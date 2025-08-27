@@ -1,0 +1,56 @@
+- ros_topic_name: "pointcloud"
+  gz_topic_name: "/world/ifarlab/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "ignition.msgs.PointCloudPacked"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: true                # Default "false"
+  direction: GZ_TO_ROS  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
+  qos_profile: SENSOR_DATA  # Default is a default-constructed QoS with appropriate queue size
+
+- ros_topic_name: "image"
+  gz_topic_name: "/world/ifarlab/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: true                # Default "false"
+  direction: GZ_TO_ROS  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
+  qos_profile: SENSOR_DATA  # Default is a default-constructed QoS with appropriate queue size
+
+- ros_topic_name: "clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "ignition.msgs.Clock"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: true                # Default "false"
+  direction: BIDIRECTIONAL  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
+
+- ros_topic_name: "pose"
+  gz_topic_name: "/world/ifarlab/dynamic_pose/info"
+  ros_type_name: "geometry_msgs/msg/PoseArray"
+  gz_type_name: "ignition.msgs.Pose_V"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: true                # Default "false"
+  direction: GZ_TO_ROS  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
+
+- ros_topic_name: "sim_joint_states"
+  gz_topic_name: "/sim_robot_joint_states"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  gz_type_name: "ignition.msgs.Model"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: true                # Default "false"
+  direction: GZ_TO_ROS  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
