@@ -33,6 +33,7 @@ Install dependencies,
 build the workspace
 ```bash
     colcon build
+    source install/setup.bash
 ```
 Two primary systems can be run with this repository.
 
