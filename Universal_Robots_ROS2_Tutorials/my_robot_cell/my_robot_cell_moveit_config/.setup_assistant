@@ -1,0 +1,10 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: my_robot_cell_description
+    relative_path: urdf/my_robot_cell.urdf.xacro
+  srdf:
+    relative_path: config/my_robot_cell.srdf
+  package_settings:
+    author_name: Felix Exner
+    author_email: urfeex@universal-robots.com
+    generated_timestamp: 1742223443

@@ -1,0 +1,142 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:include filename="$(find ur_description)/urdf/firstrobot_ur_macro.xacro"/>
+
+  <xacro:macro name="firstrobot_my_robot_cell" params="
+    parent
+    *origin
+    ur_type
+    joint_limits_parameters_file
+    kinematics_parameters_file
+    physical_parameters_file
+    visual_parameters_file
+    sim_ignition:=true
+    tf_prefix:='robot1_'   
+    ">
+    <!-- no prefix for real robot, robot1_ for sim -->
+    <material name="silver">
+      <color rgba="0.7 0.7 0.7 1.0"/>
+    </material>
+
+    <material name="white">
+      <color rgba="1 1 1 1"/>
+    </material>
+    
+    <link name="${tf_prefix}table">
+      <inertial>
+        <origin rpy="0 0 0" xyz="-0.11578560444646112 1.1997807817885673 0.4198575454601515"/>
+        <mass value="54.501673015936554"/>
+        <inertia ixx="28.453985" ixy="-0.075126" ixz="-0.006467" iyy="1.801962" iyz="0.004704" izz="27.627414"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/base_link.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/base_link.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+
+    <link name="${tf_prefix}chassis">
+      <inertial>
+        <origin xyz="-3.2936436978144956 1.434305900139973 1.1195492278047758" rpy="0 0 0"/>
+        <mass value="120.90442642947052"/>
+        <inertia ixx="129.47263" ixy="-0.023527" ixz="-0.011644"
+                iyy="73.136591" iyz="-1.726202"
+                izz="85.878511"/>
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl" scale="1 1 1"/>
+        </geometry>
+        <material name="chassis_material">
+          <color rgba="0.7 0.7 0.7 1"/>
+        </material>
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl" scale="1 1 1"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="${tf_prefix}robot_mount">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0.04578298705746098 0.1200817119996848 0.03993803302086685"/>
+        <mass value="14.04925448455695"/>
+        <inertia ixx="0.061984" ixy="-0.003503" ixz="0.001551" iyy="0.069314" iyz="0.000564" izz="0.125682"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0.147 -0.115 -0.58635"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/linear_axis_moving_link.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0.147 -0.115 -0.58635"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/linear_axis_moving_link.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${tf_prefix}table_base_joint" type="fixed">
+      <xacro:insert_block name="origin" />
+      <parent link="${parent}" />
+      <child link="${tf_prefix}table" />
+    </joint>
+
+    <joint name="${tf_prefix}base_to_robot_mount" type="fixed">
+      <parent link="${tf_prefix}table"/>
+      <child link="${tf_prefix}robot_mount"/>
+      <origin xyz="-0.147 1.115 0.58635" rpy="0 0 0" />
+    </joint>
+
+    <joint name="${tf_prefix}base_to_chassis" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${tf_prefix}chassis"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+
+    <!--This will create the specific robot. Set generate_ros2_control_tag false if working with real robot, true for sim-->
+    <xacro:firstrobot_ur_robot
+      name="${tf_prefix}${ur_type}"
+      tf_prefix="${tf_prefix}${ur_type}_"
+      parent="${tf_prefix}robot_mount"
+      joint_limits_parameters_file="${joint_limits_parameters_file}"
+      kinematics_parameters_file="${kinematics_parameters_file}"
+      physical_parameters_file="${physical_parameters_file}"
+      visual_parameters_file="${visual_parameters_file}"
+      generate_ros2_control_tag="true" 
+      sim_ignition="${sim_ignition}"
+    >
+      <origin xyz="0 0 0" rpy="0 0 0" />
+    </xacro:firstrobot_ur_robot>
+
+    <xacro:if value="${sim_ignition}">
+      <gazebo>
+        <plugin filename="libgz-sim-joint-state-publisher-system.so" name="gz::sim::systems::JointStatePublisher">
+          <topic>/robot1_joint_states</topic>
+        </plugin>
+      </gazebo>
+    </xacro:if>
+
+
+  </xacro:macro>
+
+  
+
+</robot>
