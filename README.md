@@ -48,9 +48,8 @@ If you want to test the system without real robots using fake_hardware, you can 
 ```bash
   ros2 launch my_robot_cell_control hil_test.launch.py use_fake_hardware:=true
 ```
-<img width="1948" height="988" alt="Screenshot from 2025-08-27 16-16-42" src="https://github.com/user-attachments/assets/a59565eb-ebab-4ada-a54d-641ddbddd034" />
+<img width="1918" height="995" alt="image" src="https://github.com/user-attachments/assets/53fff91c-f95a-47ab-8b29-73f854e41077" />
 
-<img width="1948" height="988" alt="Screenshot from 2025-08-27 16-17-20" src="https://github.com/user-attachments/assets/d3c00fb4-e9b3-487c-9a17-97796a6eeb29" />
 After the system is up and running, you can use the following command to start the MoveIt 2! controllers and move the robots:
 
 ```bash
@@ -64,7 +63,7 @@ To launch the dual-robot Gazebo simulation, run the following command:
 ```bash
   ros2 launch mobile_manipulator_description whole_ifarlab_gazebo.launch.py
 ```
-<img width="1948" height="988" alt="Screenshot from 2025-08-27 16-18-28" src="https://github.com/user-attachments/assets/fd330ce5-c2e8-4fb4-b95e-8045d51d5da3" />
+<img width="1918" height="995" alt="image" src="https://github.com/user-attachments/assets/45eab4f8-863c-4745-8bb2-bee5ec282690" />
 
 
 
