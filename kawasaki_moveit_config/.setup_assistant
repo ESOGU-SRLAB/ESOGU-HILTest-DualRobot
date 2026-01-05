@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: mobile_manipulator_description
+    relative_path: urdf/mobile_manipulator.urdf.xacro
+  srdf:
+    relative_path: config/robot.srdf
+  package_settings:
+    author_name: Cem Süha Yılmaz
+    author_email: cshyilmaz@gmail.com
+    generated_timestamp: 1764167247
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity

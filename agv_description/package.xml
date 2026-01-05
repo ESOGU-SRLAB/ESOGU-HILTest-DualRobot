@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>agv_description</name>
+  <version>1.2.0</version>
+  <description>
+    URDF/Xacro Description package for the AGV robot.
+    Compatible with ROS 2 Humble and Gazebo Sim (ros_gz_sim).
+  </description>
+
+  <author>Cem Süha Yılmaz</author>
+  <maintainer email="cshyilmaz@gmail.com">Cem Süha Yılmaz</maintainer>
+  <license>BSD</license>
+
+  <!-- Build system -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Core runtime dependencies -->
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>urdf</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <!-- Gazebo Sim (Ignition) integration -->
+  <exec_depend>ros_gz_sim</exec_depend>              <!-- ana simülasyon paketi -->
+  <exec_depend>ros_gz_bridge</exec_depend>           <!-- ROS <-> Gazebo topic köprüsü -->
+  <exec_depend>ros_gz_interfaces</exec_depend>       <!-- mesaj tipleri -->
+  <exec_depend>ros_gz_sim_demos</exec_depend>        <!-- örnek world’ler ve araçlar -->
+  <exec_depend>gz_ros2_control</exec_depend>         <!-- ros2_control için -->
+
+  <!-- Lint & test -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

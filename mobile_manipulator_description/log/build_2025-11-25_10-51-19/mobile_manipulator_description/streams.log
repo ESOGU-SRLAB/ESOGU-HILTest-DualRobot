@@ -1,0 +1,214 @@
+[0.008s] Invoking command in '/home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cem/colcon_ws/install/rs005l_controller:/opt/ros/humble /usr/bin/cmake /home/cem/colcon_ws/src/mobile_manipulator_description -DCMAKE_INSTALL_PREFIX=/home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description
+[0.114s] -- The C compiler identification is GNU 11.4.0
+[0.210s] -- The CXX compiler identification is GNU 11.4.0
+[0.221s] -- Detecting C compiler ABI info
+[0.302s] -- Detecting C compiler ABI info - done
+[0.309s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.310s] -- Detecting C compile features
+[0.311s] -- Detecting C compile features - done
+[0.314s] -- Detecting CXX compiler ABI info
+[0.399s] -- Detecting CXX compiler ABI info - done
+[0.407s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.407s] -- Detecting CXX compile features
+[0.408s] -- Detecting CXX compile features - done
+[0.414s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.554s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.656s] -- Found xacro: 2.0.13 (/opt/ros/humble/share/xacro/cmake)
+[0.698s] -- Configuring done
+[0.700s] -- Generating done
+[0.701s] -- Build files have been written to: /home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description
+[0.705s] Invoked command in '/home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cem/colcon_ws/install/rs005l_controller:/opt/ros/humble /usr/bin/cmake /home/cem/colcon_ws/src/mobile_manipulator_description -DCMAKE_INSTALL_PREFIX=/home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description
+[0.707s] Invoking command in '/home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cem/colcon_ws/install/rs005l_controller:/opt/ros/humble /usr/bin/cmake --build /home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description -- -j20 -l20
+[0.753s] Invoked command in '/home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cem/colcon_ws/install/rs005l_controller:/opt/ros/humble /usr/bin/cmake --build /home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description -- -j20 -l20
+[0.767s] Invoking command in '/home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cem/colcon_ws/install/rs005l_controller:/opt/ros/humble /usr/bin/cmake --install /home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description
+[0.775s] -- Install configuration: ""
+[0.775s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf
+[0.775s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota.urdf.xacro
+[0.775s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/mobile_manipulator.urdf.xacro
+[0.775s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs
+[0.775s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/rs005l.urdf.xacro
+[0.775s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/rs005l_with_gripper_macro.xacro
+[0.776s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/rs005l_with_capsules_macro.xacro
+[0.776s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/rs005l_with_capsules.urdf.xacro
+[0.777s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/rs005l_with_gripper.urdf.xacro
+[0.777s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/rs005l_macro.xacro
+[0.777s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/rs005l.ros2_control.xacro
+[0.777s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/rs_with_gripper.transmission.xacro
+[0.777s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/rs.transmission.xacro
+[0.777s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/khi_rs/common.gazebo.xacro
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota/ota_ir.xacro
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota/inertia_tensors.urdf.xacro
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota/ota_macro.xacro
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota/ota.ros2_control.xacro
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota/ota_caster.xacro
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota/ota_plugin.xacro
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota/ota_wheel.xacro
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/urdf/ota/ota_base.xacro
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes
+[0.778s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/camera.stl
+[0.795s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment
+[0.795s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/ifarlab_ray.stl
+[0.796s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/barrier_closekabinet.stl
+[0.796s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/barrier.stl
+[0.796s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/light_curtain_3m.stl
+[0.797s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/barrier_closetable.stl
+[0.797s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/barrier_kaw1.stl
+[0.798s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/barrier_kaw2.stl
+[0.798s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/barrier_kaw3.stl
+[0.798s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/Kabinet.stl
+[0.799s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/environment/standing.stl
+[0.800s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs
+[0.800s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/gripper.STL
+[0.801s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper
+[0.801s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/_SCHUNK_5521763_Gehaeuse_EGP_50_2.sldprt
+[0.802s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne.sldasm
+[0.802s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/_SCHUNK_5510589_Huelse_MPG_50_19.sldprt
+[0.802s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/_SCHUNK_9962714_Bracket_MPG_50_9.sldprt
+[0.803s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/_SCHUNK_9700901_Halter_fuer_NHS_Du_4_4.sldprt
+[0.803s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne
+[0.803s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/launch
+[0.803s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/launch/gazebo.launch
+[0.803s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/launch/display.launch
+[0.803s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/meshes
+[0.803s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/meshes/gripper.STL
+[0.804s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/meshes/left_finger.STL
+[0.805s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/meshes/right_finger.STL
+[0.805s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/urdf
+[0.805s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/urdf/SCHUNK_0310960_EGP_50_N_N_B_00ohne.urdf
+[0.805s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/config
+[0.805s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/config/joint_names_SCHUNK_0310960_EGP_50_N_N_B_00ohne.yaml
+[0.806s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/textures
+[0.806s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/CMakeLists.txt
+[0.806s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK_0310960_EGP_50_N_N_B_00ohne/package.xml
+[0.806s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/_SCHUNK_5522650_Finger_EGP_50_7.sldprt
+[0.806s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/_SCHUNK_SNT016581_Stecker_EGP_23.sldprt
+[0.806s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/SCHUNK-0310960 EGP 50-N-N-B,00ohne.dae
+[0.807s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/_SCHUNK_9905503_Typenschild_11x43x0_3_25.sldprt
+[0.808s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Gripper/_SCHUNK_9965221_Scheibe_D4_5_11.sldprt
+[0.808s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/Montaj.stl
+[0.809s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/RS005L_J6.STL
+[0.809s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/RS005L_J2.STL
+[0.810s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/readme-and-terms-of-use-3d-cad-models.txt
+[0.810s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/RS005L_J5.STL
+[0.810s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/left_finger.STL
+[0.811s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/SCHUNK_EGP_50_N_N_B.stl
+[0.814s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/FlansforSick_v1_1.stl
+[0.815s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/right_finger.STL
+[0.815s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/RS005L_J1.STL
+[0.815s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/SCHUNK_ToolChangerRobotSide.stl
+[0.818s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/V3S1#5-#######-S313011.stl
+[0.824s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/RS005L_J3.STL
+[0.824s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/RS005L_J0.STL
+[0.824s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/khi_rs/RS005L_J4.STL
+[0.825s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/ota
+[0.825s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/ota/AnaTeker.stl
+[0.828s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/ota/OTA-v0.7.stl
+[0.984s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/ota/S30B-XXXXXX.stl
+[0.988s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/ota/OTA-v0.7.zip
+[1.025s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/ota/zed.stl
+[1.025s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/ota/SarhosTeker.stl
+[1.039s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/meshes/ota/FotoelektrikSensor.stl
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/config
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/config/ros_controllers.yaml
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/config/gazebo_controllers.yaml
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/config/ota_controllers.yaml
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/config/rs005l_controllers.yaml
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/launch
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/launch/gazebo_view_robot.launch.py
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/launch/view_robot.launch.py
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/launch/combined_robots.launch.py
+[1.041s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/launch/ota_gazebo_start.launch.py
+[1.042s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model
+[1.042s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_ray
+[1.042s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_ray/model.config
+[1.042s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_ray/model
+[1.042s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_ray/model/ifarlab_ray.stl
+[1.043s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_ray/model.sdf
+[1.043s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/light_curtain
+[1.043s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/light_curtain/model.config
+[1.043s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/light_curtain/model
+[1.043s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/light_curtain/model/light_curtain_3m.stl
+[1.045s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/light_curtain/model/light_curtain.stl
+[1.047s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/light_curtain/model.sdf
+[1.048s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_robot
+[1.048s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_robot/model.config
+[1.048s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_robot/model
+[1.048s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_robot/model/robot.stl
+[1.082s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_robot/model.sdf
+[1.083s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/kabinet
+[1.083s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/kabinet/model.config
+[1.083s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/kabinet/model
+[1.083s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/kabinet/model/Kabinet.stl
+[1.086s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/kabinet/model.sdf
+[1.086s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_bus
+[1.087s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_bus/model.config
+[1.087s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_bus/model
+[1.087s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_bus/model/IFARLASASE.stl
+[1.087s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_bus/model/ifarlab_bus.stl
+[1.096s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_bus/model/ifarlab_bus1.stl
+[1.103s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_bus/model/ifarlab_bus_w_plexi_cylinder.stl
+[1.110s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_bus/model/ifarlab_bus_w_plexi.stl
+[1.117s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/ifarlab_bus/model.sdf
+[1.117s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing
+[1.117s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/model.config
+[1.117s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/model.sdf
+[1.117s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/meshes
+[1.117s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/meshes/standing.dae
+[1.123s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/meshes/standing.stl
+[1.125s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials
+[1.125s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures
+[1.125s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/male02_diffuse_black-unmodified.png
+[1.131s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/jeans_basic_diffuse.png
+[1.136s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/eyebrow001.png
+[1.136s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/young_lightskinned_male_diffuse.png
+[1.142s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/eyebrow001-unmodified.png
+[1.143s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/male02_diffuse_black.png
+[1.148s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/teeth.png
+[1.151s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/tshirt02_texture.png
+[1.151s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/jeans01_normals.png
+[1.156s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/tshirt02_normals.png
+[1.157s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_standing/materials/textures/green_eye.png
+[1.158s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking
+[1.158s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/model.config
+[1.158s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/model.sdf
+[1.158s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/meshes
+[1.158s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/meshes/walking.dae
+[1.165s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials
+[1.165s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures
+[1.166s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/male02_diffuse_black-unmodified.png
+[1.172s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/jeans_basic_diffuse.png
+[1.178s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/eyebrow001.png
+[1.179s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/young_lightskinned_male_diffuse.png
+[1.185s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/eyebrow001-unmodified.png
+[1.185s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/male02_diffuse_black.png
+[1.191s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/teeth.png
+[1.193s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/tshirt02_texture.png
+[1.194s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/jeans01_normals.png
+[1.199s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/tshirt02_normals.png
+[1.200s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/person_walking/materials/textures/green_eye.png
+[1.201s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/barrier
+[1.201s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/barrier/model.config
+[1.201s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/barrier/model
+[1.201s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/barrier/model/barrier.stl
+[1.202s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/barrier/model/standing.dae
+[1.208s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/barrier/model/standing.stl
+[1.210s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/barrier/model.sdf
+[1.211s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/worlds
+[1.211s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/worlds/ifarlab.world
+[1.211s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/ament_index/resource_index/package_run_dependencies/mobile_manipulator_description
+[1.211s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/ament_index/resource_index/parent_prefix_path/mobile_manipulator_description
+[1.212s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/environment/ament_prefix_path.sh
+[1.212s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/environment/ament_prefix_path.dsv
+[1.212s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/environment/path.sh
+[1.212s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/environment/path.dsv
+[1.213s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/local_setup.bash
+[1.213s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/local_setup.sh
+[1.213s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/local_setup.zsh
+[1.213s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/local_setup.dsv
+[1.213s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/package.dsv
+[1.213s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/ament_index/resource_index/packages/mobile_manipulator_description
+[1.213s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/cmake/mobile_manipulator_descriptionConfig.cmake
+[1.214s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/cmake/mobile_manipulator_descriptionConfig-version.cmake
+[1.214s] -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/package.xml
+[1.216s] Invoked command in '/home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/cem/colcon_ws/install/rs005l_controller:/opt/ros/humble /usr/bin/cmake --install /home/cem/colcon_ws/src/mobile_manipulator_description/build/mobile_manipulator_description

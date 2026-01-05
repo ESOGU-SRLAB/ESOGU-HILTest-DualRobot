@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">  
+  <xacro:macro name="agv_ir" params="agv_base_link link_name xyz_ir rpy_ir">
+
+    <!-- IR Sensör Linki -->
+    <link name="${link_name}_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.001"/>
+        <inertia ixx="0.001666" ixy="0" ixz="0" iyy="0.001666" iyz="0" izz="0.001666"/>
+      </inertial>	
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/agv_description/meshes/OTAv07_meshes/FotoelektrikSensor.stl" scale="0.0015 0.0015 0.0015"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.01 0.01" />
+        </geometry>
+      </collision>
+    </link>
+     
+    <joint name="${link_name}_joint" type="fixed">
+      <origin xyz="${xyz_ir}" rpy="${rpy_ir}"/>
+      <parent link="${agv_base_link}"/>
+      <child link="${link_name}_link"/>
+    </joint>
+
+    <!-- Gazebo Sim için güncel sensör plugin yapısı -->
+    <plugin name="${link_name}_sensor_plugin" filename="gz-sim-sensors-system">
+      <sensor name="${link_name}_sensor" type="gpu_ray">
+        <update_rate>4</update_rate>
+        <topic>/${link_name}</topic>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>320</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.001</min_angle>
+              <max_angle>0.001</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.02</min>
+            <max>5.0</max>
+            <resolution>0.01</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.0</stddev>
+          </noise>
+        </ray>
+      </sensor>
+    </plugin>
+
+  </xacro:macro>	  
+</robot>

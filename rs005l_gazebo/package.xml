@@ -1,0 +1,25 @@
+<package format="3">
+  <name>rs005l_gazebo</name>
+  <version>1.0.0</version>
+  <description>Gazebo Ignition simulation for Kawasaki RS005L</description>
+  
+  <author>Cem Süha Yılmaz</author>
+  <maintainer email="cshyilmaz@gmail.com">Sezgin Secil</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>rs005l_description</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>joint_state_broadcaster</exec_depend>
+  <exec_depend>joint_trajectory_controller</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

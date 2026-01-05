@@ -1,0 +1,62 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/ifarlab/catkin_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/ackermann_steering_controller/include/**",
+        "/home/ifarlab/catkin_ws/src/sir_robot_ros_interface/agv_msgs/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_planners/chomp/chomp_motion_planner/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_control/combined_robot_hw/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_control/combined_robot_hw_tests/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_control/controller_interface/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_control/controller_manager/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_control/controller_manager_tests/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/diff_drive_controller/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/effort_controllers/include/**",
+        "/home/ifarlab/catkin_ws/src/mobile_manipulator/emergency_pkg/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/force_torque_sensor_controller/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/forward_command_controller/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/four_wheel_steering_controller/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/gripper_action_controller/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_control/hardware_interface/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/imu_sensor_controller/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_control/joint_limits_interface/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/joint_state_controller/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/joint_trajectory_controller/include/**",
+        "/home/ifarlab/catkin_ws/src/mobile_manipulator/mobile_manipulator_action/include/**",
+        "/home/ifarlab/catkin_ws/src/mobile_manipulator/mobile_manipulator_description/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_planners/chomp/chomp_interface/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_ros/benchmarks/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_plugins/moveit_ros_control_interface/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_ros/move_group/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_ros/occupancy_map_monitor/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_ros/robot_interaction/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_ros/moveit_servo/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_setup_assistant/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_plugins/moveit_simple_controller_manager/include/**",
+        "/home/ifarlab/catkin_ws/src/mobile_manipulator/odom_filtered/include/**",
+        "/home/ifarlab/catkin_ws/src/mobile_manipulator/parameter_configuration/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_planners/pilz_industrial_motion_planner/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_planners/pilz_industrial_motion_planner_testutils/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/position_controllers/include/**",
+        "/home/ifarlab/catkin_ws/src/moveit/moveit_planners/sbpl/core/sbpl_interface/include/**",
+        "/home/ifarlab/catkin_ws/src/sir_robot_ros_interface/sir_robot_ros_interface/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_control/transmission_interface/include/**",
+        "/home/ifarlab/catkin_ws/src/mobile_manipulator/valu3s_tools/include/**",
+        "/home/ifarlab/catkin_ws/src/ros_controllers/velocity_controllers/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

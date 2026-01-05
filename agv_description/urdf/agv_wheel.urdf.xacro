@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">  
+  <xacro:macro name="agv_wheel" params="xyz_hub rpy_hub side">    
+
+    <!-- Tekerlek Linki -->
+    <link name='wheel_${side}_link'>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 1.570796"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/agv_description/meshes/OTAv07_meshes/AnaTeker.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>	 
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 1.570796 1.570796"/>
+        <geometry>
+          <cylinder radius="0.1" length="0.05"/>	  			  
+        </geometry>
+      </collision>
+
+      <xacro:cylinder_inertial radius="0.15" length="0.02" mass="0.1"/>
+    </link>
+
+    <!-- Tekerlek Bağlantı Eklem -->
+    <joint name="wheel_${side}_base" type="continuous">
+      <origin xyz="${xyz_hub}" rpy="${rpy_hub}"/>
+      <parent link="agv_base_link"/>
+      <child link="wheel_${side}_link"/>
+      <axis xyz="0 1 0"/>    
+    </joint> 
+
+    <!-- Gazebo Sim uyumlu görsel malzeme -->
+    <plugin name="wheel_${side}_visual_plugin" filename="gz-sim-visual-system">
+      <link_name>wheel_${side}_link</link_name>
+      <material>Gazebo/Green</material>
+    </plugin>
+
+    <!-- (Opsiyonel) Gazebo Sim fizik veya dönme eklentisi -->
+    <plugin name="wheel_${side}_physics_plugin" filename="gz-sim-joint-state-publisher-system">
+      <joint_name>wheel_${side}_base</joint_name>
+      <update_rate>100</update_rate>
+    </plugin>
+
+  </xacro:macro>
+</robot>
