@@ -1,5 +1,5 @@
 This repository contains the ROS 2 packages for both a dual-robot UR10e system and Hardware-in-the-Loop (HIL) test system developed at the Intelligent Factory and Robotics Laboratory (IFARLAB) of Eskişehir Osmangazi University (ESOGU).
-
+![WhatsApp Image 2026-01-05 at 12 37 18](https://github.com/user-attachments/assets/e54bcc60-3736-45e5-98fb-7963c768c673)
 ⚠️ Important Setup Step: Updating File Paths
 
 The current file structure uses absolute file paths within some .xacro files. To run this repository on your system without issues, you must update these paths according to your own username and workspace directory.
