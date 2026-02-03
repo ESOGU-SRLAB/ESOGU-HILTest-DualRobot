@@ -298,6 +298,14 @@ def launch_setup(context, *args, **kwargs):
         output="screen"
     )
 
+    ur_real_to_sim_bridge_node = Node(
+        package="my_robot_cell_control",
+        executable="real_to_sim_bridge",
+        name="real_to_sim_bridge",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time}],
+    )
+
     ur_nodes_in_namespace = GroupAction(
         actions=[
             PushRosNamespace(ur_namespace),
@@ -310,6 +318,7 @@ def launch_setup(context, *args, **kwargs):
             ur_tf_installer,
             ur_base_launch,
             ur_linear_axis_adapter_node,
+            ur_real_to_sim_bridge_node,
         ]
     )
 
@@ -366,6 +375,14 @@ def launch_setup(context, *args, **kwargs):
         condition=UnlessCondition(kawasaki_start_joint_controller),
     )
 
+    # OTA Base Controller spawner
+    ota_base_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["ota_base_controller", "-c", "/kawasaki/controller_manager"],
+        parameters=[{"use_sim_time": use_sim_time}],
+    )
+
     kawasaki_moveit = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [
@@ -387,6 +404,7 @@ def launch_setup(context, *args, **kwargs):
             kawasaki_delay_rviz,
             kawasaki_initial_joint_controller_spawner_stopped,
             kawasaki_initial_joint_controller_spawner_started,
+            ota_base_controller_spawner,
             kawasaki_moveit,
         ]
     )

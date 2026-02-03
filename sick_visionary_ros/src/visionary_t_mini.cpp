@@ -196,7 +196,7 @@ int main(int argc, char **argv)
   auto node = std::make_shared<rclcpp::Node>("sick_visionary_t_mini");
 
   // Declare parameters
-  node->declare_parameter<std::string>("remote_device_ip", "192.168.4.50");
+  node->declare_parameter<std::string>("remote_device_ip", "192.168.3.50");
   node->declare_parameter<std::string>("frame_id", "ur10e_depth_optical_frame");
   node->declare_parameter<bool>("enable_depth", true);
   node->declare_parameter<bool>("enable_intensity", true);

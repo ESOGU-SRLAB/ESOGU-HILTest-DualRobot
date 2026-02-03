@@ -15,7 +15,7 @@
   <xacro:arg name="physical_params" default="$(find my_robot_cell_control)/config/$(arg ur_type)/physical_parameters.yaml"/>
   <xacro:arg name="visual_params" default="$(find my_robot_cell_control)/config/$(arg ur_type)/visual_parameters.yaml"/>
 
-  <xacro:arg name="robot_ip" default="192.168.4.5"/>
+  <xacro:arg name="robot_ip" default="192.168.3.5"/>
   <xacro:arg name="headless_mode" default="false" />
   <xacro:arg name="ur_script_filename" default="$(find ur_client_library)/resources/external_control.urscript"/>
   <xacro:arg name="ur_output_recipe_filename" default="$(find ur_robot_driver)/resources/rtde_output_recipe.txt"/>

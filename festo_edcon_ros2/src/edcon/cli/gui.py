@@ -16,7 +16,7 @@ def main():
     parser.add_argument(
         "-i",
         "--ip-address",
-        default="192.168.4.100",
+        default="192.168.3.100",
         help="IP address to connect to (default: %(default)s).",
     )
 

@@ -295,6 +295,16 @@ def launch_setup(context, *args, **kwargs):
                         "use_sim_time": "true",
                     }.items(),
                 ),
+                
+                # Real to Sim Bridge Node - Gerçek robot ile simüle robot arasında köprü
+                Node(
+                    package="my_robot_cell_control",
+                    executable="real_to_sim_bridge",
+                    name="real_to_sim_bridge",
+                    output="screen",
+                    parameters=[{"use_sim_time": True}],
+                ),
+                
                 # Gerçek robot için RViz (namespace olmadan)
                 Node(
                     package="rviz2",
@@ -345,7 +355,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "robot_ip",
-            default_value="192.168.4.5",
+            default_value="192.168.3.5",
             description="IP address by which the robot can be reached.",
         )
     )

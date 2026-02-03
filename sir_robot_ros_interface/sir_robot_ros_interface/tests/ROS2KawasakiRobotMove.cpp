@@ -159,13 +159,37 @@ private:
 
     // 2. nokta: 39.390, -34.935, -76.969, -126.004, 46.171, 32.372
     SIRMatrix point2(6, 1);
-    point2 << 42.360, -29.443, -76.153, -154.640, 31.510, 47.312;
+    point2 << -104.117, 20.814, -31.719, -290.426, 94.088, 116.370;
     waypoints.push_back(point2);
 
     // 3. nokta: 15.118, -20.317, -72.776, -151.849, 26.688, 43.579
     SIRMatrix point3(6, 1);
-    point3 << 42.360, -29.443, -61.095, -154.640, 31.510, 47.312;
+    point3 << -71.503, 24.562, -25.947, -270.191, 68.745, 118.992;
     waypoints.push_back(point3);
+
+    SIRMatrix point4(6, 1);
+    point4 << -71.503, 0.877, -101.176, -287.050, 77.113, 172.441;
+    waypoints.push_back(point4);
+
+    SIRMatrix point5(6, 1);
+    point5 << -71.503, 38.622, -125.932, -289.487, 98.656, 231.511;
+    waypoints.push_back(point5);
+
+    SIRMatrix point6(6, 1);
+    point6 << -71.503, 0.877, -101.176, -287.050, 77.113, 172.441;
+    waypoints.push_back(point6);
+
+    SIRMatrix point7(6, 1);
+    point7 << -71.503, 24.562, -25.947, -270.191, 68.745, 118.992;
+    waypoints.push_back(point7);
+
+    SIRMatrix point8(6, 1);
+    point8 << -104.117, 20.814, -31.719, -290.426, 94.088, 116.370;
+    waypoints.push_back(point8);
+
+    SIRMatrix point9(6, 1);
+    point9 << 15.837, -28.815, -76.154, -154.640, 31.511, 47.310;
+    waypoints.push_back(point9);
 
     return waypoints;
   }

@@ -20,7 +20,7 @@ class LinearAxisControllerAdapter(Node):
         self.get_logger().info("Linear Axis Controller Adapter started.")
 
         # Parametreler
-        self.declare_parameter('ip_address', '192.168.4.1')
+        self.declare_parameter('ip_address', '192.168.3.1')
         self.declare_parameter('joint_name', 'ur10e_base_to_robot_mount')
         self.declare_parameter('update_frequency_hz', 500.0)
         self.declare_parameter('command_send_frequency_hz', 100.0)

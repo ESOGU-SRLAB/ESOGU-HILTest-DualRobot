@@ -93,10 +93,15 @@
       <inertial>
         <mass value="50.0"/>
         <origin xyz="0 0 0"/>
-        <inertia ixx="1" iyy="1" izz="1" ixy="0" ixz="0" iyz="0"/>
+        <inertia ixx="5.0" iyy="5.0" izz="5.0" ixy="0" ixz="0" iyz="0"/>
       </inertial>
 
     </link>
+
+    <gazebo reference="${link_name}">
+      <mu1>0.1</mu1>
+      <mu2>0.1</mu2>
+    </gazebo>
 
     <link name='manipulator_base_link'>
       <origin xyz="0 0 0" rpy=" 0 0 0"/>
@@ -146,9 +151,10 @@
 
       <!-- === WHEEL COLLISION (simple cylinder) === -->
       <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <origin xyz="0 0 0" rpy="0 0 1.570796"/>
         <geometry>
-          <cylinder radius="0.102" length="0.02"/>
+          <mesh filename="file:////home/cem/colcon_ws/src/mobile_manipulator_description/meshes/ota/AnaTeker.stl"
+                scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
 
@@ -163,6 +169,16 @@
       <child link="wheel_${side}_link"/>
       <axis xyz="0 1 0"/>
     </joint>
+
+    <!-- Gazebo wheel parameters -->
+    <gazebo reference="wheel_${side}_link">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+      <kp>1000000.0</kp>
+      <kd>10.0</kd>
+      <minDepth>0.001</minDepth>
+      <material>Gazebo/Red</material>
+    </gazebo>
 
   </xacro:macro>
 
@@ -182,21 +198,22 @@
       <collision>
         <origin xyz="0 0 0"/>
         <geometry>
-          <cylinder radius="0.04" length="0.02"/>
+          <mesh filename="file:////home/cem/colcon_ws/src/mobile_manipulator_description/meshes/ota/SarhosTeker.stl"
+                scale="0.001 0.0008 0.001"/>
         </geometry>
       </collision>
 
       <xacro:cylinder_inertial radius="0.04" length="0.02" mass="0.5" />
     </link>   
-    <!-- Bu joint continous'tu -->
+    <!-- Bu joint continous'tu ben değiştirdim-->
     <joint name="caster_${side}_joint" type="fixed">
-      <axis xyz="0 0 1"/>
+      <axis xyz="1 0 0"/>
       <origin xyz="${xyz_caster}" rpy="${rpy_caster}"/>
       <child link="caster_${side}_link"/>
       <parent link="${base_link}"/>
     </joint>  
 
-    <link name='caster_wheel_${side}_link'>
+    <!-- <link name='caster_wheel_${side}_link'>
       <visual>
         <origin xyz="0 0 0"/>
         <geometry>
@@ -219,7 +236,7 @@
       <origin xyz="-0.04 0 -0.07"/>
       <parent link="caster_${side}_link"/>
       <child link="caster_wheel_${side}_link"/>
-    </joint>  
+    </joint>   -->
   
   </xacro:macro>
 
@@ -297,14 +314,14 @@
     <xacro:ota_ir base_link="${base_link}" link_name="ota_ir" xyz_ir="0.503 0.0 0.175" rpy_ir="0 0 0"/>
 
     <!-- Tahrik tekerlekleri -->
-    <xacro:ota_wheel base_link="${base_link}" xyz_hub="0 -0.30 0.10" rpy_hub="0 0 0" side="left"/>
-    <xacro:ota_wheel base_link="${base_link}" xyz_hub="0 0.30 0.10" rpy_hub="0 0 0" side="right"/>
+    <xacro:ota_wheel base_link="${base_link}" xyz_hub="0 -0.305 0.10" rpy_hub="0 0 0" side="left"/>
+    <xacro:ota_wheel base_link="${base_link}" xyz_hub="0 0.295 0.10" rpy_hub="0 0 0" side="right"/>
 
     <!-- Sarhoş tekerlekler -->
-    <xacro:ota_swivel base_link="${base_link}" xyz_caster="0.37 -0.22 0.12" rpy_caster="0 0 0" side="front_right"/>
-    <xacro:ota_swivel base_link="${base_link}" xyz_caster="0.37 0.22 0.12" rpy_caster="0 0 0" side="front_left"/>
-    <xacro:ota_swivel base_link="${base_link}" xyz_caster="-0.37 -0.22 0.12" rpy_caster="0 0 0" side="back_right"/>
-    <xacro:ota_swivel base_link="${base_link}" xyz_caster="-0.37 0.22 0.12" rpy_caster="0 0 0" side="back_left"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="0.37 -0.223 0.12" rpy_caster="0 0 0" side="front_right"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="0.37 0.217 0.12" rpy_caster="0 0 0" side="front_left"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="-0.37 -0.223 0.12" rpy_caster="0 0 0" side="back_right"/>
+    <xacro:ota_swivel base_link="${base_link}" xyz_caster="-0.37 0.217 0.12" rpy_caster="0 0 0" side="back_left"/>
   </xacro:macro>
 
 </robot>

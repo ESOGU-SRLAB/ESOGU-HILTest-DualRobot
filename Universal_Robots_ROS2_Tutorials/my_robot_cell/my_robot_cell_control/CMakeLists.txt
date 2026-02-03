@@ -33,6 +33,7 @@ install(
 
 install(PROGRAMS
   scripts/real_to_gazebo.py
+  scripts/usb_camera_node.py
 DESTINATION lib/${PROJECT_NAME}
 )
 

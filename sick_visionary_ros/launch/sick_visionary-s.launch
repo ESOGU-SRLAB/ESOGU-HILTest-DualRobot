@@ -4,8 +4,8 @@
   <arg name="camera" default="sick_visionary_s" />
 
   <node pkg="sick_visionary_ros" type="sick_visionary_s_node" name="$(arg camera)" output="screen">
-    <!-- IP address of the Visionary-S device, default: 192.168.4.50 -->
-    <param name="remote_device_ip" value="192.168.4.50" />
+    <!-- IP address of the Visionary-S device, default: 192.168.3.50 -->
+    <param name="remote_device_ip" value="192.168.3.50" />
     <param name="frame_id" value="camera" />
     <param name="enable_z" value="true" />
     <param name="enable_statemap" value="true" />

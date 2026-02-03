@@ -208,7 +208,7 @@ def main():
     
     # Infinite loop için pozisyonları tanımla
     safe_positions = [
-        [-0.5, 1.0, 1.55],
+        [0.5676, 2.2807, 1.7283],
         [-1.0, 1.0, 1.55],
         [-0.5, 1.0, 1.55],
         [-0.5, 1.65, 1.55],

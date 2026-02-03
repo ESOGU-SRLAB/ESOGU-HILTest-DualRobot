@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
+  <xacro:include filename="$(find my_robot_cell_description)/urdf/chassis_macro.xacro"/>
 
   <xacro:macro name="my_robot_cell" params="
     parent
@@ -44,6 +45,11 @@
       </collision>
     </link>
 
+    <!-- Chassis assembly - tüm PART1-PART44 parçalarını içerir -->
+    <!-- <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:chassis_assembly> -->
+
     <link name="${tf_prefix}chassis">
       <inertial>
         <origin xyz="-1.124731 1.232845 1.108302" rpy="0 0 0"/>
@@ -70,6 +76,7 @@
         </geometry>
       </collision>
     </link>
+
 
     <link name="${tf_prefix}robot_mount">
       <inertial>
@@ -183,12 +190,6 @@
       <child link="${tf_prefix}table" />
     </joint>
 
-    <joint name="${tf_prefix}base_to_chassis" type="fixed">
-      <parent link="${parent}"/>
-      <child link="${tf_prefix}chassis"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
-
     <!-- Linear axis joint - bu joint'in tam tanımı burada olmalı -->
     <joint name="${tf_prefix}base_to_robot_mount" type="prismatic">
       <parent link="${tf_prefix}table"/>
@@ -197,6 +198,12 @@
       <axis xyz="0.0 1.0 0.0"/>
       <limit effort="1000" lower="0.05" upper="1.95" velocity="1.25"/>
       <dynamics damping="100.0" friction="50.0"/>
+    </joint>
+
+    <joint name="${tf_prefix}base_to_chassis" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${tf_prefix}chassis"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
     <joint name="${tf_prefix}base_to_alumuniumtable" type="fixed">

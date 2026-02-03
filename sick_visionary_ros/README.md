@@ -130,7 +130,7 @@ The launch file starts the respective ROS Node and provides it with the necessar
 #### sick_visionary-s.launch
 
 - `remote_device_ip:`
-  IP-address of the device (string, default: 192.168.4.50)
+  IP-address of the device (string, default: 192.168.3.50)
 
 - `frame_id:`
   Name of the reference frame. (string, default: camera)
@@ -154,7 +154,7 @@ The launch file starts the respective ROS Node and provides it with the necessar
 #### sick_visionary-t_mini.launch
 
 - `remote_device_ip:`
-  IP-address of the device (string, default: 192.168.4.50)
+  IP-address of the device (string, default: 192.168.3.50)
 
 - `frame_id:`
   Name of the reference frame. (string, default: camera)

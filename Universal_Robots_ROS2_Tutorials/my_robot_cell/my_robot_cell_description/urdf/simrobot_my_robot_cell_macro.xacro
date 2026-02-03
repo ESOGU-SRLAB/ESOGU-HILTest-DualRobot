@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:include filename="$(find ur_description)/urdf/simrobot_ur_macro.xacro"/>
+  <xacro:include filename="$(find my_robot_cell_description)/urdf/chassis_macro.xacro"/>
+
 
   <xacro:macro name="simrobot_my_robot_cell" params="
     parent
@@ -39,32 +41,10 @@
       </collision>
     </link>
 
-    <link name="${tf_prefix}chassis">
-      <inertial>
-        <origin xyz="-1.124731 1.232845 1.108302" rpy="0 0 0"/>
-        <mass value="120.90442642947052"/>
-        <inertia ixx="129.47263" ixy="-0.023527" ixz="-0.011644"
-                iyy="73.136591" iyz="-1.726202"
-                izz="85.878511"/>
-      </inertial>
-      
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl" scale="0.001 0.001 0.001"/>
-        </geometry>
-        <material name="chassis_material">
-          <color rgba="0.7 0.7 0.7 1"/>
-        </material>
-      </visual>
-      
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl" scale="0.001 0.001 0.001"/>
-        </geometry>
-      </collision>
-    </link>
+    <!-- Chassis assembly - tüm PART1-PART44 parçalarını içerir -->
+    <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:chassis_assembly>
 
     <link name="${tf_prefix}robot_mount">
       <inertial>
@@ -178,11 +158,11 @@
       <child link="${tf_prefix}table" />
     </joint>
 
-    <joint name="${tf_prefix}base_to_chassis" type="fixed">
+    <!-- <joint name="${tf_prefix}base_to_chassis" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}chassis"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
+    </joint> -->
 
     <!-- Linear axis joint - bu joint'in tam tanımı burada olmalı -->
     <joint name="${tf_prefix}base_to_robot_mount" type="prismatic">
