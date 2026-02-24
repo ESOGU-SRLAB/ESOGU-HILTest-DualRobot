@@ -42,9 +42,36 @@
     </link>
 
     <!-- Chassis assembly - tüm PART1-PART44 parçalarını içerir -->
-    <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
+    <!-- <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </xacro:chassis_assembly>
+    </xacro:chassis_assembly> -->
+
+    <link name="${tf_prefix}chassis">
+      <inertial>
+        <origin xyz="-1.124731 1.232845 1.108302" rpy="0 0 0"/>
+        <mass value="120.90442642947052"/>
+        <inertia ixx="129.47263" ixy="-0.023527" ixz="-0.011644"
+                iyy="73.136591" iyz="-1.726202"
+                izz="85.878511"/>
+      </inertial>
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="chassis_material">
+          <color rgba="0.7 0.7 0.7 1"/>
+        </material>
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
 
     <link name="${tf_prefix}robot_mount">
       <inertial>
@@ -66,48 +93,6 @@
         </geometry>
       </collision>
     </link>
-
-    <!-- <link name="${tf_prefix}wall_door">
-      <inertial>
-        <origin rpy="0 0 0" xyz="600.0 3235.0 550.0"/>
-        <mass value="8.04925448455695"/>
-        <inertia ixx="10.53" ixy="0.0" ixz="0.0" iyy="22.88" iyz="0.0" izz="12.52"/>
-      </inertial>
-      <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/wall_door.stl" scale="0.001 0.001 0.001"/>
-        </geometry>
-        <material name="silver"/>
-      </visual>
-      <collision>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/wall_door.stl" scale="0.001 0.001 0.001"/>
-        </geometry>
-      </collision>
-    </link>
-
-    <link name="${tf_prefix}wall_server">
-      <inertial>
-        <origin rpy="0 0 0" xyz="-175.0 -1020.0 550.0"/>
-        <mass value="12.04925448455695"/>
-        <inertia ixx="24.14" ixy="0.0" ixz="0.0" iyy="17.36" iyz="0.0" izz="14.98"/>
-      </inertial>
-      <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/wall_server.stl" scale="0.001 0.001 0.001"/>
-        </geometry>
-        <material name="silver"/>
-      </visual>
-      <collision>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/wall_server.stl" scale="0.001 0.001 0.001"/>
-        </geometry>
-      </collision>
-    </link> -->
 
     <link name="${tf_prefix}alumunium_table">
       <inertial>
@@ -158,11 +143,11 @@
       <child link="${tf_prefix}table" />
     </joint>
 
-    <!-- <joint name="${tf_prefix}base_to_chassis" type="fixed">
+    <joint name="${tf_prefix}base_to_chassis" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}chassis"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint> -->
+    </joint>
 
     <!-- Linear axis joint - bu joint'in tam tanımı burada olmalı -->
     <joint name="${tf_prefix}base_to_robot_mount" type="prismatic">
@@ -184,6 +169,40 @@
       <parent link="${parent}"/>
       <child link="${tf_prefix}conveyor_belt"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="${tf_prefix}stackable_bin">
+      <inertial>
+        <origin xyz="0.81318 1.30332 0.489851" rpy="0 0 0"/>
+        <mass value="15.033826"/>
+        <inertia 
+          ixx="2.508"
+          ixy="8.586e-9"
+          ixz="-0.09262"
+          iyy="1.966"
+          iyz="1.39871e-7"
+          izz="1.231"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/stackable_bin.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+    
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/stackable_bin.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${tf_prefix}bin_fixed" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${tf_prefix}stackable_bin"/>
+      <origin xyz="1.028923 1.685202 0.0" rpy="0 0 1.5707963"/>
     </joint>
 
     <!-- <joint name="${tf_prefix}base_to_walldoor" type="fixed">

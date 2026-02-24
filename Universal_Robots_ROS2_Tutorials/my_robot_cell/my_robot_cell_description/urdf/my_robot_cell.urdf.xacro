@@ -2,7 +2,8 @@
 <robot name="my_robot_cell" xmlns:xacro="http://ros.org/wiki/xacro">
 
   <xacro:include filename="$(find my_robot_cell_description)/urdf/my_robot_cell_macro.xacro"/>
-
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ifarlab_environment.xacro"/>
+  
   <xacro:arg name="ur_type" default="ur10e"/>
   <xacro:arg name="joint_limits_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
   <xacro:arg name="kinematics_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/default_kinematics.yaml"/>
@@ -13,6 +14,9 @@
   <xacro:arg name="use_fake_hardware" default="false" />
 
   <link name="world"/>
+
+  <xacro:ifarlab_environment prefix=""/>
+  
   <!--This will create the scene where the robot is located in-->
   <xacro:my_robot_cell
     parent="world"

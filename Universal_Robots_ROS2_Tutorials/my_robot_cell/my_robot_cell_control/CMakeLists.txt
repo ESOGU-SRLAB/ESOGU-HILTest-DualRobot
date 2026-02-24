@@ -11,6 +11,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(trajectory_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 # Build real_to_sim_bridge executable
 add_executable(real_to_sim_bridge src/real_to_sim_bridge.cpp)
@@ -18,6 +20,8 @@ ament_target_dependencies(real_to_sim_bridge
   rclcpp
   sensor_msgs
   trajectory_msgs
+  geometry_msgs
+  nav_msgs
 )
 
 # Install executables

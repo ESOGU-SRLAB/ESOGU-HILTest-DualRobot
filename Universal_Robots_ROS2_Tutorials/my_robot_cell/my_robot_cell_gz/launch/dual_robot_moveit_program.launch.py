@@ -12,7 +12,7 @@ def generate_launch_description():
     return LaunchDescription([
         # 1. Simülasyon Robot Kontrolcüsü Düğümü
         Node(
-            package='pymoveit2_robot1',
+            package='pymoveit2_sim',
             executable='robot1_robot_goal.py',
             name='robot1_joint_controller',
             output='screen',
@@ -21,8 +21,8 @@ def generate_launch_description():
         
         # 2. Gerçek Robot Kontrolcüsü Düğümü
         Node(
-            package='pymoveit2_robot2',
-            executable='robot2_robot_goal.py',
+            package='pymoveit2_kawasaki_sim',
+            executable='agv_kawa_goal.py',
             name='robot2_joint_controller',
             output='screen',
             emulate_tty=True, # Logların düzgün görünmesi için

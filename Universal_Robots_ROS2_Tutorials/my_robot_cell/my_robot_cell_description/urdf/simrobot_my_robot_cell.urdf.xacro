@@ -2,6 +2,8 @@
 <robot name="my_robot_cell_sim" xmlns:xacro="http://ros.org/wiki/xacro">
 
   <xacro:include filename="$(find my_robot_cell_description)/urdf/simrobot_my_robot_cell_macro.xacro"/>
+  <!-- ifarlab ortam makrosu -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ifarlab_environment.xacro"/>
 
   <xacro:arg name="ur_type" default="ur10e"/>
   <xacro:arg name="joint_limits_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
@@ -13,6 +15,9 @@
   <xacro:arg name="tf_prefix" default="sim_" /> <!--sim_ur10e_ for digital twin-->
 
   <link name="world"/>
+
+  <!-- ifarlab ortam bileşenlerini spawn et (world frame'e sabitli) -->
+  <xacro:ifarlab_environment prefix=""/>
   
   <!--This will create the scene where the robot is located in-->
   <xacro:simrobot_my_robot_cell

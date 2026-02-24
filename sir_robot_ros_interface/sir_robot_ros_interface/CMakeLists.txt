@@ -16,6 +16,7 @@ find_package(agv_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
@@ -130,6 +131,10 @@ add_executable(ROS2KawasakiRobotMove tests/ROS2KawasakiRobotMove.cpp)
 ament_target_dependencies(ROS2KawasakiRobotMove rclcpp std_msgs sensor_msgs trajectory_msgs agv_msgs Eigen3)
 target_link_libraries(ROS2KawasakiRobotMove sir_robot_ros_interface_lib "${cpp_typesupport_target}")
 
+add_executable(AGVSequenceMove tests/AGVSequenceMove.cpp)
+ament_target_dependencies(AGVSequenceMove rclcpp std_msgs sensor_msgs nav_msgs trajectory_msgs agv_msgs Eigen3)
+target_link_libraries(AGVSequenceMove sir_robot_ros_interface_lib "${cpp_typesupport_target}")
+
 # Install executables
 install(TARGETS
   KawasakiRobotTestForLinux
@@ -140,6 +145,7 @@ install(TARGETS
   ROS2KawasakiRobotJointStatePublisher
   ROS2KawasakiRobotGazeboJSP
   ROS2KawasakiRobotMove
+  AGVSequenceMove
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -5,6 +5,8 @@
   <xacro:include filename="$(find my_robot_cell_description)/urdf/my_robot_cell_macro.xacro"/>
   <!--The ur_description package already provides a control tag for the UR arm, we can directly include-->
   <xacro:include filename="$(find ur_description)/urdf/ur.ros2_control.xacro"/>
+  <!-- ifarlab ortam makrosu -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ifarlab_environment.xacro"/>
 
   <!--We need to specify the arguments used for parametrizing our description-->
   <!--Create a folder for wanted ur_type and copy those files from ur_description package in there; copied only ur20 files -->
@@ -28,6 +30,9 @@
 
 
   <link name="world" />
+
+  <!-- ifarlab ortam bileşenlerini spawn et (world frame'e sabitli) -->
+  <xacro:ifarlab_environment prefix=""/>
 
   <!--Create the scene description including the robot-->
   <xacro:my_robot_cell
@@ -55,8 +60,6 @@
     fake_sensor_commands="$(arg fake_sensor_commands)"
     headless_mode="$(arg headless_mode)"
   />
-  
-
   <!--If you had more controlled devices in your description, e.g. a gripper, you can add another ros2_control tag here-->
 
 </robot>

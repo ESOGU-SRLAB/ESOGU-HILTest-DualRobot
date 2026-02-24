@@ -35,6 +35,7 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/sim_robot_joint_goal.py
     ${EXAMPLES_DIR}/dualrobot_sim_robot_goal.py
     ${EXAMPLES_DIR}/ex_servo.py
+    ${EXAMPLES_DIR}/sim_gripper_goal.py
 
     DESTINATION lib/${PROJECT_NAME}
 )

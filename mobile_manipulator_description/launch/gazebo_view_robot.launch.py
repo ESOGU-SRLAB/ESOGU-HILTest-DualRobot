@@ -163,7 +163,7 @@ def launch_setup(context, *args, **kwargs):
             "true",
             "-x", "0.0",
             "-y", "0.0",
-            "-z", "0.0",
+            "-z", "0.005",  # Tekerlekler zemine değecek şekilde (wheel z=0.10, radius=0.102)
             "-R", "0",
             "-P", "0",
             "-Y", "0",

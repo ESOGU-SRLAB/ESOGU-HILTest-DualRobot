@@ -21,6 +21,7 @@
     trajectory_port:=50003
     non_blocking_read:=true
     keep_alive_count:=2
+    use_gripper:=false
     ">
 
     <ros2_control name="${name}" type="system">
@@ -367,6 +368,25 @@
           <state_interface name="get_version_bugfix"/>
         </gpio>
       </xacro:unless>
+
+      <xacro:if value="${use_gripper}">
+        <joint name="${tf_prefix}gripper_joint">
+          <command_interface name="position"/>
+          <state_interface name="position">
+            <param name="initial_value">0.0005</param>
+          </state_interface>
+          <state_interface name="velocity"/>
+          <state_interface name="effort"/>
+        </joint>
+        <joint name="${tf_prefix}gripper_lower_finger_joint">
+          <param name="mimic">${tf_prefix}gripper_joint</param>
+          <param name="multiplier">-1</param>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+          <state_interface name="effort"/>
+        </joint>
+      </xacro:if>
 
     </ros2_control>
 

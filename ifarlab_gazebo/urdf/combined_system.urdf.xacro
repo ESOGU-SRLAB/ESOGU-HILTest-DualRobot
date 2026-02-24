@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="ifarlab_combined">
+
+  <!-- ========================================== -->
+  <!-- 1. Arguments & Common Elements             -->
+  <!-- ========================================== -->
+  <xacro:arg name="use_fake_hardware" default="false" />
+  <xacro:arg name="sim_ignition" default="true" />
+  <xacro:arg name="simulation_controllers" default="" />
+
+  <!-- A universal world link for the static parts of the scene -->
+  <link name="world"/>
+
+
+  <!-- ========================================== -->
+  <!-- 2. System 1: UR10e + Linear Axis CMM       -->
+  <!-- ========================================== -->
+  <xacro:arg name="ur_type" default="ur10e"/>
+  <xacro:arg name="joint_limits_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
+  <xacro:arg name="kinematics_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/default_kinematics.yaml"/>
+  <xacro:arg name="physical_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/physical_parameters.yaml"/>
+  <xacro:arg name="visual_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/visual_parameters.yaml"/>
+  
+  <!-- Include the underlying UR10e robot cell macro -->
+  <xacro:include filename="$(find my_robot_cell_description)/urdf/simrobot_my_robot_cell_macro.xacro"/>
+
+  <!-- Instantiate the UR10e cell, attaching it to "world" -->
+  <xacro:simrobot_my_robot_cell
+    parent="world"
+    ur_type="$(arg ur_type)"
+    joint_limits_parameters_file="$(arg joint_limits_parameters_file)"
+    kinematics_parameters_file="$(arg kinematics_parameters_file)"
+    physical_parameters_file="$(arg physical_parameters_file)"
+    visual_parameters_file="$(arg visual_parameters_file)"
+    sim_ignition="$(arg sim_ignition)"
+    tf_prefix="sim_ur10e_"
+    >
+      <origin xyz="0 0 0" rpy="0 0 0" />
+  </xacro:simrobot_my_robot_cell>
+
+
+  <!-- ========================================== -->
+  <!-- 3. System 2: Kawasaki RS005L + OTA AGV     -->
+  <!-- ========================================== -->
+  <xacro:arg name="kawasaki_name" default="rs005l" />     
+  <xacro:arg name="kawasaki_tf_prefix" default="" />
+
+  <!-- Include underlying Kawasaki and OTA AGV macros -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/khi_rs/rs005l_macro.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_macro.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_plugin.xacro"/>
+
+  <!-- Instantiate AGV Base (ota_system). It generates ros2_control tags for the wheels. -->
+  <xacro:ota_macro
+      base_link="ota_base_link"
+      name="ota_system"
+      sim_ignition="$(arg sim_ignition)"
+      use_fake_hardware="$(arg use_fake_hardware)"
+      generate_ros2_control_tag="true"/>
+
+  <!-- Instantiate Kawasaki RS005L, attaching it to the AGV's manipulator_base_link -->
+  <xacro:khi_rs005l 
+    name="$(arg kawasaki_name)"
+    tf_prefix="$(arg kawasaki_tf_prefix)"
+    parent="manipulator_base_link"
+    sim_ignition="$(arg sim_ignition)"
+    use_fake_hardware="$(arg use_fake_hardware)">
+    <origin xyz="0 0 0.051" rpy="0 0 3.141593" />
+  </xacro:khi_rs005l>
+
+  <!-- IMPORTANT: Connect the AGV to the world frame with a floating joint 
+       so Gazebo does not complain about multiple root links. -->
+  <joint name="world_to_ota_base_link" type="floating">
+    <parent link="world"/>
+    <child link="ota_base_link"/>
+    <!-- The exact start pose from launch will overwrite this origin -->
+    <origin xyz="-2.301949 0.530401 0.17" rpy="0 0 1.570796"/>
+  </joint>
+
+
+  <!-- ========================================== -->
+  <!-- 4. Gazebo Plugins                          -->
+  <!-- ========================================== -->
+  <xacro:if value="$(arg sim_ignition)">
+    <gazebo reference="world">
+    </gazebo>
+    
+    <!-- Unified ros2_control Plugin -->
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(arg simulation_controllers)</parameters>
+        <controller_manager_node_name>controller_manager</controller_manager_node_name>
+      </plugin>
+    </gazebo>
+    
+    <!-- AGV Differential Drive & Joint State Plugins -->
+    <xacro:ota_diff_drive base_link="ota_base_link"/>
+    <xacro:ota_joints_state_publisher /> 
+  </xacro:if>
+
+</robot>

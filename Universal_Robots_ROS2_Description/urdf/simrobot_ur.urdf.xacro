@@ -47,6 +47,8 @@
    <xacro:arg name="sim_gazebo" default="false" />
    <xacro:arg name="sim_ignition" default="false" />
    <xacro:arg name="simulation_controllers" default="" />
+   <!-- Gripper parameter -->
+   <xacro:arg name="use_gripper" default="false" />
 
    <!-- initial position for simulations (Fake Hardware, Gazebo, Ignition) -->
    <xacro:arg name="initial_positions_file" default="$(find ur_description)/config/initial_positions.yaml"/>
@@ -122,6 +124,7 @@
      reverse_port="$(arg reverse_port)"
      script_sender_port="$(arg script_sender_port)"
      trajectory_port="$(arg trajectory_port)"
+     use_gripper="$(arg use_gripper)"
      >
      <origin xyz="0 0 0" rpy="0 0 0" />          <!-- position robot in the world -->
    </xacro:simrobot_ur_robot>

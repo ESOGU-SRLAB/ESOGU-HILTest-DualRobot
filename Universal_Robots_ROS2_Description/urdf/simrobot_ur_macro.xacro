@@ -92,7 +92,8 @@
     script_command_port:=50004
     trajectory_port:=50003
     non_blocking_read:=true
-    keep_alive_count:=2"
+    keep_alive_count:=2
+    use_gripper:=false"
 
     >
 
@@ -139,6 +140,7 @@
         trajectory_port="${trajectory_port}"
         non_blocking_read="${non_blocking_read}"
         keep_alive_count="${keep_alive_count}"
+        use_gripper="${use_gripper}"
         />
     </xacro:if>
 
@@ -532,16 +534,175 @@
     </link>
 
     <joint name="${tf_prefix}flange-tool0" type="fixed">
-      <origin xyz="0.028 0.0249 0.01" rpy="0 0 0"/>
-      <parent link="${tf_prefix}tool0"/>
-      <child link="${tf_prefix}flange"/>
-    </joint>
+        <origin xyz="0.028 0.0249 0.01" rpy="0 0 0"/>
+        <parent link="${tf_prefix}tool0"/>
+        <child link="${tf_prefix}flange"/>
+      </joint>
 
-    <joint name="${tf_prefix}tool0-sickcamera" type="fixed">
-      <origin xyz="-0.081802 0.043811 0.003" rpy="0 0 0"/>
-      <parent link="${tf_prefix}flange"/>
-      <child link="${tf_prefix}sick_camera"/>
-    </joint>
+      <joint name="${tf_prefix}tool0-sickcamera" type="fixed">
+        <origin xyz="-0.081802 0.043811 0.003" rpy="0 0 0"/>
+        <parent link="${tf_prefix}flange"/>
+        <child link="${tf_prefix}sick_camera"/>
+      </joint>
+
+    <!-- Gripper links and joints (conditional on use_gripper parameter) -->
+    <!-- <xacro:if value="${use_gripper}">
+      <xacro:include filename="$(find gripper_test)/urdf/gripper_macro.xacro" />
+      <xacro:gripper
+        tf_prefix="${tf_prefix}"
+        parent="world"
+        sim_ignition="${sim_ignition}">
+        <origin xyz="3 0 0" rpy="0 0 0"/>
+      </xacro:gripper>
+    </xacro:if> -->
+
+    <xacro:if value="${use_gripper}">
+      <link name="${tf_prefix}gripper_body_1">
+        <inertial>
+          <origin xyz="0.046201794305521515 0.04641351769017876 -0.017675503740650633" rpy="0 0 0"/>
+          <mass value="4.92893092862587"/>
+          <inertia ixx="0.006626" iyy="0.0075" izz="0.005595" ixy="-0.000805" iyz="4e-06" ixz="8e-06"/>
+        </inertial>
+        <visual>
+          <origin xyz="-1.123708 -0.518786 -0.735428" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_body_1.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="violet">
+            <color rgba="0.4 0.18 0.57 1.0"/>
+          </material>
+        </visual>
+        <collision>
+          <origin xyz="-1.123708 -0.518786 -0.735428" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_body_1.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+        </collision>
+      </link>
+
+      <link name="${tf_prefix}gripper_upper_1">
+        <inertial>
+          <origin xyz="0.009933945618336715 0.020191952923398593 0.002410109555269213" rpy="0 0 0"/>
+          <mass value="0.15599517357950826"/>
+          <inertia ixx="3.7e-05" iyy="4.5e-05" izz="6.6e-05" ixy="-7e-06" iyz="-5e-06" ixz="-9e-06"/>
+        </inertial>
+        <visual>
+          <origin xyz="-1.22001 -0.579787 -0.7675" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_upper_1.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="grey">
+            <color rgba="0.2 0.2 0.2 1.0"/>
+          </material>
+        </visual>
+        <collision>
+          <origin xyz="-1.22001 -0.579787 -0.7675" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_upper_1.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+        </collision>
+      </link>
+
+      <link name="${tf_prefix}gripper_lower_1">
+        <inertial>
+          <origin xyz="0.009953097781983722 0.020157371452492412 -0.0024101337743568374" rpy="0 0 0"/>
+          <mass value="0.15599517357965467"/>
+          <inertia ixx="3.7e-05" iyy="4.5e-05" izz="6.6e-05" ixy="-7e-06" iyz="5e-06" ixz="9e-06"/>
+        </inertial>
+        <visual>
+          <origin xyz="-1.22001 -0.579787 -0.668" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_lower_1.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="grey">
+            <color rgba="0.2 0.2 0.2 1.0"/>
+          </material>
+        </visual>
+        <collision>
+          <origin xyz="-1.22001 -0.579787 -0.668" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_lower_1.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="${tf_prefix}gripper_body_joint" type="fixed">
+        <origin xyz="0.045576 0.040897 0.017678" rpy="0 0 0"/>
+        <parent link="${tf_prefix}tool0"/>
+        <child link="${tf_prefix}gripper_body_1"/>
+      </joint>
+
+      <joint name="${tf_prefix}gripper_joint" type="prismatic">
+        <origin xyz="0.096302 0.061001 0.032072" rpy="0 0 0"/>
+        <parent link="${tf_prefix}gripper_body_1"/>
+        <child link="${tf_prefix}gripper_upper_1"/>
+        <axis xyz="0.0 0.0 -1.0"/>
+        <!-- limits extended ±0.001 beyond nominal 0..0.025 range to work around DART servo bug (dartsim/dart#1683) -->
+        <limit upper="0.026" lower="-0.001" effort="1000" velocity="10"/>
+      </joint>
+
+      <joint name="${tf_prefix}gripper_lower_finger_joint" type="prismatic">
+        <origin xyz="0.096302 0.061001 -0.067428" rpy="0 0 0"/>
+        <parent link="${tf_prefix}gripper_body_1"/>
+        <child link="${tf_prefix}gripper_lower_1"/>
+        <axis xyz="0.0 0.0 -1.0"/>
+        <mimic joint="${tf_prefix}gripper_joint" multiplier="-1.0"/>
+        <!-- limits extended ±0.001 beyond nominal -0.025..0 range to work around DART servo bug (dartsim/dart#1683) -->
+        <limit upper="0.001" lower="-0.026" effort="1000" velocity="10"/>
+      </joint>
+
+      <link name="${tf_prefix}IMX_Camera">
+        <inertial>
+          <origin xyz="5.410014880524727e-07 0.008501727362029532 -0.018614321006647505" rpy="0 0 0"/>
+          <mass value="0.044117104706977495"/>
+          <inertia ixx="6e-06" iyy="5e-06" izz="5e-06" ixy="0.0" iyz="0.0" ixz="-0.0"/>
+        </inertial>
+        <visual>
+          <origin xyz="-1.078132 -0.499789 -0.70475" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/IMX_Camera.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="silver"/>
+        </visual>
+        <collision>
+          <origin xyz="-1.078132 -0.499789 -0.70475" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/IMX_Camera.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="${tf_prefix}IMX_Camera_joint" type="fixed">
+        <origin xyz="0.0 -0.038 -0.003" rpy="0 0 0"/>
+        <parent link="${tf_prefix}cable_channel_flange"/>
+        <child link="${tf_prefix}IMX_Camera"/>
+      </joint>
+
+      <gazebo reference="${tf_prefix}IMX_Camera">
+        <sensor name="${tf_prefix}imx179_camera" type="camera">
+          <always_on>true</always_on>
+          <update_rate>30.0</update_rate>
+          <visualize>false</visualize>
+    
+          <camera name="${tf_prefix}imx179_rgb">
+            <!-- 145 deg = 2.5307 rad -->
+            <horizontal_fov>2.5307</horizontal_fov>
+    
+            <image>
+              <width>3288</width>
+              <height>2512</height>
+              <format>R8G8B8</format>
+            </image>
+    
+            <clip>
+              <near>0.05</near>
+              <far>16.0</far>
+            </clip>
+          </camera>
+        </sensor>
+      </gazebo>
+
+    </xacro:if>
 
     <link name="${tf_prefix}cable_channel_flange">
       <inertial>
@@ -626,35 +787,54 @@
       <child link="${tf_prefix}rgb_optical_frame"/>
     </joint>
 
+    
+    
+    
+    
+    
     <xacro:if value="${sim_ignition}">
+    
+      <!-- Sensors system: SADECE 1 KERE -->
+      <gazebo>
+        <plugin filename="ignition-gazebo-sensors-system"
+                name="ignition::gazebo::systems::Sensors">
+          <render_engine>ogre2</render_engine>
+        </plugin>
+      </gazebo>
+    
+      <!-- RGBD camera (depth_optical_frame linkine bağlı) -->
       <gazebo reference="${tf_prefix}depth_optical_frame">
-        <sensor name="${tf_prefix}depth_optical_frame" type="rgbd_camera">
+        <sensor name="${tf_prefix}rgbd_camera" type="rgbd_camera">
           <always_on>true</always_on>
           <update_rate>30.0</update_rate>
-          <visualize>true</visualize>
-          <camera name="depth_optical_frame">
+          <visualize>false</visualize>
+    
+          <camera name="${tf_prefix}rgbd">
             <horizontal_fov>1.22</horizontal_fov>
+    
             <image>
               <width>512</width>
               <height>424</height>
               <format>R8G8B8</format>
             </image>
+    
             <depth_image>
               <width>512</width>
               <height>424</height>
               <format>R_FLOAT32</format>
             </depth_image>
+    
             <clip>
               <near>0.05</near>
               <far>16.0</far>
             </clip>
           </camera>
-
-          <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
-            <render_engine>ogre2</render_engine>
-          </plugin>
         </sensor>
       </gazebo>
+    
+      <!-- IMX179 RGB camera (IMX_Camera linkine bağlı) -->
+      
+    
     </xacro:if>
 
   </xacro:macro>

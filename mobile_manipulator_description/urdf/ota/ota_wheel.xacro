@@ -9,24 +9,20 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 1.570796"/>
         <geometry>
-          <mesh filename="package://mobile_manipulator_description/meshes/ota/AnaTeker.stl"
+          <mesh filename="file:////home/cem/colcon_ws/src/mobile_manipulator_description/meshes/ota/AnaTeker.stl"
                 scale="0.001 0.001 0.001"/>
         </geometry>
-
-        <!-- Ignition PBR Material -->
-        <material name="DefaultWhite">
-          <color rgba="1 1 1 1"/>
-        </material>
       </visual>
 
-      <!-- === WHEEL COLLISION === -->
+      <!-- === WHEEL COLLISION (simple cylinder) === -->
       <collision>
         <origin xyz="0 0 0" rpy="0 1.570796 1.570796"/>
         <geometry>
-          <cylinder radius="0.102" length="0.02"/>
+          <cylinder radius="0.102" length="0.02"/>	  			  
         </geometry>
       </collision>
 
+      <!-- === WHEEL INERTIA === -->
       <xacro:cylinder_inertial radius="0.102" length="0.02" mass="5"/>
     </link>
 
@@ -37,6 +33,23 @@
       <child link="wheel_${side}_link"/>
       <axis xyz="0 1 0"/>
     </joint>
+
+    <!-- Gazebo wheel parameters -->
+    <gazebo reference="wheel_${side}_link">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+      <kp>1000000.0</kp>
+      <kd>10.0</kd>
+      <minDepth>0.001</minDepth>
+      <material>Gazebo/Red</material>
+      <visual>
+        <material>
+          <ambient>1 0 0 1</ambient>
+          <diffuse>1 0 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </gazebo>
 
   </xacro:macro>
 

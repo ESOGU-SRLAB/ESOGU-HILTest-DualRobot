@@ -9,7 +9,7 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     description_package = FindPackageShare("my_robot_cell_description")
     description_file = PathJoinSubstitution(
-        [description_package, "urdf", "my_robot_cell.urdf.xacro"]
+        [description_package, "urdf", "simrobot_my_robot_cell.urdf.xacro"]
     )
     rvizconfig_file = PathJoinSubstitution([description_package, "rviz", "urdf.rviz"])
 

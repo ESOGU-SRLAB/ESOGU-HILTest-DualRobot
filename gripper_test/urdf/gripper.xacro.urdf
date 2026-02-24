@@ -1,0 +1,135 @@
+<?xml version="1.0" ?>
+<robot name="gripper_test">
+
+  <link name="world"/>
+
+  <!-- Gripper Body - sabit base olarak kullanılıyor -->
+  <link name="gripper_body">
+    <inertial>
+      <origin xyz="-0.015094849333356525 0.0009171496638341419 0.06339132112531773" rpy="0 0 0"/>
+      <mass value="4.92893092862587"/>
+      <inertia ixx="0.005611" iyy="0.008" izz="0.006152" ixy="-0.0" iyz="-2.3e-05" ixz="0.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="file:////home/cem/colcon_ws/src/gripper_test/meshes/gripper_body_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="violet">
+        <color rgba="0.4 0.18 0.57 1.0" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="file:////home/cem/colcon_ws/src/gripper_test/meshes/gripper_body_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Upper Finger -->
+  <link name="gripper_upper">
+    <inertial>
+      <origin xyz="-0.0024097196655041425 -0.012480247735723496 0.01869961002404573" rpy="0 0 0"/>
+      <mass value="0.15599517363758736"/>
+      <inertia ixx="6.6e-05" iyy="4.9e-05" izz="3.3e-05" ixy="0.0" iyz="0.0" ixz="1e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.064844 -0.0135 -0.114075" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="file:////home/cem/colcon_ws/src/gripper_test/meshes/gripper_upper_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="grey">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.064844 -0.0135 -0.114075" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="file:////home/cem/colcon_ws/src/gripper_test/meshes/gripper_upper_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+  </collision>
+  </link>
+
+  <!-- Lower Finger -->
+  <link name="gripper_lower">
+    <inertial>
+      <origin xyz="0.0024105236654536483 -0.012519772264191995 0.018698905548844943" rpy="0 0 0"/>
+      <mass value="0.15599517363773097"/>
+      <inertia ixx="6.6e-05" iyy="4.9e-05" izz="3.3e-05" ixy="0.0" iyz="0.0" ixz="-1e-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.034656 -0.0135 -0.114075" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="file:////home/cem/colcon_ws/src/gripper_test/meshes/gripper_lower_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="grey">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.034656 -0.0135 -0.114075" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="file:////home/cem/colcon_ws/src/gripper_test/meshes/gripper_lower_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+  </collision>
+  </link>
+
+  <!-- World to gripper body (fixed) -->
+  <joint name="world_to_gripper_body" type="fixed">
+    <origin xyz="0 0 0.5" rpy="0 0 0"/>
+    <parent link="world"/>
+    <child link="gripper_body"/>
+  </joint>
+
+  <!-- Upper finger joint (primary, commanded) -->
+  <joint name="gripper_joint" type="prismatic">
+    <origin xyz="-0.064844 0.0135 0.114075" rpy="0 0 0"/>
+    <parent link="gripper_body"/>
+    <child link="gripper_upper"/>
+    <axis xyz="1.0 0.0 0.0"/>
+    <!-- limits extended ±0.001 beyond nominal 0..0.025 range to work around DART servo bug (dartsim/dart#1683) -->
+    <limit upper="0.026" lower="-0.001" effort="10000" velocity="100"/>
+  </joint>
+
+  <!-- Lower finger joint (mimic) -->
+  <joint name="gripper_joint_lower" type="prismatic">
+    <mimic joint="gripper_joint" multiplier="-1"/>
+    <origin xyz="0.034656 0.0135 0.114075" rpy="0 0 0"/>
+    <parent link="gripper_body"/>
+    <child link="gripper_lower"/>
+    <axis xyz="1.0 0.0 0.0"/>
+    <!-- limits extended ±0.001 beyond nominal -0.025..0 range to work around DART servo bug (dartsim/dart#1683) -->
+    <limit upper="0.001" lower="-0.026" effort="10000" velocity="100"/>
+  </joint>
+
+  <!-- ros2_control - birebir demo yapısı -->
+  <ros2_control name="GripperTest" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="gripper_joint">
+      <command_interface name="position"/>
+      <state_interface name="position">
+        <param name="initial_value">0.0005</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+    <joint name="gripper_joint_lower">
+      <param name="mimic">gripper_joint</param>
+      <param name="multiplier">-1</param>
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find gripper_test)/config/gripper_controller.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>

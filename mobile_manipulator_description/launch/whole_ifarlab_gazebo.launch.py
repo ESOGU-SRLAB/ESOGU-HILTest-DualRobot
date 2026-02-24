@@ -118,7 +118,9 @@ def launch_setup(context, *args, **kwargs):
             use_sim_time,
         ]
     )
-    ur_robot_description = {"robot_description": ur_robot_description_content}
+    ur_robot_description = {
+        "robot_description": ParameterValue(ur_robot_description_content, value_type=str)
+    }
 
     # ==================== Kawasaki+AGV Robot Description ====================
     kawasaki_initial_joint_controllers = PathJoinSubstitution(
@@ -199,9 +201,12 @@ def launch_setup(context, *args, **kwargs):
             "mobile_manipulator",
             "-allow_renaming",
             "true",
-            "-x", "0.0",
-            "-y", "0.0",
-            "-z", "0.0",
+            "-x", "-2.301949",
+            "-y", "0.530401",
+            "-z", "0.17",
+            "-R", "0.0",
+            "-P", "0.0",
+            "-Y", "1.570796",
         ],
     )
 
@@ -316,7 +321,7 @@ def launch_setup(context, *args, **kwargs):
             ur_initial_joint_controller_spawner_started,
             ur_gz_sim_bridge,
             ur_tf_installer,
-            ur_base_launch,
+            # ur_base_launch,
             ur_linear_axis_adapter_node,
             ur_real_to_sim_bridge_node,
         ]
@@ -383,10 +388,46 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
+    # AGV cmd_vel bridge: ROS /kawasaki/ota_base_controller/cmd_vel_unstamped <-> Gazebo /cmd_vel
+    kawasaki_cmd_vel_bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=[
+            "/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist",
+        ],
+        remappings=[
+            ("/cmd_vel", "/kawasaki/ota_base_controller/cmd_vel_unstamped"),
+        ],
+        output="screen",
+    )
+
+    # Gazebo'dan ROS'a TF bridge (diff_drive plugin odom->ota_base_link TF yayınlıyor)
+    kawasaki_tf_bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=[
+            "/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V",
+        ],
+        output="screen",
+    )
+
+    # world -> odom static transform (spawn pozisyonuyla aynı)
+    # Spawn: x=-2.301949, y=0.530401, z=0.17, Y=1.570796 (90 derece)
+    kawasaki_world_to_odom_tf = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=[
+            "-2.301949", "0.530401", "0.17",  # x, y, z
+            "0", "0", "0.707107", "0.707107",  # qx, qy, qz, qw (yaw=90 derece)
+            "world", "odom",
+        ],
+        output="screen",
+    )
+
     kawasaki_moveit = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [
-                PathJoinSubstitution([FindPackageShare("kawasaki_moveit_config"), "launch"]),
+                PathJoinSubstitution([FindPackageShare("deneme_mobil_manipulator"), "launch"]),
                 "/move_group.launch.py",
             ]
         ),
@@ -394,6 +435,20 @@ def launch_setup(context, *args, **kwargs):
             "use_sim_time": "true",
             "namespace": "/kawasaki",
         }.items(),
+    )
+
+    kawasaki_moveit_rviz = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                PathJoinSubstitution([FindPackageShare("deneme_mobil_manipulator"), "launch"]),
+                "/moveit_rviz.launch.py",
+            ]
+        ),
+        launch_arguments={
+            "use_sim_time": "true",
+            "namespace": "/kawasaki",
+        }.items(),
+        condition=IfCondition(launch_rviz),
     )
 
     kawasaki_nodes_in_namespace = GroupAction(
@@ -405,7 +460,9 @@ def launch_setup(context, *args, **kwargs):
             kawasaki_initial_joint_controller_spawner_stopped,
             kawasaki_initial_joint_controller_spawner_started,
             ota_base_controller_spawner,
-            kawasaki_moveit,
+            kawasaki_cmd_vel_bridge,
+            # kawasaki_moveit,
+            # kawasaki_moveit_rviz,
         ]
     )
 
@@ -433,6 +490,12 @@ def launch_setup(context, *args, **kwargs):
         # Gazebo başlat
         gz_launch_description_with_gui,
         gz_launch_description_without_gui,
+
+        # Gazebo -> ROS TF bridge (odom -> ota_base_link için)
+        kawasaki_tf_bridge,
+        
+        # world -> odom static transform (AGV başlangıç pozisyonu)
+        kawasaki_world_to_odom_tf,
 
         # Önce Kawasaki tarafı
         kawasaki_gz_spawn_entity,
@@ -473,7 +536,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "world_file",
-            default_value="/home/cem/colcon_ws/src/Universal_Robots_ROS2_Tutorials/my_robot_cell/my_robot_cell_gz/worlds/ifarlab.sdf",
+            default_value="/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf",
             description="Gazebo world file path.",
         )
     )

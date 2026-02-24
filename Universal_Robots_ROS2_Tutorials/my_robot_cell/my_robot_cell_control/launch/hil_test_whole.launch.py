@@ -191,18 +191,18 @@ def launch_setup(context, *args, **kwargs):
             ),
             
             # MoveIt Config (gerçek robot için)
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(
-                        get_package_share_directory('real_robot_moveit_config'),
-                        'launch',
-                        'move_group.launch.py'
-                    )
-                ),
-                launch_arguments={
-                    "use_sim_time": "false",
-                }.items(),
-            ),
+            # IncludeLaunchDescription(
+            #     PythonLaunchDescriptionSource(
+            #         os.path.join(
+            #             get_package_share_directory('real_robot_moveit_config'),
+            #             'launch',
+            #             'move_group.launch.py'
+            #         )
+            #     ),
+            #     launch_arguments={
+            #         "use_sim_time": "false",
+            #     }.items(),
+            # ),
             
             # Linear Axis Adapter
             Node(
@@ -237,9 +237,12 @@ def launch_setup(context, *args, **kwargs):
             "mobile_manipulator",
             "-allow_renaming",
             "true",
-            "-x", "0.0",
-            "-y", "0.0",
-            "-z", "0.0",
+            "-x", "-2.301949",
+            "-y", "0.530401",
+            "-z", "0.17",
+            "-R", "0.0",
+            "-P", "0.0",
+            "-Y", "1.570796",
         ],
     )
 
@@ -273,21 +276,64 @@ def launch_setup(context, *args, **kwargs):
                 condition=IfCondition(kawasaki_start_joint_controller),
             ),
             
-            # MoveIt
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(
-                        get_package_share_directory('kawasaki_moveit_config'),
-                        'launch',
-                        'move_group.launch.py'
-                    )
-                ),
-                launch_arguments={
-                    "use_sim_time": "true",
-                    "namespace": kawasaki_namespace,
-                }.items(),
+            # OTA Base Controller (AGV diff_drive)
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                arguments=["ota_base_controller", "-c", "/kawasaki/controller_manager"],
+                parameters=[{"use_sim_time": True}],
             ),
+            
+            # AGV cmd_vel bridge: ROS /kawasaki/ota_base_controller/cmd_vel_unstamped <-> Gazebo /cmd_vel
+            Node(
+                package="ros_gz_bridge",
+                executable="parameter_bridge",
+                arguments=[
+                    "/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist",
+                ],
+                remappings=[
+                    ("/cmd_vel", "/kawasaki/ota_base_controller/cmd_vel_unstamped"),
+                ],
+                output="screen",
+            ),
+            
+            # MoveIt
+            # IncludeLaunchDescription(
+            #     PythonLaunchDescriptionSource(
+            #         os.path.join(
+            #             get_package_share_directory('kawasaki_moveit_config'),
+            #             'launch',
+            #             'move_group.launch.py'
+            #         )
+            #     ),
+            #     launch_arguments={
+            #         "use_sim_time": "true",
+            #         "namespace": kawasaki_namespace,
+            #     }.items(),
+            # ),
         ]
+    )
+
+    # Gazebo'dan ROS'a TF bridge (diff_drive plugin odom->ota_base_link TF yayınlıyor)
+    kawasaki_tf_bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=[
+            "/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V",
+        ],
+        output="screen",
+    )
+
+    # world -> odom static transform (AGV spawn pozisyonuyla eşleşmeli)
+    kawasaki_world_to_odom_tf = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=[
+            "-2.301949", "0.530401", "0.17",  # x, y, z (spawn pozisyonuyla aynı)
+            "0", "0", "0.707107", "0.707107",  # qx, qy, qz, qw (yaw=90 derece)
+            "world", "odom",
+        ],
+        output="screen",
     )
 
     # Kawasaki controller'larını 2 saniye gecikmeli başlat
@@ -327,7 +373,7 @@ def launch_setup(context, *args, **kwargs):
                 executable="robot_state_publisher",
                 output="both",
                 parameters=[
-                    {"robot_description": ur_sim_robot_description_content},
+                    {"robot_description": ParameterValue(ur_sim_robot_description_content, value_type=str)},
                     {"use_sim_time": True},
                 ],
             ),
@@ -382,18 +428,18 @@ def launch_setup(context, *args, **kwargs):
             ),
             
             # MoveIt
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(
-                        get_package_share_directory('sim_robot_moveit_config'),
-                        'launch',
-                        'move_group.launch.py'
-                    )
-                ),
-                launch_arguments={
-                    "use_sim_time": "true",
-                }.items(),
-            ),
+            # IncludeLaunchDescription(
+            #     PythonLaunchDescriptionSource(
+            #         os.path.join(
+            #             get_package_share_directory('sim_robot_moveit_config'),
+            #             'launch',
+            #             'move_group.launch.py'
+            #         )
+            #     ),
+            #     launch_arguments={
+            #         "use_sim_time": "true",
+            #     }.items(),
+            # ),
             
             # Real to Sim Bridge - GLOBAL NAMESPACE'DE BAŞLATILIYOR (aşağıda)
             # Gerçek robottan veri okuyup simülasyona göndermesi için
@@ -459,6 +505,12 @@ def launch_setup(context, *args, **kwargs):
         gz_launch_description_with_gui,
         gz_launch_description_without_gui,
         
+        # Gazebo -> ROS TF bridge (odom -> ota_base_link için)
+        kawasaki_tf_bridge,
+        
+        # world -> odom static transform (AGV başlangıç pozisyonu)
+        kawasaki_world_to_odom_tf,
+        
         # 1. Gerçek robot (hemen başlat)
         real_robot_launch_group,
         
@@ -504,7 +556,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "world_file",
-            default_value="/home/cem/colcon_ws/src/Universal_Robots_ROS2_Tutorials/my_robot_cell/my_robot_cell_gz/worlds/ifarlab.sdf",
+            default_value="/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf",
             description="Gazebo world file path.",
         )
     )

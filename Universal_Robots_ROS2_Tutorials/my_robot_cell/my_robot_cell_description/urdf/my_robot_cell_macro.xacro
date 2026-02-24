@@ -2,7 +2,7 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:include filename="$(find ur_description)/urdf/ur_macro.xacro"/>
   <xacro:include filename="$(find my_robot_cell_description)/urdf/chassis_macro.xacro"/>
-
+  
   <xacro:macro name="my_robot_cell" params="
     parent
     *origin
@@ -99,7 +99,7 @@
       </collision>
     </link>
 
-    <link name="${tf_prefix}wall_door">
+    <!-- <link name="${tf_prefix}wall_door">
       <inertial>
         <origin rpy="0 0 0" xyz="600.0 3235.0 550.0"/>
         <mass value="8.04925448455695"/>
@@ -139,7 +139,7 @@
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/wall_server.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
-    </link>
+    </link> -->
 
     <link name="${tf_prefix}alumunium_table">
       <inertial>
@@ -183,6 +183,34 @@
       </collision>
     </link>
 
+    <link name="${tf_prefix}stackable_bin">
+      <inertial>
+        <origin xyz="0.81318 1.30332 0.489851" rpy="0 0 0"/>
+        <mass value="15.033826"/>
+        <inertia 
+          ixx="2.508"
+          ixy="8.586e-9"
+          ixz="-0.09262"
+          iyy="1.966"
+          iyz="1.39871e-7"
+          izz="1.231"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/stackable_bin.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+    
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/stackable_bin.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
     <!-- Joint tanımları -->
     <joint name="${tf_prefix}table_base_joint" type="fixed">
       <xacro:insert_block name="origin" />
@@ -218,16 +246,10 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
-    <joint name="${tf_prefix}base_to_walldoor" type="fixed">
+    <joint name="${tf_prefix}bin_fixed" type="fixed">
       <parent link="${parent}"/>
-      <child link="${tf_prefix}wall_door"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
-
-    <joint name="${tf_prefix}base_to_wall_server" type="fixed">
-      <parent link="${parent}"/>
-      <child link="${tf_prefix}wall_server"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <child link="${tf_prefix}stackable_bin"/>
+      <origin xyz="1.028923 1.685202 0.0" rpy="0 0 1.5707963"/>
     </joint>
 
     <ros2_control name="LinearAxisHardwareInterface" type="system">

@@ -32,7 +32,7 @@
         <max_angular_acceleration>2.0</max_angular_acceleration>
         <min_angular_acceleration>-2.0</min_angular_acceleration>
 
-        <!-- Komut ve odom topic'leri -->
+        <!-- Komut ve odom topic'leri - basit isimler (bridge ile ROS'a bağlanacak) -->
         <topic>cmd_vel</topic>
         <odom_topic>odom</odom_topic>
 
@@ -40,7 +40,7 @@
         <odom_publish_frequency>50</odom_publish_frequency>
         <tf_topic>/tf</tf_topic>
         
-        <!-- Frame isimleri -->
+        <!-- Frame isimleri: odom -> ota_base_link (world->odom static TF ile ayarlanacak) -->
         <frame_id>odom</frame_id>
         <child_frame_id>${base_link}</child_frame_id>
 

@@ -231,22 +231,79 @@ def main():
     
     robot_controller.check_planning_scene()
     
-    home_joints = [0.0, -math.pi/2, math.pi/2, -math.pi/2, -math.pi/2, 0.0]
-    pose2_joints = [1.0, math.radians(-19.36), math.radians(-122.69), math.radians(-51.80), math.radians(-2.51), math.radians(116.43), math.radians(0.0)]
-    pose3_joints = [1.0, math.radians(34.56), math.radians(-117.73), math.radians(-53.48), math.radians(-13.09), math.radians(55.02), math.radians(0.0)]
-    # pose4_joints = [math.radians(31), math.radians(-113), math.radians(-50), math.radians(157), math.radians(-53), math.radians(88)]
-    # pose5_joints = [math.radians(70), math.radians(-103), math.radians(-145), math.radians(229), math.radians(-15), math.radians(103)]
-    # pose6_joints = [math.radians(33), math.radians(-127), math.radians(-116), math.radians(237), math.radians(-51), math.radians(88)]
-    # pose7_joints = [math.radians(-35), math.radians(-125), math.radians(-133), math.radians(264), math.radians(-120), math.radians(88)]
-    # pose8_joints = [math.radians(-26), math.radians(-129), math.radians(-115), math.radians(250), math.radians(-111), math.radians(86)]
+    # --- RECORDING.PY İLE AYNI WAYPOINT'LER ---
+    home_joints = [1.0, 0.0, -math.pi/2, 0.0, -math.pi/2, 0.0, 0.0]
+
+    # Pose 1 Ailesi (very_right) - Radyana çevrildi
+    vr_top = [1.9, math.radians(-15.36), math.radians(-115.21), math.radians(-51.42), math.radians(-13.16), math.radians(110.86), math.radians(90.0)]
+    vr_middle = [1.9, math.radians(-15.39), math.radians(-117.15), math.radians(-82.83), math.radians(20.18), math.radians(110.77), math.radians(90.0)]
+    vr_below = [1.9, math.radians(-15.36), math.radians(-147.23), math.radians(-90.96), math.radians(58.35), math.radians(110.72), math.radians(90.0)]
+    
+    # Ara nokta (Pose 1'den Pose 2'ye geçiş için)
+    intermediate_point = [1.0, math.radians(34.37), math.radians(-55.44), math.radians(-122.10), math.radians(-2.37), math.radians(60.99), math.radians(0)]
+
+    # Pose 2 Ailesi (sağ_üst_göz)
+    pose2_joints_downwards = [1.0, math.radians(-19.36), math.radians(-122.69), math.radians(-51.80), math.radians(-2.51), math.radians(116.43), math.radians(0.0)]
+    pose2_joints_left = [1.0, math.radians(-19.36), math.radians(-122.69), math.radians(-51.80), math.radians(-2.51), math.radians(116.43), math.radians(90.0)]
+    pose2_joints_upwards = [1.0, math.radians(-19.36), math.radians(-122.69), math.radians(-51.80), math.radians(-2.51), math.radians(116.43), math.radians(180.0)]
+    pose2_joints_right = [1.0, math.radians(-19.36), math.radians(-122.69), math.radians(-51.80), math.radians(-2.51), math.radians(116.43), math.radians(270.0)]
+    pose2_joints_tofront = [1.0, math.radians(-19.36), math.radians(-122.69), math.radians(-51.80), math.radians(-2.51), math.radians(180.0), math.radians(-90.0)]
+
+    # Pose 3 Ailesi (sol_üst_göz)
+    pose3_joints_downwards = [1.0, math.radians(34.56), math.radians(-117.73), math.radians(-53.48), math.radians(-13.09), math.radians(55.02), math.radians(0.0)]
+    pose3_joints_left = [1.0, math.radians(34.56), math.radians(-117.73), math.radians(-53.48), math.radians(-13.09), math.radians(55.02), math.radians(90.0)]
+    pose3_joints_upwards = [1.0, math.radians(34.56), math.radians(-117.73), math.radians(-53.48), math.radians(-13.09), math.radians(55.02), math.radians(180.0)]
+    pose3_joints_right = [1.0, math.radians(34.56), math.radians(-117.73), math.radians(-53.48), math.radians(-13.09), math.radians(55.02), math.radians(270.0)]
+    pose3_joints_tofront = [1.0, math.radians(34.56), math.radians(-117.73), math.radians(-53.48), math.radians(-13.09), math.radians(180.0), math.radians(-90.0)]
+
+    # Pose 4 Ailesi (very_left) - Radyana çevrildi
+    vl_top = [0.055, math.radians(25.22), math.radians(-135.98), math.radians(-9.01), math.radians(-23.58), math.radians(61.88), math.radians(-90.0)]
+    vl_middle = [0.055, math.radians(25.17), math.radians(-123.55), math.radians(-60.94), math.radians(15.93), math.radians(61.75), math.radians(-90.0)]
+    vl_below = [0.055, math.radians(25.19), math.radians(-158.32), math.radians(-75.32), math.radians(65.15), math.radians(61.69), math.radians(-90.0)]
+
+    # Pose 5 Ailesi (sol_alt_göz)
+    pose5_joints_downwards = [1.0, math.radians(43.79), math.radians(-150.71), math.radians(-97.00), math.radians(67.98), math.radians(51.56), math.radians(0.0)]
+    pose5_joints_left = [1.0, math.radians(46.29), math.radians(-149.39), math.radians(-101.79), math.radians(71.48), math.radians(49.05), math.radians(90.0)]
+    pose5_joints_upwards = [1.0, math.radians(46.29), math.radians(-149.39), math.radians(-101.79), math.radians(71.48), math.radians(49.05), math.radians(180.0)]
+    pose5_joints_right = [1.0, math.radians(46.29), math.radians(-149.39), math.radians(-101.79), math.radians(71.48), math.radians(49.05), math.radians(270.0)]
+
+    # Alt ara nokta (Pose 5 ve 6 arası)
+    below_intermediate_point = [1.0, math.radians(62.61), math.radians(-146.06), math.radians(-120.64), math.radians(87.28), math.radians(32.73), math.radians(0.0)]
+
+    # Pose 6 Ailesi (sağ_alt_göz)
+    pose6_joints_downwards = [1.0, math.radians(-23.72), math.radians(-148.62), math.radians(-105.66), math.radians(70.17), math.radians(111.45), math.radians(0.0)]
+    pose6_joints_left = [1.0, math.radians(-23.72), math.radians(-148.62), math.radians(-105.66), math.radians(70.17), math.radians(111.45), math.radians(90.0)]
+    pose6_joints_upwards = [1.0, math.radians(-23.72), math.radians(-148.62), math.radians(-105.66), math.radians(70.17), math.radians(111.45), math.radians(180.0)]
+    pose6_joints_right = [1.0, math.radians(-23.72), math.radians(-148.62), math.radians(-105.66), math.radians(70.17), math.radians(111.45), math.radians(270.0)]
+    
+    # Sıralı hareket için waypoint listesi
     safe_joint_configurations = [
-        pose2_joints,
-        pose3_joints,
-        # pose4_joints,
-        # pose5_joints,
-        # pose6_joints,
-        # pose7_joints,
-        # pose8_joints,
+        vr_top,
+        vr_middle,
+        vr_below,
+        intermediate_point,
+        pose2_joints_downwards,
+        pose2_joints_left,
+        pose2_joints_upwards,
+        pose2_joints_right,
+        pose2_joints_tofront,
+        pose3_joints_downwards,
+        pose3_joints_left,
+        pose3_joints_upwards,
+        pose3_joints_right,
+        pose3_joints_tofront,
+        vl_top,
+        vl_middle,
+        vl_below,
+        pose5_joints_downwards,
+        pose5_joints_left,
+        pose5_joints_upwards,
+        pose5_joints_right,
+        below_intermediate_point,
+        pose6_joints_downwards,
+        pose6_joints_left,
+        pose6_joints_upwards,
+        pose6_joints_right,
     ]
     
     loop_counter = 0

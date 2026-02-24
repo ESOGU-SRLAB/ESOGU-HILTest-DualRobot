@@ -15,6 +15,7 @@
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>trajectory_msgs</depend>
   <depend>eigen3_cmake_module</depend>
   <depend>Eigen3</depend>

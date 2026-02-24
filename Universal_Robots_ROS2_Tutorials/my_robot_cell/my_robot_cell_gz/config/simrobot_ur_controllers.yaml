@@ -24,6 +24,9 @@
     sim_forward_position_controller:
       type: position_controllers/JointGroupPositionController
 
+    sim_gripper_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
 
 
 # Speed Scaling State Broadcaster
@@ -113,3 +116,19 @@
       - sim_ur10e_wrist_1_joint
       - sim_ur10e_wrist_2_joint
       - sim_ur10e_wrist_3_joint
+
+# Gripper Controller
+/sim/sim_gripper_controller:
+  ros__parameters:
+    joints:
+      - sim_ur10e_gripper_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    gains:
+      sim_ur10e_gripper_joint:
+        p: 1000.0
+        i: 10.0
+        d: 50.0

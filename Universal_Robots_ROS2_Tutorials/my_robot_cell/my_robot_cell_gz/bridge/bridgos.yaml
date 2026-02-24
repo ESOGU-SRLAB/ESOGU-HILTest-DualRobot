@@ -10,7 +10,7 @@
                             # "ROS_TO_GZ" - Bridge ROS topic to Gz
   qos_profile: SENSOR_DATA  # Default is a default-constructed QoS with appropriate queue size
 
-- ros_topic_name: "image"
+- ros_topic_name: "depth/image"
   gz_topic_name: "/world/ifarlab/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "ignition.msgs.Image"
@@ -54,3 +54,20 @@
   direction: GZ_TO_ROS  # Default "BIDIRECTIONAL" - Bridge both directions
                             # "GZ_TO_ROS" - Bridge Gz topic to ROS
                             # "ROS_TO_GZ" - Bridge ROS topic to Gz
+
+
+- ros_topic_name: "image"
+  gz_topic_name: "/world/ifarlab/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_imx179_camera/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: false
+
+- ros_topic_name: "camera_info"
+  gz_topic_name: "/world/ifarlab/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_imx179_camera/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "ignition.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: false

@@ -1,0 +1,268 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="ifarlab_environment" params="prefix:=''">
+
+    <!-- ========== ifarlab_ray - robot hareket rayı ========== -->
+    <!-- <link name="${prefix}ifarlab_ray_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/ifarlab_ray.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}ifarlab_ray_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/ifarlab_ray.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}ifarlab_ray_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}ifarlab_ray_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint> -->
+
+    <!-- ========== barrier - ana koruma bariyeri ========== -->
+    <link name="${prefix}barrier_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}barrier_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}barrier_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}barrier_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- ========== barrier_closekabinet - yakın kabinet bariyeri ========== -->
+    <link name="${prefix}barrier_closekabinet_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_closekabinet.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}barrier_closekabinet_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_closekabinet.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}barrier_closekabinet_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}barrier_closekabinet_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- ========== barrier_closetable - yakın masa bariyeri ========== -->
+    <link name="${prefix}barrier_closetable_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_closetable.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}barrier_closetable_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_closetable.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}barrier_closetable_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}barrier_closetable_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- ========== barrier_kaw1 - Kawasaki bariyeri 1 ========== -->
+    <link name="${prefix}barrier_kaw1_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_kaw1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}barrier_kaw1_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_kaw1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}barrier_kaw1_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}barrier_kaw1_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- ========== barrier_kaw2 - Kawasaki bariyeri 2 ========== -->
+    <link name="${prefix}barrier_kaw2_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_kaw2.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}barrier_kaw2_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_kaw2.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}barrier_kaw2_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}barrier_kaw2_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- ========== barrier_kaw3 - Kawasaki bariyeri 3 ========== -->
+    <link name="${prefix}barrier_kaw3_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_kaw3.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}barrier_kaw3_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/barrier_kaw3.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}barrier_kaw3_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}barrier_kaw3_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- ========== kabinet - kontrol kabini ========== -->
+    <link name="${prefix}kabinet_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/Kabinet.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}kabinet_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/Kabinet.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}kabinet_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}kabinet_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- ========== light_curtain - ışık perdesi ========== -->
+    <link name="${prefix}light_curtain_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/light_curtain_3m.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}light_curtain_material">
+          <color rgba="0.9 0.9 0.9 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/light_curtain_3m.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}light_curtain_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}light_curtain_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- ========== human - duran insan modeli ========== -->
+    <link name="${prefix}human_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/standing.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}human_material">
+          <color rgba="0.8 0.6 0.5 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/standing.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${prefix}human_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}human_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+  </xacro:macro>
+
+</robot>

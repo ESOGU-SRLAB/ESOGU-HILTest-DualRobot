@@ -5,8 +5,8 @@ MOVE_GROUP_GRIPPER: str = "gripper"
 
 prefix: str = "sim_ur10e_"
 
-OPEN_GRIPPER_JOINT_POSITIONS: List[float] = [0.04, 0.04]
-CLOSED_GRIPPER_JOINT_POSITIONS: List[float] = [0.0, 0.0]
+OPEN_GRIPPER_JOINT_POSITIONS: List[float] = [0.0]
+CLOSED_GRIPPER_JOINT_POSITIONS: List[float] = [0.025]
 
 
 def joint_names(prefix: str = prefix) -> List[str]:
@@ -30,4 +30,4 @@ def end_effector_name(prefix: str = prefix) -> str:
 
 
 def gripper_joint_names(prefix: str = prefix) -> List[str]:
-    return []
+    return prefix + "gripper_joint"

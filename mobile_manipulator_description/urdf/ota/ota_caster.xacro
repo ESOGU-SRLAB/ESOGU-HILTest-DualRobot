@@ -9,39 +9,53 @@
       <visual>
         <origin xyz="0 0 0"/>
         <geometry>
-          <mesh filename="package://mobile_manipulator_description/meshes/ota/SarhosTeker.stl"
+          <mesh filename="file:////home/cem/colcon_ws/src/mobile_manipulator_description/meshes/ota/SarhosTeker.stl"
                 scale="0.001 0.0008 0.001"/>
         </geometry>
-
-        <!-- Ignition PBR Material -->
-        <material name="DefaultWhite">
-          <color rgba="1 1 1 1"/>
-        </material>
-
       </visual>
 
       <collision>
         <origin xyz="0 0 0"/>
         <geometry>
-          <cylinder radius="0.005" length="0.05"/>
+          <cylinder radius="0.005" length="0.05"/>	  			  
         </geometry>
       </collision>
-  
+
       <xacro:cylinder_inertial radius="0.005" length="0.07" mass="1" />
-    </link>      
-    
+    </link>   
     <joint name="caster_${side}_joint" type="fixed">
-      <origin xyz="${xyz_caster}" rpy="${rpy_caster}"/>
       <axis xyz="0 0 1"/>
-      <parent link="${base_link}"/>
+      <origin xyz="${xyz_caster}" rpy="${rpy_caster}"/>
       <child link="caster_${side}_link"/>
-    </joint>
+      <parent link="${base_link}"/>
+    </joint>  
+    
+    <gazebo reference="caster_${side}_link">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+      <kp>1000000.0</kp>
+      <kd>10.0</kd>
+      <minDepth>0.001</minDepth>
+      <material>Gazebo/Red</material>
+      <visual>
+        <material>
+          <ambient>1 0 0 1</ambient>
+          <diffuse>1 0 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </gazebo>
 
+    <!-- <link name='caster_wheel_${side}_link'>
+      <visual>
+        <origin xyz="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.042" length="0.02"/>
+        </geometry>
+      </visual>
 
-    <!-- CASTER WHEEL -->
-    <link name='caster_wheel_${side}_link'>
       <collision>
-        <origin xyz="0 0 0" rpy="0 1.570796 1.570796"/>
+        <origin xyz="0 0 0"/>
         <geometry>
           <cylinder radius="0.042" length="0.02"/>
         </geometry>
@@ -55,7 +69,7 @@
       <origin xyz="-0.04 0 -0.07"/>
       <parent link="caster_${side}_link"/>
       <child link="caster_wheel_${side}_link"/>
-    </joint>  
+    </joint>   -->
   
   </xacro:macro>
 </robot>

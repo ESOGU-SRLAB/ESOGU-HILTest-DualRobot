@@ -13,7 +13,7 @@ def generate_launch_description():
         # 1. Simülasyon Robot Kontrolcüsü Düğümü
         Node(
             package='pymoveit2_kawasaki_sim',
-            executable='sim_robot_joint_goal.py',
+            executable='agv_kawa_goal.py',
             name='kawasaki_joint_controller',
             output='screen',
             emulate_tty=True, # Logların düzgün görünmesi için
