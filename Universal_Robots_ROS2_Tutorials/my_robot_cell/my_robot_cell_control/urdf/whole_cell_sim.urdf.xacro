@@ -1,0 +1,161 @@
+<?xml version="1.0"?>
+<!--
+  WHOLE CELL SIM - Birleşik Simülasyon URDF
+  İçerik:
+    1. UR10e + Lineer Eksen (simrobot macro, sim_ur10e_ prefix)
+    2. AGV + Kawasaki RS005L (ota_macro + rs005l_macro)
+    3. Çevresel bileşenler (ifarlab_environment)
+  
+  Tüm bileşenler tek bir URDF altında, tek TF ağacında birleştirilmiştir.
+  Tek bir gz_ros2_control plugin'i tüm controller'ları yönetir.
+
+  NOT: OTA inertia makroları ile UR inertia makroları arasında
+  "cylinder_inertial" çakışması var. Bu dosyada OTA bileşenleri UR'den
+  ÖNCE yüklenir (include edilir), böylece UR'nin cylinder_inertial versiyonu 
+  son tanımlanan olur. OTA tarafındaki cylinder_inertial çağrıları 
+  origin bloğu olmadan yapılır; UR versiyonu *origin bekler.
+  Bu sorunu çözmek için OTA bileşenlerini kullanmak yerine satır içi 
+  inertial tanımları yapıyoruz.
+-->
+<robot name="whole_cell_sim" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- ==================== MACRO INCLUDE'LAR ==================== -->
+  <!-- ÖNEMLI: Include sırası kritik! 
+       OTA inertia makroları UR ile çakışıyor (cylinder_inertial).
+       Kawasaki + AGV makrolarını UR'den ÖNCE include ediyoruz,
+       sonra UR'nin versiyonu üste yazacak.
+       Ancak bu durumda OTA wheel/caster çalışmaz.
+       BU YÜZDEN AGV bileşenlerini Gazebo'da ayrı model olarak 
+       spawn etmek üzere burada sadece Kawasaki kolunu dahil ediyoruz.
+       AGV için ota_macro yerine bileşenleri satır içi tanımlıyoruz.
+  -->
+
+  <!-- AGV bileşenleri: inertia_tensors olmadan, sadece gerekli alt makrolar -->
+  <!-- Bu include'lar inertia_tensors include etmez -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_base.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/inertia_tensors.urdf.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_wheel.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_caster.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_ir.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_plugin.xacro"/>
+  <!-- OTA ros2_control -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota.ros2_control.xacro"/>
+
+  <!-- Kawasaki RS005L makrosu -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/khi_rs/rs005l_macro.xacro"/>
+
+  <!-- UR10e sim makrosu (lineer eksen + UR10e kol + ros2_control) -->
+  <!-- Bu EN SON include edilmeli ki cylinder_inertial'ın UR versiyonu kazansın -->
+  <xacro:include filename="$(find my_robot_cell_description)/urdf/simrobot_my_robot_cell_macro.xacro"/>
+
+  <!-- Çevresel bileşenler makrosu -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ifarlab_environment.xacro"/>
+
+  <!-- ==================== ARGÜMANLAR ==================== -->
+  <!-- UR10e argümanları -->
+  <xacro:arg name="ur_type" default="ur10e"/>
+  <xacro:arg name="joint_limits_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
+  <xacro:arg name="kinematics_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/default_kinematics.yaml"/>
+  <xacro:arg name="physical_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/physical_parameters.yaml"/>
+  <xacro:arg name="visual_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/visual_parameters.yaml"/>
+  <xacro:arg name="sim_ignition" default="true"/>
+  <xacro:arg name="simulation_controllers" default=""/>
+  <xacro:arg name="tf_prefix" default="sim_"/>
+
+  <!-- Kawasaki argümanları -->
+  <xacro:arg name="kawasaki_name" default="rs005l"/>
+  <xacro:arg name="kawasaki_tf_prefix" default=""/>
+  <xacro:arg name="kawasaki_sim_ignition" default="true"/>
+  <xacro:arg name="kawasaki_use_fake_hardware" default="false"/>
+  <xacro:arg name="kawasaki_simulation_controllers" default=""/>
+
+  <!-- AGV spawn pozisyonu (world frame'e göre) -->
+  <xacro:arg name="agv_x" default="-2.301949"/>
+  <xacro:arg name="agv_y" default="0.530401"/>
+  <xacro:arg name="agv_z" default="0.17"/>
+  <xacro:arg name="agv_yaw" default="1.570796"/>
+
+  <!-- ==================== WORLD ROOT LINK ==================== -->
+  <link name="world"/>
+
+  <!-- ==================== 1. AGV + KAWASAKI RS005L ==================== -->
+  <!-- AGV'yi world frame'e sabit bağla (başlangıç pozisyonu) -->
+  <joint name="world_to_agv" type="fixed">
+    <parent link="world"/>
+    <child link="ota_base_link"/>
+    <origin xyz="$(arg agv_x) $(arg agv_y) $(arg agv_z)" 
+            rpy="0 0 $(arg agv_yaw)"/>
+  </joint>
+
+  <!-- AGV gövdesi -->
+  <xacro:ota_base link_name="ota_base_link"/>
+
+  <!-- AGV ros2_control (tekerlek velocity interface) -->
+  <xacro:ota_ros2_control
+    name="ota_system"
+    sim_ignition="$(arg kawasaki_sim_ignition)"
+    use_fake_hardware="$(arg kawasaki_use_fake_hardware)"/>
+
+  <!-- IR sensör -->
+  <xacro:ota_ir base_link="ota_base_link" link_name="ota_ir" xyz_ir="0.403 0.0 0.03" rpy_ir="0 0 0"/>
+
+  <!-- Tahrik tekerlekleri -->
+  <xacro:ota_wheel base_link="ota_base_link" xyz_hub="0 -0.30 -0.06" rpy_hub="0 0 0" side="left"/>
+  <xacro:ota_wheel base_link="ota_base_link" xyz_hub="0 0.30 -0.06" rpy_hub="0 0 0" side="right"/>
+
+  <!-- Sarhoş tekerlekler -->
+  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="0.37 -0.22 -0.048" rpy_caster="0 0 0" side="front_right"/>
+  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="0.37 0.22 -0.048" rpy_caster="0 0 0" side="front_left"/>
+  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="-0.37 -0.22 -0.048" rpy_caster="0 0 0" side="back_right"/>
+  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="-0.37 0.22 -0.048" rpy_caster="0 0 0" side="back_left"/>
+
+  <!-- Diff Drive Plugin (AGV hareketi için) -->
+  <xacro:ota_diff_drive base_link="ota_base_link"/>
+  <!-- Joint State Publisher Plugin -->
+  <xacro:ota_joints_state_publisher/>
+
+  <!-- Kawasaki RS005L kol (AGV üstünde) -->
+  <xacro:khi_rs005l
+    name="$(arg kawasaki_name)"
+    tf_prefix="$(arg kawasaki_tf_prefix)"
+    parent="manipulator_base_link"
+    sim_ignition="$(arg kawasaki_sim_ignition)"
+    use_fake_hardware="$(arg kawasaki_use_fake_hardware)">
+    <origin xyz="0 0 0.051" rpy="0 0 3.141593" />
+  </xacro:khi_rs005l>
+
+  <!-- ==================== 2. UR10e + LİNEER EKSEN (SİM) ==================== -->
+  <xacro:simrobot_my_robot_cell
+    parent="world"
+    ur_type="$(arg ur_type)"
+    joint_limits_parameters_file="$(arg joint_limits_parameters_file)"
+    kinematics_parameters_file="$(arg kinematics_parameters_file)"
+    physical_parameters_file="$(arg physical_parameters_file)"
+    visual_parameters_file="$(arg visual_parameters_file)"
+    sim_ignition="$(arg sim_ignition)"
+    tf_prefix="$(arg tf_prefix)ur10e_"
+    >
+      <origin xyz="0.0 0 0" rpy="0 0 0" />
+  </xacro:simrobot_my_robot_cell>
+
+  <!-- ==================== 3. ÇEVRESEL BİLEŞENLER ==================== -->
+  <xacro:ifarlab_environment prefix=""/>
+
+  <!-- ==================== 4. GAZEBO PLUGIN'LERİ ==================== -->
+  <xacro:if value="$(arg sim_ignition)">
+    <gazebo reference="world">
+    </gazebo>
+
+    <!-- gz_ros2_control: Tüm ros2_control bileşenleri için tek plugin -->
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(arg simulation_controllers)</parameters>
+        <controller_manager_node_name>controller_manager</controller_manager_node_name>
+        <ros>
+          <namespace>sim</namespace>
+        </ros>
+      </plugin>
+    </gazebo>
+  </xacro:if>
+
+</robot>

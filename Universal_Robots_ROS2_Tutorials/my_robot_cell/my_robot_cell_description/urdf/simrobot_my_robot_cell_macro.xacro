@@ -96,7 +96,7 @@
 
     <link name="${tf_prefix}alumunium_table">
       <inertial>
-        <origin rpy="0 0 0" xyz="681.141 2464.643 737.851"/>
+        <origin rpy="0 0 0" xyz="0.681141 2.464643 0.737851"/>
         <mass value="20.04925448455695"/>
         <inertia ixx="130.9" ixy="0.04503" ixz="0.9303" iyy="70.758" iyz="-0.03313" izz="139.1"/>
       </inertial>
@@ -117,9 +117,9 @@
 
     <link name="${tf_prefix}conveyor_belt">
       <inertial>
-        <origin rpy="0 0 0" xyz="736.828 104.977 664.295"/>
-        <mass value="15.04925448455695"/>
-        <inertia ixx="0.061984" ixy="-0.003503" ixz="0.001551" iyy="0.069314" iyz="0.000564" izz="0.125682"/>
+        <origin rpy="0 0 0" xyz="0.731215 0.101822 0.642664"/>
+        <mass value="27.036586"/>
+        <inertia ixx="4.104" ixy="-0.008305" ixz="-0.010260" iyy="2.304" iyz="0.064250" izz="2.392"/>
       </inertial>
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>

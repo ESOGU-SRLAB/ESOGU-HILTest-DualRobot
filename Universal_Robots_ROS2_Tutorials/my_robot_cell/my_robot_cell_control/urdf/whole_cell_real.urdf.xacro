@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<!--
+  WHOLE CELL REAL - Birleşik Gerçek Dünya URDF
+  İçerik:
+    1. UR10e + Lineer Eksen (gerçek donanım: ur_robot_driver + TopicBasedSystem)
+    2. AGV + Kawasaki RS005L (sadece görsel/collision, ros2_control yok)
+    3. Çevresel bileşenler (ifarlab_environment)
+  
+  Bu URDF, MoveIt'in tüm bileşenleri tek bir planning scene'de görmesi ve
+  collision check yapabilmesi için tasarlanmıştır.
+  
+  NOT: Kawasaki + AGV kısmında ros2_control tag'ları generate edilmez.
+  Bu bileşenler sadece collision geometrileri olarak dahil edilir.
+  
+  INCLUDE SIRASI: OTA inertia makroları ile UR inertia makroları arasında
+  "cylinder_inertial" isim çakışması var. OTA bileşenleri ÖNCE, 
+  UR bileşenleri SONRA include ediliyor — UR'nin versiyonu kazanır.
+-->
+<robot name="whole_cell_real" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- ==================== MACRO INCLUDE'LAR ==================== -->
+  <!-- SIRA KRİTİK: OTA inertia macroları ÖNCE, UR SONRA -->
+
+  <!-- AGV alt bileşenleri (inertia_tensors dahil) -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_base.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/inertia_tensors.urdf.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_wheel.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_caster.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_ir.xacro"/>
+
+  <!-- Kawasaki RS005L makrosu -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/khi_rs/rs005l_macro.xacro"/>
+
+  <!-- UR10e gerçek robot makrosu - EN SON include (cylinder_inertial kazanır) -->
+  <xacro:include filename="$(find my_robot_cell_description)/urdf/my_robot_cell_macro.xacro"/>
+  <xacro:include filename="$(find ur_description)/urdf/ur.ros2_control.xacro"/>
+
+  <!-- Çevresel bileşenler makrosu -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ifarlab_environment.xacro"/>
+
+  <!-- ==================== ARGÜMANLAR ==================== -->
+  <!-- UR10e argümanları -->
+  <xacro:arg name="ur_type" default="ur10e"/>
+  <xacro:arg name="joint_limit_params" default="$(find my_robot_cell_control)/config/$(arg ur_type)/joint_limits.yaml"/>
+  <xacro:arg name="kinematics_params" default="$(find my_robot_cell_control)/config/$(arg ur_type)/default_kinematics.yaml"/>
+  <xacro:arg name="physical_params" default="$(find my_robot_cell_control)/config/$(arg ur_type)/physical_parameters.yaml"/>
+  <xacro:arg name="visual_params" default="$(find my_robot_cell_control)/config/$(arg ur_type)/visual_parameters.yaml"/>
+  <xacro:arg name="tf_prefix" default="ur10e_"/>
+
+  <!-- UR10e driver argümanları -->
+  <xacro:arg name="robot_ip" default="192.168.3.5"/>
+  <xacro:arg name="headless_mode" default="false"/>
+  <xacro:arg name="ur_script_filename" default="$(find ur_client_library)/resources/external_control.urscript"/>
+  <xacro:arg name="ur_output_recipe_filename" default="$(find ur_robot_driver)/resources/rtde_output_recipe.txt"/>
+  <xacro:arg name="ur_input_recipe_filename" default="$(find ur_robot_driver)/resources/rtde_input_recipe.txt"/>
+  <xacro:arg name="use_fake_hardware" default="false"/>
+  <xacro:arg name="fake_sensor_commands" default="false"/>
+
+  <!-- Kawasaki argümanları -->
+  <xacro:arg name="kawasaki_tf_prefix" default=""/>
+
+  <!-- AGV pozisyonu (world frame'e göre) -->
+  <xacro:arg name="agv_x" default="-2.301949"/>
+  <xacro:arg name="agv_y" default="0.530401"/>
+  <xacro:arg name="agv_z" default="0.17"/>
+  <xacro:arg name="agv_yaw" default="1.570796"/>
+
+  <!-- ==================== PROPERTY'LER ==================== -->
+  <xacro:property name="kinematics_params_file" value="$(arg kinematics_params)"/>
+  <xacro:property name="kinematics_hash" value="${xacro.load_yaml(kinematics_params_file)['kinematics']['hash']}"/>
+
+  <!-- ==================== WORLD ROOT LINK ==================== -->
+  <link name="world"/>
+
+  <!-- ==================== 1. AGV + KAWASAKI RS005L (SADECE GÖRSEL/COLLISION) ==================== -->
+  <!-- AGV'yi world frame'e sabit bağla -->
+  <joint name="world_to_agv" type="fixed">
+    <parent link="world"/>
+    <child link="ota_base_link"/>
+    <origin xyz="$(arg agv_x) $(arg agv_y) $(arg agv_z)" 
+            rpy="0 0 $(arg agv_yaw)"/>
+  </joint>
+
+  <!-- AGV gövdesi (sadece görsel/collision) -->
+  <xacro:ota_base link_name="ota_base_link"/>
+  <xacro:ota_ir base_link="ota_base_link" link_name="ota_ir" xyz_ir="0.403 0.0 0.03" rpy_ir="0 0 0"/>
+  <xacro:ota_wheel base_link="ota_base_link" xyz_hub="0 -0.30 -0.06" rpy_hub="0 0 0" side="left"/>
+  <xacro:ota_wheel base_link="ota_base_link" xyz_hub="0 0.30 -0.06" rpy_hub="0 0 0" side="right"/>
+  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="0.37 -0.22 -0.048" rpy_caster="0 0 0" side="front_right"/>
+  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="0.37 0.22 -0.048" rpy_caster="0 0 0" side="front_left"/>
+  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="-0.37 -0.22 -0.048" rpy_caster="0 0 0" side="back_right"/>
+  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="-0.37 0.22 -0.048" rpy_caster="0 0 0" side="back_left"/>
+
+  <!-- Kawasaki RS005L kol (sadece görsel/collision, ros2_control yok) -->
+  <xacro:khi_rs005l
+    name="rs005l"
+    tf_prefix="$(arg kawasaki_tf_prefix)"
+    parent="manipulator_base_link"
+    sim_ignition="false"
+    use_fake_hardware="false"
+    generate_ros2_control_tag="false">
+    <origin xyz="0 0 0.051" rpy="0 0 3.141593" />
+  </xacro:khi_rs005l>
+
+  <!-- ==================== 2. UR10e + LİNEER EKSEN (GERÇEK) ==================== -->
+  <xacro:my_robot_cell
+    parent="world"
+    ur_type="$(arg ur_type)"
+    joint_limits_parameters_file="$(arg joint_limit_params)"
+    kinematics_parameters_file="$(arg kinematics_params)"
+    physical_parameters_file="$(arg physical_params)"
+    visual_parameters_file="$(arg visual_params)"
+  >
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </xacro:my_robot_cell>
+
+  <!-- UR10e ros2_control tag (ur_robot_driver) -->
+  <xacro:ur_ros2_control
+    name="$(arg ur_type)"
+    tf_prefix="$(arg ur_type)_"
+    hash_kinematics="${kinematics_hash}"
+    robot_ip="$(arg robot_ip)"
+    script_filename="$(arg ur_script_filename)"
+    output_recipe_filename="$(arg ur_output_recipe_filename)"
+    input_recipe_filename="$(arg ur_input_recipe_filename)"
+    use_fake_hardware="$(arg use_fake_hardware)"
+    fake_sensor_commands="$(arg fake_sensor_commands)"
+    headless_mode="$(arg headless_mode)"
+  />
+
+  <!-- ==================== 3. ÇEVRESEL BİLEŞENLER ==================== -->
+  <xacro:ifarlab_environment prefix=""/>
+
+</robot>

@@ -23,19 +23,13 @@ public:
   RealToSimBridge()
   : Node("real_to_sim_bridge"),
     ur_last_update_time_(this->now()),
-    kawasaki_last_update_time_(this->now()),
-    real_agv_odom_received_(false),
-    sim_agv_odom_received_(false)
+    kawasaki_last_update_time_(this->now())
   {
     // Parameters
     update_rate_ = this->declare_parameter<double>("update_rate", 10.0);
     trajectory_time_ = this->declare_parameter<double>("trajectory_time", 0.5);
     
-    // AGV P-controller gains
-    agv_kp_linear_ = this->declare_parameter<double>("agv_kp_linear", 1.5);
-    agv_kp_angular_ = this->declare_parameter<double>("agv_kp_angular", 2.0);
-    agv_max_linear_vel_ = this->declare_parameter<double>("agv_max_linear_vel", 1.0);
-    agv_max_angular_vel_ = this->declare_parameter<double>("agv_max_angular_vel", 2.0);
+    // ...existing code...
     
     // ==================== UR10E CONFIGURATION ====================
     // Joint name mapping: real -> sim
@@ -89,28 +83,7 @@ public:
       "/kawasaki/kawasaki_controller/joint_trajectory",
       rclcpp::QoS(10).best_effort());
 
-    // ==================== AGV CONFIGURATION ====================
-    // Subscriber to real AGV odometry (from bridge_node.py)
-    agv_real_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "/agv/odom",
-      rclcpp::QoS(10),
-      std::bind(&RealToSimBridge::agvRealOdomCallback, this, std::placeholders::_1));
-
-    // Subscriber to Gazebo AGV odometry (from ota_base_controller)
-    agv_sim_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "/kawasaki/ota_base_controller/odom",
-      rclcpp::QoS(10),
-      std::bind(&RealToSimBridge::agvSimOdomCallback, this, std::placeholders::_1));
-
-    // Publisher to Gazebo AGV diff_drive controller
-    agv_cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
-      "/kawasaki/ota_base_controller/cmd_vel_unstamped",
-      rclcpp::QoS(10));
-
-    // Timer for AGV P-controller loop
-    agv_control_timer_ = this->create_wall_timer(
-      std::chrono::milliseconds(static_cast<int>(1000.0 / update_rate_)),
-      std::bind(&RealToSimBridge::agvControlLoop, this));
+    // ...existing code...
 
     // ==================== LOG INFO ====================
     RCLCPP_INFO(this->get_logger(), "Real-to-Sim Bridge Node started");
@@ -121,11 +94,7 @@ public:
     RCLCPP_INFO(this->get_logger(), "--- Kawasaki ---");
     RCLCPP_INFO(this->get_logger(), "  Listening to: /kawasaki/joint_states");
     RCLCPP_INFO(this->get_logger(), "  Publishing to: /kawasaki/kawasaki_controller/joint_trajectory");
-    RCLCPP_INFO(this->get_logger(), "--- AGV (P-controller) ---");
-    RCLCPP_INFO(this->get_logger(), "  Real odom: /agv/odom");
-    RCLCPP_INFO(this->get_logger(), "  Sim odom:  /kawasaki/ota_base_controller/odom");
-    RCLCPP_INFO(this->get_logger(), "  Cmd output: /kawasaki/ota_base_controller/cmd_vel_unstamped");
-    RCLCPP_INFO(this->get_logger(), "  Kp_linear=%.2f, Kp_angular=%.2f", agv_kp_linear_, agv_kp_angular_);
+    // ...existing code...
   }
 
 private:
@@ -251,101 +220,9 @@ private:
                  kawasaki_joint_names_.size());
   }
 
-  // ==================== AGV ODOM CALLBACKS ====================
-  void agvRealOdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
-  {
-    std::lock_guard<std::mutex> lock(agv_mutex_);
-    real_agv_x_ = msg->pose.pose.position.x;
-    real_agv_y_ = msg->pose.pose.position.y;
-    real_agv_yaw_ = quaternionToYaw(
-      msg->pose.pose.orientation.x,
-      msg->pose.pose.orientation.y,
-      msg->pose.pose.orientation.z,
-      msg->pose.pose.orientation.w);
-    real_agv_odom_received_ = true;
-  }
+  // ...existing code...
 
-  void agvSimOdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
-  {
-    std::lock_guard<std::mutex> lock(agv_mutex_);
-    sim_agv_x_ = msg->pose.pose.position.x;
-    sim_agv_y_ = msg->pose.pose.position.y;
-    sim_agv_yaw_ = quaternionToYaw(
-      msg->pose.pose.orientation.x,
-      msg->pose.pose.orientation.y,
-      msg->pose.pose.orientation.z,
-      msg->pose.pose.orientation.w);
-    sim_agv_odom_received_ = true;
-  }
-
-  // ==================== AGV P-CONTROLLER LOOP ====================
-  void agvControlLoop()
-  {
-    std::lock_guard<std::mutex> lock(agv_mutex_);
-
-    if (!real_agv_odom_received_ || !sim_agv_odom_received_) {
-      RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
-                            "Waiting for AGV odom data (real:%s, sim:%s)",
-                            real_agv_odom_received_ ? "OK" : "NO",
-                            sim_agv_odom_received_ ? "OK" : "NO");
-      return;
-    }
-
-    // Position error in world frame
-    double dx = real_agv_x_ - sim_agv_x_;
-    double dy = real_agv_y_ - sim_agv_y_;
-
-    // Yaw error (normalize to [-pi, pi])
-    double dyaw = normalizeAngle(real_agv_yaw_ - sim_agv_yaw_);
-
-    // Transform position error to robot body frame
-    double cos_yaw = std::cos(sim_agv_yaw_);
-    double sin_yaw = std::sin(sim_agv_yaw_);
-    double error_forward = dx * cos_yaw + dy * sin_yaw;   // Along robot's x-axis
-    double error_lateral = -dx * sin_yaw + dy * cos_yaw;  // Along robot's y-axis
-
-    // Distance error in body-forward direction
-    double distance_error = std::sqrt(dx * dx + dy * dy);
-
-    // If the target is behind us, we need to consider the heading to target
-    double angle_to_target = std::atan2(dy, dx);
-    double heading_error = normalizeAngle(angle_to_target - sim_agv_yaw_);
-
-    // P-controller output
-    geometry_msgs::msg::Twist cmd_vel;
-
-    // If far from target, first rotate toward it, then drive forward
-    if (distance_error > 0.02) {  // 2cm threshold
-      // Compute linear velocity (proportional to forward error)
-      cmd_vel.linear.x = agv_kp_linear_ * error_forward;
-      
-      // Compute angular velocity (combine heading error + yaw alignment)
-      // When far: prioritize heading toward target
-      // When close: prioritize final yaw alignment
-      double heading_weight = std::min(distance_error / 0.5, 1.0);  // Smooth blend
-      double angular_error = heading_weight * heading_error + (1.0 - heading_weight) * dyaw;
-      cmd_vel.angular.z = agv_kp_angular_ * angular_error;
-    } else {
-      // Close enough in position, just fix yaw
-      cmd_vel.linear.x = 0.0;
-      cmd_vel.angular.z = agv_kp_angular_ * dyaw;
-
-      // If yaw is also close enough, stop
-      if (std::abs(dyaw) < 0.02) {  // ~1 degree
-        cmd_vel.angular.z = 0.0;
-      }
-    }
-
-    // Clamp velocities
-    cmd_vel.linear.x = clamp(cmd_vel.linear.x, -agv_max_linear_vel_, agv_max_linear_vel_);
-    cmd_vel.angular.z = clamp(cmd_vel.angular.z, -agv_max_angular_vel_, agv_max_angular_vel_);
-
-    agv_cmd_vel_pub_->publish(cmd_vel);
-
-    RCLCPP_DEBUG_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
-                          "AGV tracking: dist_err=%.3f yaw_err=%.3f cmd_vx=%.3f cmd_wz=%.3f",
-                          distance_error, dyaw, cmd_vel.linear.x, cmd_vel.angular.z);
-  }
+  // ...existing code...
 
   // ==================== UTILITY FUNCTIONS ====================
   static double quaternionToYaw(double qx, double qy, double qz, double qw)
@@ -386,25 +263,7 @@ private:
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr kawasaki_trajectory_pub_;
   rclcpp::Time kawasaki_last_update_time_;
 
-  // ==================== AGV members ====================
-  // AGV P-controller gains
-  double agv_kp_linear_;
-  double agv_kp_angular_;
-  double agv_max_linear_vel_;
-  double agv_max_angular_vel_;
-
-  // Odom state (protected by mutex for thread safety)
-  std::mutex agv_mutex_;
-  double real_agv_x_ = 0.0, real_agv_y_ = 0.0, real_agv_yaw_ = 0.0;
-  double sim_agv_x_ = 0.0, sim_agv_y_ = 0.0, sim_agv_yaw_ = 0.0;
-  bool real_agv_odom_received_;
-  bool sim_agv_odom_received_;
-
-  // ROS communication
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr agv_real_odom_sub_;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr agv_sim_odom_sub_;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr agv_cmd_vel_pub_;
-  rclcpp::TimerBase::SharedPtr agv_control_timer_;
+  // ...existing code...
 };
 
 int main(int argc, char** argv)

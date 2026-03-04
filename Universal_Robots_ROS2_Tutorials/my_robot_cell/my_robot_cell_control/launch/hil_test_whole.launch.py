@@ -238,7 +238,7 @@ def launch_setup(context, *args, **kwargs):
             "-allow_renaming",
             "true",
             "-x", "-2.301949",
-            "-y", "0.530401",
+            "-y", "0.135135131",
             "-z", "0.17",
             "-R", "0.0",
             "-P", "0.0",
@@ -325,7 +325,18 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # world -> odom static transform (AGV spawn pozisyonuyla eşleşmeli)
-    kawasaki_world_to_odom_tf = Node(
+    # kawasaki_world_to_odom_tf = Node(
+    #     package="tf2_ros",
+    #     executable="static_transform_publisher",
+    #     arguments=[
+    #         "-2.301949", "0.530401", "0.17",  # x, y, z (spawn pozisyonuyla aynı)
+    #         "0", "0", "0.707107", "0.707107",  # qx, qy, qz, qw (yaw=90 derece)
+    #         "world", "kawasaki/odom",
+    #     ],
+    #     output="screen",
+    # )
+
+    world_to_odom_tf = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
         arguments=[
@@ -509,8 +520,8 @@ def launch_setup(context, *args, **kwargs):
         kawasaki_tf_bridge,
         
         # world -> odom static transform (AGV başlangıç pozisyonu)
-        kawasaki_world_to_odom_tf,
-        
+        # kawasaki_world_to_odom_tf,
+        world_to_odom_tf,
         # 1. Gerçek robot (hemen başlat)
         real_robot_launch_group,
         

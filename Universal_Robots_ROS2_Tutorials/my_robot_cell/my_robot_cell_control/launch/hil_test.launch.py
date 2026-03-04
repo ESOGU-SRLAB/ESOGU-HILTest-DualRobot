@@ -23,6 +23,7 @@ from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.substitutions import FindPackageShare
 from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def launch_setup(context, *args, **kwargs):
@@ -190,7 +191,7 @@ def launch_setup(context, *args, **kwargs):
                     executable="robot_state_publisher",
                     output="both",
                     parameters=[
-                        {"robot_description": robot_description_content},
+                        {"robot_description": ParameterValue(robot_description_content, value_type=str)},
                         {"use_sim_time": True},
                     ],
                 ),

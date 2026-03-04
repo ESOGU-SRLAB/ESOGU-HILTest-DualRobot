@@ -23,7 +23,14 @@
       </collision>
 
       <!-- === WHEEL INERTIA === -->
-      <xacro:cylinder_inertial radius="0.102" length="0.02" mass="5"/>
+      <!-- <xacro:cylinder_inertial radius="0.102" length="0.02" mass="5"/>ORJİNALİ BÖYLE -->
+      <inertial>
+        <mass value="5" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="${0.0833333 * 5 * (3 * 0.102 * 0.102 + 0.02 * 0.02)}" ixy="0.0" ixz="0.0"
+          iyy="${0.0833333 * 5 * (3 * 0.102 * 0.102 + 0.02 * 0.02)}" iyz="0.0"
+          izz="${0.5 * 5 * 0.102 * 0.102}" />
+      </inertial>
     </link>
 
     <!-- === WHEEL JOINT === -->
