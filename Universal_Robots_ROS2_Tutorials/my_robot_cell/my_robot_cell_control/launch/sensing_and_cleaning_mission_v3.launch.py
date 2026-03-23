@@ -22,7 +22,7 @@ from std_msgs.msg import String
 def generate_launch_description():
     sensing_robot_node = Node(
         package="pymoveit2_sim",
-        executable="sensing_robot_v3.py",
+        executable="sensing_robot_v2.py",
         name="harmony_sensing_robot",
         output="screen",
         emulate_tty=True,
@@ -40,12 +40,20 @@ def generate_launch_description():
 
     cleaning_runner_node = Node(
     package="pymoveit2_sim",
-    executable="cleaning_mission_runner_v3.py",
+    executable="cleaning_mission_runner_v2.py",
     name="harmony_cleaning_runner",
     output="screen",
     emulate_tty=True,
     parameters=[{"fixed_frame": "world"}],
 )
+
+    sim_to_real_bridge_node = Node(
+        package="my_robot_cell_control",
+        executable="sim_to_real_bridge",
+        name="sim_to_real_bridge",
+        output="screen",
+        emulate_tty=True,
+    )
 
 
     return LaunchDescription([
@@ -53,4 +61,5 @@ def generate_launch_description():
         sensing_robot_node,
         red_detection_node,
         cleaning_runner_node,
+        # sim_to_real_bridge_node,
     ])

@@ -423,10 +423,33 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
+    # === MoveIt Move Group (sim namespace) ===
+    # TimerAction içindeki GroupAction ile namespace'i garanti ediyoruz.
+    # (TimerAction, üst GroupAction'daki PushRosNamespace scope'unu kaybeder.)
+    # delayed_sim_moveit = TimerAction(
+    #     period=25.0,  # Sim spawn(10) + controller'lar(7) + buffer
+    #     actions=[
+    #         GroupAction(
+    #             actions=[
+    #                 PushRosNamespace(sim_namespace),
+    #                 IncludeLaunchDescription(
+    #                     PythonLaunchDescriptionSource(
+    #                         PathJoinSubstitution([
+    #                             FindPackageShare("sim_ifarlab_moveit_config"),
+    #                             "launch",
+    #                             "move_group.launch.py",
+    #                         ])
+    #                     ),
+    #                 ),
+    #             ]
+    #         ),
+    #     ],
+    # )
+
     # Real-to-Sim Bridge (gerçek robottan sim'e joint state senkronizasyonu)
     # Tüm controller'lar hazır olduktan sonra başlat (15 sn)
     real_to_sim_bridge_delayed = TimerAction(
-        period=20.0,  # Sim controller'lar ~17 sn'de hazır (10+7)
+        period=30.0,  # Sim controller'lar + MoveIt hazır olduktan sonra
         actions=[
             Node(
                 package="my_robot_cell_control",
@@ -467,7 +490,10 @@ def launch_setup(context, *args, **kwargs):
         # 2. Simülasyon (10 sn sonra - unified URDF, tek spawn)
         delayed_sim_spawn_and_nodes,
 
-        # 3. Real-to-Sim Bridge (20 sn sonra)
+        # 3. MoveIt (25 sn sonra - kendi GroupAction ile /sim namespace)
+        # delayed_sim_moveit,
+
+        # 4. Real-to-Sim Bridge (30 sn sonra)
         real_to_sim_bridge_delayed,
     ]
 

@@ -100,7 +100,7 @@
          - fixed joint: keeps them together
          ========================= -->
     <model name="cup">
-      <pose>0.966 2.165 0.891102 0 0 0</pose>
+      <pose>0.749 0.0 0.9 0 0 0</pose>
       <static>false</static>
       <self_collide>false</self_collide>
 
@@ -137,10 +137,10 @@
 
         <collision name="cup_collision">
           <geometry>
-            <cylinder>
-              <radius>0.04</radius>
-              <length>0.09</length>
-            </cylinder>
+            <mesh>
+              <uri>file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/cup.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
           </geometry>
           <surface>
             <friction>
@@ -184,7 +184,7 @@
          NEW: bozuk bardak
          ========================= -->
     <model name="bozuk_bardak">
-      <pose>0.694428 2.165313 0.891068 0 0 0</pose>
+      <pose>0.749 -0.2 0.9 0 0 1.570</pose>
       <static>false</static>
       <self_collide>false</self_collide>
 
@@ -221,10 +221,10 @@
 
         <collision name="cup_collision">
           <geometry>
-            <cylinder>
-              <radius>0.04</radius>
-              <length>0.09</length>
-            </cylinder>
+            <mesh>
+              <uri>file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/intact_cup.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
           </geometry>
           <surface>
             <friction>

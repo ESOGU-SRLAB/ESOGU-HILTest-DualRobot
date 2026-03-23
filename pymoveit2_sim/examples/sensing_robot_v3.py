@@ -75,9 +75,9 @@ class HarmonySensingRobotV2(Node):
             group_name=robot.MOVE_GROUP_ARM,
             callback_group=cbg,
         )
-        self.moveit2.planner_id = "RRTConnectkConfigDefault"
-        self.moveit2.max_velocity = 0.2
-        self.moveit2.max_acceleration = 0.5
+        self.moveit2.planner_id = "ESTkConfigDefault"
+        self.moveit2.max_velocity = 1.0
+        self.moveit2.max_acceleration = 1.0 
         self.moveit2.cartesian_avoid_collisions = True
         self.moveit2.cartesian_jump_threshold = 2.0
 
@@ -362,7 +362,7 @@ class HarmonySensingRobotV2(Node):
             pose6_joints,   #sol üst
             pose7_joints,   #sol orta
             pose10_joints,  #orta orta
-            pose4_joints,   #sağ orta
+            pose4_joints,   #sağ orta, buradan homea gidecek, oradan sonra chatteki 3 waypointe gidecek.
             pose3_joints,   #sağ alt
             pose11_joints,  #orta alt
             pose8_joints,   #sol alt

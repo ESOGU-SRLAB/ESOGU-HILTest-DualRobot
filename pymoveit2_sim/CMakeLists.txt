@@ -36,6 +36,10 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/dualrobot_sim_robot_goal.py
     ${EXAMPLES_DIR}/ex_servo.py
     ${EXAMPLES_DIR}/sim_gripper_goal.py
+    ${EXAMPLES_DIR}/cup_detection_node.py
+    ${EXAMPLES_DIR}/detection_to_3d_node.py
+    ${EXAMPLES_DIR}/cup_sort_node.py
+    ${EXAMPLES_DIR}/test_orientation_node.py
 
     DESTINATION lib/${PROJECT_NAME}
 )

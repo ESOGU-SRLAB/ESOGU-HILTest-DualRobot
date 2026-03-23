@@ -24,9 +24,20 @@ ament_target_dependencies(real_to_sim_bridge
   nav_msgs
 )
 
+# Build sim_to_real_bridge executable
+add_executable(sim_to_real_bridge src/sim_to_real_bridge.cpp)
+ament_target_dependencies(sim_to_real_bridge
+  rclcpp
+  sensor_msgs
+  trajectory_msgs
+  geometry_msgs
+  nav_msgs
+)
+
 # Install executables
 install(TARGETS
   real_to_sim_bridge
+  sim_to_real_bridge
   DESTINATION lib/${PROJECT_NAME}
 )
 

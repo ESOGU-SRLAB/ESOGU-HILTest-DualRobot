@@ -39,7 +39,7 @@ def generate_launch_description():
                     "tracker": LaunchConfiguration("tracker", default="bytetrack.yaml"),
                     "device": LaunchConfiguration("device", default="cpu"),
                     "enable": LaunchConfiguration("enable", default="True"),
-                    "threshold": LaunchConfiguration("threshold", default="0.5"),
+                    "threshold": LaunchConfiguration("threshold", default="0.3"),
                     "input_image_topic": LaunchConfiguration(
                         "input_image_topic", default="/sim/image"
                     ),

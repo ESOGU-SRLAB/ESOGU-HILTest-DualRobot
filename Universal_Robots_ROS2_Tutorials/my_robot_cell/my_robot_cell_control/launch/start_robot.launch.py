@@ -66,7 +66,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "description_file",
-            default_value="real_linear_robot_my_robot_cell.urdf.xacro",
+            default_value="my_robot_cell_controlled.urdf.xacro",
             description="URDF/XACRO description file with the robot.",
         )
     )

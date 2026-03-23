@@ -2,6 +2,28 @@
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:macro name="ota_base" params="link_name">
+    <!-- <link name="world"/> -->
+    <link name="ifarlab_ray_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/ifarlab_ray.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="ifarlab_ray_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/ifarlab_ray.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    
 
     <link name='${link_name}'>
       <origin xyz="0 0 0" rpy=" 0 0 0"/>
@@ -77,6 +99,26 @@
         </material>
       </visual>
     </gazebo> -->
+
+    <!-- ifarlab.sdf: ifarlab_ray model pose = "0 0 0 0 0 0" → world origin -->
+    <joint name="ifarlab_ray_joint" type="fixed">
+      <parent link="world"/>
+      <child link="ifarlab_ray_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- AGV başlangıç konumu: ifarlab.sdf spawn pozisyonundan okundu
+         x=-2.301949  y=0.135135131  z=0.17  yaw=1.570796 (90°)
+         axis 1 0 0 = joint frame local X = yaw 90° nedeniyle world +Y yönü
+         Bu eksende AGV ileri/geri hareket eder (ray üzerinde kayar) -->
+    <joint name="world_to_agv" type="prismatic">
+      <parent link="ifarlab_ray_link"/>
+      <child link="${link_name}"/>
+      <origin xyz="-2.301959 0.135135131 0.165" rpy="0 0 1.570796"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit effort="1000" lower="0.0" upper="2.0" velocity="1.25"/>
+      <dynamics damping="100.0" friction="50.0"/>
+    </joint>
     
     <joint name="base2manipulatorbase" type="fixed">
       <parent link="${link_name}"/>

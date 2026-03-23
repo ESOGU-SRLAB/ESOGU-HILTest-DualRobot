@@ -110,29 +110,29 @@ def launch_setup(context, *args, **kwargs):
     real_robot_actions.append(linear_axis_adapter_node)
 
     # SICK Visionary T Mini Node - sistem ayağa kalkarken hemen başlat
-    # sick_visionary_node = Node(
-    #     package="sick_visionary_ros",
-    #     executable="sick_visionary_t_mini_node",
-    #     name="sick_visionary_t_mini_node",
-    #     output="screen",
-    #     parameters=[{"use_sim_time": False}],
-    # )
-    # real_robot_actions.append(sick_visionary_node)
+    sick_visionary_node = Node(
+        package="sick_visionary_ros",
+        executable="sick_visionary_t_mini_node",
+        name="sick_visionary_t_mini_node",
+        output="screen",
+        parameters=[{"use_sim_time": False}],
+    )
+    real_robot_actions.append(sick_visionary_node)
     
-    # # Point Cloud Transformer Node - 15 saniye gecikme ile başlat
-    # pointcloud_transformer_delayed = TimerAction(
-    #     period=15.0,  # 15 saniye bekle
-    #     actions=[
-    #         Node(
-    #             package="pointcloud_transformer",
-    #             executable="pointcloud_transformer_node",
-    #             name="pointcloud_transformer_node",
-    #             output="screen",
-    #             parameters=[{"use_sim_time": False}],
-    #         )
-    #     ]
-    # )
-    # real_robot_actions.append(pointcloud_transformer_delayed)
+    # Point Cloud Transformer Node - 15 saniye gecikme ile başlat
+    pointcloud_transformer_delayed = TimerAction(
+        period=15.0,  # 15 saniye bekle
+        actions=[
+            Node(
+                package="pointcloud_transformer",
+                executable="pointcloud_transformer_node",
+                name="pointcloud_transformer_node",
+                output="screen",
+                parameters=[{"use_sim_time": False}],
+            )
+        ]
+    )
+    real_robot_actions.append(pointcloud_transformer_delayed)
     
     # Gerçek robot için RViz config
     rviz_config_file = PathJoinSubstitution(

@@ -189,7 +189,7 @@ def launch_setup(context, *args, **kwargs):
         arguments=[
             "--ros-args",
             "-p",
-            f"config_file:={os.path.join(get_package_share_directory('my_robot_cell_gz'), 'bridge', 'bridgos.yaml')}",
+            f"config_file:={os.path.join(get_package_share_directory('my_robot_cell_gz'), 'bridge', 'gripper_bridge.yaml')}",
         ],
         output="screen",
     )

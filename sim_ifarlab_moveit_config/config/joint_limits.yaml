@@ -1,0 +1,52 @@
+joint_limits:
+  sim_ur10e_base_to_robot_mount:
+    has_acceleration_limits: true
+    max_acceleration: 1.0
+  sim_ur10e_shoulder_pan_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  sim_ur10e_shoulder_lift_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  sim_ur10e_elbow_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  sim_ur10e_wrist_1_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  sim_ur10e_wrist_2_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  sim_ur10e_wrist_3_joint:
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  joint1:
+    has_velocity_limits: true
+    max_velocity: 5.2359877559829888
+    has_acceleration_limits: false
+    max_acceleration: 0
+  joint2:
+    has_velocity_limits: true
+    max_velocity: 5.2359877559829888
+    has_acceleration_limits: false
+    max_acceleration: 0
+  joint3:
+    has_velocity_limits: true
+    max_velocity: 5.2359877559829888
+    has_acceleration_limits: false
+    max_acceleration: 0
+  joint4:
+    has_velocity_limits: true
+    max_velocity: 8.0285145591739155
+    has_acceleration_limits: false
+    max_acceleration: 0
+  joint5:
+    has_velocity_limits: true
+    max_velocity: 8.0285145591739155
+    has_acceleration_limits: false
+    max_acceleration: 0
+  joint6:
+    has_velocity_limits: true
+    max_velocity: 12.915436464758038
+    has_acceleration_limits: false
+    max_acceleration: 0

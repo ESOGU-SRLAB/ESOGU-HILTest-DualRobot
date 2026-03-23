@@ -42,11 +42,11 @@
     </link>
 
     <!-- Chassis assembly - tüm PART1-PART44 parçalarını içerir -->
-    <!-- <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
+    <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </xacro:chassis_assembly> -->
+    </xacro:chassis_assembly>
 
-    <link name="${tf_prefix}chassis">
+    <!-- <link name="${tf_prefix}chassis">
       <inertial>
         <origin xyz="-1.124731 1.232845 1.108302" rpy="0 0 0"/>
         <mass value="120.90442642947052"/>
@@ -71,7 +71,7 @@
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
-    </link>
+    </link> -->
 
     <link name="${tf_prefix}robot_mount">
       <inertial>
@@ -143,11 +143,11 @@
       <child link="${tf_prefix}table" />
     </joint>
 
-    <joint name="${tf_prefix}base_to_chassis" type="fixed">
+    <!-- <joint name="${tf_prefix}base_to_chassis" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}chassis"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
+    </joint> -->
 
     <!-- Linear axis joint - bu joint'in tam tanımı burada olmalı -->
     <joint name="${tf_prefix}base_to_robot_mount" type="prismatic">

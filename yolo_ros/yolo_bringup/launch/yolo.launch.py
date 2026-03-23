@@ -81,7 +81,7 @@ def generate_launch_description():
         threshold = LaunchConfiguration("threshold")
         threshold_cmd = DeclareLaunchArgument(
             "threshold",
-            default_value="0.5",
+            default_value="0.3",
             description="Minimum probability of a detection to be published",
         )
 
@@ -95,14 +95,14 @@ def generate_launch_description():
         imgsz_height = LaunchConfiguration("imgsz_height")
         imgsz_height_cmd = DeclareLaunchArgument(
             "imgsz_height",
-            default_value="480",
+            default_value="1080",
             description="Image height for inference",
         )
 
         imgsz_width = LaunchConfiguration("imgsz_width")
         imgsz_width_cmd = DeclareLaunchArgument(
             "imgsz_width",
-            default_value="640",
+            default_value="1920",
             description="Image width for inference",
         )
 
@@ -189,7 +189,7 @@ def generate_launch_description():
         target_frame = LaunchConfiguration("target_frame")
         target_frame_cmd = DeclareLaunchArgument(
             "target_frame",
-            default_value="sim_ur10e_base_link",
+            default_value="world",
             description="Target frame to transform the 3D boxes",
         )
 

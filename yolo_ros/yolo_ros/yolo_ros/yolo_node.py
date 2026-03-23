@@ -64,7 +64,7 @@ class YoloNode(LifecycleNode):
 
         # Params
         self.declare_parameter("model_type", "YOLO")
-        self.declare_parameter("model", "yolov8m.pt")
+        self.declare_parameter("model", "/home/cem/colcon_ws/src/yolo_ros/best.pt")
         self.declare_parameter("device", "cuda:0")
         self.declare_parameter("fuse_model", False)
         self.declare_parameter("yolo_encoding", "bgr8")

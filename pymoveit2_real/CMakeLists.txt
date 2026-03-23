@@ -27,6 +27,12 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/real_robot_joint_goal.py
     ${EXAMPLES_DIR}/ex_servo.py
     ${EXAMPLES_DIR}/recording.py
+    ${EXAMPLES_DIR}/cup_detection_node.py
+    ${EXAMPLES_DIR}/real_sensing_mirror_node.py
+    ${EXAMPLES_DIR}/real_cleaning_mirror_node.py
+    ${EXAMPLES_DIR}/real_sensing_robot_v3.py
+    ${EXAMPLES_DIR}/real_cleaning_mission_runner_v3.py
+    ${EXAMPLES_DIR}/real_detection_to_3d_node.py
     DESTINATION lib/${PROJECT_NAME}
 )
 

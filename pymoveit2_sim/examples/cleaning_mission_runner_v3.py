@@ -92,9 +92,9 @@ class HarmonyCleaningMissionRunnerV3(Node):
             group_name=robot.MOVE_GROUP_ARM,
             callback_group=cbg,
         )
-        self.moveit2.planner_id = "RRTConnectkConfigDefault"
-        self.moveit2.max_velocity = 0.2
-        self.moveit2.max_acceleration = 0.2
+        self.moveit2.planner_id = "ESTkConfigDefault"
+        self.moveit2.max_velocity = 1.0
+        self.moveit2.max_acceleration = 1.0
         self.moveit2.cartesian_avoid_collisions = True
         self.moveit2.cartesian_jump_threshold = 2.0
 
@@ -344,11 +344,11 @@ class HarmonyCleaningMissionRunnerV3(Node):
                     if self.stop_event.is_set():
                         break
 
-                    approach_pos = [target[0] + self.approach_offset, target[1], target[2]]
+                    # approach_pos = [target[0] + self.approach_offset, target[1], target[2]]
 
-                    ok = self.move_with_retries(approach_pos, try_non_cartesian_first=True)
-                    if not ok:
-                        continue
+                    # ok = self.move_with_retries(approach_pos, try_non_cartesian_first=True)
+                    # if not ok:
+                    #     continue
 
                     ok = self.move_with_retries(target, try_non_cartesian_first=True)
                     if not ok:
@@ -362,7 +362,7 @@ class HarmonyCleaningMissionRunnerV3(Node):
                         time.sleep(0.01)
 
                     # retract
-                    self.move_to_pose(approach_pos, cartesian=False)
+                    # self.move_to_pose(approach_pos, cartesian=False)
 
             self.cleaning_active.clear()
 

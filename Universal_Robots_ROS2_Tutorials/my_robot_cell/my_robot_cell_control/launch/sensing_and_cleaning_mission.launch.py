@@ -57,7 +57,7 @@ class SensingCompletedWatcher:
                             
                             # Cleaning mission runner'ı başlat
                             subprocess.Popen([
-                                'ros2', 'run', 'pymoveit2_sim', 'cleaning_mission_runner.py'
+                                'ros2', 'run', 'pymoveit2_sim', 'cleaning_mission_runner_v2.py'
                             ])
                         
                         cleaning_thread = threading.Thread(target=start_cleaning, daemon=True)
@@ -94,7 +94,7 @@ def generate_launch_description():
     # 1. Sensing Robot Node
     sensing_robot_node = Node(
         package='pymoveit2_sim',
-        executable='sensing_robot.py',
+        executable='sensing_robot_v2.py',
         name='sensing_robot',
         output='screen',
         emulate_tty=True,
@@ -103,7 +103,7 @@ def generate_launch_description():
     # 2. Red Detection Node
     red_detection_node = Node(
         package='pymoveit2_sim',
-        executable='red_detection_node.py',
+        executable='red_detection_node_v3.py',
         name='red_detection_node',
         output='screen',
         emulate_tty=True,

@@ -61,7 +61,7 @@
 
   <!-- AGV pozisyonu (world frame'e göre) -->
   <xacro:arg name="agv_x" default="-2.301949"/>
-  <xacro:arg name="agv_y" default="0.530401"/>
+  <xacro:arg name="agv_y" default="0.135135131"/>
   <xacro:arg name="agv_z" default="0.17"/>
   <xacro:arg name="agv_yaw" default="1.570796"/>
 
@@ -74,12 +74,12 @@
 
   <!-- ==================== 1. AGV + KAWASAKI RS005L (SADECE GÖRSEL/COLLISION) ==================== -->
   <!-- AGV'yi world frame'e sabit bağla -->
-  <joint name="world_to_agv" type="fixed">
+  <!-- <joint name="world_to_agv" type="fixed">
     <parent link="world"/>
     <child link="ota_base_link"/>
     <origin xyz="$(arg agv_x) $(arg agv_y) $(arg agv_z)" 
             rpy="0 0 $(arg agv_yaw)"/>
-  </joint>
+  </joint> -->
 
   <!-- AGV gövdesi (sadece görsel/collision) -->
   <xacro:ota_base link_name="ota_base_link"/>
