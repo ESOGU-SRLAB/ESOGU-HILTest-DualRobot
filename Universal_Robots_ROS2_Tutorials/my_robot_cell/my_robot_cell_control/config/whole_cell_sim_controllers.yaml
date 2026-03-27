@@ -172,12 +172,12 @@
   ros__parameters:
     joints:
       - world_to_agv
-      - joint1
-      - joint2
-      - joint3
-      - joint4
-      - joint5
-      - joint6
+      - sim_kawasaki_joint1
+      - sim_kawasaki_joint2
+      - sim_kawasaki_joint3
+      - sim_kawasaki_joint4
+      - sim_kawasaki_joint5
+      - sim_kawasaki_joint6
     command_interfaces:
       - position
     state_interfaces:

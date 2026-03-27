@@ -22,32 +22,32 @@
         </xacro:if>
       </hardware>
       <!-- orjinalinde command interface effort bunu sormak lazım -->
-      <joint name="joint1">
+      <joint name="${tf_prefix}joint1">
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
-      <joint name="joint2">
+      <joint name="${tf_prefix}joint2">
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
-      <joint name="joint3">
+      <joint name="${tf_prefix}joint3">
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
-      <joint name="joint4">
+      <joint name="${tf_prefix}joint4">
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
-      <joint name="joint5">
+      <joint name="${tf_prefix}joint5">
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>
       </joint>
-      <joint name="joint6">
+      <joint name="${tf_prefix}joint6">
         <command_interface name="position"/>
         <state_interface name="position"/>
         <state_interface name="velocity"/>

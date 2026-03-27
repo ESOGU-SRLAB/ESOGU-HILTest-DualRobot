@@ -557,23 +557,42 @@ class HarmonyCleaningMissionRunnerV3(Node):
                 if xyz is None:
                     continue
 
-                x, y, z = xyz
-                y2 = y - self.paint_y_offset
-                dx = self.paint_x_span
+                # x, y, z = xyz
+                # y2 = y - self.paint_y_offset
+                # dx = self.paint_x_span
 
-                targets = [
-                    [x + dx, y2, z],
-                    [x - dx, y2, z],
+                # targets = [
+                #     [x + dx, y2, z],
+                #     [x - dx, y2, z],
+                # ]
+
+                # for target in targets:
+                #     if self.stop_event.is_set():
+                #         break
+
+                #     ok = self.move_with_retries(target, try_non_cartesian_first=True)
+                #     if not ok:
+                #         continue
+
+                #     t0 = time.time()
+                #     while time.time() - t0 < self.cleaning_duration:
+                #         if self.stop_event.is_set():
+                #             break
+                #         time.sleep(0.01)
+
+                import math
+                target_joints = [
+                    1.0,
+                    math.radians(67.37),
+                    math.radians(-97.28),
+                    math.radians(-86.24),
+                    math.radians(10.17),
+                    math.radians(87.78),
+                    math.radians(-70.02)
                 ]
-
-                for target in targets:
-                    if self.stop_event.is_set():
-                        break
-
-                    ok = self.move_with_retries(target, try_non_cartesian_first=True)
-                    if not ok:
-                        continue
-
+                
+                ok = self.move_to_joint_config(target_joints)
+                if ok:
                     t0 = time.time()
                     while time.time() - t0 < self.cleaning_duration:
                         if self.stop_event.is_set():

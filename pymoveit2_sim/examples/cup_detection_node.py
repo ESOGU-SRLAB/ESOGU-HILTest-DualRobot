@@ -33,8 +33,8 @@ class ArmController(Node):
             callback_group=cbg,
         )
         self.arm.planner_id = "RRTConnectkConfigDefault"
-        self.arm.max_velocity = 0.3
-        self.arm.max_acceleration = 0.3
+        self.arm.max_velocity = 1.0
+        self.arm.max_acceleration = 1.0
 
         # Tarama tamamlandı sinyali
         self._scan_pub = self.create_publisher(Bool, "/scan_complete", 10)

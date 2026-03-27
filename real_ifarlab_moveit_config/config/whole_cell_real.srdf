@@ -12,8 +12,8 @@
     <group name="real_ur10e">
         <chain base_link="ur10e_table" tip_link="ur10e_tool0"/>
     </group>
-    <group name="sim_kawasaki">
-        <chain base_link="manipulator_base_link" tip_link="link6"/>
+    <group name="real_kawasaki">
+        <chain base_link="ifarlab_ray_link" tip_link="real_kawasaki_link6"/>
     </group>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
     <disable_collisions link1="barrier_closekabinet_link" link2="barrier_closetable_link" reason="Adjacent"/>
@@ -21,22 +21,27 @@
     <disable_collisions link1="barrier_closekabinet_link" link2="barrier_kaw2_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="barrier_kaw3_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="barrier_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="base_link" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="real_kawasaki_base_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="caster_back_left_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="caster_back_right_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="caster_front_left_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="caster_wheel_front_right_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="human_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="ifarlab_ray_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="kabinet_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="light_curtain_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="link4" reason="Never"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="link5" reason="Never"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="real_kawasaki_link4" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="ota_base_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_base_link_inertia" reason="Never"/>
@@ -48,6 +53,7 @@
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_forearm_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_sick_camera" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_tool0" reason="Never"/>
@@ -61,22 +67,27 @@
     <disable_collisions link1="barrier_closetable_link" link2="barrier_kaw2_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="barrier_kaw3_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="barrier_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_closetable_link" link2="base_link" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="real_kawasaki_base_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="caster_back_left_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="caster_back_right_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="caster_front_left_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="caster_wheel_front_right_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="human_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_closetable_link" link2="ifarlab_ray_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="kabinet_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="light_curtain_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_closetable_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="barrier_closetable_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="barrier_closetable_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="barrier_closetable_link" link2="link4" reason="Never"/>
-    <disable_collisions link1="barrier_closetable_link" link2="link5" reason="Never"/>
-    <disable_collisions link1="barrier_closetable_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="real_kawasaki_link4" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="barrier_closetable_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_closetable_link" link2="ota_base_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_base_link_inertia" reason="Never"/>
@@ -92,22 +103,24 @@
     <disable_collisions link1="barrier_kaw1_link" link2="barrier_kaw2_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw1_link" link2="barrier_kaw3_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw1_link" link2="barrier_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="base_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="real_kawasaki_base_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="caster_back_left_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="caster_back_right_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="caster_front_left_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="caster_wheel_front_right_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="human_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="ifarlab_ray_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw1_link" link2="kabinet_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw1_link" link2="light_curtain_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="link4" reason="Never"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="link5" reason="Never"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="real_kawasaki_link3" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="ota_base_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_base_link_inertia" reason="Never"/>
@@ -131,19 +144,24 @@
     <disable_collisions link1="barrier_kaw1_link" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="barrier_kaw3_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw2_link" link2="barrier_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_kaw2_link" link2="base_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="real_kawasaki_base_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="caster_back_left_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="caster_back_right_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="caster_front_left_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="caster_wheel_front_right_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="human_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="ifarlab_ray_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw2_link" link2="kabinet_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw2_link" link2="light_curtain_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_kaw2_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="barrier_kaw2_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="barrier_kaw2_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="real_kawasaki_link3" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="barrier_kaw2_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="ota_base_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_base_link_inertia" reason="Never"/>
@@ -166,19 +184,24 @@
     <disable_collisions link1="barrier_kaw2_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="barrier_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_kaw3_link" link2="base_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="real_kawasaki_base_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="caster_back_left_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="caster_back_right_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="caster_front_left_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="caster_wheel_front_right_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="human_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="ifarlab_ray_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw3_link" link2="kabinet_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw3_link" link2="light_curtain_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_kaw3_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="barrier_kaw3_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="barrier_kaw3_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="real_kawasaki_link3" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="barrier_kaw3_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="ota_base_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_base_link_inertia" reason="Never"/>
@@ -200,22 +223,27 @@
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="base_link" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="real_kawasaki_base_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="caster_back_left_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="caster_back_right_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="caster_front_left_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="caster_wheel_front_right_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="human_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_link" link2="ifarlab_ray_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_link" link2="kabinet_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_link" link2="light_curtain_link" reason="Adjacent"/>
-    <disable_collisions link1="barrier_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="link4" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="link5" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="real_kawasaki_link4" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="barrier_link" link2="ota_base_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_link" link2="ur10e_base_link_inertia" reason="Never"/>
@@ -223,61 +251,75 @@
     <disable_collisions link1="barrier_link" link2="ur10e_cable_channel_flange" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="barrier_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
+    <disable_collisions link1="barrier_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_forearm_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="ur10e_sick_camera" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="barrier_link" link2="ur10e_table" reason="Adjacent"/>
+    <disable_collisions link1="barrier_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="caster_back_left_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="caster_back_right_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="caster_front_left_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="caster_front_right_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="human_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="kabinet_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="light_curtain_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="link1" reason="Adjacent"/>
-    <disable_collisions link1="base_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="base_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="base_link" link2="manipulator_base_link" reason="Adjacent"/>
-    <disable_collisions link1="base_link" link2="ota_base_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ota_ir_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_alumunium_table" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_base_link_inertia" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_cable_channel" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_chassis" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_conveyor_belt" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_flange" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_robot_mount" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_shoulder_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_sick_camera" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_stackable_bin" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_table" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_tool0" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_wrist_2_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_wrist_3_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="wheel_left_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="caster_back_left_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="caster_back_right_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="caster_front_left_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="caster_wheel_front_right_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="human_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ifarlab_ray_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="kabinet_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="light_curtain_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="real_kawasaki_link1" reason="Adjacent"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="manipulator_base_link" reason="Adjacent"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ota_base_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_chassis" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="wheel_left_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_base_link" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="caster_back_right_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="caster_front_left_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="caster_wheel_back_left_link" reason="Adjacent"/>
+    <disable_collisions link1="caster_back_left_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="caster_wheel_front_right_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="human_link" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="ifarlab_ray_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="kabinet_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="light_curtain_link" reason="Never"/>
-    <disable_collisions link1="caster_back_left_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="caster_back_left_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="caster_back_left_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="caster_back_left_link" link2="link4" reason="Never"/>
-    <disable_collisions link1="caster_back_left_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="real_kawasaki_link4" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ota_base_link" reason="Adjacent"/>
     <disable_collisions link1="caster_back_left_link" link2="ota_ir_link" reason="Never"/>
@@ -303,13 +345,19 @@
     <disable_collisions link1="caster_back_left_link" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="caster_front_left_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="caster_wheel_back_right_link" reason="Adjacent"/>
+    <disable_collisions link1="caster_back_right_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="caster_wheel_front_right_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="human_link" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="ifarlab_ray_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="kabinet_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="light_curtain_link" reason="Never"/>
-    <disable_collisions link1="caster_back_right_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="caster_back_right_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="caster_back_right_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="caster_back_right_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ota_base_link" reason="Adjacent"/>
     <disable_collisions link1="caster_back_right_link" link2="ota_ir_link" reason="Never"/>
@@ -334,13 +382,18 @@
     <disable_collisions link1="caster_back_right_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="caster_front_right_link" reason="Never"/>
+    <disable_collisions link1="caster_front_left_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="caster_front_left_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="caster_front_left_link" link2="caster_wheel_front_left_link" reason="Adjacent"/>
+    <disable_collisions link1="caster_front_left_link" link2="caster_wheel_front_right_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="human_link" reason="Never"/>
+    <disable_collisions link1="caster_front_left_link" link2="ifarlab_ray_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="kabinet_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="light_curtain_link" reason="Never"/>
-    <disable_collisions link1="caster_front_left_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="caster_front_left_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="caster_front_left_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="caster_front_left_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="caster_front_left_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="caster_front_left_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="caster_front_left_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="caster_front_left_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ota_base_link" reason="Adjacent"/>
     <disable_collisions link1="caster_front_left_link" link2="ota_ir_link" reason="Never"/>
@@ -364,13 +417,18 @@
     <disable_collisions link1="caster_front_left_link" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="caster_wheel_back_left_link" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="caster_wheel_front_right_link" reason="Adjacent"/>
     <disable_collisions link1="caster_front_right_link" link2="human_link" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="ifarlab_ray_link" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="kabinet_link" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="light_curtain_link" reason="Never"/>
-    <disable_collisions link1="caster_front_right_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="caster_front_right_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="caster_front_right_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="caster_front_right_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ota_base_link" reason="Adjacent"/>
     <disable_collisions link1="caster_front_right_link" link2="ota_ir_link" reason="Never"/>
@@ -394,16 +452,148 @@
     <disable_collisions link1="caster_front_right_link" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="caster_wheel_back_right_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="caster_wheel_front_right_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="human_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ifarlab_ray_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="kabinet_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="light_curtain_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="real_kawasaki_link6" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="manipulator_base_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ota_base_link" reason="Default"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_chassis" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="wheel_left_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="caster_wheel_front_left_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="caster_wheel_front_right_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="human_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ifarlab_ray_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="kabinet_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="light_curtain_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="real_kawasaki_link6" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="manipulator_base_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ota_base_link" reason="Default"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_chassis" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="wheel_left_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="caster_wheel_front_right_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="human_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ifarlab_ray_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="kabinet_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="light_curtain_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="real_kawasaki_link6" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="manipulator_base_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ota_base_link" reason="Default"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_chassis" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="wheel_left_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="human_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ifarlab_ray_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="kabinet_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="light_curtain_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="real_kawasaki_link6" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="manipulator_base_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ota_base_link" reason="Default"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_chassis" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="wheel_left_link" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="human_link" link2="ifarlab_ray_link" reason="Adjacent"/>
     <disable_collisions link1="human_link" link2="kabinet_link" reason="Adjacent"/>
     <disable_collisions link1="human_link" link2="light_curtain_link" reason="Adjacent"/>
-    <disable_collisions link1="human_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="human_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="human_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="human_link" link2="link4" reason="Never"/>
-    <disable_collisions link1="human_link" link2="link5" reason="Never"/>
-    <disable_collisions link1="human_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="human_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="human_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="human_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="human_link" link2="real_kawasaki_link4" reason="Never"/>
+    <disable_collisions link1="human_link" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="human_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="human_link" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="human_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="human_link" link2="ota_base_link" reason="Never"/>
     <disable_collisions link1="human_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="human_link" link2="ur10e_base_link_inertia" reason="Never"/>
@@ -425,15 +615,43 @@
     <disable_collisions link1="human_link" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="human_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="human_link" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="kabinet_link" reason="Adjacent"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="light_curtain_link" reason="Adjacent"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="manipulator_base_link" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_chassis" reason="Adjacent"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_stackable_bin" reason="Adjacent"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_table" reason="Adjacent"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="wheel_left_link" reason="Default"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="wheel_right_link" reason="Default"/>
     <disable_collisions link1="kabinet_link" link2="light_curtain_link" reason="Adjacent"/>
-    <disable_collisions link1="kabinet_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="kabinet_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="kabinet_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="kabinet_link" link2="link4" reason="Never"/>
-    <disable_collisions link1="kabinet_link" link2="link5" reason="Never"/>
-    <disable_collisions link1="kabinet_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="kabinet_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="kabinet_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="kabinet_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="kabinet_link" link2="real_kawasaki_link4" reason="Never"/>
+    <disable_collisions link1="kabinet_link" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="kabinet_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="kabinet_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="kabinet_link" link2="ota_base_link" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_base_link_inertia" reason="Never"/>
@@ -455,14 +673,14 @@
     <disable_collisions link1="kabinet_link" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="link1" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="link2" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="link4" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="link5" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="link6" reason="Never"/>
+    <disable_collisions link1="light_curtain_link" link2="real_kawasaki_link1" reason="Never"/>
+    <disable_collisions link1="light_curtain_link" link2="real_kawasaki_link2" reason="Never"/>
+    <disable_collisions link1="light_curtain_link" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="light_curtain_link" link2="real_kawasaki_link4" reason="Never"/>
+    <disable_collisions link1="light_curtain_link" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="light_curtain_link" link2="real_kawasaki_link6" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="ota_base_link" reason="Adjacent"/>
+    <disable_collisions link1="light_curtain_link" link2="ota_base_link" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_base_link_inertia" reason="Never"/>
@@ -479,140 +697,136 @@
     <disable_collisions link1="light_curtain_link" link2="ur10e_table" reason="Adjacent"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="link2" reason="Adjacent"/>
-    <disable_collisions link1="link1" link2="link3" reason="Never"/>
-    <disable_collisions link1="link1" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="ota_base_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="ota_ir_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_alumunium_table" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_base_link_inertia" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_cable_channel" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_conveyor_belt" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_flange" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_robot_mount" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_shoulder_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_sick_camera" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_stackable_bin" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_table" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_tool0" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_wrist_2_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_wrist_3_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="wheel_left_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="link3" reason="Adjacent"/>
-    <disable_collisions link1="link2" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="ota_base_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="ota_ir_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_alumunium_table" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_base_link_inertia" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_cable_channel" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_conveyor_belt" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_flange" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_robot_mount" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_shoulder_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_sick_camera" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_stackable_bin" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_table" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_tool0" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_wrist_2_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_wrist_3_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="wheel_left_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="link4" reason="Adjacent"/>
-    <disable_collisions link1="link3" link2="link5" reason="Never"/>
-    <disable_collisions link1="link3" link2="link6" reason="Never"/>
-    <disable_collisions link1="link3" link2="manipulator_base_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="ota_ir_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_alumunium_table" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_base_link_inertia" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_cable_channel" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_conveyor_belt" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_flange" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_robot_mount" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_shoulder_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_sick_camera" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_stackable_bin" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_table" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_tool0" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_wrist_2_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_wrist_3_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="wheel_left_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="link4" link2="link5" reason="Adjacent"/>
-    <disable_collisions link1="link4" link2="link6" reason="Never"/>
-    <disable_collisions link1="link4" link2="ota_ir_link" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_alumunium_table" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_base_link_inertia" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_cable_channel" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_conveyor_belt" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_flange" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_robot_mount" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_shoulder_link" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_sick_camera" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_stackable_bin" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_table" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_tool0" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_wrist_2_link" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_wrist_3_link" reason="Never"/>
-    <disable_collisions link1="link5" link2="link6" reason="Adjacent"/>
-    <disable_collisions link1="link5" link2="ota_ir_link" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_alumunium_table" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_base_link_inertia" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_cable_channel" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_conveyor_belt" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_flange" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_robot_mount" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_shoulder_link" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_sick_camera" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_stackable_bin" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_table" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_tool0" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_wrist_2_link" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_wrist_3_link" reason="Never"/>
-    <disable_collisions link1="link6" link2="ota_ir_link" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_alumunium_table" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_base_link_inertia" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_cable_channel" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_conveyor_belt" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_flange" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_robot_mount" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_shoulder_link" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_sick_camera" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_stackable_bin" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_table" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_tool0" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_wrist_2_link" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="real_kawasaki_link2" reason="Adjacent"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="real_kawasaki_link3" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="manipulator_base_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ota_base_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_chassis" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="wheel_left_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link1" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="real_kawasaki_link3" reason="Adjacent"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="manipulator_base_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ota_base_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="wheel_left_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link2" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="real_kawasaki_link4" reason="Adjacent"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="real_kawasaki_link5" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="real_kawasaki_link6" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="manipulator_base_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="wheel_left_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link3" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="real_kawasaki_link5" reason="Adjacent"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="real_kawasaki_link6" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link4" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="real_kawasaki_link6" reason="Adjacent"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link5" link2="ur10e_wrist_3_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ota_ir_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_alumunium_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_cable_channel" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_conveyor_belt" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_flange" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_forearm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_sick_camera" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_table" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_tool0" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_upper_arm_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_wrist_1_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_wrist_2_link" reason="Never"/>
+    <disable_collisions link1="real_kawasaki_link6" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ota_base_link" reason="Adjacent"/>
     <disable_collisions link1="manipulator_base_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_alumunium_table" reason="Never"/>
@@ -636,19 +850,19 @@
     <disable_collisions link1="manipulator_base_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ota_ir_link" reason="Adjacent"/>
-    <disable_collisions link1="ota_base_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
+    <disable_collisions link1="ota_base_link" link2="ur10e_alumunium_table" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="ota_base_link" link2="ur10e_chassis" reason="Adjacent"/>
-    <disable_collisions link1="ota_base_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
+    <disable_collisions link1="ota_base_link" link2="ur10e_chassis" reason="Never"/>
+    <disable_collisions link1="ota_base_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_forearm_link" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_sick_camera" reason="Never"/>
-    <disable_collisions link1="ota_base_link" link2="ur10e_stackable_bin" reason="Adjacent"/>
-    <disable_collisions link1="ota_base_link" link2="ur10e_table" reason="Adjacent"/>
+    <disable_collisions link1="ota_base_link" link2="ur10e_stackable_bin" reason="Never"/>
+    <disable_collisions link1="ota_base_link" link2="ur10e_table" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_wrist_1_link" reason="Never"/>

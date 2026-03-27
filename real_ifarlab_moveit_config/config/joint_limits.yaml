@@ -73,3 +73,8 @@ joint_limits:
     max_velocity: 3.1415926535897931
     has_acceleration_limits: false
     max_acceleration: 0
+  world_to_agv:
+    has_velocity_limits: true
+    max_velocity: 1.25
+    has_acceleration_limits: false
+    max_acceleration: 0

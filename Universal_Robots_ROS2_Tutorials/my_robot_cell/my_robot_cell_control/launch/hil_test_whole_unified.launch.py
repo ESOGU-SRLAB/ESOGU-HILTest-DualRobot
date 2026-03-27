@@ -426,25 +426,25 @@ def launch_setup(context, *args, **kwargs):
     # === MoveIt Move Group (sim namespace) ===
     # TimerAction içindeki GroupAction ile namespace'i garanti ediyoruz.
     # (TimerAction, üst GroupAction'daki PushRosNamespace scope'unu kaybeder.)
-    # delayed_sim_moveit = TimerAction(
-    #     period=25.0,  # Sim spawn(10) + controller'lar(7) + buffer
-    #     actions=[
-    #         GroupAction(
-    #             actions=[
-    #                 PushRosNamespace(sim_namespace),
-    #                 IncludeLaunchDescription(
-    #                     PythonLaunchDescriptionSource(
-    #                         PathJoinSubstitution([
-    #                             FindPackageShare("sim_ifarlab_moveit_config"),
-    #                             "launch",
-    #                             "move_group.launch.py",
-    #                         ])
-    #                     ),
-    #                 ),
-    #             ]
-    #         ),
-    #     ],
-    # )
+    delayed_sim_moveit = TimerAction(
+        period=25.0,  # Sim spawn(10) + controller'lar(7) + buffer
+        actions=[
+            GroupAction(
+                actions=[
+                    PushRosNamespace(sim_namespace),
+                    IncludeLaunchDescription(
+                        PythonLaunchDescriptionSource(
+                            PathJoinSubstitution([
+                                FindPackageShare("sim_ifarlab_moveit_config"),
+                                "launch",
+                                "move_group.launch.py",
+                            ])
+                        ),
+                    ),
+                ]
+            ),
+        ],
+    )
 
     # Real-to-Sim Bridge (gerçek robottan sim'e joint state senkronizasyonu)
     # Tüm controller'lar hazır olduktan sonra başlat (15 sn)
@@ -476,7 +476,7 @@ def launch_setup(context, *args, **kwargs):
         gz_launch_description_without_gui,
 
         # Gazebo → ROS TF bridge
-        gz_tf_bridge,
+        # gz_tf_bridge,
 
         # world → odom static transform
         world_to_odom_tf,
@@ -491,10 +491,10 @@ def launch_setup(context, *args, **kwargs):
         delayed_sim_spawn_and_nodes,
 
         # 3. MoveIt (25 sn sonra - kendi GroupAction ile /sim namespace)
-        # delayed_sim_moveit,
+        delayed_sim_moveit,
 
         # 4. Real-to-Sim Bridge (30 sn sonra)
-        real_to_sim_bridge_delayed,
+        # real_to_sim_bridge_delayed,
     ]
 
     return nodes_to_start

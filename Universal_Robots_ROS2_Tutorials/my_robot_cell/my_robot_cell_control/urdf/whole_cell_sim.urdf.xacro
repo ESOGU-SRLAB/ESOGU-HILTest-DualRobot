@@ -64,7 +64,7 @@
 
   <!-- Kawasaki argümanları -->
   <xacro:arg name="kawasaki_name" default="rs005l"/>
-  <xacro:arg name="kawasaki_tf_prefix" default=""/>
+  <xacro:arg name="kawasaki_tf_prefix" default="sim_kawasaki_"/>
   <xacro:arg name="kawasaki_sim_ignition" default="true"/>
   <xacro:arg name="kawasaki_use_fake_hardware" default="false"/>
   <xacro:arg name="kawasaki_simulation_controllers" default=""/>

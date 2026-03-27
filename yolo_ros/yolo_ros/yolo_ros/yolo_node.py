@@ -15,7 +15,10 @@
 
 
 from typing import List, Dict
+import numpy as np
 from cv_bridge import CvBridge
+
+import cv2
 
 import rclpy
 from rclpy.qos import QoSProfile
@@ -177,6 +180,14 @@ class YoloNode(LifecycleNode):
                 self.yolo.fuse()
             except TypeError as e:
                 self.get_logger().warn(f"Error while fuse: {e}")
+
+        # Gazebo preprocessing: gamma LUT + CLAHE
+        gamma = 0.4545  # 1/2.2 sRGB gamma
+        self.gamma_lut = np.array(
+            [((i / 255.0) ** gamma) * 255 for i in range(256)]
+        ).astype("uint8")
+        self.clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        self.get_logger().info("Gazebo preprocessing aktif (gamma + CLAHE + blur)")
 
         self._enable_srv = self.create_service(SetBool, "enable", self.enable_cb)
 
@@ -435,9 +446,24 @@ class YoloNode(LifecycleNode):
         if self.enable:
 
             # Convert image + predict
-            cv_image = self.cv_bridge.imgmsg_to_cv2(
-                msg, desired_encoding=self.yolo_encoding
-            )
+            cv_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding="passthrough")
+
+            if msg.encoding in ("rgb8", "RGB8"):
+                cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
+
+            # --- Yeşil Arka Plan Maskeleme (Chroma Key) ---
+            # Gazebo'daki parlak yeşil makine/konveyör arka planı, eğitim
+            # verilerinde olmayan bir renk. Yeşil pikselleri nötr griye
+            # çevirerek modelin bardaklara odaklanmasını sağlıyoruz.
+            hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+            # Yeşil renk aralığı (HSV)
+            lower_green = np.array([35, 80, 80])
+            upper_green = np.array([85, 255, 255])
+            green_mask = cv2.inRange(hsv, lower_green, upper_green)
+            # Yeşil pikselleri nötr gri ile değiştir (128, 128, 128)
+            cv_image[green_mask > 0] = [128, 128, 128]
+
+
             results = self.yolo.predict(
                 source=cv_image,
                 verbose=False,
