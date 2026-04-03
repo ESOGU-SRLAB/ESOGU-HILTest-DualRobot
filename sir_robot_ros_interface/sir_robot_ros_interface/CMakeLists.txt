@@ -139,6 +139,10 @@ add_executable(ROS2KawasakiAGVMove tests/ROS2KawasakiAGVMove.cpp)
 ament_target_dependencies(ROS2KawasakiAGVMove rclcpp std_msgs sensor_msgs nav_msgs trajectory_msgs agv_msgs Eigen3)
 target_link_libraries(ROS2KawasakiAGVMove sir_robot_ros_interface_lib "${cpp_typesupport_target}")
 
+add_executable(KawasakiArmNode tests/KawasakiArmNode.cpp)
+ament_target_dependencies(KawasakiArmNode rclcpp std_msgs sensor_msgs nav_msgs trajectory_msgs agv_msgs Eigen3)
+target_link_libraries(KawasakiArmNode sir_robot_ros_interface_lib "${cpp_typesupport_target}")
+
 # Install executables
 install(TARGETS
   KawasakiRobotTestForLinux
@@ -151,6 +155,7 @@ install(TARGETS
   ROS2KawasakiRobotMove
   AGVSequenceMove
   ROS2KawasakiAGVMove
+  KawasakiArmNode
   DESTINATION lib/${PROJECT_NAME}
 )
 

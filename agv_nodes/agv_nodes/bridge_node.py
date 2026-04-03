@@ -10,6 +10,7 @@ from rclpy.node import Node
 from std_msgs.msg import String, Int8, Bool
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import JointState
 import roslibpy
 import threading
 
@@ -32,6 +33,19 @@ class AGVBridgeNode(Node):
 
         # ROS2 Publishers
         self.odom_pub = self.create_publisher(Odometry, '/agv/odom', 10)
+        # world_to_agv prismatik joint için — robot_state_publisher bu olmadan
+        # ota_base_link ve altındaki tüm TF'leri (AGV + Kawasaki) yayımlamaz
+        self.agv_joint_pub = self.create_publisher(JointState, '/joint_states', 10)
+
+        # En son bilinen AGV konumu (odom callback'ten thread-safe güncellenir)
+        self._agv_position = 0.0
+        self._agv_velocity = 0.0
+        self._agv_lock = threading.Lock()
+
+        # 50 Hz sabit timer — TF_OLD_DATA'yı önlemek için JointState burada
+        # publish edilir; böylece robot_state_publisher her zaman monoton artan
+        # zaman damgası alır (odom callback'indeki roslibpy thread'inden değil)
+        self.create_timer(0.02, self._publish_agv_joint_state)
         self.mobile_status_pub = self.create_publisher(String, '/agv/mobile_status', 10)
         self.emg_pub = self.create_publisher(Int8, '/agv/emg', 10)
         self.ui_emg_pub = self.create_publisher(Int8, '/agv/ui_emg', 10)
@@ -98,23 +112,48 @@ class AGVBridgeNode(Node):
             self.get_logger().error(f'Rosbridge bağlantı hatası: {e}')
 
     def _odom_callback(self, msg):
+        agv_x = msg['pose']['pose']['position']['x']
+        agv_vel = msg['twist']['twist']['linear']['x']
+
+        # AGV konumunu thread-safe güncelle (timer ayrı thread'de okur)
+        with self._agv_lock:
+            self._agv_position = agv_x
+            self._agv_velocity = agv_vel
+
         odom = Odometry()
+        odom.header.stamp = self.get_clock().now().to_msg()
         odom.header.frame_id = 'odom'
         odom.child_frame_id = 'base_link'
-        odom.pose.pose.position.x = msg['pose']['pose']['position']['x']
+        odom.pose.pose.position.x = agv_x
         odom.pose.pose.position.y = msg['pose']['pose']['position']['y']
         odom.pose.pose.position.z = msg['pose']['pose']['position']['z']
         odom.pose.pose.orientation.x = msg['pose']['pose']['orientation']['x']
         odom.pose.pose.orientation.y = msg['pose']['pose']['orientation']['y']
         odom.pose.pose.orientation.z = msg['pose']['pose']['orientation']['z']
         odom.pose.pose.orientation.w = msg['pose']['pose']['orientation']['w']
-        odom.twist.twist.linear.x = msg['twist']['twist']['linear']['x']
+        odom.twist.twist.linear.x = agv_vel
         odom.twist.twist.linear.y = msg['twist']['twist']['linear']['y']
         odom.twist.twist.linear.z = msg['twist']['twist']['linear']['z']
         odom.twist.twist.angular.x = msg['twist']['twist']['angular']['x']
         odom.twist.twist.angular.y = msg['twist']['twist']['angular']['y']
         odom.twist.twist.angular.z = msg['twist']['twist']['angular']['z']
         self.odom_pub.publish(odom)
+
+    def _publish_agv_joint_state(self):
+        """50 Hz timer callback — world_to_agv joint'ini her zaman ROS2
+        node'unun kendi saatiyle yayımlar; roslibpy arka plan thread'inden
+        bağımsız olduğu için TF_OLD_DATA uyarısı oluşmaz."""
+        with self._agv_lock:
+            pos = self._agv_position
+            vel = self._agv_velocity
+
+        js = JointState()
+        js.header.stamp = self.get_clock().now().to_msg()
+        js.name = ['world_to_agv']
+        js.position = [pos]
+        js.velocity = [vel]
+        js.effort = [0.0]
+        self.agv_joint_pub.publish(js)
 
     def _mobile_status_callback(self, msg):
         ros2_msg = String()

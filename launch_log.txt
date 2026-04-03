@@ -1,0 +1,859 @@
+[INFO] [launch]: All log files can be found below /home/cem/.ros/log/2026-02-25-11-11-08-033636-cem-43577
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [launch.user]: HIL Test Whole - 3 Robot Başlatma Yapılandırması Yükleniyor...
+[INFO] [launch.user]: 1. UR10e Gerçek Robot (namespace yok)
+[INFO] [launch.user]: 2. Kawasaki Simülasyon (/kawasaki)
+[INFO] [launch.user]: 3. UR10e Simülasyon (/sim)
+[INFO] [launch.user]: [1/3] Gerçek UR10e robot bileşenleri başlatılıyor...
+[INFO] [ign gazebo-1]: process started with pid [43580]
+[INFO] [parameter_bridge-2]: process started with pid [43582]
+[INFO] [static_transform_publisher-3]: process started with pid [43585]
+[INFO] [ros2_control_node-4]: process started with pid [43587]
+[INFO] [urscript_interface-5]: process started with pid [43589]
+[INFO] [robot_state_publisher-6]: process started with pid [43591]
+[INFO] [spawner-7]: process started with pid [43593]
+[INFO] [spawner-8]: process started with pid [43595]
+[INFO] [linear_axis_adapter.py-9]: process started with pid [43597]
+[INFO] [rviz2-10]: process started with pid [43599]
+[INFO] [create-11]: process started with pid [43601]
+[static_transform_publisher-3] [WARN] [1772007068.579037419] []: Old-style arguments are deprecated; see --help for new-style arguments
+[ign gazebo-1] [1;36m[Dbg] [gz.cc:161] [0m[1;36mSubscribing to [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [gz.cc:163] [0m[1;36mWaiting for a world to be set from the GUI...[0m[1;36m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
+[ign gazebo-1] [1;36m[Dbg] [gz.cc:167] [0m[1;36mUnsubscribing from [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mIgnition Gazebo Server v[0m[1;32m6.16.0[0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m].[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServing entity system service on [[0m[1;32m/[0m[1;32mentity/system/add[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[Dbg] [Physics.cc:804] [0m[1;36mLoaded [[0m[1;36mignition::physics::dartsim::Plugin[0m[1;36m] from library [[0m[1;36m/usr/lib/x86_64-linux-gnu/ign-physics-5/engine-plugins/libignition-physics-dartsim-plugin.so[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::Physics[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mCreate service on [[0m[1;32m/world/ifarlab/create[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mRemove service on [[0m[1;32m/world/ifarlab/remove[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mPose service on [[0m[1;32m/world/ifarlab/set_pose[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mPose service on [[0m[1;32m/world/ifarlab/set_pose_vector[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mLight configuration service on [[0m[1;32m/world/ifarlab/light_config[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mPhysics service on [[0m[1;32m/world/ifarlab/set_physics[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mSphericalCoordinates service on [[0m[1;32m/world/ifarlab/set_spherical_coordinates[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mEnable collision service on [[0m[1;32m/world/ifarlab/enable_collision[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mDisable collision service on [[0m[1;32m/world/ifarlab/disable_collision[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mMaterial service on [[0m[1;32m/world/ifarlab/visual_config[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mMaterial service on [[0m[1;32m/world/ifarlab/wheel_slip[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::UserCommands[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::SceneBroadcaster[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::Contact[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mLoaded level [[0m[1;32m3[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServing world controls on [[0m[1;32m/world/ifarlab[0m[1;32m/control], [[0m[1;32m/world/ifarlab[0m[1;32m/control/state] and [[0m[1;32m/world/ifarlab[0m[1;32m/playback/control][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServing GUI information on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mgui/info[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mWorld [[0m[1;32mifarlab[0m[1;32m] initialized with [[0m[1;32mode[0m[1;32m] physics profile.[0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServing world SDF generation service on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mgenerate_world_sdf[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServing world names on [[0m[1;32m/gazebo/worlds[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mResource path add service on [[0m[1;32m/gazebo/resource_paths/add[0m[1;32m].[0m[1;32m[0m
+[static_transform_publisher-3] [INFO] [1772007068.925539867] [static_transform_publisher_OSk6wtZXksBw0gDy]: Spinning until stopped - publishing transform
+[static_transform_publisher-3] translation: ('-2.301949', '0.530401', '0.170000')
+[static_transform_publisher-3] rotation: ('0.000000', '0.000000', '0.707107', '0.707107')
+[static_transform_publisher-3] from 'world' to 'odom'
+[ros2_control_node-4] [WARN] [1772007068.936395469] [controller_manager]: [Deprecated] Passing the robot description parameter directly to the control_manager node is deprecated. Use '~/robot_description' topic from 'robot_state_publisher' instead.
+[ros2_control_node-4] [INFO] [1772007068.936992978] [resource_manager]: Loading hardware 'LinearAxisHardwareInterface' 
+[ros2_control_node-4] [INFO] [1772007068.937663853] [resource_manager]: Initialize hardware 'LinearAxisHardwareInterface' 
+[ros2_control_node-4] [INFO] [1772007068.937733398] [resource_manager]: Successful initialization of hardware 'LinearAxisHardwareInterface'
+[ros2_control_node-4] [INFO] [1772007068.937750292] [resource_manager]: Loading hardware 'ur10e' 
+[ros2_control_node-4] [INFO] [1772007068.937763730] [resource_manager]: Initialize hardware 'ur10e' 
+[ros2_control_node-4] [WARN] [1772007068.937801949] [mock_generic_system]: Parameter 'fake_sensor_commands' has been deprecated from usage. Use'mock_sensor_commands' instead.
+[ros2_control_node-4] [WARN] [1772007068.937878297] [mock_generic_system]: Parsing of optional initial interface values failed or uses a deprecated format. Add initial values for every state interface in the ros2_control.xacro. For example: 
+[ros2_control_node-4] <state_interface name="velocity"> 
+[ros2_control_node-4]   <param name="initial_value">0.0</param> 
+[ros2_control_node-4] </state_interface>
+[ros2_control_node-4] [INFO] [1772007068.937886230] [resource_manager]: Successful initialization of hardware 'ur10e'
+[parameter_bridge-2] [INFO] [1772007068.937869445] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/tf (gz.msgs.Pose_V) -> /tf (tf2_msgs/msg/TFMessage)] (Lazy 0)
+[ros2_control_node-4] [INFO] [1772007068.938164940] [resource_manager]: 'configure' hardware 'ur10e' 
+[ros2_control_node-4] [INFO] [1772007068.938177168] [resource_manager]: Successful 'configure' of hardware 'ur10e'
+[ros2_control_node-4] [INFO] [1772007068.938208244] [resource_manager]: 'activate' hardware 'ur10e' 
+[ros2_control_node-4] [INFO] [1772007068.938214281] [resource_manager]: Successful 'activate' of hardware 'ur10e'
+[ros2_control_node-4] [INFO] [1772007068.938219102] [resource_manager]: 'configure' hardware 'LinearAxisHardwareInterface' 
+[ros2_control_node-4] [INFO] [1772007068.938223931] [resource_manager]: Successful 'configure' of hardware 'LinearAxisHardwareInterface'
+[ros2_control_node-4] [INFO] [1772007068.938228919] [resource_manager]: 'activate' hardware 'LinearAxisHardwareInterface' 
+[ros2_control_node-4] [INFO] [1772007068.938233390] [resource_manager]: Successful 'activate' of hardware 'LinearAxisHardwareInterface'
+[ros2_control_node-4] [INFO] [1772007068.942725977] [controller_manager]: update rate is 500 Hz
+[ros2_control_node-4] [INFO] [1772007068.942754942] [controller_manager]: Spawning controller_manager RT thread with scheduler priority: 50
+[ros2_control_node-4] [WARN] [1772007068.942830482] [controller_manager]: Could not enable FIFO RT scheduling policy: with error number <1>(Operation not permitted). See [https://control.ros.org/master/doc/ros2_control/controller_manager/doc/userdoc.html] for details on how to enable realtime scheduling.
+[create-11] [INFO] [1772007068.947745899] [ros_gz_sim]: Requesting list of world names.
+[robot_state_publisher-6] [INFO] [1772007068.968013068] [robot_state_publisher]: got segment barrier_closekabinet_link
+[robot_state_publisher-6] [INFO] [1772007068.968144879] [robot_state_publisher]: got segment barrier_closetable_link
+[robot_state_publisher-6] [INFO] [1772007068.968158642] [robot_state_publisher]: got segment barrier_kaw1_link
+[robot_state_publisher-6] [INFO] [1772007068.968166174] [robot_state_publisher]: got segment barrier_kaw2_link
+[robot_state_publisher-6] [INFO] [1772007068.968172853] [robot_state_publisher]: got segment barrier_kaw3_link
+[robot_state_publisher-6] [INFO] [1772007068.968179424] [robot_state_publisher]: got segment barrier_link
+[robot_state_publisher-6] [INFO] [1772007068.968185608] [robot_state_publisher]: got segment human_link
+[robot_state_publisher-6] [INFO] [1772007068.968191799] [robot_state_publisher]: got segment kabinet_link
+[robot_state_publisher-6] [INFO] [1772007068.968198153] [robot_state_publisher]: got segment light_curtain_link
+[robot_state_publisher-6] [INFO] [1772007068.968204379] [robot_state_publisher]: got segment ur10e_alumunium_table
+[robot_state_publisher-6] [INFO] [1772007068.968210833] [robot_state_publisher]: got segment ur10e_base
+[robot_state_publisher-6] [INFO] [1772007068.968216882] [robot_state_publisher]: got segment ur10e_base_link
+[robot_state_publisher-6] [INFO] [1772007068.968223004] [robot_state_publisher]: got segment ur10e_base_link_inertia
+[robot_state_publisher-6] [INFO] [1772007068.968229115] [robot_state_publisher]: got segment ur10e_cable_channel
+[robot_state_publisher-6] [INFO] [1772007068.968235280] [robot_state_publisher]: got segment ur10e_cable_channel_flange
+[robot_state_publisher-6] [INFO] [1772007068.968241576] [robot_state_publisher]: got segment ur10e_chassis
+[robot_state_publisher-6] [INFO] [1772007068.968247721] [robot_state_publisher]: got segment ur10e_conveyor_belt
+[robot_state_publisher-6] [INFO] [1772007068.968253779] [robot_state_publisher]: got segment ur10e_depth_frame
+[robot_state_publisher-6] [INFO] [1772007068.968259800] [robot_state_publisher]: got segment ur10e_depth_optical_frame
+[robot_state_publisher-6] [INFO] [1772007068.968265878] [robot_state_publisher]: got segment ur10e_flange
+[robot_state_publisher-6] [INFO] [1772007068.968271831] [robot_state_publisher]: got segment ur10e_forearm_link
+[robot_state_publisher-6] [INFO] [1772007068.968277731] [robot_state_publisher]: got segment ur10e_ft_frame
+[robot_state_publisher-6] [INFO] [1772007068.968283625] [robot_state_publisher]: got segment ur10e_rgb_frame
+[robot_state_publisher-6] [INFO] [1772007068.968289759] [robot_state_publisher]: got segment ur10e_rgb_optical_frame
+[robot_state_publisher-6] [INFO] [1772007068.968295773] [robot_state_publisher]: got segment ur10e_robot_mount
+[robot_state_publisher-6] [INFO] [1772007068.968301760] [robot_state_publisher]: got segment ur10e_shoulder_link
+[robot_state_publisher-6] [INFO] [1772007068.968307825] [robot_state_publisher]: got segment ur10e_sick_camera
+[robot_state_publisher-6] [INFO] [1772007068.968313715] [robot_state_publisher]: got segment ur10e_stackable_bin
+[robot_state_publisher-6] [INFO] [1772007068.968319621] [robot_state_publisher]: got segment ur10e_table
+[robot_state_publisher-6] [INFO] [1772007068.968325700] [robot_state_publisher]: got segment ur10e_tool0
+[robot_state_publisher-6] [INFO] [1772007068.968331797] [robot_state_publisher]: got segment ur10e_upper_arm_link
+[robot_state_publisher-6] [INFO] [1772007068.968337844] [robot_state_publisher]: got segment ur10e_wrist_1_link
+[robot_state_publisher-6] [INFO] [1772007068.968343831] [robot_state_publisher]: got segment ur10e_wrist_2_link
+[robot_state_publisher-6] [INFO] [1772007068.968349848] [robot_state_publisher]: got segment ur10e_wrist_3_link
+[robot_state_publisher-6] [INFO] [1772007068.968355937] [robot_state_publisher]: got segment world
+[spawner-7] [INFO] [1772007068.979945847] [spawner_joint_state_broadcaster]: waiting for service /controller_manager/list_controllers to become available...
+[spawner-8] [INFO] [1772007068.980347030] [spawner_joint_trajectory_controller]: waiting for service /controller_manager/list_controllers to become available...
+[linear_axis_adapter.py-9] [INFO] [1772007068.990450350] [linear_axis_adapter_node]: Linear Axis Controller Adapter started.
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:/qml/StyleDialog.qml:112:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:/qml/StyleDialog.qml:105:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:/qml/StyleDialog.qml:98:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:102:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:/qml/PluginMenu.qml:27:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[rviz2-10] [INFO] [1772007069.071174594] [rviz2]: Stereo is NOT SUPPORTED
+[rviz2-10] [INFO] [1772007069.071235719] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/Gazebo/GazeboDrawer.qml:242:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[rviz2-10] [INFO] [1772007069.083466906] [rviz2]: Stereo is NOT SUPPORTED
+[ros2_control_node-4] [INFO] [1772007069.233836313] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[ros2_control_node-4] [INFO] [1772007069.249236059] [controller_manager]: Loading controller 'joint_trajectory_controller'
+[create-11] [INFO] [1772007069.249284604] [ros_gz_sim]: Requested creation of entity.
+[create-11] [INFO] [1772007069.249325151] [ros_gz_sim]: OK creation of entity.
+[spawner-7] [INFO] [1772007069.250579502] [spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+[ros2_control_node-4] [WARN] [1772007069.270053901] [joint_trajectory_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[ros2_control_node-4] [INFO] [1772007069.271402264] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[ros2_control_node-4] [INFO] [1772007069.271540087] [joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[spawner-8] [INFO] [1772007069.272727502] [spawner_joint_trajectory_controller]: [94mLoaded [1mjoint_trajectory_controller[0m
+[ros2_control_node-4] [INFO] [1772007069.281201416] [controller_manager]: Configuring controller 'joint_trajectory_controller'
+[ros2_control_node-4] [INFO] [1772007069.281461986] [joint_trajectory_controller]: No specific joint names are used for command interfaces. Using 'joints' parameter.
+[ros2_control_node-4] [INFO] [1772007069.281498715] [joint_trajectory_controller]: Command interfaces are [position] and state interfaces are [position velocity].
+[ros2_control_node-4] [INFO] [1772007069.281530387] [joint_trajectory_controller]: Using 'splines' interpolation method.
+[ros2_control_node-4] [INFO] [1772007069.283201596] [joint_trajectory_controller]: Controller state will be published at 100.00 Hz.
+[ros2_control_node-4] [INFO] [1772007069.285974234] [joint_trajectory_controller]: Action status changes will be monitored at 20.00 Hz.
+[spawner-7] [INFO] [1772007069.293738263] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+[ros2_control_node-4] [INFO] [1772007069.294119222] [controller_manager]: Loading controller 'forward_velocity_controller'
+[ros2_control_node-4] [INFO] [1772007069.301111143] [controller_manager]: Loading controller 'io_and_status_controller'
+[spawner-8] [INFO] [1772007069.301732468] [spawner_joint_trajectory_controller]: [94mLoaded [1mforward_velocity_controller[0m
+[ros2_control_node-4] [INFO] [1772007069.311199929] [controller_manager]: Configuring controller 'forward_velocity_controller'
+[spawner-7] [INFO] [1772007069.311599354] [spawner_joint_state_broadcaster]: [94mLoaded [1mio_and_status_controller[0m
+[ros2_control_node-4] [INFO] [1772007069.311859973] [forward_velocity_controller]: configure successful
+[ros2_control_node-4] [INFO] [1772007069.313350953] [controller_manager]: Configuring controller 'io_and_status_controller'
+[ros2_control_node-4] [INFO] [1772007069.328752464] [controller_manager]: Loading controller 'forward_position_controller'
+[spawner-7] [INFO] [1772007069.329942575] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mio_and_status_controller[0m
+[spawner-8] [INFO] [1772007069.340268364] [spawner_joint_trajectory_controller]: [94mLoaded [1mforward_position_controller[0m
+[ros2_control_node-4] [INFO] [1772007069.340688209] [controller_manager]: Configuring controller 'forward_position_controller'
+[ros2_control_node-4] [INFO] [1772007069.341255380] [forward_position_controller]: configure successful
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:57:5: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:52:3: QML RenderWindowOverlay: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:67:3: QML EntityContextMenu: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ros2_control_node-4] [INFO] [1772007069.343512803] [controller_manager]: Loading controller 'speed_scaling_state_broadcaster'
+[ros2_control_node-4] [INFO] [1772007069.354933662] [speed_scaling_state_broadcaster]: Loading UR SpeedScalingStateBroadcaster with tf_prefix: ur10e_
+[spawner-7] [INFO] [1772007069.357825722] [spawner_joint_state_broadcaster]: [94mLoaded [1mspeed_scaling_state_broadcaster[0m
+[ros2_control_node-4] [INFO] [1772007069.358106798] [controller_manager]: Configuring controller 'speed_scaling_state_broadcaster'
+[ros2_control_node-4] [INFO] [1772007069.358219368] [speed_scaling_state_broadcaster]: Publisher rate set to : 100.0 Hz
+[ros2_control_node-4] [INFO] [1772007069.361327959] [controller_manager]: Loading controller 'force_mode_controller'
+[INFO] [create-11]: process has finished cleanly [pid 43601]
+[spawner-8] [INFO] [1772007069.369930696] [spawner_joint_trajectory_controller]: [94mLoaded [1mforce_mode_controller[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:52:3: QML RenderWindowOverlay: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:67:3: QML EntityContextMenu: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:52:3: QML RenderWindowOverlay: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:67:3: QML EntityContextMenu: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ros2_control_node-4] [INFO] [1772007069.373330504] [controller_manager]: Configuring controller 'force_mode_controller'
+[spawner-7] [INFO] [1772007069.373609434] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mspeed_scaling_state_broadcaster[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:52:3: QML RenderWindowOverlay: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:67:3: QML EntityContextMenu: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:52:3: QML RenderWindowOverlay: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:67:3: QML EntityContextMenu: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:52:3: QML RenderWindowOverlay: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:67:3: QML EntityContextMenu: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ros2_control_node-4] [INFO] [1772007069.380012791] [controller_manager]: Loading controller 'force_torque_sensor_broadcaster'
+[ros2_control_node-4] [INFO] [1772007069.387153064] [controller_manager]: Loading controller 'passthrough_trajectory_controller'
+[spawner-7] [INFO] [1772007069.387781989] [spawner_joint_state_broadcaster]: [94mLoaded [1mforce_torque_sensor_broadcaster[0m
+[ros2_control_node-4] [INFO] [1772007069.393133410] [controller_manager]: Configuring controller 'force_torque_sensor_broadcaster'
+[spawner-8] [INFO] [1772007069.393763158] [spawner_joint_trajectory_controller]: [94mLoaded [1mpassthrough_trajectory_controller[0m
+[ros2_control_node-4] [INFO] [1772007069.395340717] [controller_manager]: Configuring controller 'passthrough_trajectory_controller'
+[spawner-7] [INFO] [1772007069.405625547] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mforce_torque_sensor_broadcaster[0m
+[ros2_control_node-4] [INFO] [1772007069.406164591] [controller_manager]: Loading controller 'freedrive_mode_controller'
+[ros2_control_node-4] [INFO] [1772007069.413225405] [controller_manager]: Loading controller 'ur_configuration_controller'
+[spawner-8] [INFO] [1772007069.413890082] [spawner_joint_trajectory_controller]: [94mLoaded [1mfreedrive_mode_controller[0m
+[ros2_control_node-4] [INFO] [1772007069.419213963] [controller_manager]: Configuring controller 'freedrive_mode_controller'
+[spawner-7] [INFO] [1772007069.419484802] [spawner_joint_state_broadcaster]: [94mLoaded [1mur_configuration_controller[0m
+[ros2_control_node-4] [INFO] [1772007069.423174459] [controller_manager]: Configuring controller 'ur_configuration_controller'
+[ros2_control_node-4] [INFO] [1772007069.431366065] [controller_manager]: Loading controller 'tool_contact_controller'
+[spawner-7] [INFO] [1772007069.431830005] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mur_configuration_controller[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mResource path get service on [[0m[1;32m/gazebo/resource_paths/get[0m[1;32m].[0m[1;32m[[1;32m[Msg] [0m[1;32mIgnition Gazebo GUI    v[0m[1;32m6.16.0[0m[1;32m[0m
+[ign gazebo-1] [1;36m[Dbg] [Gui.cc:253] [0m[1;36mWaiting for subscribers to [[0m[1;36m/gazebo/starting_world[0m[1;36m]...[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [Application.cc:92] [0m[1;36mInitializing application.[0m[1;36m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:555] [0m[1;36mCreate main window[0m[1;36m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [PathManager.cc:66] [0m[1;36mRequesting resource paths through [[0m[1;36m/gazebo/resource_paths/get[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Gui.cc:333] [0m[1;36mGUI requesting list of world names. The server may be busy [0m[1;36mdownloading resources. Please be patient.[0m[1;36m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [PathManager.cc:55] [0m[1;36mReceived resource paths.[0m[1;36m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Gui.cc:391] [0m[1;36mRequesting GUI from [[0m[1;36m/world/ifarlab/gui/info[0m[1;36m]...[0m[1;36m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [GuiRunner.cc:145] [0m[1;36mRequesting initial state from [[0m[1;36m/world/ifarlab/state[0m[1;36m]...[0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading config [[0m[1;32m/home/cem/.ignition/gazebo/6/gui.config[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mMinimalScene[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32m3D View[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mMinimalScene[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gui-6/plugins/libMinimalScene.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mEntityContextMenuPlugin[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mEntity Context Menu[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mEntityContextMenuPlugin[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libEntityContextMenuPlugin.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mGzSceneManager[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mScene Manager[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mGzSceneManager[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libGzSceneManager.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mInteractiveViewControl[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCamera view controller topic advertised on [[0m[1;32m/gui/camera/view_control[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCamera reference visual topic advertised on [[0m[1;32m/gui/camera/view_control/reference_visual[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCamera view control sensitivity advertised on [[0m[1;32m/gui/camera/view_control/sensitivity[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mInteractive view control[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mInteractiveViewControl[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gui-6/plugins/libInteractiveViewControl.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mCameraTracking[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mCamera tracking[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mCameraTracking[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gui-6/plugins/libCameraTracking.so[0m[1;32m][0m[1;32m[0m
+[spawner-8] [INFO] [1772007069.439947112] [spawner_joint_trajectory_controller]: [94mLoaded [1mtool_contact_controller[0m
+[ros2_control_node-4] [INFO] [1772007069.440252090] [controller_manager]: Configuring controller 'tool_contact_controller'
+[ros2_control_node-4] [INFO] [1772007069.445113724] [controller_manager]: Loading controller 'scaled_joint_trajectory_controller'
+[ros2_control_node-4] [INFO] [1772007069.455299484] [scaled_joint_trajectory_controller]: Using scaling state from the hardware from interface ur10e_speed_scaling/speed_scaling_factor.
+[ros2_control_node-4] [WARN] [1772007069.459091155] [scaled_joint_trajectory_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[spawner-7] [INFO] [1772007069.461655071] [spawner_joint_state_broadcaster]: [94mLoaded [1mscaled_joint_trajectory_controller[0m
+[ros2_control_node-4] [INFO] [1772007069.461903942] [controller_manager]: Configuring controller 'scaled_joint_trajectory_controller'
+[ros2_control_node-4] [INFO] [1772007069.462026891] [scaled_joint_trajectory_controller]: No specific joint names are used for command interfaces. Using 'joints' parameter.
+[ros2_control_node-4] [INFO] [1772007069.462038135] [scaled_joint_trajectory_controller]: Command interfaces are [position] and state interfaces are [position velocity].
+[ros2_control_node-4] [INFO] [1772007069.462046133] [scaled_joint_trajectory_controller]: Using 'splines' interpolation method.
+[ros2_control_node-4] [INFO] [1772007069.462484743] [scaled_joint_trajectory_controller]: Controller state will be published at 100.00 Hz.
+[ros2_control_node-4] [INFO] [1772007069.463602480] [scaled_joint_trajectory_controller]: Action status changes will be monitored at 20.00 Hz.
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/Spawn/Spawn.qml:32:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[spawner-7] [INFO] [1772007069.471544690] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mscaled_joint_trajectory_controller[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/WorldControl/WorldControl.qml:30:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mMarkerManager[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/ifarlab/stats[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mMarker Manager[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mMarkerManager[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gui-6/plugins/libMarkerManager.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mSelectEntities[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mSelect entities[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mSelectEntities[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libSelectEntities.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mSpawn[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mSpawn[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mSpawn[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libSpawn.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mVisualizationCapabilities[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView as transparent service on [[0m[1;32m/gui/view/transparent[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView as wireframes service on [[0m[1;32m/gui/view/wireframes[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView center of mass service on [[0m[1;32m/gui/view/com[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView inertia service on [[0m[1;32m/gui/view/inertia[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView collisions service on [[0m[1;32m/gui/view/collisions[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView joints service on [[0m[1;32m/gui/view/joints[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView frames service on [[0m[1;32m/gui/view/frames[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mVisualization capabilities[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mVisualizationCapabilities[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libVisualizationCapabilities.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mWorldControl[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mUsing world control service [[0m[1;32m/world/ifarlab/control[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/ifarlab/stats[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [WorldControl.cc:246] [0m[1;36mUsing an event to share WorldControl msgs with the server[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mWorld control[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mWorldControl[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gui-6/plugins/libWorldControl.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mWorldStats[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/ifarlab/stats[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mWorld stats[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/TransformControl/TransformControl.qml:104:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/TransformControl/TransformControl.qml:99:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/TransformControl/TransformControl.qml:94:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/TransformControl/TransformControl.qml:89:3: QML Connections: Implicitly defined onFoo properties in Connections are deprecated. Use this syntax instead: function onFoo(<arguments>) { ... }[0m[1;33m[0m
+[INFO] [spawner-8]: process has finished cleanly [pid 43595]
+[INFO] [spawner-7]: process has finished cleanly [pid 43593]
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityTree/EntityTree.qml:148:7: QML ToolButton: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityTree/EntityTree.qml:148:7: QML ToolButton: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/WorldStats/WorldStats.qml:53:3: QML RowLayout: Binding loop detected for property "x"[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:52:3: QML RenderWindowOverlay: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::/EntityContextMenuPlugin/EntityContextMenuPlugin.qml:67:3: QML EntityContextMenu: Detected anchors on an item that is managed by a layout. This is undefined behavior; use Layout.alignment instead.[0m[1;33m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mWorldStats[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gui-6/plugins/libWorldStats.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mShapes[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mShapes[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mShapes[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libShapes.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mLights[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mLights[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mLights[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libLights.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mTransformControl[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [TransformControl.cc:222] [0m[1;36mLegacy mode is disabled; this plugin must be used with [0m[1;36mMinimalScene.[0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mTransform control[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mTransformControl[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libTransformControl.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mScreenshot[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mScreenshot service on [[0m[1;32m/gui/screenshot[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mScreenshot[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mScreenshot[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gui-6/plugins/libScreenshot.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mCopyPaste[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mCopy/Paste[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mCopyPaste[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libCopyPaste.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mComponentInspector[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mComponent inspector[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mComponentInspector[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libComponentInspector.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:426] [0m[1;36mLoading plugin [[0m[1;36mEntityTree[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mEntity tree[0m[1;32m] to main window[0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mEntityTree[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/ign-gazebo-6/plugins/gui/libEntityTree.so[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:296] [0m[1;36mLoading window config[0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mUsing server control service [[0m[1;32m/server_control[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:569] [0m[1;36mApplying config[0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [MinimalScene.cc:602] [0m[1;36mCreate scene [[0m[1;36mscene[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[INFO] [launch.user]: [2/3] Kawasaki simülasyon bileşenleri başlatılıyor...
+[INFO] [robot_state_publisher-12]: process started with pid [44030]
+[INFO] [spawner-13]: process started with pid [44032]
+[INFO] [spawner-14]: process started with pid [44034]
+[INFO] [spawner-15]: process started with pid [44036]
+[INFO] [parameter_bridge-16]: process started with pid [44038]
+[parameter_bridge-16] [INFO] [1772007070.739222339] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/cmd_vel (gz.msgs.Twist) -> /cmd_vel (geometry_msgs/msg/Twist)] (Lazy 0)
+[parameter_bridge-16] [INFO] [1772007070.740808039] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/cmd_vel (geometry_msgs/msg/Twist) -> /cmd_vel (gz.msgs.Twist)] (Lazy 0)
+[robot_state_publisher-12] [WARN] [1772007070.741129758] [kdl_parser]: The root link ota_base_link has an inertia specified in the URDF, but KDL does not support a root link with an inertia.  As a workaround, you can add an extra dummy link to your URDF.
+[robot_state_publisher-12] [INFO] [1772007070.741198144] [robot_state_publisher]: got segment base_link
+[robot_state_publisher-12] [INFO] [1772007070.741235307] [robot_state_publisher]: got segment caster_back_left_link
+[robot_state_publisher-12] [INFO] [1772007070.741238758] [robot_state_publisher]: got segment caster_back_right_link
+[robot_state_publisher-12] [INFO] [1772007070.741241111] [robot_state_publisher]: got segment caster_front_left_link
+[robot_state_publisher-12] [INFO] [1772007070.741243182] [robot_state_publisher]: got segment caster_front_right_link
+[robot_state_publisher-12] [INFO] [1772007070.741245208] [robot_state_publisher]: got segment link1
+[robot_state_publisher-12] [INFO] [1772007070.741247437] [robot_state_publisher]: got segment link2
+[robot_state_publisher-12] [INFO] [1772007070.741249453] [robot_state_publisher]: got segment link3
+[robot_state_publisher-12] [INFO] [1772007070.741251403] [robot_state_publisher]: got segment link4
+[robot_state_publisher-12] [INFO] [1772007070.741253331] [robot_state_publisher]: got segment link5
+[robot_state_publisher-12] [INFO] [1772007070.741255279] [robot_state_publisher]: got segment link6
+[robot_state_publisher-12] [INFO] [1772007070.741257281] [robot_state_publisher]: got segment manipulator_base_link
+[robot_state_publisher-12] [INFO] [1772007070.741259338] [robot_state_publisher]: got segment ota_base_link
+[robot_state_publisher-12] [INFO] [1772007070.741261484] [robot_state_publisher]: got segment ota_ir_link
+[robot_state_publisher-12] [INFO] [1772007070.741263535] [robot_state_publisher]: got segment wheel_left_link
+[robot_state_publisher-12] [INFO] [1772007070.741265700] [robot_state_publisher]: got segment wheel_right_link
+[ign gazebo-1] [INFO] [1772007070.814641706] [GazeboSimROS2ControlPlugin]: robot_param_node is robot_state_publisher
+[ign gazebo-1] [INFO] [1772007070.814671640] [GazeboSimROS2ControlPlugin]: robot_param_node is robot_description
+[ign gazebo-1] [INFO] [1772007070.877923827] [gz_ros2_control]: connected to service!! robot_state_publisher asking for robot_description
+[ign gazebo-1] [INFO] [1772007070.879182014] [gz_ros2_control]: Received URDF from param server
+[ign gazebo-1] [ERROR] [1772007070.914581736] [gz_ros2_control]: The plugin failed to load for some reason. Error: According to the loaded plugin descriptions the class mock_components/GenericSystem with base class type gz_ros2_control::GazeboSimSystemInterface does not exist. Declared types are  gz_ros2_control/GazeboSimSystem ign_ros2_control/IgnitionSystem
+[ign gazebo-1] 
+[ign gazebo-1] [ERROR] [1772007070.914971699] [gz_ros2_control]: The plugin failed to load for some reason. Error: According to the loaded plugin descriptions the class mock_components/GenericSystem with base class type gz_ros2_control::GazeboSimSystemInterface does not exist. Declared types are  gz_ros2_control/GazeboSimSystem ign_ros2_control/IgnitionSystem
+[ign gazebo-1] 
+[ign gazebo-1] [INFO] [1772007070.914995240] [gz_ros2_control]: Loading controller_manager
+[ign gazebo-1] [WARN] [1772007070.941563933] [controller_manager]: 'update_rate' parameter not set, using default value.
+[ign gazebo-1] [ERROR] [1772007070.968786947] [gz_ros2_control]: controller manager doesn't have an update_rate parameter
+[ign gazebo-1] [1;33m[Wrn] [Model.hh:69] [0m[1;33mSkipping serialization / deserialization for models [0m[1;33mwith //pose/@relative_to attribute.[0m[1;33m[0m
+[ign gazebo-1] [1;33m[Wrn] [Component.hh:144] [0m[1;33mTrying to serialize component with data type [[0m[1;33mN3sdf3v125WorldE[0m[1;33m], which doesn't have [0m[1;33m`operator<<`. Component will not be serialized.[0m[1;33m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [TransformControl.cc:531] [0m[1;36mTransfo0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mResource path resolve service on [[0m[1;32m/gazebo/resource_paths/resolve[0m[1;32m].[0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mResource paths published on [[0m[1;32m/gazebo/resource_paths[0m[1;32m].[0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServer control service on [[0m[1;32m/server_control[0m[1;32m].[0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mFound no publishers on /stats, adding root stats topic[0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mFound no publishers on /clock, adding root clock topic[0m[1;32m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:496] [0m[1;36mCreating PostUpdate worker threads: [0m[1;36m3[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m0[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m1[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mDiffDrive subscribing to twist messages on [[0m[1;32mcmd_vel[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mignition::gazebo::systems::DiffDrive[0m[1;36m] for entity [[0m[1;36m10[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mignition::gazebo::systems::JointStatePublisher[0m[1;36m] for entity [[0m[1;36m10[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mgz_ros2_control::GazeboSimROS2ControlPlugin[0m[1;36m] for entity [[0m[1;36m10[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mDiffDrive subscribing to twist messages on [[0m[1;32mcmd_vel[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mignition::gazebo::systems::DiffDrive[0m[1;36m] for entity [[0m[1;36m10[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mignition::gazebo::systems::JointStatePublisher[0m[1;36m] for entity [[0m[1;36m10[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [UserCommands.cc:1303] [0m[1;36mCreated entity [[0m[1;36m10[0m[1;36m] named [[0m[1;36mmobile_manipulator[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationFeatures.cc:71] [0m[1;36mSimulation timestep set to: [0m[1;36m0.01[0m[1;36m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServing scene information on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mscene/info[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServing graph information on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mscene/graph[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServing full state on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mstate[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mServing full state (async) on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mstate_async[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mPublishing scene information on [[0m[1;32m/world/ifarlab/scene/info[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mPublishing entity deletions on [[0m[1;32m/world/ifarlab/scene/deletion[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mPublishing state changes on [[0m[1;32m/world/ifarlab/state[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mPublishing pose messages on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mpose/info[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mPublishing dynamic pose messages on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mdynamic_pose/info[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[Dbg] [EntityComponentManager.cc:1623] [0m[1;36mUpdated state thread iterators: [0m[1;36m20[0m[1;36m threads processing around [0m[1;36m3[0m[1;36m entities each.[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36m1[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36m0[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:496] [0m[1;36mCreating PostUpdate worker threads: [0m[1;36m8[0m[1;36m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Component.hh:189] [0m[WARN] [1772007071.029545885] [gz_ros2_control]:  Desired controller update period (1 s) is slower than the gazebo simulation period (0.01 s).
+[ign gazebo-1] [1;33mTrying to deserialize component with data type [[0m[1;33mN3sdf3v125WorldE[0m[1;33m], which doesn't have [0m[1;33m`operator>>`. Component will not be deserialized.[0m[1;33m[0m
+[spawner-14] [INFO] [1772007071.055672798] [spawner_kawasaki_controller]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[spawner-15] [INFO] [1772007071.059337718] [spawner_ota_base_controller]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Model.hh:98] [0m[1;33mUnable to deserialize sdf::Model[0m[1;33m[0m
+[spawner-13] [INFO] [1772007071.125677715] [spawner_kawasaki_joint_state_broadcaster]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[linear_axis_adapter.py-9] Connection to (192.168.3.1, 502) failed: timed out
+[linear_axis_adapter.py-9] Connection to (192.168.3.1, 502) failed: [Errno 113] No route to host
+[linear_axis_adapter.py-9] [ERROR] [1772007072.089664512] [linear_axis_adapter_node]: Festo connection error: Modbus Error: [Connection] Failed to connect[ModbusTcpClient 192.168.3.1:502]
+[linear_axis_adapter.py-9] [INFO] [1772007072.143290348] [linear_axis_adapter_node]: Adapter started:
+[linear_axis_adapter.py-9] [INFO] [1772007072.143632136] [linear_axis_adapter_node]:   - Command frequency: 100.0 Hz
+[linear_axis_adapter.py-9] [INFO] [1772007072.143933984] [linear_axis_adapter_node]:   - Interpolation alpha: 0.2
+[linear_axis_adapter.py-9] [INFO] [1772007072.144239940] [linear_axis_adapter_node]:   - Use MoveIt velocity: True
+[linear_axis_adapter.py-9] [ERROR] [1772007072.243350198] [linear_axis_adapter_node]: LINEAR AXIS CONNECTION LOST! No communication for 3.25s. STOPPING ROBOT FOR SAFETY!
+[linear_axis_adapter.py-9] [ERROR] [1772007072.243637467] [linear_axis_adapter_node]: ============================================================
+[linear_axis_adapter.py-9] [ERROR] [1772007072.243864138] [linear_axis_adapter_node]: 🚨 SAFETY STOP - LINEAR AXIS CONNECTION LOST! 🚨
+[linear_axis_adapter.py-9] [ERROR] [1772007072.244086754] [linear_axis_adapter_node]: ============================================================
+[linear_axis_adapter.py-9] [ERROR] [1772007072.494830898] [linear_axis_adapter_node]: ⚠️ Protective stop service NOT AVAILABLE!
+[ros2_control_node-4] [WARN] [1772007072.495318510] [controller_manager]: 'stop_controllers' field is deprecated, use 'deactivate_controllers' field instead!
+[ign gazebo-1] [WARN] [1772007072.495355254] [controller_manager]: 'stop_controllers' field is deprecated, use 'deactivate_controllers' field instead!
+[linear_axis_adapter.py-9] [ERROR] [1772007072.495381152] [linear_axis_adapter_node]: ⏹️  >>> STOPPING CONTROLLER NOW <<<
+[ign gazebo-1] [WARN] [1772007072.495417480] [controller_manager]: Could not 'deactivate' controller with name 'scaled_joint_trajectory_controller' because no controller with this name exists
+[ign gazebo-1] [INFO] [1772007072.495448641] [controller_manager]: Empty activate and deactivate list, not requesting switch
+[ros2_control_node-4] [INFO] [1772007072.495429334] [controller_manager]: Switch controller timeout is set to 0, using default 1s!
+[linear_axis_adapter.py-9] [ERROR] [1772007072.496561122] [linear_axis_adapter_node]: ✓ Robot controller STOPPED successfully!
+[INFO] [launch.user]: [3/3] UR10e simülasyon bileşenleri başlatılıyor...
+[INFO] [create-17]: process started with pid [44273]
+[INFO] [robot_state_publisher-18]: process started with pid [44275]
+[INFO] [parameter_bridge-19]: process started with pid [44277]
+[INFO] [static_transform_publisher-20]: process started with pid [44279]
+[INFO] [rviz2-21]: process started with pid [44281]
+[static_transform_publisher-20] [WARN] [1772007078.768544621] []: Old-style arguments are deprecated; see --help for new-style arguments
+[static_transform_publisher-20] [INFO] [1772007079.154276821] [sim.static_transform_publisher_0L4Y8CMarQBfx27O]: Spinning until stopped - publishing transform
+[static_transform_publisher-20] translation: ('0.000000', '0.000000', '0.000000')
+[static_transform_publisher-20] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-20] from 'sim_ur10e_depth_optical_frame' to 'my_robot_cell_sim/sim_ur10e_wrist_3_link/sim_ur10e_depth_optical_frame'
+[create-17] [INFO] [1772007079.168578247] [ros_gz_sim]: Waiting messages on topic [/sim/robot_description].
+[robot_state_publisher-18] [INFO] [1772007079.212163267] [sim.robot_state_publisher]: got segment barrier_closekabinet_link
+[robot_state_publisher-18] [INFO] [1772007079.212331035] [sim.robot_state_publisher]: got segment barrier_closetable_link
+[robot_state_publisher-18] [INFO] [1772007079.212342253] [sim.robot_state_publisher]: got segment barrier_kaw1_link
+[robot_state_publisher-18] [INFO] [1772007079.212349774] [sim.robot_state_publisher]: got segment barrier_kaw2_link
+[robot_state_publisher-18] [INFO] [1772007079.212357084] [sim.robot_state_publisher]: got segment barrier_kaw3_link
+[robot_state_publisher-18] [INFO] [1772007079.212363679] [sim.robot_state_publisher]: got segment barrier_link
+[robot_state_publisher-18] [INFO] [1772007079.212370021] [sim.robot_state_publisher]: got segment human_link
+[robot_state_publisher-18] [INFO] [1772007079.212376236] [sim.robot_state_publisher]: got segment kabinet_link
+[robot_state_publisher-18] [INFO] [1772007079.212382481] [sim.robot_state_publisher]: got segment light_curtain_link
+[robot_state_publisher-18] [INFO] [1772007079.212388807] [sim.robot_state_publisher]: got segment sim_ur10e_alumunium_table
+[robot_state_publisher-18] [INFO] [1772007079.212395289] [sim.robot_state_publisher]: got segment sim_ur10e_base
+[robot_state_publisher-18] [INFO] [1772007079.212401528] [sim.robot_state_publisher]: got segment sim_ur10e_base_link
+[robot_state_publisher-18] [INFO] [1772007079.212407739] [sim.robot_state_publisher]: got segment sim_ur10e_base_link_inertia
+[robot_state_publisher-18] [INFO] [1772007079.212413998] [sim.robot_state_publisher]: got segment sim_ur10e_cable_channel
+[robot_state_publisher-18] [INFO] [1772007079.212420305] [sim.robot_state_publisher]: got segment sim_ur10e_cable_channel_flange
+[robot_state_publisher-18] [INFO] [1772007079.212426722] [sim.robot_state_publisher]: got segment sim_ur10e_chassis
+[robot_state_publisher-18] [INFO] [1772007079.212433140] [sim.robot_state_publisher]: got segment sim_ur10e_conveyor_belt
+[robot_state_publisher-18] [INFO] [1772007079.212439367] [sim.robot_state_publisher]: got segment sim_ur10e_depth_frame
+[robot_state_publisher-18] [INFO] [1772007079.212445746] [sim.robot_state_publisher]: got segment sim_ur10e_depth_optical_frame
+[robot_state_publisher-18] [INFO] [1772007079.212451965] [sim.robot_state_publisher]: got segment sim_ur10e_flange
+[robot_state_publisher-18] [INFO] [1772007079.212458599] [sim.robot_state_publisher]: got segment sim_ur10e_forearm_link
+[robot_state_publisher-18] [INFO] [1772007079.212464666] [sim.robot_state_publisher]: got segment sim_ur10e_ft_frame
+[robot_state_publisher-18] [INFO] [1772007079.212470545] [sim.robot_state_publisher]: got segment sim_ur10e_rgb_frame
+[robot_state_publisher-18] [INFO] [1772007079.212476626] [sim.robot_state_publisher]: got segment sim_ur10e_rgb_optical_frame
+[robot_state_publisher-18] [INFO] [1772007079.212482791] [sim.robot_state_publisher]: got segment sim_ur10e_robot_mount
+[robot_state_publisher-18] [INFO] [1772007079.212488974] [sim.robot_state_publisher]: got segment sim_ur10e_shoulder_link
+[robot_state_publisher-18] [INFO] [1772007079.212495352] [sim.robot_state_publisher]: got segment sim_ur10e_sick_camera
+[robot_state_publisher-18] [INFO] [1772007079.212501308] [sim.robot_state_publisher]: got segment sim_ur10e_stackable_bin
+[robot_state_publisher-18] [INFO] [1772007079.212507485] [sim.robot_state_publisher]: got segment sim_ur10e_table
+[robot_state_publisher-18] [INFO] [1772007079.212513515] [sim.robot_state_publisher]: got segment sim_ur10e_tool0
+[robot_state_publisher-18] [INFO] [1772007079.212519574] [sim.robot_state_publisher]: got segment sim_ur10e_upper_arm_link
+[robot_state_publisher-18] [INFO] [1772007079.212525645] [sim.robot_state_publisher]: got segment sim_ur10e_wrist_1_link
+[robot_state_publisher-18] [INFO] [1772007079.212531784] [sim.robot_state_publisher]: got segment sim_ur10e_wrist_2_link
+[robot_state_publisher-18] [INFO] [1772007079.212537849] [sim.robot_state_publisher]: got segment sim_ur10e_wrist_3_link
+[robot_state_publisher-18] [INFO] [1772007079.212544287] [sim.robot_state_publisher]: got segment world
+[create-17] [INFO] [1772007079.510746086] [ros_gz_sim]: Requested creation of entity.
+[create-17] [INFO] [1772007079.510779955] [ros_gz_sim]: OK creation of entity.
+[rviz2-21] [INFO] [1772007079.562644905] [rviz2]: Stereo is NOT SUPPORTED
+[rviz2-21] [INFO] [1772007079.562717130] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[ign gazebo-1] [INFO] [1772007079.602141033] [GazeboSimROS2ControlPlugin]: robot_param_node is robot_state_publisher
+[ign gazebo-1] [INFO] [1772007079.602159169] [GazeboSimROS2ControlPlugin]: robot_param_node is robot_description
+[ign gazebo-1] [INFO] [1772007079.612218973] [sim.gz_ros2_control]: connected to service!! /sim/robot_state_publisher asking for robot_description
+[ign gazebo-1] [INFO] [1772007079.612597288] [sim.gz_ros2_control]: Received URDF from param server
+[ign gazebo-1] [INFO] [1772007079.618297495] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_closekabinet_joint] (Entity=137)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618331505] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_closetable_joint] (Entity=138)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618334694] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_joint] (Entity=139)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618337560] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_kaw1_joint] (Entity=140)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618340384] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_kaw2_joint] (Entity=141)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618343091] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_kaw3_joint] (Entity=142)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618345503] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [human_joint] (Entity=143)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618347983] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [kabinet_joint] (Entity=144)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618350395] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [light_curtain_joint] (Entity=145)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618353008] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_base_to_alumuniumtable] (Entity=146)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618355520] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_base_to_chassis] (Entity=147)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618357937] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_base_to_conveyorbelt] (Entity=148)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618360323] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_bin_fixed] (Entity=149)] is skipped
+[ign gazebo-1] [INFO] [1772007079.618362744] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_table_base_joint] (Entity=150)] is skipped
+[INFO] [create-17]: process has finished cleanly [pid 44273]
+[ign gazebo-1] [INFO] [1772007079.623143793] [sim.gz_ros2_control]: The position_proportional_gain has been set to: 0.1
+[ign gazebo-1] [INFO] [1772007079.623378028] [sim.gz_ros2_control]: Loading joint: sim_ur10e_base_to_robot_mount
+[ign gazebo-1] [INFO] [1772007079.623423872] [sim.gz_ros2_control]: 	State:
+[ign gazebo-1] [INFO] [1772007079.623444571] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.623546283] [sim.gz_ros2_control]: 			 found initial value: 1.000000
+[ign gazebo-1] [INFO] [1772007079.623561843] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.623604763] [sim.gz_ros2_control]: 		 effort
+[ign gazebo-1] [INFO] [1772007079.623629129] [sim.gz_ros2_control]: 	Command:
+[ign gazebo-1] [INFO] [1772007079.623638368] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.623843087] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.624495756] [resource_manager]: Initialize hardware 'LinearAxisHardwareInterface' 
+[ign gazebo-1] [INFO] [1772007079.624755402] [resource_manager]: Successful initialization of hardware 'LinearAxisHardwareInterface'
+[ign gazebo-1] [INFO] [1772007079.624810789] [resource_manager]: 'configure' hardware 'LinearAxisHardwareInterface' 
+[ign gazebo-1] [INFO] [1772007079.624815644] [sim.gz_ros2_control]: System Successfully configured!
+[ign gazebo-1] [INFO] [1772007079.624829928] [resource_manager]: Successful 'configure' of hardware 'LinearAxisHardwareInterface'
+[ign gazebo-1] [INFO] [1772007079.624833303] [resource_manager]: 'activate' hardware 'LinearAxisHardwareInterface' 
+[ign gazebo-1] [INFO] [1772007079.624835840] [resource_manager]: Successful 'activate' of hardware 'LinearAxisHardwareInterface'
+[ign gazebo-1] [INFO] [1772007079.625037616] [sim.gz_ros2_control]: The position_proportional_gain has been set to: 0.1
+[ign gazebo-1] [INFO] [1772007079.625072465] [sim.gz_ros2_control]: Loading joint: sim_ur10e_shoulder_pan_joint
+[ign gazebo-1] [INFO] [1772007079.625079979] [sim.gz_ros2_control]: 	State:
+[ign gazebo-1] [INFO] [1772007079.625085580] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625094462] [sim.gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-1] [INFO] [1772007079.625100318] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625111516] [sim.gz_ros2_control]: 		 effort
+[ign gazebo-1] [INFO] [1772007079.625115831] [sim.gz_ros2_control]: 	Command:
+[ign gazebo-1] [INFO] [1772007079.625118521] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625136355] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625148890] [sim.gz_ros2_control]: Loading joint: sim_ur10e_shoulder_lift_joint
+[ign gazebo-1] [INFO] [1772007079.625152261] [sim.gz_ros2_control]: 	State:
+[ign gazebo-1] [INFO] [1772007079.625155366] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625158844] [sim.gz_ros2_control]: 			 found initial value: -1.570000
+[ign gazebo-1] [INFO] [1772007079.625161853] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625164908] [sim.gz_ros2_control]: 		 effort
+[ign gazebo-1] [INFO] [1772007079.625167565] [sim.gz_ros2_control]: 	Command:
+[ign gazebo-1] [INFO] [1772007079.625170141] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625176899] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625183786] [sim.gz_ros2_control]: Loading joint: sim_ur10e_elbow_joint
+[ign gazebo-1] [INFO] [1772007079.625186943] [sim.gz_ros2_control]: 	State:
+[ign gazebo-1] [INFO] [1772007079.625189431] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625192103] [sim.gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-1] [INFO] [1772007079.625195008] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625197629] [sim.gz_ros2_control]: 		 effort
+[ign gazebo-1] [INFO] [1772007079.625209158] [sim.gz_ros2_control]: 	Command:
+[ign gazebo-1] [INFO] [1772007079.625212405] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625218701] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625227242] [sim.gz_ros2_control]: Loading joint: sim_ur10e_wrist_1_joint
+[ign gazebo-1] [INFO] [1772007079.625231509] [sim.gz_ros2_control]: 	State:
+[ign gazebo-1] [INFO] [1772007079.625235623] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625239815] [sim.gz_ros2_control]: 			 found initial value: -1.570000
+[ign gazebo-1] [INFO] [1772007079.625244670] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625248826] [sim.gz_ros2_control]: 		 effort
+[ign gazebo-1] [INFO] [1772007079.625252884] [sim.gz_ros2_control]: 	Command:
+[ign gazebo-1] [INFO] [1772007079.625256843] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625266165] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625277358] [sim.gz_ros2_control]: Loading joint: sim_ur10e_wrist_2_joint
+[ign gazebo-1] [INFO] [1772007079.625295985] [sim.gz_ros2_control]: 	State:
+[ign gazebo-1] [INFO] [1772007079.625298850] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625301812] [sim.gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-1] [INFO] [1772007079.625305012] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625307563] [sim.gz_ros2_control]: 		 effort
+[ign gazebo-1] [INFO] [1772007079.625310310] [sim.gz_ros2_control]: 	Command:
+[ign gazebo-1] [INFO] [1772007079.625313409] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625325215] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625336496] [sim.gz_ros2_control]: Loading joint: sim_ur10e_wrist_3_joint
+[ign gazebo-1] [INFO] [1772007079.625339815] [sim.gz_ros2_control]: 	State:
+[ign gazebo-1] [INFO] [1772007079.625343194] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625347125] [sim.gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-1] [INFO] [1772007079.625351609] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625358163] [sim.gz_ros2_control]: 		 effort
+[ign gazebo-1] [INFO] [1772007079.625362602] [sim.gz_ros2_control]: 	Command:
+[ign gazebo-1] [INFO] [1772007079.625366577] [sim.gz_ros2_control]: 		 position
+[ign gazebo-1] [INFO] [1772007079.625375040] [sim.gz_ros2_control]: 		 velocity
+[ign gazebo-1] [INFO] [1772007079.625418638] [resource_manager]: Initialize hardware 'sim_ur10e_ur10e' 
+[ign gazebo-1] [INFO] [1772007079.625444829] [resource_manager]: Successful initialization of hardware 'sim_ur10e_ur10e'
+[ign gazebo-1] [INFO] [1772007079.625469206] [resource_manager]: 'configure' hardware 'sim_ur10e_ur10e' 
+[ign gazebo-1] [INFO] [1772007079.625471618] [sim.gz_ros2_control]: System Successfully configured!
+[ign gazebo-1] [INFO] [1772007079.625477960] [resource_manager]: Successful 'configure' of hardware 'sim_ur10e_ur10e'
+[ign gazebo-1] [INFO] [1772007079.625483254] [resource_manager]: 'activate' hardware 'sim_ur10e_ur10e' 
+[ign gazebo-1] [INFO] [1772007079.625485609] [resource_manager]: Successful 'activate' of hardware 'sim_ur10e_ur10e'
+[ign gazebo-1] [INFO] [1772007079.625488535] [sim.gz_ros2_control]: Loading controller_manager
+[rviz2-21] [INFO] [1772007079.643424161] [rviz2]: Stereo is NOT SUPPORTED
+[parameter_bridge-19] [INFO] [1772007080.185700788] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points (ignition.msgs.PointCloudPacked) -> pointcloud (sensor_msgs/msg/PointCloud2)] (Lazy 1)
+[parameter_bridge-19] [INFO] [1772007080.187304025] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image (ignition.msgs.Image) -> depth/image (sensor_msgs/msg/Image)] (Lazy 1)
+[parameter_bridge-19] [INFO] [1772007080.187965216] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/clock (ignition.msgs.Clock) -> clock (rosgraph_msgs/msg/Clock)] (Lazy 1)
+[parameter_bridge-19] [INFO] [1772007080.188864650] [sim.ros_gz_bridge]: Creating ROS->GZ Bridge: [clock (rosgraph_msgs/msg/Clock) -> /clock (ignition.msgs.Clock)] (Lazy 1)
+[parameter_bridge-19] [INFO] [1772007080.189071957] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/dynamic_pose/info (ignition.msgs.Pose_V) -> pose (geometry_msgs/msg/PoseArray)] (Lazy 1)
+[parameter_bridge-19] [INFO] [1772007080.189807725] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/sim_robot_joint_states (ignition.msgs.Model) -> sim_joint_states (sensor_msgs/msg/JointState)] (Lazy 1)
+[parameter_bridge-19] [INFO] [1772007080.190340448] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_imx179_camera/image (ignition.msgs.Image) -> image (sensor_msgs/msg/Image)] (Lazy 0)
+[parameter_bridge-19] [INFO] [1772007080.190958032] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_imx179_camera/camera_info (ignition.msgs.CameraInfo) -> camera_info (sensor_msgs/msg/CameraInfo)] (Lazy 0)
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m0[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m1[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m2[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m3[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m4[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m5[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m6[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:506] [0m[1;36mConfiguring Sensors system[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:431] [0m[1;36mSensorsPrivate::Run[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mignition::gazebo::systems::Sensors[0m[1;36m] for entity [[0m[1;36m60[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:411] [0m[1;36mSensorsPrivate::RenderThread started[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:258] [0m[1;36mWaiting for init[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::JointStatePublisher[0m[1;36m] for entity [[0m[1;36m60[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SystemManager.cc:70] [0m[1;36mLoaded system [[0m[1;36mgz_ros2_control::GazeboSimROS2ControlPlugin[0m[1;36m] for entity [[0m[1;36m60[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [UserCommands.cc:1303] [0m[1;36mCreated entity [[0m[1;36m60[0m[1;36m] named [[0m[1;36mmy_robot_cell_sim[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36m[Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36m[Dbg] [SimulationRunner.cc:523] 5[0m[1;36m[Dbg] [SimulationRunner.cc:523] [0m[1;36m[Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36m2[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36mExiting postupdate worker thread ([Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36mExiting postupdate worker thread ([0m[1;36m6[0m[1;36m)3[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[0m
+[ign gazebo-1] [1;36m[0m
+[ign gazebo-1] [1;36m[0m
+[ign gazebo-1] [1;36m[0m
+[ign gazebo-1] [1;36m4[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[0m
+[ign gazebo-1] [1;36m0[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m1[0m[1;36m1[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:496] [0m[1;36mCreating PostUpdate worker threads: [0m[1;36m11[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m0[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m1[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m2[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m3[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m4[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m5[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m6[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m7[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m8[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:507] [0m[1;36mCreating postupdate worker thread ([0m[1;36m9[0m[1;36m)[0m[1;36m[0m
+[spawner-14] [WARN] [1772007081.069261526] [spawner_kawasaki_controller]: Could not contact service /kawasaki_controller_manager/list_controllers
+[spawner-14] [INFO] [1772007081.069496511] [spawner_kawasaki_controller]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[spawner-15] [WARN] [1772007081.073156604] [spawner_ota_base_controller]: Could not contact service /kawasaki_controller_manager/list_controllers
+[spawner-15] [INFO] [1772007081.073529784] [spawner_ota_base_controller]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[spawner-13] [WARN] [1772007081.139566611] [spawner_kawasaki_joint_state_broadcaster]: Could not contact service /kawasaki_controller_manager/list_controllers
+[spawner-13] [INFO] [1772007081.139803414] [spawner_kawasaki_joint_state_broadcaster]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[INFO] [real_to_sim_bridge-22]: process started with pid [44530]
+[INFO] [spawner-23]: process started with pid [44541]
+[real_to_sim_bridge-22] [INFO] [1772007083.950656407] [real_to_sim_bridge]: Real-to-Sim Bridge Node started
+[real_to_sim_bridge-22] [INFO] [1772007083.950729283] [real_to_sim_bridge]: Update rate: 10.00 Hz
+[real_to_sim_bridge-22] [INFO] [1772007083.950738751] [real_to_sim_bridge]: --- UR10E ---
+[real_to_sim_bridge-22] [INFO] [1772007083.950742459] [real_to_sim_bridge]:   Listening to: /joint_states
+[real_to_sim_bridge-22] [INFO] [1772007083.950746068] [real_to_sim_bridge]:   Publishing to: /sim/sim_scaled_joint_trajectory_controller/joint_trajectory
+[real_to_sim_bridge-22] [INFO] [1772007083.950750068] [real_to_sim_bridge]: --- Kawasaki ---
+[real_to_sim_bridge-22] [INFO] [1772007083.950753657] [real_to_sim_bridge]:   Listening to: /kawasaki/joint_states
+[real_to_sim_bridge-22] [INFO] [1772007083.950757400] [real_to_sim_bridge]:   Publishing to: /kawasaki/kawasaki_controller/joint_trajectory
+[real_to_sim_bridge-22] [INFO] [1772007083.950761080] [real_to_sim_bridge]: --- AGV (P-controller) ---
+[real_to_sim_bridge-22] [INFO] [1772007083.950764564] [real_to_sim_bridge]:   Real odom: /agv/odom
+[real_to_sim_bridge-22] [INFO] [1772007083.950767927] [real_to_sim_bridge]:   Sim odom:  /kawasaki/ota_base_controller/odom
+[real_to_sim_bridge-22] [INFO] [1772007083.950771407] [real_to_sim_bridge]:   Cmd output: /kawasaki/ota_base_controller/cmd_vel_unstamped
+[real_to_sim_bridge-22] [INFO] [1772007083.950774911] [real_to_sim_bridge]:   Kp_linear=1.50, Kp_angular=2.00
+[spawner-23] [INFO] [1772007084.007979940] [spawner_sim_joint_state_broadcaster]: waiting for service /sim/controller_manager/list_controllers to become available...
+[ign gazebo-1] [INFO] [1772007084.760602285] [sim.controller_manager]: Loading controller 'sim_joint_state_broadcaster'
+[spawner-23] [INFO] [1772007084.774207328] [spawner_sim_joint_state_broadcaster]: [94mLoaded [1msim_joint_state_broadcaster[0m
+[ign gazebo-1] [INFO] [1772007084.775167377] [sim.controller_manager]: Configuring controller 'sim_joint_state_broadcaster'
+[ign gazebo-1] [INFO] [1772007084.775331744] [sim.sim_joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[spawner-23] [INFO] [1772007084.802388165] [spawner_sim_joint_state_broadcaster]: [92mConfigured and activated [1msim_joint_state_broadcaster[0m
+[INFO] [spawner-23]: process has finished cleanly [pid 44541]
+[INFO] [spawner-24]: process started with pid [44574]
+[spawner-24] [INFO] [1772007086.319329238] [spawner_sim_scaled_joint_trajectory_controller]: waiting for service /sim/controller_manager/list_controllers to become available...
+[ign gazebo-1] [INFO] [1772007087.022438259] [sim.controller_manager]: Loading controller 'sim_scaled_joint_trajectory_controller'
+[ign gazebo-1] [INFO] [1772007087.065986709] [sim.sim_scaled_joint_trajectory_controller]: No scaling interface set. This controller will not use speed scaling.
+[ign gazebo-1] [WARN] [1772007087.074162340] [sim.sim_scaled_joint_trajectory_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[spawner-24] [INFO] [1772007087.080341545] [spawner_sim_scaled_joint_trajectory_controller]: [94mLoaded [1msim_scaled_joint_trajectory_controller[0m
+[ign gazebo-1] [INFO] [1772007087.083619197] [sim.controller_manager]: Configuring controller 'sim_scaled_joint_trajectory_controller'
+[ign gazebo-1] [INFO] [1772007087.083998811] [sim.sim_scaled_joint_trajectory_controller]: No specific joint names are used for command interfaces. Using 'joints' parameter.
+[ign gazebo-1] [INFO] [1772007087.084044342] [sim.sim_scaled_joint_trajectory_controller]: Command interfaces are [position] and state interfaces are [position velocity].
+[ign gazebo-1] [INFO] [1772007087.084465744] [sim.sim_scaled_joint_trajectory_controller]: Using 'splines' interpolation method.
+[ign gazebo-1] [INFO] [1772007087.086950429] [sim.sim_scaled_joint_trajectory_controller]: Controller state will be published at 100.00 Hz.
+[ign gazebo-1] [INFO] [1772007087.091031088] [sim.sim_scaled_joint_trajectory_controller]: Action status changes will be monitored at 20.00 Hz.
+[spawner-24] [INFO] [1772007087.128693652] [spawner_sim_scaled_joint_trajectory_controller]: [92mConfigured and activated [1msim_scaled_joint_trajectory_controller[0m
+[INFO] [spawner-24]: process has finished cleanly [pid 44574]
+[spawner-14] [WARN] [1772007091.083319809] [spawner_kawasaki_controller]: Could not contact service /kawasaki_controller_manager/list_controllers
+[spawner-14] [INFO] [1772007091.083566669] [spawner_kawasaki_controller]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[spawner-15] [WARN] [1772007091.087789022] [spawner_ota_base_controller]: Could not contact service /kawasaki_controller_manager/list_controllers
+[spawner-15] [INFO] [1772007091.087985720] [spawner_ota_base_controller]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[spawner-13] [WARN] [1772007091.154747488] [spawner_kawasaki_joint_state_broadcaster]: Could not contact service /kawasaki_controller_manager/list_controllers
+[spawner-13] [INFO] [1772007091.155347630] [spawner_kawasaki_joint_state_broadcaster]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[spawner-14] [WARN] [1772007101.097944018] [spawner_kawasaki_controller]: Could not contact service /kawasaki_controller_manager/list_controllers
+[spawner-14] [INFO] [1772007101.098207404] [spawner_kawasaki_controller]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[spawner-15] [WARN] [1772007101.101477654] [spawner_ota_base_controller]: Could not contact service /kawasaki_controller_manager/list_controllers
+[spawner-15] [INFO] [1772007101.101679939] [spawner_ota_base_controller]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[spawner-13] [WARN] [1772007101.169769546] [spawner_kawasaki_joint_state_broadcaster]: Could not contact service /kawasaki_controller_manager/list_controllers
+[spawner-13] [INFO] [1772007101.170238847] [spawner_kawasaki_joint_state_broadcaster]: waiting for service /kawasaki_controller_manager/list_controllers to become available...
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[robot_state_publisher-18] [INFO] [1772007110.707323457] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[real_to_sim_bridge-22] [INFO] [1772007110.707322957] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[robot_state_publisher-6] [INFO] [1772007110.707341792] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[urscript_interface-5] [INFO] [1772007110.707361672] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[static_transform_publisher-20] [INFO] [1772007110.707411009] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[ros2_control_node-4] [INFO] [1772007110.707494666] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[ros2_control_node-4] [INFO] [1772007110.707655392] [controller_manager]: Shutdown request received....
+[ros2_control_node-4] [INFO] [1772007110.707756255] [controller_manager]: Shutting down all controllers in the controller manager.
+[ros2_control_node-4] [INFO] [1772007110.707811350] [controller_manager]: Deactivating controller 'joint_state_broadcaster'
+[ros2_control_node-4] [INFO] [1772007110.707872136] [controller_manager]: Shutting down controller 'joint_state_broadcaster'
+[ros2_control_node-4] [INFO] [1772007110.707969471] [controller_manager]: Shutting down controller 'joint_trajectory_controller'
+[ros2_control_node-4] [INFO] [1772007110.708009153] [controller_manager]: Shutting down controller 'forward_velocity_controller'
+[ros2_control_node-4] [INFO] [1772007110.708045392] [controller_manager]: Deactivating controller 'io_and_status_controller'
+[ros2_control_node-4] [INFO] [1772007110.708475935] [controller_manager]: Shutting down controller 'io_and_status_controller'
+[ros2_control_node-4] [INFO] [1772007110.708529306] [controller_manager]: Shutting down controller 'forward_position_controller'
+[ros2_control_node-4] [INFO] [1772007110.708565675] [controller_manager]: Deactivating controller 'speed_scaling_state_broadcaster'
+[ros2_control_node-4] [INFO] [1772007110.708597406] [controller_manager]: Shutting down controller 'speed_scaling_state_broadcaster'
+[ros2_control_node-4] [INFO] [1772007110.708631790] [controller_manager]: Shutting down controller 'force_mode_controller'
+[ros2_control_node-4] [INFO] [1772007110.708666618] [controller_manager]: Deactivating controller 'force_torque_sensor_broadcaster'
+[ros2_control_node-4] [INFO] [1772007110.708696082] [controller_manager]: Shutting down controller 'force_torque_sensor_broadcaster'
+[ros2_control_node-4] [INFO] [1772007110.708729072] [controller_manager]: Shutting down controller 'passthrough_trajectory_controller'
+[ros2_control_node-4] [INFO] [1772007110.708765145] [controller_manager]: Shutting down controller 'freedrive_mode_controller'
+[ros2_control_node-4] [INFO] [1772007110.708800021] [controller_manager]: Deactivating controller 'ur_configuration_controller'
+[ros2_control_node-4] [INFO] [1772007110.708828186] [controller_manager]: Shutting down controller 'ur_configuration_controller'
+[rviz2-10] [INFO] [1772007110.707560171] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[parameter_bridge-2] [INFO] [1772007110.707625984] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[robot_state_publisher-12] [INFO] [1772007110.707656255] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[rviz2-21] [INFO] [1772007110.708420558] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[static_transform_publisher-3] [INFO] [1772007110.708815733] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[parameter_bridge-19] [INFO] [1772007110.710135431] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[parameter_bridge-16] [INFO] [1772007110.711099506] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[ros2_control_node-4] [INFO] [1772007110.773112262] [controller_manager]: Shutting down controller 'tool_contact_controller'
+[linear_axis_adapter.py-9] Traceback (most recent call last):
+[linear_axis_adapter.py-9]   File "/home/cem/colcon_ws/install/festo_edcon_ros2/lib/festo_edcon_ros2/linear_axis_adapter.py", line 489, in <module>
+[linear_axis_adapter.py-9]     main()
+[linear_axis_adapter.py-9]   File "/home/cem/colcon_ws/install/festo_edcon_ros2/lib/festo_edcon_ros2/linear_axis_adapter.py", line 486, in main
+[linear_axis_adapter.py-9]     rclpy.shutdown()
+[linear_axis_adapter.py-9]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+[linear_axis_adapter.py-9]     _shutdown(context=context)
+[linear_axis_adapter.py-9]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+[linear_axis_adapter.py-9]     return context.shutdown()
+[linear_axis_adapter.py-9]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+[linear_axis_adapter.py-9]     self.__context.shutdown()
+[linear_axis_adapter.py-9] rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241
+[ros2_control_node-4] [INFO] [1772007110.778448090] [controller_manager]: Shutting down controller 'scaled_joint_trajectory_controller'
+[ros2_control_node-4] [INFO] [1772007110.778519101] [resource_manager]: 'deactivate' hardware 'ur10e' 
+[ros2_control_node-4] [INFO] [1772007110.778529467] [resource_manager]: Successful 'deactivate' of hardware 'ur10e'
+[ros2_control_node-4] [INFO] [1772007110.778534707] [resource_manager]: 'shutdown' hardware 'ur10e' 
+[ros2_control_node-4] [INFO] [1772007110.778540623] [resource_manager]: Successful 'shutdown' of hardware 'ur10e'
+[ros2_control_node-4] [INFO] [1772007110.778546652] [resource_manager]: 'deactivate' hardware 'LinearAxisHardwareInterface' 
+[ros2_control_node-4] [INFO] [1772007110.778551796] [resource_manager]: Successful 'deactivate' of hardware 'LinearAxisHardwareInterface'
+[ros2_control_node-4] [INFO] [1772007110.778556109] [resource_manager]: 'shutdown' hardware 'LinearAxisHardwareInterface' 
+[ros2_control_node-4] [INFO] [1772007110.778561493] [resource_manager]: Successful 'shutdown' of hardware 'LinearAxisHardwareInterface'
+[ros2_control_node-4] [INFO] [1772007110.778566106] [controller_manager]: Shutting down the controller manager.
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:52: TypeError: Cannot read property 'dialogOnExitText' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:54: TypeError: Cannot read property 'exitDialogShowCloseGui' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:53: TypeError: Cannot read property 'exitDialogShowShutdown' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:251: TypeError: Cannot read property 'showDrawer' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:/qml/SideDrawer.qml:93: TypeError: Cannot read property 'showDefaultDrawerOpts' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:/qml/IgnSplit.qml:56: TypeError: Cannot read property 'pluginCount' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:41: TypeError: Cannot read property 'toolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:42: TypeError: Cannot read property 'toolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:43: TypeError: Cannot read property 'toolBarColorDark' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:44: TypeError: Cannot read property 'toolBarTextColorDark' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:45: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:46: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:47: TypeError: Cannot read property 'pluginToolBarColorDark' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:48: TypeError: Cannot read property 'pluginToolBarTextColorDark' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:50: TypeError: Cannot read property 'defaultExitAction' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:51: TypeError: Cannot read property 'showDialogOnExit' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:55: TypeError: Cannot read property 'exitDialogShutdownText' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:56: TypeError: Cannot read property 'exitDialogCloseGuiText' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:66: TypeError: Cannot read property 'toolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:76: TypeError: Cannot read property 'toolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:219: TypeError: Cannot read property 'showPluginMenu' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:202: TypeError: Cannot read property 'showDrawer' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] qrc:qml/Main.qml:188: TypeError: Cannot read property 'showDrawer' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:128: TypeError: Cannot read property 'pluginToolBarColorLight' of null[0m[1;33m[0m
+[ign gazebo-1] [1;33m[GUI] [Wrn] [Application.cc:797] [0m[1;33m[QT] file::qml/IgnCard.qml:139: TypeError: Cannot read property 'pluginToolBarTextColorLight' of null[0m[1;33m[0m
+[INFO] [parameter_bridge-19]: process has finished cleanly [pid 44277]
+[INFO] [parameter_bridge-2]: process has finished cleanly [pid 43582]
+[INFO] [parameter_bridge-16]: process has finished cleanly [pid 44038]
+[INFO] [static_transform_publisher-3]: process has finished cleanly [pid 43585]
+[INFO] [static_transform_publisher-20]: process has finished cleanly [pid 44279]
+[INFO] [real_to_sim_bridge-22]: process has finished cleanly [pid 44530]
+[INFO] [robot_state_publisher-6]: process has finished cleanly [pid 43591]
+[INFO] [robot_state_publisher-18]: process has finished cleanly [pid 44275]
+[INFO] [robot_state_publisher-12]: process has finished cleanly [pid 44030]
+[INFO] [spawner-13]: process has finished cleanly [pid 44032]
+[INFO] [spawner-14]: process has finished cleanly [pid 44034]
+[INFO] [rviz2-21]: process has finished cleanly [pid 44281]
+[INFO] [spawner-15]: process has finished cleanly [pid 44036]
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:610] [0m[1;36mInitialization needed[0m[1;36rmControl plugin is using camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Spawn.cc:289] [0m[1;36mSpawn plugin is using camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [SelectEntities.cc:451] [0m[1;36mSelectEntities plugin is using camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [MarkerManager.cc:173] [0m[1;36mAdvertise [0m[1;36m/marker[0m[1;36m/list service.[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [MarkerManager.cc:183] [0m[1;36mAdvertise [0m[1;36m/marker[0m[1;36m/list.[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [MarkerManager.cc:193] [0m[1;36mAdvertise [0m[1;36m/marker[0m[1;36m_array.[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [CameraTracking.cc:181] [0m[1;36mCameraTrackingPrivate plugin is moving camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mMove to service on [[0m[1;32m/gui/move_to[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mFollow service on [[0m[1;32m/gui/follow[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mMove to pose service on [[0m[1;32m/gui/move_to/pose[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCamera pose topic advertised on [[0m[1;32m/gui/camera/pose[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mFollow offset service on [[0m[1;32m/gui/follow/offset[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [InteractiveViewControl.cc:174] [0m[1;36mInteractiveViewControl plugin is moving camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [EntityContextMenuPlugin.cc:79] [0m[1;36mEntity context menu plugin is using camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [SignalHandler.cc:141] [0m[1;36mReceived signal[[0m[1;36m2[0m[1;36m].[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Gui.cc:472] [0m[1;36mShutting down ign-gazebo-gui[0m[1;36m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [Application.cc:140] [0m[1;36mTerminating application.[0m[1;36m[0m
+[ign gazebo-1] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[GUI] [Dbg] [MinimalScene.cc:657] [0m[1;36mDestroy scene [[0m[1;36mscene[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [INFO] [1772007110.955229462] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[ign gazebo-1] [INFO] [1772007110.955306501] [sim.controller_manager]: Shutdown request received....
+[ign gazebo-1] [INFO] [1772007110.955370335] [sim.controller_manager]: Shutting down all controllers in the controller manager.
+[ign gazebo-1] [INFO] [1772007110.955401678] [sim.controller_manager]: Deactivating controller 'sim_joint_state_broadcaster'
+[ign gazebo-1] [INFO] [1772007110.955469814] [sim.controller_manager]: Shutting down controller 'sim_joint_state_broadcaster'
+[ign gazebo-1] [INFO] [1772007110.955526938] [sim.controller_manager]: Deactivating controller 'sim_scaled_joint_trajectory_controller'
+[ign gazebo-1] [INFO] [1772007110.955605527] [sim.controller_manager]: Shutting down controller 'sim_scaled_joint_trajectory_controller'
+[ign gazebo-1] [INFO] [1772007110.955657428] [resource_manager]: 'deactivate' hardware 'sim_ur10e_ur10e' 
+[ign gazebo-1] [INFO] [1772007110.955672875] [resource_manager]: Successful 'deactivate' of hardware 'sim_ur10e_ur10e'
+[ign gazebo-1] [INFO] [1772007110.955677825] [resource_manager]: 'shutdown' hardware 'sim_ur10e_ur10e' 
+[ign gazebo-1] [INFO] [1772007110.955682902] [resource_manager]: Successful 'shutdown' of hardware 'sim_ur10e_ur10e'
+[ign gazebo-1] [INFO] [1772007110.955688538] [resource_manager]: 'deactivate' hardware 'LinearAxisHardwareInterface' 
+[ign gazebo-1] [INFO] [1772007110.955693062] [resource_manager]: Successful 'deactivate' of hardware 'LinearAxisHardwareInterface'
+[ign gazebo-1] [INFO] [1772007110.955699362] [resource_manager]: 'shutdown' hardware 'LinearAxisHardwareInterface' 
+[ign gazebo-1] [INFO] [1772007110.955703598] [resource_manager]: Successful 'shutdown' of hardware 'LinearAxisHardwareInterface'
+[ign gazebo-1] [INFO] [1772007110.955707526] [sim.controller_manager]: Shutting down the controller manager.
+[ign gazebo-1] [INFO] [1772007110.955718718] [controller_manager]: Shutdown request received....
+[ign gazebo-1] [INFO] [1772007110.955737980] [controller_manager]: Shutting down all controllers in the controller manager.
+[ign gazebo-1] [INFO] [1772007110.955746838] [controller_manager]: Shutting down the controller manager.
+[ERROR] [linear_axis_adapter.py-9]: process has died [pid 43597, exit code 1, cmd '/home/cem/colcon_ws/install/festo_edcon_ros2/lib/festo_edcon_ros2/linear_axis_adapter.py --ros-args -r __node:=linear_axis_adapter_node --params-file /tmp/launch_params_yvwnodit'].
+[INFO] [rviz2-10]: process has finished cleanly [pid 43599]
+[ign gazebo-1] m[0m
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:270] [0m[1;36mInitializing render context[0m[1;36m[0m
+[ign gazebo-1] [1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mignition-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[ign gazebo-1] [1;36m[Dbg] [RenderUtil.cc:2591] [0m[1;36mCreate scene [[0m[1;36mscene[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:284] [Dbg] [Sensors.cc:610] [0m[1;36mInitialization needed[0m[1;36m[0m
+[ign gazebo-1] [1;36mRendering Thread initialized[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [RgbdCameraSensor.cc:216] [0m[1;36mRGB images for [[0m[1;36mmy_robot_cell_sim::sim_ur10e_wrist_3_link::sim_ur10e_rgbd_camera[0m[1;36m] advertised on [[0m[1;36mworld/ifarlab/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_rgbd_camera[0m[1;36m/image][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [RgbdCameraSensor.cc:230] [0m[1;36mDepth images for [[0m[1;36mmy_robot_cell_sim::sim_ur10e_wrist_3_link::sim_ur10e_rgbd_camera[0m[1;36m] advertised on [[0m[1;36mworld/ifarlab/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_rgbd_camera[0m[1;36m/depth_image][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [RgbdCameraSensor.cc:244] [0m[1;36mPoints for [[0m[1;36mmy_robot_cell_sim::sim_ur10e_wrist_3_link::sim_ur10e_rgbd_camera[0m[1;36m] advertised on [[0m[1;36mworld/ifarlab/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_rgbd_camera[0m[1;36m/points][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [CameraSensor.cc:760] [0m[1;36mCamera info for [[0m[1;36mmy_robot_cell_sim::sim_ur10e_wrist_3_link::sim_ur10e_rgbd_camera[0m[1;36m] advertised on [[0m[1;36mworld/ifarlab/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_rgbd_camera/camera_info[0m[1;36m][0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SignalHandler.cc:141] [0m[1;36mReceived signal[[0m[1;36m2[0m[1;36m].[0m
+[ign gazebo-1] [1;36m[Dbg] [ServerPrivate.cc:110] [0m[1;36mServer received signal[[0m[1;36m2[0m[1;36m][0m
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:439] [0m[1;36mSensorsPrivate::Stop[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:425] [0m[1;36mSensorsPrivate::RenderThread stopped[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [gz.cc:410] [0m[1;36mShutting down ign-gazebo-server[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36mExiting postupdate worker thread ([0m[1;36m[Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m1[0m[1;36m)[0m[1;36m[Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36m[Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36mExiting postupdate worker thread ([0m[1;36mExiting postupdate worker thread ([0m[1;36mExiting postupdate worker thread ([0m[1;36mExiting postupdate worker thread (5[0m[1;36mExiting postupdate worker thread ([0m[1;36m7[0m[1;36m[Dbg] [SimulationRunner.cc:523] [Dbg] [SimulationRunner.cc:523] [0m[1;36mExiting postupdate worker thread ([0m[1;36m6[0m[1;36m)[0m[1;36m
+[ign gazebo-1] 8[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36mExiting postupdate worker thread ([0m[1;36m[0m
+[ign gazebo-1] [1;36m04)[0m[1;36m6[0m[1;36m[0m
+[ign gazebo-1] [1;36m04)2[0m[1;36m)[0m[1;36m04[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m9[0m[1;36m)[0m[1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m)[0m[1;36m04)[0m[1;36m[0m
+[ign gazebo-1] [1;36m)[0m[1;36m[0m
+[ign gazebo-1] [1;36m[Dbg] [Sensors.cc:439] [0m[1;36mSensorsPrivate::Stop[0m[1;36m[0m
+[ERROR] [ign gazebo-1]: process has died [pid 43580, exit code -2, cmd 'ruby /usr/bin/ign gazebo  -r -v 4 /home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf --force-version 6'].
+[INFO] [launch]: process[ign gazebo-1] was required: shutting down launched system
+[ERROR] [urscript_interface-5]: process[urscript_interface-5] failed to terminate '5' seconds after receiving 'SIGINT', escalating to 'SIGTERM'
+[ERROR] [ros2_control_node-4]: process[ros2_control_node-4] failed to terminate '5' seconds after receiving 'SIGINT', escalating to 'SIGTERM'
+[INFO] [urscript_interface-5]: sending signal 'SIGTERM' to process[urscript_interface-5]
+[INFO] [ros2_control_node-4]: sending signal 'SIGTERM' to process[ros2_control_node-4]
+[urscript_interface-5] [INFO] [1772007115.766530889] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[ERROR] [ros2_control_node-4]: process has died [pid 43587, exit code -15, cmd '/opt/ros/humble/lib/controller_manager/ros2_control_node --ros-args --params-file /tmp/launch_params_wicoxu1q --params-file /home/cem/colcon_ws/install/ur_robot_driver/share/ur_robot_driver/config/ur10e_update_rate.yaml --params-file /tmp/launch_params_78clanxq'].
+[ERROR] [urscript_interface-5]: process[urscript_interface-5] failed to terminate '10.0' seconds after receiving 'SIGTERM', escalating to 'SIGKILL'
+[INFO] [urscript_interface-5]: sending signal 'SIGKILL' to process[urscript_interface-5]
+[ERROR] [urscript_interface-5]: process has died [pid 43589, exit code -9, cmd '/home/cem/colcon_ws/install/ur_robot_driver/lib/ur_robot_driver/urscript_interface --ros-args --params-file /tmp/launch_params_whk3fizv'].

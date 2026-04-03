@@ -35,36 +35,12 @@ build the workspace
     colcon build
     source install/setup.bash
 ```
-Two primary systems can be run with this repository.
-
-System 1: HIL Test System (Real + Simulation)
-
-This system provides a Hardware-in-the-Loop (HIL) test environment that runs the real robot system at IFARLAB and the Gazebo simulation simultaneously.
+UR10e robot with 2FG14 Gripper 
 
 ```bash
-  ros2 launch my_robot_cell_control hil_test.launch.py
+  ros2 launch my_robot_cell_gz gripperrobot_ifarlab_gazebo.launch.py use_gripper:=true
 ```
-If you want to test the system without real robots using fake_hardware, you can add the use_fake_hardware:=true parameter to the command:
-```bash
-  ros2 launch my_robot_cell_control hil_test.launch.py use_fake_hardware:=true
-```
-<img width="1918" height="995" alt="image" src="https://github.com/user-attachments/assets/53fff91c-f95a-47ab-8b29-73f854e41077" />
-
-After the system is up and running, you can use the following command to start the MoveIt 2! controllers and move the robots:
-
-```bash
-  ros2 run pymoveit2_real combined_joint_goal.py
-```
-
-System 2: Dual Robot HIL Test System (Kawasaki RS005L + UR10e)
-This option launches a Gazebo simulation environment consisting only of a dual UR10e robot setup. It is used for working entirely in simulation without real robot hardware.
-Currently, that system is developing.
-To launch the dual-robot Gazebo simulation, run the following command:
-```bash
-  ros2 launch mobile_manipulator_description whole_ifarlab_gazebo.launch.py
-```
-<img width="1918" height="995" alt="image" src="https://github.com/user-attachments/assets/45eab4f8-863c-4745-8bb2-bee5ec282690" />
-
+<img width="1911" height="948" alt="Screenshot from 2026-02-10 13-30-14" src="https://github.com/user-attachments/assets/18b3f464-3197-4398-b9a1-250a99f3ba74" />
 
 
   

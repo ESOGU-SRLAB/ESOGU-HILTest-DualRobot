@@ -1,0 +1,5 @@
+[INFO] [launch]: All log files can be found below /home/cem/.ros/log/2026-02-24-17-40-53-781505-cem-31186
+[INFO] [launch]: Default logging verbosity is set to INFO
+[ERROR] [launch]: Caught exception in launch (see debug for traceback): Caught multiple exceptions when trying to load file of format [py]:
+ - XacroException: Not enough blocks
+ - InvalidFrontendLaunchFileError: The launch file may have a syntax error, or its format is unknown

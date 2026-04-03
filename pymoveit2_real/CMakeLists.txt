@@ -33,7 +33,13 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/real_sensing_robot_v3.py
     ${EXAMPLES_DIR}/real_cleaning_mission_runner_v3.py
     ${EXAMPLES_DIR}/real_detection_to_3d_node.py
+    ${EXAMPLES_DIR}/real_dual_executor.py
     DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install launch files
+install(DIRECTORY launch/
+    DESTINATION share/${PROJECT_NAME}/launch
 )
 
 # Setup the project

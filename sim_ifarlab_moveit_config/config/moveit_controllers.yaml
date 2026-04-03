@@ -22,7 +22,7 @@ moveit_simple_controller_manager:
   kawasaki_controller:
     type: FollowJointTrajectory
     joints:
-      - sim_kawasaki_world_to_agv
+      - world_to_agv
       - sim_kawasaki_joint1
       - sim_kawasaki_joint2
       - sim_kawasaki_joint3

@@ -8,32 +8,32 @@ default_acceleration_scaling_factor: 0.1
 # Specific joint properties can be changed with the keys [max_position, min_position, max_velocity, max_acceleration]
 # Joint limits can be turned off with [has_velocity_limits, has_acceleration_limits]
 joint_limits:
-  joint1:
+  sim_kawasaki_joint1:
     has_velocity_limits: true
     max_velocity: 5.2359877559829888
     has_acceleration_limits: false
     max_acceleration: 0
-  joint2:
+  sim_kawasaki_joint2:
     has_velocity_limits: true
     max_velocity: 5.2359877559829888
     has_acceleration_limits: false
     max_acceleration: 0
-  joint3:
+  sim_kawasaki_joint3:
     has_velocity_limits: true
     max_velocity: 5.2359877559829888
     has_acceleration_limits: false
     max_acceleration: 0
-  joint4:
+  sim_kawasaki_joint4:
     has_velocity_limits: true
     max_velocity: 8.0285145591739155
     has_acceleration_limits: false
     max_acceleration: 0
-  joint5:
+  sim_kawasaki_joint5:
     has_velocity_limits: true
     max_velocity: 8.0285145591739155
     has_acceleration_limits: false
     max_acceleration: 0
-  joint6:
+  sim_kawasaki_joint6:
     has_velocity_limits: true
     max_velocity: 12.915436464758038
     has_acceleration_limits: false

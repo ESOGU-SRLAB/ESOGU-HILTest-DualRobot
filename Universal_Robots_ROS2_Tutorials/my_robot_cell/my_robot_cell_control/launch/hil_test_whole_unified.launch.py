@@ -172,6 +172,45 @@ def launch_setup(context, *args, **kwargs):
                 parameters=[{"use_sim_time": False}],
             ),
 
+            # AGV Bridge Node — ROS1 Noetic PC (192.168.3.6:9090) ile köprü
+            # world_to_agv prismatik joint'ini /joint_states'e publish eder;
+            # robot_state_publisher bu olmadan AGV + Kawasaki TF ağacını yayımlamaz.
+            # roslibpy bağlantı yoksa kendi içinde retry yapar, timer gerekmez.
+            # Node(
+            #     package="agv_nodes",
+            #     executable="bridge_node",
+            #     name="agv_bridge_node",
+            #     output="screen",
+            #     parameters=[{"use_sim_time": False}],
+            # ),
+
+            # # AGV Controller Node — /agv/goal_position → ROS1 action goal
+            # Node(
+            #     package="agv_nodes",
+            #     executable="agv_controller_node",
+            #     name="agv_controller_node",
+            #     output="screen",
+            #     parameters=[{"use_sim_time": False}],
+            # ),
+
+            # # Kawasaki RS005L Joint State Publisher
+            # # TCP bağlantısı (192.168.3.7:11111) için robot_state_publisher
+            # # ve UR driver hazır olduktan sonra başlatılır.
+            # # /joint_states  → robot_state_publisher TF ağacını tamamlar (RViz)
+            # # /kawasaki/joint_states → real_to_sim_bridge sim senkronizasyonu
+            # TimerAction(
+            #     period=8.0,
+            #     actions=[
+            #         Node(
+            #             package="sir_robot_ros_interface",
+            #             executable="ROS2KawasakiRobotJointStatePublisher",
+            #             name="kawasaki_joint_state_publisher",
+            #             output="screen",
+            #             parameters=[{"use_sim_time": False}],
+            #         ),
+            #     ],
+            # ),
+
             # RViz (gerçek robot görünümü)
             Node(
                 package="rviz2",
@@ -464,6 +503,7 @@ def launch_setup(context, *args, **kwargs):
             ),
         ],
     )
+    
 
     # ==================== Başlatılacak Tüm Düğümler ====================
     nodes_to_start = [
