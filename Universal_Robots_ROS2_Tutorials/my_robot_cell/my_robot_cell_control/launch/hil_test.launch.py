@@ -24,6 +24,7 @@ from launch_ros.substitutions import FindPackageShare
 from launch.conditions import IfCondition, UnlessCondition
 from launch.event_handlers import OnProcessExit
 from launch_ros.parameter_descriptions import ParameterValue
+from launch.actions import SetEnvironmentVariable
 
 
 def launch_setup(context, *args, **kwargs):
@@ -42,6 +43,11 @@ def launch_setup(context, *args, **kwargs):
     namespace = LaunchConfiguration("namespace")
     sim_namespace = LaunchConfiguration("sim_namespace")
     tf_prefix = LaunchConfiguration("tf_prefix")
+    
+    # Gripper için eklenen dinamik xacro argümanları
+    gripper_ip = LaunchConfiguration("gripper_ip")
+    gripper_port = LaunchConfiguration("gripper_port")
+    use_mock_hardware = LaunchConfiguration("use_mock_hardware")
     
     # Gazebo argümanları - simrobot_ifarlab_gazebo için
     use_gazebo = LaunchConfiguration("use_gazebo")
@@ -81,10 +87,14 @@ def launch_setup(context, *args, **kwargs):
                     "initial_joint_controller": initial_joint_controller,
                     "activate_joint_controller": activate_joint_controller,
                     "headless_mode": headless_mode,
+                    "use_gripper": LaunchConfiguration("use_gripper"),
+                    # Gerçek robot URDF'i oluşturulurken gripper IP/Port bilgilerini aktarıyoruz
+                    "gripper_ip": gripper_ip,
+                    "gripper_port": gripper_port,
+                    "use_mock_hardware": use_mock_hardware,
                 }.items(),
             ),
             # MoveIt config'i gerçek robot için namespace olmadan başlat
-            
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(
@@ -157,14 +167,14 @@ def launch_setup(context, *args, **kwargs):
     # === SİMÜLASYON BİLEŞENLERİ (SADECE 'use_gazebo' true ise oluşturulur) ===
     if use_gazebo_value.lower() == 'true':
     
-    # Controller dosyasının tam yolunu belirtin
+        # Controller dosyasının tam yolunu belirtin
         controller_params_file = PathJoinSubstitution([
-            FindPackageShare("my_robot_cell_gz"),  # Package adını doğru yazın
+            FindPackageShare("my_robot_cell_gz"),
             "config",
             "simrobot_ur_controllers.yaml"
         ])
         
-        # Robot description'ı simülasyon için hazırla
+        # Robot description'ı simülasyon için hazırla (XACRO DİNAMİK ARGÜMANLARI BURADA)
         robot_description_content = Command([
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
@@ -177,6 +187,9 @@ def launch_setup(context, *args, **kwargs):
             " tf_prefix:=sim_",
             " sim_ignition:=true",
             " simulation_controllers:=", controller_params_file,
+            " gripper_ip:=", gripper_ip,
+            " gripper_port:=", gripper_port,
+            " use_fake_hardware:=", use_fake_hardware,
         ])
         
         # --- SİMÜLASYON NAMESPACE GRUBU (SIM_NAMESPACE İLE) ---
@@ -238,17 +251,7 @@ def launch_setup(context, *args, **kwargs):
                     output="screen",
                 ),
 
-                # Node(
-                #     package='tf2_ros',
-                #     executable='static_transform_publisher',
-                #     arguments=[
-                #         '0.0', '0.0', '0.0',
-                #         '-0.707', '0.0', '0.707', '0.0',
-                #         'sim_ur10e_depth_optical_frame', 
-                #         'my_robot_cell_sim/sim_ur10e_wrist_3_link/sim_ur10e_depth_optical_frame'
-                #     ],
-                #     parameters=[{"use_sim_time": True}],
-                # ),    URDF Düzeltmesine göre güncellenmiş hali aşağıda
+                # URDF Düzeltmesine göre güncellenmiş hali aşağıda
                 Node(
                     package='tf2_ros',
                     executable='static_transform_publisher',
@@ -318,8 +321,6 @@ def launch_setup(context, *args, **kwargs):
                 )
             ]
         )
-
-    
     
     # Simülasyon eylemlerini gecikmeli olarak başlatmak için TimerAction kullan
     delayed_sim_launch = TimerAction(
@@ -328,11 +329,41 @@ def launch_setup(context, *args, **kwargs):
     )
     simulation_actions.append(delayed_sim_launch)
 
+    # === GRIPPER CONTROLLER SPAWNER (use_gripper true ise) ===
+    gripper_actions = []
+    use_gripper_value = context.launch_configurations.get("use_gripper", "false")
+
+    if use_gripper_value.lower() == 'true':
+        onrobot_launch = TimerAction(
+            period=10.0,
+            actions=[
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource(
+                        PathJoinSubstitution([
+                            FindPackageShare("onrobot_robot_driver"),
+                            "launch",
+                            "onrobot_control.launch.py",
+                        ])
+                    ),
+                    launch_arguments={
+                        "address": gripper_ip,
+                        "port": gripper_port,
+                        "use_fake_hardware": use_fake_hardware,
+                    }.items(),
+                ),
+            ]
+        )
+        gripper_actions.append(onrobot_launch)
+
     # Paralel başlatma için eylemler
     final_actions = []
     
     # Gerçek robot eylemlerini hemen başlat
     final_actions.extend(real_robot_actions)
+
+    # Gripper controller spawner ekle
+    if gripper_actions:
+        final_actions.extend(gripper_actions)
     
     # Simülasyon eylemlerini de ekle (paralel)
     if simulation_actions:
@@ -360,6 +391,31 @@ def generate_launch_description():
             description="IP address by which the robot can be reached.",
         )
     )
+    
+    # --- GRIPPER İÇİN EKLENEN YENİ ARGÜMANLAR ---
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gripper_ip",
+            default_value="192.168.3.56",
+            description="IP address of the OnRobot Gripper.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gripper_port",
+            default_value="502",
+            description="Port of the OnRobot Gripper.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_mock_hardware",
+            default_value="false",
+            description="Set to true to use mock/fake hardware for the gripper.",
+        )
+    )
+    # --------------------------------------------
+
     declared_arguments.append(
         DeclareLaunchArgument("launch_rviz", default_value="true", description="Launch RViz for real robot?")
     )
@@ -476,8 +532,22 @@ def generate_launch_description():
             description="Gazebo world file path.",
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_gripper",
+            default_value="false",
+            description="Enable gripper on the robot.",
+        )
+    )
 
     return LaunchDescription(declared_arguments + [
         LogInfo(msg=["Dijital İkiz Robot başlatma yapılandırması yükleniyor..."]),
+        
+        # UR paketinin launch dosyasına özel argümanlarımızı sızdırmak için Environment Variable kullanıyoruz:
+        SetEnvironmentVariable('ENV_USE_GRIPPER', LaunchConfiguration('use_gripper')),
+        SetEnvironmentVariable('ENV_USE_FAKE_HARDWARE', LaunchConfiguration('use_fake_hardware')),
+        SetEnvironmentVariable('ENV_GRIPPER_IP', LaunchConfiguration('gripper_ip')),
+        SetEnvironmentVariable('ENV_GRIPPER_PORT', LaunchConfiguration('gripper_port')),
+        
         OpaqueFunction(function=launch_setup)
     ])

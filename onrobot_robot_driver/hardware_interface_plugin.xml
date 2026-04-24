@@ -1,0 +1,9 @@
+<library path="onrobot_robot_driver_plugin">
+    <class name="onrobot_robot_driver/Onrobot2FG7PositionHardwareInterface"
+            type="onrobot::Onrobot2FG7PositionHardwareInterface"
+            base_class_type="hardware_interface::SystemInterface">
+        <description>
+            ROS2 Control System Driver for Allegro Hand grippers
+        </description>
+    </class>
+</library>

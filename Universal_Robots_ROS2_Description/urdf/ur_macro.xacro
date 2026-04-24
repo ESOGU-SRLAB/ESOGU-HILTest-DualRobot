@@ -92,8 +92,8 @@
     script_command_port:=50004
     trajectory_port:=50003
     non_blocking_read:=true
-    keep_alive_count:=2"
-
+    keep_alive_count:=2
+    use_gripper:=false"
     >
 
     <!-- Load configuration data from the provided .yaml files -->
@@ -139,6 +139,7 @@
         trajectory_port="${trajectory_port}"
         non_blocking_read="${non_blocking_read}"
         keep_alive_count="${keep_alive_count}"
+        use_gripper="${use_gripper}"
         />
     </xacro:if>
 
@@ -626,6 +627,32 @@
       <parent link="${tf_prefix}rgb_frame" />
       <child link="${tf_prefix}rgb_optical_frame"/>
     </joint>
+
+    <xacro:arg name="use_gripper" default="$(optenv ENV_USE_GRIPPER false)"/>
+    <xacro:arg name="use_fake_hardware" default="$(optenv ENV_USE_FAKE_HARDWARE false)"/>
+    <xacro:arg name="gripper_ip" default="$(optenv ENV_GRIPPER_IP 192.168.3.56)"/>
+    <xacro:arg name="gripper_port" default="$(optenv ENV_GRIPPER_PORT 502)"/>
+
+    <xacro:if value="$(arg use_gripper)">
+
+      <xacro:include filename="$(find onrobot_2fg7_description)/urdf/onrobot_2fg7.xacro"/>
+      <xacro:include filename="$(find onrobot_2fg7_description)/ros2_control/onrobot_2fg7.ros2_control.xacro"/>
+
+      <xacro:onrobot_2fg7 prefix="${tf_prefix}" parent="${tf_prefix}tool0">
+        <origin xyz="0.045576 0.040897 0.017678" rpy="0 0 0"/>
+      </xacro:onrobot_2fg7>
+
+      <xacro:onrobot_2fg7_ros2_control
+        name="onrobot_2fg7"
+        prefix="${tf_prefix}"
+        port="$(arg gripper_port)"
+        address="$(arg gripper_ip)"
+        force=""
+        position_filtering=""
+        velocity_filtering=""
+        use_fake_hardware="$(arg use_fake_hardware)" />
+      
+    </xacro:if>
 
   </xacro:macro>
 </robot>

@@ -41,12 +41,14 @@
       </collision>
     </link>
 
-    <!-- Chassis assembly - tüm PART1-PART44 parçalarını içerir -->
+    <!-- Chassis assembly - devre dışı bırakıldı, platform/door/door1 ile değiştirildi
     <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </xacro:chassis_assembly>
+    -->
 
-    <!-- <link name="${tf_prefix}chassis">
+    <!-- CHASSIS LINK - devre dışı bırakıldı
+    <link name="${tf_prefix}chassis">
       <inertial>
         <origin xyz="-1.124731 1.232845 1.108302" rpy="0 0 0"/>
         <mass value="120.90442642947052"/>
@@ -71,7 +73,80 @@
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
-    </link> -->
+    </link>
+    -->
+
+    <!-- Platform - Bodies(1): mass=205.0 kg, inertia CAD'dan alındı -->
+    <link name="${tf_prefix}platform">
+      <inertial>
+        <origin xyz="-1.101122 1.387607 0.574201" rpy="0 0 0"/>
+        <mass value="205.0"/>
+        <inertia ixx="267.2" ixy="-0.03267" ixz="1.178"
+                 iyy="96.55"  iyz="0.1364"
+                 izz="194.6"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/platform.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/platform.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- Door - araba kapısı (~18 kg, 1.1m x 0.9m x 0.05m çelik) -->
+    <link name="${tf_prefix}windowlessdoor"> 
+      <inertial>
+        <origin xyz="-0.864306 0.816343 0.934094" rpy="0 0 0"/>
+        <mass value="18.0"/>
+        <inertia ixx="497.9" ixy="1.366" ixz="78.57"
+                 iyy="320.6" iyz="0.8697"
+                 izz="218.4"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowlessdoor.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowlessdoor.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <!-- Door1 - araba kapısı (~18 kg, 1.1m x 0.9m x 0.05m çelik) -->
+    <link name="${tf_prefix}windowdoor">
+      <inertial>
+        <origin xyz="-0.844038 1.994389 0.74421" rpy="0 0 0"/>
+        <mass value="18.0"/>
+        <inertia ixx="1.22" ixy="0.0" ixz="0.0"
+                 iyy="1.84" iyz="0.0"
+                 izz="3.03"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowdoor.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowdoor.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
 
     <link name="${tf_prefix}robot_mount">
       <inertial>
@@ -143,11 +218,31 @@
       <child link="${tf_prefix}table" />
     </joint>
 
-    <!-- <joint name="${tf_prefix}base_to_chassis" type="fixed">
+    <!-- CHASSIS JOINT - devre dışı bırakıldı
+    <joint name="${tf_prefix}base_to_chassis" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}chassis"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint> -->
+    </joint>
+    -->
+
+    <joint name="${tf_prefix}base_to_platform" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${tf_prefix}platform"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="${tf_prefix}platform_to_windowlessdoor" type="fixed">
+      <parent link="${tf_prefix}platform"/>
+      <child link="${tf_prefix}windowlessdoor"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="${tf_prefix}platform_to_windowdoor" type="fixed">
+      <parent link="${tf_prefix}platform"/>
+      <child link="${tf_prefix}windowdoor"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
 
     <!-- Linear axis joint - bu joint'in tam tanımı burada olmalı -->
     <joint name="${tf_prefix}base_to_robot_mount" type="prismatic">
