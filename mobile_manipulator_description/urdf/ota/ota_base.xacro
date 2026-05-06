@@ -100,14 +100,14 @@
       </visual>
     </gazebo> -->
 
-    <!-- ifarlab.sdf: ifarlab_ray model pose = "0 0 0 0 0 0" → world origin -->
+    <!-- cem.sdf: ifarlab_ray model pose = "0 0 0 0 0 0" → world origin -->
     <joint name="ifarlab_ray_joint" type="fixed">
       <parent link="world"/>
       <child link="ifarlab_ray_link"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
-    <!-- AGV başlangıç konumu: ifarlab.sdf spawn pozisyonundan okundu
+    <!-- AGV başlangıç konumu: cem.sdf spawn pozisyonundan okundu
          x=-2.301949  y=0.135135131  z=0.17  yaw=1.570796 (90°)
          axis 1 0 0 = joint frame local X = yaw 90° nedeniyle world +Y yönü
          Bu eksende AGV ileri/geri hareket eder (ray üzerinde kayar) -->

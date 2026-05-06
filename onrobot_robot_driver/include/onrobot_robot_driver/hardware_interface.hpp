@@ -60,6 +60,7 @@ protected:
   double beta_;
   double force_;
   bool use_commanded;
+  bool command_initialized_;  // İlk dış komut gelene kadar write() devre dışı
   std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
 
   // callback handles for dynamic configuration

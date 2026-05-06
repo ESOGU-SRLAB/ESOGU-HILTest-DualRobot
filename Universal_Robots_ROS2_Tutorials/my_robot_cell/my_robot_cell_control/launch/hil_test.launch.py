@@ -95,18 +95,18 @@ def launch_setup(context, *args, **kwargs):
                 }.items(),
             ),
             # MoveIt config'i gerçek robot için namespace olmadan başlat
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(
-                        get_package_share_directory('real_robot_moveit_config'),
-                        'launch',
-                        'move_group.launch.py'
-                    )
-                ),
-                launch_arguments={
-                    "use_sim_time": "false",
-                }.items(),
-            )
+            # IncludeLaunchDescription(
+            #     PythonLaunchDescriptionSource(
+            #         os.path.join(
+            #             get_package_share_directory('real_robot_moveit_config'),
+            #             'launch',
+            #             'move_group.launch.py'
+            #         )
+            #     ),
+            #     launch_arguments={
+            #         "use_sim_time": "false",
+            #     }.items(),
+            # )
         ]
     )
     real_robot_actions.append(real_robot_launch_group)
@@ -190,6 +190,7 @@ def launch_setup(context, *args, **kwargs):
             " gripper_ip:=", gripper_ip,
             " gripper_port:=", gripper_port,
             " use_fake_hardware:=", use_fake_hardware,
+            " use_gripper:=", LaunchConfiguration("use_gripper"),
         ])
         
         # --- SİMÜLASYON NAMESPACE GRUBU (SIM_NAMESPACE İLE) ---
@@ -229,7 +230,7 @@ def launch_setup(context, *args, **kwargs):
                     package="ros_gz_sim",
                     executable="create",
                     arguments=[
-                        "-world", "ifarlab",
+                        "-world", "cem",
                         "-topic", "/sim/robot_description",
                         "-name", "my_robot_cell_sim",
                         "-allow_renaming", "true",
@@ -287,18 +288,32 @@ def launch_setup(context, *args, **kwargs):
                         ),
                     ]
                 ),
-                IncludeLaunchDescription(
-                    PythonLaunchDescriptionSource(
-                        os.path.join(
-                            get_package_share_directory('sim_robot_moveit_config'),
-                            'launch',
-                            'move_group.launch.py'
-                        )
-                    ),
-                    launch_arguments={
-                        "use_sim_time": "true",
-                    }.items(),
+
+                # sim_gripper_controller spawner - sadece use_gripper:=true ise
+                TimerAction(
+                    period=9.0,  # UR controller'lardan sonra spawn et
+                    actions=[
+                        Node(
+                            package="controller_manager",
+                            executable="spawner",
+                            arguments=["sim_gripper_controller", "--controller-manager", "/sim/controller_manager"],
+                            output="screen",
+                            condition=IfCondition(LaunchConfiguration("use_gripper")),
+                        ),
+                    ]
                 ),
+                # IncludeLaunchDescription(
+                #     PythonLaunchDescriptionSource(
+                #         os.path.join(
+                #             get_package_share_directory('sim_robot_moveit_config'),
+                #             'launch',
+                #             'move_group.launch.py'
+                #         )
+                #     ),
+                #     launch_arguments={
+                #         "use_sim_time": "true",
+                #     }.items(),
+                # ),
                 
                 # Real to Sim Bridge Node - Gerçek robot ile simüle robot arasında köprü
                 Node(
@@ -327,33 +342,76 @@ def launch_setup(context, *args, **kwargs):
         period=3.0,  # 3 saniye gecikme ile başlat
         actions=[sim_group]
     )
-    simulation_actions.append(delayed_sim_launch)
+
+    # === KONVEYÖR BELT (Gazebo plugin'li, hareketli) ===
+    _conveyor_pkg = get_package_share_directory('conveyorbelt_gz')
+    _conveyor_share_root = os.path.dirname(_conveyor_pkg)
+    _conveyor_lib = os.path.join(
+        os.path.dirname(os.path.dirname(_conveyor_pkg)), 'lib'
+    )
+    # URDF'deki statik conveyor_belt linki devre dışı; aynı pozisyonda plugin'li SDF spawn edilir.
+    # Pozisyon: STL mesh origin offset'i telafi etmek için x=0.7422, y=0.0966
+    conveyor_spawn = TimerAction(
+        period=12.0,  # Gazebo ve robot spawn tamamlanana kadar bekle
+        actions=[
+            Node(
+                package="ros_gz_sim",
+                executable="create",
+                arguments=[
+                    "-world", "cem",
+                    "-file", os.path.join(_conveyor_pkg, "sdf", "conveyor.sdf"),
+                    "-name", "conveyor",
+                    "-allow_renaming", "false",
+                    "-x", "0.7422",
+                    "-y", "0.0966",
+                    "-z", "0.0",
+                ],
+                output="screen",
+            ),
+        ]
+    )
+
+    simulation_actions.extend([
+        SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', _conveyor_share_root),
+        SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', _conveyor_share_root),
+        SetEnvironmentVariable('IGN_GAZEBO_SYSTEM_PLUGIN_PATH', _conveyor_lib),
+        delayed_sim_launch,
+        conveyor_spawn,
+    ])
 
     # === GRIPPER CONTROLLER SPAWNER (use_gripper true ise) ===
+    # NOT: onrobot_control.launch.py ayrıca başlatılmaz çünkü aynı robota ikinci
+    # bir RTDE bağlantısı açarak çakışmaya neden olur.
+    # Gripper donanımı zaten ur_control.launch.py tarafından ana controller manager'a
+    # yükleniyor. Burada sadece gripper_controller'ı ana controller manager'a spawn ediyoruz.
     gripper_actions = []
     use_gripper_value = context.launch_configurations.get("use_gripper", "false")
 
     if use_gripper_value.lower() == 'true':
-        onrobot_launch = TimerAction(
-            period=10.0,
+        gripper_param_file = PathJoinSubstitution([
+            FindPackageShare("my_robot_cell_control"),
+            "config",
+            "gripper_controllers.yaml"
+        ])
+        # gripper_controller'ı ana controller manager'a spawn et (gecikmeli)
+        # --controller-type ile tip doğrudan spawner'a verilir
+        gripper_controller_spawner = TimerAction(
+            period=15.0,  # UR driver ayağa kalktıktan sonra spawn et
             actions=[
-                IncludeLaunchDescription(
-                    PythonLaunchDescriptionSource(
-                        PathJoinSubstitution([
-                            FindPackageShare("onrobot_robot_driver"),
-                            "launch",
-                            "onrobot_control.launch.py",
-                        ])
-                    ),
-                    launch_arguments={
-                        "address": gripper_ip,
-                        "port": gripper_port,
-                        "use_fake_hardware": use_fake_hardware,
-                    }.items(),
+                Node(
+                    package="controller_manager",
+                    executable="spawner",
+                    arguments=[
+                        "gripper_controller",
+                        "--controller-manager", "/controller_manager",
+                        "--controller-type", "joint_trajectory_controller/JointTrajectoryController",
+                        "--param-file", gripper_param_file,
+                    ],
+                    output="screen",
                 ),
             ]
         )
-        gripper_actions.append(onrobot_launch)
+        gripper_actions.append(gripper_controller_spawner)
 
     # Paralel başlatma için eylemler
     final_actions = []
@@ -361,7 +419,7 @@ def launch_setup(context, *args, **kwargs):
     # Gerçek robot eylemlerini hemen başlat
     final_actions.extend(real_robot_actions)
 
-    # Gripper controller spawner ekle
+    # Gripper controller spawner ekle (sadece gripper_controller spawn edilir, ayrı node açılmaz)
     if gripper_actions:
         final_actions.extend(gripper_actions)
     

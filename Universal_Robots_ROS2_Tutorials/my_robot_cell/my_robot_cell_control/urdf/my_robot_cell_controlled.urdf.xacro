@@ -5,7 +5,7 @@
   <xacro:include filename="$(find my_robot_cell_description)/urdf/my_robot_cell_macro.xacro"/>
   <!--The ur_description package already provides a control tag for the UR arm, we can directly include-->
   <xacro:include filename="$(find ur_description)/urdf/ur.ros2_control.xacro"/>
-  <!-- ifarlab ortam makrosu -->
+  <!-- cem ortam makrosu -->
   <xacro:include filename="$(find mobile_manipulator_description)/urdf/ifarlab_environment.xacro"/>
 
   <!--We need to specify the arguments used for parametrizing our description-->
@@ -31,7 +31,7 @@
 
   <link name="world" />
 
-  <!-- ifarlab ortam bileşenlerini spawn et (world frame'e sabitli) -->
+  <!-- cem ortam bileşenlerini spawn et (world frame'e sabitli) -->
   <xacro:ifarlab_environment prefix=""/>
 
   <!--Create the scene description including the robot-->

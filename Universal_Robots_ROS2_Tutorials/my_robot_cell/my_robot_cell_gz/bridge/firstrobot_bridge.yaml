@@ -34,7 +34,7 @@
                             # "ROS_TO_GZ" - Bridge ROS topic to Gz
 
 - ros_topic_name: "pose"
-  gz_topic_name: "/world/ifarlab/dynamic_pose/info"
+  gz_topic_name: "/world/cem/dynamic_pose/info"
   ros_type_name: "geometry_msgs/msg/PoseArray"
   gz_type_name: "ignition.msgs.Pose_V"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default

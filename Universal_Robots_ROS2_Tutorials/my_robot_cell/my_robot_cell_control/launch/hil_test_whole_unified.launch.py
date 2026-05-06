@@ -80,16 +80,30 @@ def launch_setup(context, *args, **kwargs):
     sim_ur_initial_joint_controller = LaunchConfiguration("sim_ur_initial_joint_controller")
     kawasaki_start_joint_controller = LaunchConfiguration("kawasaki_start_joint_controller")
 
+    # ==================== Gripper Argümanları ====================
+    gripper_ip = LaunchConfiguration("gripper_ip")
+    gripper_port = LaunchConfiguration("gripper_port")
+    use_mock_hardware = LaunchConfiguration("use_mock_hardware")
+    use_gripper_value = context.launch_configurations.get("use_gripper", "false")
+
     # ==================== Gazebo Ortam Değişkenleri ====================
     kawasaki_pkg_share = get_package_share_directory("mobile_manipulator_description")
     kawasaki_model_path = os.path.join(kawasaki_pkg_share, "model")
     kawasaki_share_root = os.path.dirname(kawasaki_pkg_share)
+
+    # Konveyör belt plugin yolları
+    _conveyor_pkg = get_package_share_directory("conveyorbelt_gz")
+    _conveyor_share_root = os.path.dirname(_conveyor_pkg)
+    _conveyor_lib = os.path.join(
+        os.path.dirname(os.path.dirname(_conveyor_pkg)), "lib"
+    )
 
     set_ign_resource = SetEnvironmentVariable(
         name="IGN_GAZEBO_RESOURCE_PATH",
         value=[
             kawasaki_model_path, ":",
             kawasaki_share_root, ":",
+            _conveyor_share_root, ":",
             EnvironmentVariable("IGN_GAZEBO_RESOURCE_PATH", default_value=""),
         ],
     )
@@ -99,7 +113,16 @@ def launch_setup(context, *args, **kwargs):
         value=[
             kawasaki_model_path, ":",
             kawasaki_share_root, ":",
+            _conveyor_share_root, ":",
             EnvironmentVariable("GZ_SIM_RESOURCE_PATH", default_value=""),
+        ],
+    )
+
+    set_gz_system_plugin = SetEnvironmentVariable(
+        name="IGN_GAZEBO_SYSTEM_PLUGIN_PATH",
+        value=[
+            _conveyor_lib, ":",
+            EnvironmentVariable("IGN_GAZEBO_SYSTEM_PLUGIN_PATH", default_value=""),
         ],
     )
 
@@ -160,6 +183,10 @@ def launch_setup(context, *args, **kwargs):
                     "initial_joint_controller": initial_joint_controller,
                     "activate_joint_controller": activate_joint_controller,
                     "headless_mode": headless_mode,
+                    "use_gripper": LaunchConfiguration("use_gripper"),
+                    "gripper_ip": gripper_ip,
+                    "gripper_port": gripper_port,
+                    "use_mock_hardware": use_mock_hardware,
                 }.items(),
             ),
 
@@ -254,7 +281,7 @@ def launch_setup(context, *args, **kwargs):
         package="ros_gz_sim",
         executable="create",
         arguments=[
-            "-world", "ifarlab",
+            "-world", "cem",
             "-topic", "/sim/robot_description",
             "-name", "whole_cell_sim",
             "-allow_renaming", "true",
@@ -343,6 +370,23 @@ def launch_setup(context, *args, **kwargs):
                             "--controller-manager", "/sim/controller_manager",
                         ],
                         output="screen",
+                    ),
+                ],
+            ),
+
+            # Sim Gripper Controller (9 sn gecikme - sadece use_gripper:=true ise)
+            TimerAction(
+                period=9.0,
+                actions=[
+                    Node(
+                        package="controller_manager",
+                        executable="spawner",
+                        arguments=[
+                            "sim_gripper_controller",
+                            "--controller-manager", "/sim/controller_manager",
+                        ],
+                        output="screen",
+                        condition=IfCondition(LaunchConfiguration("use_gripper")),
                     ),
                 ],
             ),
@@ -503,13 +547,77 @@ def launch_setup(context, *args, **kwargs):
             ),
         ],
     )
-    
+
+    # === KONVEYÖR BELT (Gazebo plugin'li, hareketli) ===
+    # URDF'deki statik conveyor_belt linki devre dışı; aynı pozisyonda plugin'li SDF spawn edilir.
+    # Pozisyon: STL mesh origin offset'i telafi etmek için x=0.7422, y=0.0966
+    conveyor_spawn = TimerAction(
+        period=22.0,  # Gazebo(0) + sim spawn(10) + robot spawn buffer
+        actions=[
+            Node(
+                package="ros_gz_sim",
+                executable="create",
+                arguments=[
+                    "-world", "cem",
+                    "-file", os.path.join(_conveyor_pkg, "sdf", "conveyor.sdf"),
+                    "-name", "conveyor",
+                    "-allow_renaming", "false",
+                    "-x", "0.7422",
+                    "-y", "0.0966",
+                    "-z", "0.0",
+                ],
+                output="screen",
+            ),
+            Node(
+                package="ros_gz_sim",
+                executable="create",
+                arguments=[
+                    "-world", "cem",
+                    "-file", os.path.join(_conveyor_pkg, "sdf", "RedCube.sdf"),
+                    "-name", "RedCube",
+                    "-allow_renaming", "true",
+                    "-x", "0.7",
+                    "-y", "0.1",
+                    "-z", "0.1",
+                ],
+                output="screen",
+            ),
+        ]
+    )
+
+    # === GERÇEK ROBOT GRIPPER CONTROLLER SPAWNER ===
+    # NOT: gripper donanımı zaten ur_control.launch.py tarafından ana controller manager'a
+    # yükleniyor. Burada sadece gripper_controller'ı spawn ediyoruz.
+    gripper_controller_spawner = None
+    if use_gripper_value.lower() == 'true':
+        gripper_param_file = PathJoinSubstitution([
+            FindPackageShare("my_robot_cell_control"),
+            "config",
+            "gripper_controllers.yaml"
+        ])
+        gripper_controller_spawner = TimerAction(
+            period=15.0,  # UR driver ayağa kalktıktan sonra spawn et
+            actions=[
+                Node(
+                    package="controller_manager",
+                    executable="spawner",
+                    arguments=[
+                        "gripper_controller",
+                        "--controller-manager", "/controller_manager",
+                        "--controller-type", "joint_trajectory_controller/JointTrajectoryController",
+                        "--param-file", gripper_param_file,
+                    ],
+                    output="screen",
+                ),
+            ]
+        )
 
     # ==================== Başlatılacak Tüm Düğümler ====================
     nodes_to_start = [
         # Ortam değişkenleri
         set_ign_resource,
         set_gz_resource,
+        set_gz_system_plugin,
 
         # Gazebo başlat
         gz_launch_description_with_gui,
@@ -530,12 +638,18 @@ def launch_setup(context, *args, **kwargs):
         # 2. Simülasyon (10 sn sonra - unified URDF, tek spawn)
         delayed_sim_spawn_and_nodes,
 
-        # 3. MoveIt (25 sn sonra - kendi GroupAction ile /sim namespace)
+        # 3. Konveyör belt (22 sn sonra - Gazebo + robot spawn tamamlanınca)
+        conveyor_spawn,
+
+        # 4. MoveIt (25 sn sonra - kendi GroupAction ile /sim namespace)
         delayed_sim_moveit,
 
-        # 4. Real-to-Sim Bridge (30 sn sonra)
+        # 5. Real-to-Sim Bridge (30 sn sonra)
         # real_to_sim_bridge_delayed,
     ]
+
+    if gripper_controller_spawner:
+        nodes_to_start.append(gripper_controller_spawner)
 
     return nodes_to_start
 
@@ -642,6 +756,36 @@ def generate_launch_description():
         )
     )
 
+    # ==================== Gripper Argümanları ====================
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gripper_ip",
+            default_value="192.168.3.56",
+            description="OnRobot Gripper IP adresi.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gripper_port",
+            default_value="502",
+            description="OnRobot Gripper port numarası.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_mock_hardware",
+            default_value="false",
+            description="Gripper için mock/fake donanım kullan.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_gripper",
+            default_value="false",
+            description="Gripper'ı etkinleştir.",
+        )
+    )
+
     # ==================== Simülasyon Argümanları ====================
     declared_arguments.append(
         DeclareLaunchArgument(
@@ -686,5 +830,9 @@ def generate_launch_description():
         LogInfo(msg=["REAL: UR10e + Lineer Eksen (gerçek hw) + AGV/Kawasaki (collision)"]),
         LogInfo(msg=["SIM:  UR10e + Lineer Eksen + AGV + Kawasaki (tek Gazebo model)"]),
         LogInfo(msg=["============================================================"]),
+        SetEnvironmentVariable('ENV_USE_GRIPPER', LaunchConfiguration('use_gripper')),
+        SetEnvironmentVariable('ENV_USE_FAKE_HARDWARE', LaunchConfiguration('use_fake_hardware')),
+        SetEnvironmentVariable('ENV_GRIPPER_IP', LaunchConfiguration('gripper_ip')),
+        SetEnvironmentVariable('ENV_GRIPPER_PORT', LaunchConfiguration('gripper_port')),
         OpaqueFunction(function=launch_setup),
     ])

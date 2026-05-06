@@ -190,7 +190,7 @@
 -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/barrier/model/standing.stl
 -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/model/barrier/model.sdf
 -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/worlds
--- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/worlds/ifarlab.world
+-- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/worlds/cem.world
 -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/ament_index/resource_index/package_run_dependencies/mobile_manipulator_description
 -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/ament_index/resource_index/parent_prefix_path/mobile_manipulator_description
 -- Installing: /home/cem/colcon_ws/src/mobile_manipulator_description/install/mobile_manipulator_description/share/mobile_manipulator_description/environment/ament_prefix_path.sh

@@ -134,7 +134,7 @@ def launch_setup(context, *args, **kwargs):
     set_ign_resource = SetEnvironmentVariable(
         name="IGN_GAZEBO_RESOURCE_PATH",
         value=[
-            model_path, ":",      # ifarlab.world içindeki model:// referansları için
+            model_path, ":",      # cem.world içindeki model:// referansları için
             share_root, ":",      # model://mobile_manipulator_description/... için
             EnvironmentVariable("IGN_GAZEBO_RESOURCE_PATH", default_value=""),
         ],
@@ -289,12 +289,12 @@ def generate_launch_description():
             "gazebo_gui", default_value="true", description="Start gazebo with GUI?"
         )
     )
-    # world_file default'u artık paket içindeki worlds/ifarlab.world
+    # world_file default'u artık paket içindeki worlds/cem.world
     # declared_arguments.append(
     #     DeclareLaunchArgument(
     #         "world_file",
     #         default_value=PathJoinSubstitution(
-    #             [FindPackageShare("mobile_manipulator_description"), "worlds", "ifarlab.world"]
+    #             [FindPackageShare("mobile_manipulator_description"), "worlds", "cem.world"]
     #         ),
     #         description="Gazebo world file (absolute path or filename from the gazebosim worlds collection) containing a custom world.",
     #     )
@@ -303,7 +303,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "world_file",
-            default_value="/home/cem/colcon_ws/src/Universal_Robots_ROS2_Tutorials/my_robot_cell/my_robot_cell_gz/worlds/ifarlab.sdf",
+            default_value="/home/cem/colcon_ws/src/Universal_Robots_ROS2_Tutorials/my_robot_cell/my_robot_cell_gz/worlds/cem.sdf",
             description="Gazebo world file (absolute path or filename from the gazebosim worlds collection) containing a custom world.",
         )
     )

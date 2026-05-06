@@ -1,6 +1,5 @@
 // real_to_sim_bridge.cpp - Bridge between real robots and simulated robots
-// Supports: UR10E only (real → sim joint state mirroring)
-// Kawasaki + AGV sim sync is handled by KawasakiArmNode (sir_robot_ros_interface)
+// Supports: UR10E arm joints + OnRobot 2FG7 gripper (real → sim mirroring)
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -63,11 +62,20 @@ public:
       "/sim/sim_scaled_joint_trajectory_controller/joint_trajectory", 
       rclcpp::QoS(10).best_effort());
 
+    // ==================== GRIPPER CONFIGURATION ====================
+    gripper_real_joint_name_ = "ur10e_gripper_joint";
+    gripper_sim_joint_name_  = "sim_ur10e_gripper_joint";
+
+    gripper_trajectory_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>(
+      "/sim/sim_gripper_controller/joint_trajectory",
+      rclcpp::QoS(10).best_effort());
+
     // ==================== LOG INFO ====================
-    RCLCPP_INFO(this->get_logger(), "Real-to-Sim Bridge Node started (UR10E only)");
+    RCLCPP_INFO(this->get_logger(), "Real-to-Sim Bridge Node started (UR10E + Gripper)");
     RCLCPP_INFO(this->get_logger(), "Update rate: %.2f Hz", update_rate_);
     RCLCPP_INFO(this->get_logger(), "  Listening to: /joint_states");
     RCLCPP_INFO(this->get_logger(), "  Publishing to: /sim/sim_scaled_joint_trajectory_controller/joint_trajectory");
+    RCLCPP_INFO(this->get_logger(), "  Publishing to: /sim/sim_gripper_controller/joint_trajectory");
   }
 
 private:
@@ -139,6 +147,25 @@ private:
     ur_trajectory_pub_->publish(traj_msg);
 
     RCLCPP_DEBUG(this->get_logger(), "Published UR trajectory with %zu joints", ur_sim_joint_order_.size());
+
+    // ==================== GRIPPER BRIDGE ====================
+    auto gripper_it = real_joint_positions.find(gripper_real_joint_name_);
+    if (gripper_it != real_joint_positions.end()) {
+      trajectory_msgs::msg::JointTrajectory gripper_traj;
+      gripper_traj.header.stamp = rclcpp::Time(0);
+      gripper_traj.joint_names = {gripper_sim_joint_name_};
+
+      trajectory_msgs::msg::JointTrajectoryPoint gp;
+      gp.positions     = {gripper_it->second};
+      gp.velocities    = {0.0};
+      gp.accelerations = {0.0};
+      gp.time_from_start = rclcpp::Duration::from_seconds(0.1);
+
+      gripper_traj.points.push_back(gp);
+      gripper_trajectory_pub_->publish(gripper_traj);
+
+      RCLCPP_DEBUG(this->get_logger(), "Published gripper trajectory: %.4f", gripper_it->second);
+    }
   }
 
   // ==================== UTILITY FUNCTIONS ====================
@@ -173,6 +200,11 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr ur_joint_state_sub_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr ur_trajectory_pub_;
   rclcpp::Time ur_last_update_time_;
+
+  // ==================== GRIPPER members ====================
+  std::string gripper_real_joint_name_;
+  std::string gripper_sim_joint_name_;
+  rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr gripper_trajectory_pub_;
 };
 
 int main(int argc, char** argv)

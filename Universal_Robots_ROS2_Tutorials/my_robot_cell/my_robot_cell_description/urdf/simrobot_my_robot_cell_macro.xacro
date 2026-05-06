@@ -14,6 +14,7 @@
     visual_parameters_file
     sim_ignition:=true
     tf_prefix:='sim_ur10e_'
+    use_gripper:=false
     ">
 
     <material name="silver">
@@ -190,7 +191,7 @@
       </collision>
     </link>
 
-    <link name="${tf_prefix}conveyor_belt">
+    <!-- <link name="${tf_prefix}conveyor_belt">
       <inertial>
         <origin rpy="0 0 0" xyz="0.731215 0.101822 0.642664"/>
         <mass value="27.036586"/>
@@ -209,7 +210,7 @@
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/conveyorbelt.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
-    </link>
+    </link> -->
 
     <!-- Joint tanımları -->
     <joint name="${tf_prefix}table_base_joint" type="fixed">
@@ -260,11 +261,11 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
-    <joint name="${tf_prefix}base_to_conveyorbelt" type="fixed">
+    <!-- <joint name="${tf_prefix}base_to_conveyorbelt" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}conveyor_belt"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
+    </joint> -->
 
     <link name="${tf_prefix}stackable_bin">
       <inertial>
@@ -357,6 +358,7 @@
       visual_parameters_file="${visual_parameters_file}"
       generate_ros2_control_tag="true" 
       sim_ignition="${sim_ignition}"
+      use_gripper="${use_gripper}"
     >
       <origin xyz="0 0 0" rpy="0 0 0" />
     </xacro:simrobot_ur_robot>

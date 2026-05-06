@@ -271,12 +271,12 @@ def generate_launch_description():
             "gazebo_gui", default_value="true", description="Start gazebo with GUI?"
         )
     )
-    # world_file default'u artık paket içindeki worlds/ifarlab.world
+    # world_file default'u artık paket içindeki worlds/cem.world
     declared_arguments.append(
         DeclareLaunchArgument(
             "world_file",
             default_value=PathJoinSubstitution(
-                [FindPackageShare("rs005l_gazebo"), "worlds", "ifarlab.world"]
+                [FindPackageShare("rs005l_gazebo"), "worlds", "cem.world"]
             ),
             description="Gazebo world file (absolute path or filename from the gazebosim worlds collection) containing a custom world.",
         )

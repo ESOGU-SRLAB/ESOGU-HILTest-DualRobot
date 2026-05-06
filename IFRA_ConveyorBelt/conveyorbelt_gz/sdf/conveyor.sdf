@@ -1,0 +1,220 @@
+<?xml version="1.0" ?>
+
+<!--
+
+# ===================================== COPYRIGHT ===================================== #
+#                                                                                       #
+#  IFRA (Intelligent Flexible Robotics and Assembly) Group, CRANFIELD UNIVERSITY        #
+#  Created on behalf of the IFRA Group at Cranfield University, United Kingdom          #
+#  E-mail: IFRA@cranfield.ac.uk                                                         #
+#                                                                                       #
+#  Licensed under the Apache-2.0 License.                                               #
+#  You may not use this file except in compliance with the License.                     #
+#  You may obtain a copy of the License at: http://www.apache.org/licenses/LICENSE-2.0  #
+#                                                                                       #
+#  Unless required by applicable law or agreed to in writing, software distributed      #
+#  under the License is distributed on an "as-is" basis, without warranties or          #
+#  conditions of any kind, either express or implied. See the License for the specific  #
+#  language governing permissions and limitations under the License.                    #
+#                                                                                       #
+#  IFRA Group - Cranfield University                                                    #
+#  AUTHORS: Mikel Bueno Viso - Mikel.Bueno-Viso@cranfield.ac.uk                         #
+#           Dr. Seemal Asif  - s.asif@cranfield.ac.uk                                   #
+#           Prof. Phil Webb  - p.f.webb@cranfield.ac.uk                                 #
+#                                                                                       #
+#  Date: June, 2023.                                                                    #
+#                                                                                       #
+# ===================================== COPYRIGHT ===================================== #
+
+# ===================================== COPYRIGHT ===================================== #
+#                                                                                       #
+#  The CAD file of the ConveyorBelt has been taken from the rokokoo/conveyor_demo ROS 2 #
+#  package. The .urdf file has been converted to a Gazebo model (.srdf).                #                                                                  
+#                                                                                       #
+#  Copyright (C) 2021, GitHub/rokokoo                                                   #                                    
+#                                                                                       #
+# ===================================== COPYRIGHT ===================================== #
+
+# ======= CITE OUR WORK ======= #
+# You can cite our work with the following statement:
+# IFRA-Cranfield (2023) Gazebo-ROS 2 Conveyor Belt Plugin. URL: https://github.com/IFRA-Cranfield/IFRA_ConveyorBelt.
+
+-->
+
+<sdf version="1.9">
+
+  <model name="conveyor">
+
+    <static>false</static>
+
+    <link name="belt_fixed">
+
+      <kinematic>true</kinematic>
+      <gravity>false</gravity>
+
+      <visual name="belt_fixed_visual">
+        <!-- STL mm cinsinden; scale 0.001 ile metreye cevirilir.
+             Pose offset mesh'i model origin'ine (XY) hizalar. -->
+        <pose>-0.7422 -0.0966 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://conveyorbelt_gz/meshes/objects/conveyorbelt.stl</uri>
+            <scale>0.001 0.001 0.001</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.5 0.5 0.5 1</ambient>
+          <diffuse>0.5 0.5 0.5 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+
+      <collision name="belt_fixed_collision">
+        <!-- Konveyor govdesinin box yaklasimi (W x D x H metre) -->
+        <pose>0 0 0.4428 0 0 0</pose>
+        <geometry>
+          <box><size>0.3584 0.9689 0.8</size></box>
+        </geometry>
+      </collision>
+
+    </link>
+
+    <link name="belt_moving">
+
+      <!-- STL bant yuzeyi: Z=843.4mm -> 0.8434m -->
+      <pose>0 0 0.8434 0 0 0</pose>
+
+      <inertial>
+        <mass>100.0</mass>
+        <inertia>
+          <ixx>1e-6</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>1e-6</iyy><iyz>0</iyz>
+          <izz>1e-6</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="belt_moving_collision">
+        <!-- Gercek bant alani: 0.2783 x 0.9522 m -->
+        <pose>-0.0105 0.0184 0 0 0 0</pose>
+        <geometry>
+          <box><size>0.2783 0.9522 0.001</size></box>
+        </geometry>
+        <surface>
+          <contact/>
+          <friction>
+            <ode>
+              <mu>100.0</mu>
+              <mu2>100.0</mu2>
+            </ode>
+            <torsional>
+              <coefficient>1000.0</coefficient>
+              <patch_radius>0.1</patch_radius>
+            </torsional>
+          </friction>
+        </surface>
+      </collision>
+
+      <!-- Ust bant yüzeyi (hareket eder) -->
+      <!-- STL bant alani: genislik=0.2783m, uzunluk=0.9522m -->
+      <!-- Merkez offset: X=-0.0105, Y=+0.0184 (STL'ye gore) -->
+      <visual name="belt_top_visual">
+        <pose>-0.0105 0.0184 0 0 0 0</pose>
+        <geometry>
+          <box><size>0.26 0.9522 0.004</size></box>
+        </geometry>
+        <material>
+          <ambient>0.0 0.6 0.0 1</ambient>
+          <diffuse>0.0 0.8 0.0 1</diffuse>
+          <specular>0.1 0.3 0.1 1</specular>
+        </material>
+      </visual>
+
+      <!-- Alt donus seridi: STL downward surface Z=819.8mm -> local Z=-0.0236m -->
+      <visual name="belt_bottom_visual">
+        <pose>-0.002 0.018 -0.038 0 0 0</pose>
+        <geometry>
+          <box><size>0.200 0.9444 0.004</size></box>
+        </geometry>
+        <material>
+          <ambient>0.0 0.6 0.0 1</ambient>
+          <diffuse>0.0 0.8 0.0 1</diffuse>
+          <specular>0.1 0.3 0.1 1</specular>
+        </material>
+      </visual>
+
+      <!-- On tamburlu rulman: yaricap=0.019m, X ekseni boyunca uzanir -->
+      <!-- RPY=(0, pi/2, 0) -> silindiri Z'den X eksenine dondurur -->
+      <visual name="belt_drum_front_visual">
+        <pose>-0.0105 0.4945 -0.019 0 1.5708 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.019</radius>
+            <length>0.26</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.0 0.6 0.0 1</ambient>
+          <diffuse>0.0 0.8 0.0 1</diffuse>
+          <specular>0.1 0.3 0.1 1</specular>
+        </material>
+      </visual>
+
+      <!-- Arka tamburlu rulman: yaricap=0.019m -->
+      <visual name="belt_drum_back_visual">
+        <pose>-0.0105 -0.4577 -0.019 0 1.5708 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.019</radius>
+            <length>0.26</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.0 0.6 0.0 1</ambient>
+          <diffuse>0.0 0.8 0.0 1</diffuse>
+          <specular>0.1 0.3 0.1 1</specular>
+        </material>
+      </visual>
+
+    </link>
+
+    <!-- FIX THE CONVEYOR -->
+    <joint name="CB_fixed" type="fixed">
+      <parent>world</parent>
+      <child>belt_fixed</child>
+    </joint>
+
+    <!-- CONVEYORBELT JOINT -->
+    <joint name="belt_joint" type="prismatic">
+
+      <parent>belt_fixed</parent>
+      <child>belt_moving</child>
+
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>0.0</lower>
+          <upper>0.01</upper>
+          <effort>1e8</effort>      
+          <velocity>10.0</velocity> 
+        </limit>
+        <dynamics>
+          <damping>1.0</damping>
+          <friction>0.0</friction>
+        </dynamics>
+      </axis>
+
+    </joint>
+
+    <!-- Fortress System plugin -->
+
+    <plugin name="ros2_conveyorbelt_system" filename="libros2gz_conveyorbelt_system.so">
+      <max_velocity>1.0</max_velocity>
+      <publish_rate>1000</publish_rate>
+      <joint_name>belt_joint</joint_name>
+      <lower_limit>0.0</lower_limit>
+      <upper_limit>0.01</upper_limit>
+    </plugin>
+
+  </model>
+  
+</sdf>

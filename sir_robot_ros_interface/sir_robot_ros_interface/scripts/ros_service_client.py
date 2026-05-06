@@ -31,7 +31,7 @@ if __name__ == '__main__':
     
     req = ManipulatorPoseIno2.Request()
     
-    req.path = "/home/ifarlab/colcon_ws/src/sir_robot_ros_interface/sir_robot_ros_interface/csv/35269.csv"
+    req.path = "/home/cem/colcon_ws/src/sir_robot_ros_interface/sir_robot_ros_interface/csv/35269.csv"
     print(req)
     
     resp = call_service(node, srv_name="/manipulator_service_test", srv_type=ManipulatorPoseIno2, srv_request=req)

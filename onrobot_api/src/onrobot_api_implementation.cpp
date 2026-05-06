@@ -75,7 +75,8 @@ void Robot2FG7::Implementation::init(const std::string& address, int port)
                  " " << modbus_strerror(errno));
   read_state(read_buffer, 1.0);
 
-  command_ = width_max_internal_;
+  // Mevcut ölçülen pozisyonu başlangıç komutu olarak kullan (gripper'ı hareket ettirme)
+  command_ = position_;
   last_command_ = command_;
 
   is_running_ = true;

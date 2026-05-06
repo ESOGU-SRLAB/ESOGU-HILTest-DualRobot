@@ -2,7 +2,7 @@
 <robot name="my_robot_cell_sim" xmlns:xacro="http://ros.org/wiki/xacro">
 
   <xacro:include filename="$(find my_robot_cell_description)/urdf/simrobot_my_robot_cell_macro.xacro"/>
-  <!-- ifarlab ortam makrosu -->
+  <!-- cem ortam makrosu -->
   <xacro:include filename="$(find mobile_manipulator_description)/urdf/ifarlab_environment.xacro"/>
 
   <xacro:arg name="ur_type" default="ur10e"/>
@@ -13,10 +13,11 @@
   <xacro:arg name="sim_ignition" default="true" />
   <xacro:arg name="simulation_controllers" default="" />
   <xacro:arg name="tf_prefix" default="sim_" /> <!--sim_ur10e_ for digital twin-->
+  <xacro:arg name="use_gripper" default="false" />
 
   <link name="world"/>
 
-  <!-- ifarlab ortam bileşenlerini spawn et (world frame'e sabitli) -->
+  <!-- cem ortam bileşenlerini spawn et (world frame'e sabitli) -->
   <xacro:ifarlab_environment prefix=""/>
   
   <!--This will create the scene where the robot is located in-->
@@ -29,6 +30,7 @@
     visual_parameters_file="$(arg visual_parameters_file)"
     sim_ignition="$(arg sim_ignition)"
     tf_prefix="$(arg tf_prefix)ur10e_"
+    use_gripper="$(arg use_gripper)"
     >
       <origin xyz="0.0 0 0" rpy="0 0 0" />
   </xacro:simrobot_my_robot_cell>

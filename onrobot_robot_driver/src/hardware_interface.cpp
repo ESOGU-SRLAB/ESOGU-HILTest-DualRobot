@@ -115,22 +115,27 @@ Onrobot2FG7PositionHardwareInterface::on_activate(
 
   api_->set_force(force_);
 
+  // Mevcut gerçek pozisyonu oku
+  double measured_position, measured_velocity, measured_force, last_command;
+  api_->get_state(measured_position, measured_velocity, measured_force, last_command);
+  double current_position = use_commanded ? last_command * 0.5 : measured_position * 0.5;
+  // Invert to match URDF convention (joint=0 = fully open)
+  double current_joint_position = position_max_ - current_position;
+
   for (std::size_t i = 0; i < info_.joints.size(); ++i)
   {
     if (std::isnan(hw_states_position_[i]))
     {
-      hw_states_position_[i] = position_max_;
+      hw_states_position_[i] = current_joint_position;
     }
     if (std::isnan(hw_states_velocity_[i]))
     {
       hw_states_velocity_[i] = 0.0;
     }
-
-    if (std::isnan(hw_commands_[i]))
-    {
-      hw_commands_[0] = position_max_;
-    }
+    // hw_commands_ NaN olarak bırak - controller komut gönderene kadar write() yazmayacak
+    hw_commands_[i] = std::numeric_limits<double>::quiet_NaN();
   }
+  command_initialized_ = false;  // Controller komut gönderene kadar write() devre dışı
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -155,12 +160,14 @@ hardware_interface::return_type Onrobot2FG7PositionHardwareInterface::read(const
   api_->get_state(measured_position, measured_velocity,
                   measured_force, last_command);
   // Use commanded position instead of measured if requested
-  measured_position = use_commanded ? last_command * 0.5 : measured_position * 0.5;
-  measured_velocity *= 0.5;
+  // Invert: joint=0 means fully open (position_max_), joint increases as gripper closes
+  double raw_position = use_commanded ? last_command * 0.5 : measured_position * 0.5;
+  double joint_position = position_max_ - raw_position;
+  double joint_velocity = -measured_velocity * 0.5;
 
   // low-pass filtering
-  hw_states_position_[0] = hw_states_position_[0] * (1.0 - alpha_) + measured_position * alpha_;
-  hw_states_velocity_[0] = hw_states_velocity_[0] * (1.0 - beta_) + measured_velocity * beta_;
+  hw_states_position_[0] = hw_states_position_[0] * (1.0 - alpha_) + joint_position * alpha_;
+  hw_states_velocity_[0] = hw_states_velocity_[0] * (1.0 - beta_) + joint_velocity * beta_;
 
   return hardware_interface::return_type::OK;
 }
@@ -168,8 +175,14 @@ hardware_interface::return_type Onrobot2FG7PositionHardwareInterface::read(const
 hardware_interface::return_type Onrobot2FG7PositionHardwareInterface::write(
   const rclcpp::Time& time, const rclcpp::Duration& period)
 {
-  double cmd = std::max(position_min_, std::min(position_max_, hw_commands_[0]));
-  api_->set_position(cmd * 2.0);
+  // hw_commands_ NaN ise controller henüz komut göndermemiş, gripper'a yazma
+  if (std::isnan(hw_commands_[0]))
+  {
+    return hardware_interface::return_type::OK;
+  }
+  double cmd = std::max(0.0, std::min(position_max_ - position_min_, hw_commands_[0]));
+  // Invert: joint=0 means fully open, so real position = position_max_ - joint_cmd
+  api_->set_position((position_max_ - cmd) * 2.0);
   return hardware_interface::return_type::OK;
 }
 

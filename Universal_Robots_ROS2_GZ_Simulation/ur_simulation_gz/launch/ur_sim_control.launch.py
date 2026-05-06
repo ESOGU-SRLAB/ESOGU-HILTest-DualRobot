@@ -320,7 +320,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "world_file",
-            default_value="/home/cem/colcon_ws/src/Universal_Robots_ROS2_GZ_Simulation/ur_simulation_gz/worlds/ifarlab.sdf",
+            default_value="/home/cem/colcon_ws/src/Universal_Robots_ROS2_GZ_Simulation/ur_simulation_gz/worlds/cem.sdf",
             description="Gazebo world file (absolute path or filename from the gazebosim worlds collection) containing a custom world.",
         )
     )

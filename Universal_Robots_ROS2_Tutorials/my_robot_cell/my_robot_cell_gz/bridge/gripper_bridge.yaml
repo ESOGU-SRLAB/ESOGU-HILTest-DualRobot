@@ -1,5 +1,5 @@
 - ros_topic_name: "pointcloud"
-  gz_topic_name: "/world/ifarlab/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points"
+  gz_topic_name: "/world/cem/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points"
   ros_type_name: "sensor_msgs/msg/PointCloud2"
   gz_type_name: "ignition.msgs.PointCloudPacked"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
@@ -11,7 +11,7 @@
   qos_profile: SENSOR_DATA  # Default is a default-constructed QoS with appropriate queue size
 
 - ros_topic_name: "depth/image"
-  gz_topic_name: "/world/ifarlab/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
+  gz_topic_name: "/world/cem/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "ignition.msgs.Image"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
@@ -34,7 +34,7 @@
                             # "ROS_TO_GZ" - Bridge ROS topic to Gz
 
 - ros_topic_name: "pose"
-  gz_topic_name: "/world/ifarlab/dynamic_pose/info"
+  gz_topic_name: "/world/cem/dynamic_pose/info"
   ros_type_name: "geometry_msgs/msg/PoseArray"
   gz_type_name: "ignition.msgs.Pose_V"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
@@ -57,7 +57,7 @@
 
 
 - ros_topic_name: "image"
-  gz_topic_name: "/world/ifarlab/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_imx179_camera/image"
+  gz_topic_name: "/world/cem/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_imx179_camera/image"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "ignition.msgs.Image"
   direction: GZ_TO_ROS
@@ -65,7 +65,7 @@
   lazy: false
 
 - ros_topic_name: "camera_info"
-  gz_topic_name: "/world/ifarlab/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_imx179_camera/camera_info"
+  gz_topic_name: "/world/cem/model/ur/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_imx179_camera/camera_info"
   ros_type_name: "sensor_msgs/msg/CameraInfo"
   gz_type_name: "ignition.msgs.CameraInfo"
   direction: GZ_TO_ROS
