@@ -12,7 +12,7 @@ from launch.actions import (
     RegisterEventHandler,
     TimerAction,
 )
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.launch_description_sources import PythonLaunchDescriptionSource, AnyLaunchDescriptionSource
 from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
@@ -92,6 +92,7 @@ def launch_setup(context, *args, **kwargs):
                     "gripper_ip": gripper_ip,
                     "gripper_port": gripper_port,
                     "use_mock_hardware": use_mock_hardware,
+                    "use_vacuum_gripper": LaunchConfiguration("use_vacuum_gripper"),
                 }.items(),
             ),
             # MoveIt config'i gerçek robot için namespace olmadan başlat
@@ -191,6 +192,7 @@ def launch_setup(context, *args, **kwargs):
             " gripper_port:=", gripper_port,
             " use_fake_hardware:=", use_fake_hardware,
             " use_gripper:=", LaunchConfiguration("use_gripper"),
+            " use_vacuum_gripper:=", LaunchConfiguration("use_vacuum_gripper"),
         ])
         
         # --- SİMÜLASYON NAMESPACE GRUBU (SIM_NAMESPACE İLE) ---
@@ -375,6 +377,7 @@ def launch_setup(context, *args, **kwargs):
         SetEnvironmentVariable('IGN_GAZEBO_RESOURCE_PATH', _conveyor_share_root),
         SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', _conveyor_share_root),
         SetEnvironmentVariable('IGN_GAZEBO_SYSTEM_PLUGIN_PATH', _conveyor_lib),
+        SetEnvironmentVariable('GZ_SIM_SYSTEM_PLUGIN_PATH', _conveyor_lib),
         delayed_sim_launch,
         conveyor_spawn,
     ])
@@ -415,7 +418,24 @@ def launch_setup(context, *args, **kwargs):
 
     # Paralel başlatma için eylemler
     final_actions = []
-    
+
+    # === ROSBRIDGE WEBSOCKET SERVER ===
+    # Foxglove, web arayüzleri veya harici istemciler için WebSocket bridge (port 9090)
+    rosbridge_server = IncludeLaunchDescription(
+        AnyLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare("rosbridge_server"),
+                "launch",
+                "rosbridge_websocket_launch.xml",
+            ])
+        ),
+        launch_arguments={
+            "port": "9090",
+            "address": "0.0.0.0",
+        }.items(),
+    )
+    final_actions.append(rosbridge_server)
+
     # Gerçek robot eylemlerini hemen başlat
     final_actions.extend(real_robot_actions)
 
@@ -597,6 +617,13 @@ def generate_launch_description():
             description="Enable gripper on the robot.",
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_vacuum_gripper",
+            default_value="false",
+            description="Enable vacuum gripper on the robot.",
+        )
+    )
 
     return LaunchDescription(declared_arguments + [
         LogInfo(msg=["Dijital İkiz Robot başlatma yapılandırması yükleniyor..."]),
@@ -606,6 +633,7 @@ def generate_launch_description():
         SetEnvironmentVariable('ENV_USE_FAKE_HARDWARE', LaunchConfiguration('use_fake_hardware')),
         SetEnvironmentVariable('ENV_GRIPPER_IP', LaunchConfiguration('gripper_ip')),
         SetEnvironmentVariable('ENV_GRIPPER_PORT', LaunchConfiguration('gripper_port')),
+        SetEnvironmentVariable('ENV_USE_VACUUM_GRIPPER', LaunchConfiguration('use_vacuum_gripper')),
         
         OpaqueFunction(function=launch_setup)
     ])

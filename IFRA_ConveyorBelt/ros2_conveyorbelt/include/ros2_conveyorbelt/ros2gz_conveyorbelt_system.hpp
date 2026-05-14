@@ -59,40 +59,40 @@
 #include <conveyorbelt_msgs/msg/conveyor_belt_state.hpp>
 #include <conveyorbelt_msgs/srv/conveyor_belt_control.hpp>
 
-// Ignition Gazebo (Fortress)
-#include <ignition/gazebo/System.hh>
-#include <ignition/gazebo/Model.hh>
-#include <ignition/gazebo/Entity.hh>
-#include <ignition/gazebo/EntityComponentManager.hh>
-#include <ignition/gazebo/Types.hh>
-#include <ignition/gazebo/components/Name.hh>
-#include <ignition/gazebo/components/JointVelocityCmd.hh>
-#include <ignition/gazebo/components/JointPosition.hh>
-#include <ignition/gazebo/components/JointPositionReset.hh>
-#include <ignition/gazebo/Util.hh>
+// Gazebo Harmonic
+#include <gz/sim/System.hh>
+#include <gz/sim/Model.hh>
+#include <gz/sim/Entity.hh>
+#include <gz/sim/EntityComponentManager.hh>
+#include <gz/sim/Types.hh>
+#include <gz/sim/components/Name.hh>
+#include <gz/sim/components/JointVelocityCmd.hh>
+#include <gz/sim/components/JointPosition.hh>
+#include <gz/sim/components/JointPositionReset.hh>
+#include <gz/sim/Util.hh>
 
-// Logging macros (ignerr / ignwarn / ignmsg)
-#include <ignition/common/Console.hh>
+// Logging macros (gzerr / gzwarn / gzmsg)
+#include <gz/common/Console.hh>
 
 namespace gz_conveyor
 {
 class ROS2ConveyorBeltSystem
-  : public ignition::gazebo::System,
-    public ignition::gazebo::ISystemConfigure,
-    public ignition::gazebo::ISystemPreUpdate
+  : public gz::sim::System,
+    public gz::sim::ISystemConfigure,
+    public gz::sim::ISystemPreUpdate
 {
 public:
   ROS2ConveyorBeltSystem() = default;
   ~ROS2ConveyorBeltSystem() override = default;
 
   // Gazebo entry points
-  void Configure(const ignition::gazebo::Entity &entity,
+  void Configure(const gz::sim::Entity &entity,
                  const std::shared_ptr<const sdf::Element> &sdf,
-                 ignition::gazebo::EntityComponentManager &ecm,
-                 ignition::gazebo::EventManager &) override;
+                 gz::sim::EntityComponentManager &ecm,
+                 gz::sim::EventManager &) override;
 
-  void PreUpdate(const ignition::gazebo::UpdateInfo &info,
-                 ignition::gazebo::EntityComponentManager &ecm) override;
+  void PreUpdate(const gz::sim::UpdateInfo &info,
+                 gz::sim::EntityComponentManager &ecm) override;
 
 private:
   // ROS 2
@@ -102,8 +102,8 @@ private:
   std::mutex mtx_;  // protects power_ and belt_velocity_
 
   // Model / joint
-  ignition::gazebo::Entity model_{ignition::gazebo::kNullEntity};
-  ignition::gazebo::Entity joint_{ignition::gazebo::kNullEntity};
+  gz::sim::Entity model_{gz::sim::kNullEntity};
+  gz::sim::Entity joint_{gz::sim::kNullEntity};
   std::string joint_name_{"belt_joint"};
 
   // Params

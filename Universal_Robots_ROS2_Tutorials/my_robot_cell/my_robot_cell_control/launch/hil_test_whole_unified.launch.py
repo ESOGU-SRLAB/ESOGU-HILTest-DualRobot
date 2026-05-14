@@ -41,7 +41,7 @@ from launch.actions import (
     SetEnvironmentVariable,
     TimerAction,
 )
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.launch_description_sources import PythonLaunchDescriptionSource, AnyLaunchDescriptionSource
 from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
@@ -131,7 +131,8 @@ def launch_setup(context, *args, **kwargs):
         PythonLaunchDescriptionSource(
             [FindPackageShare("ros_gz_sim"), "/launch/gz_sim.launch.py"]
         ),
-        launch_arguments={"gz_args": [" -r -v 4 ", world_file]}.items(),
+        launch_arguments={"gz_args": [" -r -v 4 ", world_file],
+                          "gz_version": "8",}.items(),
         condition=IfCondition(gazebo_gui),
     )
 
@@ -187,6 +188,7 @@ def launch_setup(context, *args, **kwargs):
                     "gripper_ip": gripper_ip,
                     "gripper_port": gripper_port,
                     "use_mock_hardware": use_mock_hardware,
+                    "use_vacuum_gripper": LaunchConfiguration("use_vacuum_gripper"),
                 }.items(),
             ),
 
@@ -612,6 +614,23 @@ def launch_setup(context, *args, **kwargs):
             ]
         )
 
+    # === ROSBRIDGE WEBSOCKET SERVER ===
+    # Foxglove, web arayüzleri veya harici istemciler için WebSocket bridge (port 9090)
+    # Gazebo Harmonic built-in WebSocket plugin kaldırıldığından rosbridge kullanıyoruz.
+    rosbridge_server = IncludeLaunchDescription(
+        AnyLaunchDescriptionSource(
+            PathJoinSubstitution([
+                FindPackageShare("rosbridge_server"),
+                "launch",
+                "rosbridge_websocket_launch.xml",
+            ])
+        ),
+        launch_arguments={
+            "port": "9090",
+            "address": "0.0.0.0",
+        }.items(),
+    )
+
     # ==================== Başlatılacak Tüm Düğümler ====================
     nodes_to_start = [
         # Ortam değişkenleri
@@ -646,6 +665,9 @@ def launch_setup(context, *args, **kwargs):
 
         # 5. Real-to-Sim Bridge (30 sn sonra)
         # real_to_sim_bridge_delayed,
+
+        # 6. Rosbridge WebSocket Server (port 9090)
+        rosbridge_server,
     ]
 
     if gripper_controller_spawner:
@@ -820,6 +842,14 @@ def generate_launch_description():
             "kawasaki_start_joint_controller",
             default_value="true",
             description="Kawasaki joint controller başlatılsın mı?",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_vacuum_gripper",
+            default_value="false",
+            description="Enable vacuum gripper on the robot.",
         )
     )
 

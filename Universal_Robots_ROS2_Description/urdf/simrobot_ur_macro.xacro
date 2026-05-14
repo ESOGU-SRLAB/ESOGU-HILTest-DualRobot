@@ -93,7 +93,8 @@
     trajectory_port:=50003
     non_blocking_read:=true
     keep_alive_count:=2
-    use_gripper:=false"
+    use_gripper:=false
+    use_vacuum_gripper:=false"
 
     >
 
@@ -141,6 +142,7 @@
         non_blocking_read="${non_blocking_read}"
         keep_alive_count="${keep_alive_count}"
         use_gripper="${use_gripper}"
+        use_vacuum_gripper="${use_vacuum_gripper}"
         />
     </xacro:if>
 
@@ -651,7 +653,7 @@
         <limit upper="0.001" lower="-0.026" effort="1000" velocity="10"/>
       </joint>
 
-      <link name="${tf_prefix}IMX_Camera">
+      <!-- <link name="${tf_prefix}IMX_Camera">
         <inertial>
           <origin xyz="-3.465374807465338e-05 0.0003801084631929186 0.006566275485619721" rpy="0 0 0"/>
           <mass value="0.04632955033200952"/>
@@ -670,9 +672,9 @@
             <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/IMX_Camera.stl" scale="0.001 0.001 0.001"/>
           </geometry>
         </collision>
-      </link>
+      </link> -->
 
-      <joint name="${tf_prefix}IMX_Camera_joint" type="fixed">
+      <!-- <joint name="${tf_prefix}IMX_Camera_joint" type="fixed">
         <origin xyz="-0.058785 -0.012133 0.033972" rpy="0 0 0"/>
         <parent link="${tf_prefix}sick_camera"/>
         <child link="${tf_prefix}IMX_Camera"/>
@@ -681,7 +683,6 @@
       <link name="${tf_prefix}IMX_Camera_frame_link"/>
 
       <joint name="${tf_prefix}IMX_Camera_frame_joint" type="fixed">
-        <!-- Datasheet: toplam derinlik 24.68mm, optik merkez lensin önünde -->
         <origin xyz="0.0 0.025 0.0" rpy="0 0 0" />
         <parent link="${tf_prefix}IMX_Camera" />
         <child link="${tf_prefix}IMX_Camera_frame_link"/>
@@ -689,14 +690,12 @@
 
       <gazebo reference="${tf_prefix}IMX_Camera_frame_link">
         <sensor name="${tf_prefix}imx179_camera" type="camera">
-          <!-- +Z yönüne bak (roll=-π/2) -->
           <pose>0 0 0 0 -1.5708 0</pose>
           <always_on>true</always_on>
           <update_rate>30.0</update_rate>
           <visualize>false</visualize>
     
           <camera name="${tf_prefix}imx179_rgb">
-            <!-- 145 deg = 2.5307 rad -->
             <horizontal_fov>2.5307</horizontal_fov>
     
             <image>
@@ -711,7 +710,7 @@
             </clip>
           </camera>
         </sensor>
-      </gazebo>
+      </gazebo> -->
 
     </xacro:if>
 
@@ -842,6 +841,65 @@
       <!-- IMX179 RGB camera (IMX_Camera linkine bağlı) -->
       
     
+    </xacro:if>
+
+    <xacro:arg name="use_vacuum_gripper" default="$(optenv ENV_USE_VACUUM_GRIPPER false)"/>
+    <xacro:if value="$(arg use_vacuum_gripper)">
+
+      <link name="${tf_prefix}vacuum_gripper">
+        <inertial>
+          <origin xyz="0.03840935181996907 0.02553282574514726 0.01947430811837292" rpy="0 0 0"/>
+          <mass value="5.206908838469105"/>
+          <inertia ixx="0.007119" iyy="0.00672" izz="0.006537" ixy="0.000313" iyz="1e-06" ixz="-1e-06"/>
+        </inertial>
+        <visual>
+          <origin xyz="-1.120802 -0.533941 -0.69825" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/vacuum_gripper.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="silver"/>
+        </visual>
+        <collision>
+          <origin xyz="-1.120802 -0.533941 -0.69825" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/vacuum_gripper.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+        </collision>
+      </link>
+
+      <link name="${tf_prefix}suction_cup">
+        <inertial>
+          <origin xyz="0.047500844943701104 0.027424316463654064 -9.637760878256074e-08" rpy="0 0 0"/>
+          <mass value="0.11348172115824295"/>
+          <inertia ixx="2.6e-05" iyy="5.2e-05" izz="6.5e-05" ixy="-2.3e-05" iyz="0.0" ixz="-0.0"/>
+        </inertial>
+        <visual>
+          <origin xyz="-1.19139 -0.578159 -0.71775" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/suction_cup.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="silver"/>
+        </visual>
+        <collision>
+          <origin xyz="-1.19139 -0.578159 -0.71775" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/suction_cup.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="${tf_prefix}vacuum_gripper_joint" type="fixed">
+        <origin xyz="0.04267 0.056052 -0.0195" rpy="0 0 0"/>
+        <parent link="${tf_prefix}tool0"/>
+        <child link="${tf_prefix}vacuum_gripper"/>
+      </joint>
+
+      <joint name="${tf_prefix}suction_cup_joint" type="fixed">
+        <origin xyz="0.070588 0.044218 0.0195" rpy="0 0 0"/>
+        <parent link="${tf_prefix}vacuum_gripper"/>
+        <child link="${tf_prefix}suction_cup"/>
+      </joint>
+      
     </xacro:if>
 
   </xacro:macro>

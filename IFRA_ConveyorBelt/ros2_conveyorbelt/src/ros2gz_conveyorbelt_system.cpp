@@ -50,22 +50,21 @@
 #include "ros2_conveyorbelt/ros2gz_conveyorbelt_system.hpp"
 
 #include <cmath>
-#include <ignition/plugin/Register.hh>  // IGNITION_ADD_PLUGIN
+#include <gz/plugin/Register.hh>  // GZ_ADD_PLUGIN
 
 using namespace gz_conveyor;
-using namespace ignition;
-using namespace ignition::gazebo;
+using namespace gz::sim;
 
-void ROS2ConveyorBeltSystem::Configure(const Entity &entity,
+void ROS2ConveyorBeltSystem::Configure(const gz::sim::Entity &entity,
                                        const std::shared_ptr<const sdf::Element> &sdf,
-                                       EntityComponentManager &ecm,
-                                       EventManager &)
+                                       gz::sim::EntityComponentManager &ecm,
+                                       gz::sim::EventManager &)
 {
   this->model_ = entity;
   Model model(entity);
   if (!model.Valid(ecm))
   {
-    ignerr << "[ROS2ConveyorBeltSystem] Invalid model entity.\n";
+    gzerr << "[ROS2ConveyorBeltSystem] Invalid model entity.\n";
     return;
   }
 
@@ -94,7 +93,7 @@ void ROS2ConveyorBeltSystem::Configure(const Entity &entity,
   this->joint_ = model.JointByName(ecm, this->joint_name_);
   if (this->joint_ == kNullEntity)
   {
-    ignerr << "[ROS2ConveyorBeltSystem] Joint [" << this->joint_name_ << "] not found.\n";
+    gzerr << "[ROS2ConveyorBeltSystem] Joint [" << this->joint_name_ << "] not found.\n";
     return;
   }
 
@@ -120,21 +119,21 @@ void ROS2ConveyorBeltSystem::Configure(const Entity &entity,
           std::bind(&ROS2ConveyorBeltSystem::onSetPower, this,
                     std::placeholders::_1, std::placeholders::_2));
 
-  ignwarn << "[ROS2ConveyorBeltSystem] Loaded: joint=" << this->joint_name_
+  gzwarn << "[ROS2ConveyorBeltSystem] Loaded: joint=" << this->joint_name_
           << " vmax=" << this->max_velocity_
           << " pub_rate=" << this->publish_rate_
           << " limits=[" << this->lower_limit_ << ", " << this->upper_limit_ << "]\n";
 }
 
 void ROS2ConveyorBeltSystem::PreUpdate(
-    const ignition::gazebo::UpdateInfo &info,
-    ignition::gazebo::EntityComponentManager &ecm)
+    const gz::sim::UpdateInfo &info,
+    gz::sim::EntityComponentManager &ecm)
 {
   // Spin ROS callbacks
   if (this->ros_node_)
     rclcpp::spin_some(this->ros_node_);
 
-  if (info.paused || this->joint_ == ignition::gazebo::kNullEntity)
+  if (info.paused || this->joint_ == gz::sim::kNullEntity)
     return;
 
   // --- Sim time + dt ---
@@ -147,7 +146,7 @@ void ROS2ConveyorBeltSystem::PreUpdate(
 
   // --- Read current joint position (if available) ---
   double q = std::numeric_limits<double>::quiet_NaN();
-  if (auto pos = ecm.Component<ignition::gazebo::components::JointPosition>(this->joint_))
+  if (auto pos = ecm.Component<gz::sim::components::JointPosition>(this->joint_))
   {
     if (!pos->Data().empty())
       q = pos->Data()[0];
@@ -178,10 +177,10 @@ void ROS2ConveyorBeltSystem::PreUpdate(
   {
     std::scoped_lock lk(this->mtx_);
     auto *velCmd =
-        ecm.Component<ignition::gazebo::components::JointVelocityCmd>(this->joint_);
+        ecm.Component<gz::sim::components::JointVelocityCmd>(this->joint_);
     if (!velCmd)
       velCmd = ecm.CreateComponent(
-          this->joint_, ignition::gazebo::components::JointVelocityCmd({0.0}));
+          this->joint_, gz::sim::components::JointVelocityCmd({0.0}));
 
     if (this->pending_reset_)
       velCmd->Data() = {0.0};                  // pause so reset can apply cleanly
@@ -193,10 +192,10 @@ void ROS2ConveyorBeltSystem::PreUpdate(
   if (this->pending_reset_)
   {
     auto *reset =
-        ecm.Component<ignition::gazebo::components::JointPositionReset>(this->joint_);
+        ecm.Component<gz::sim::components::JointPositionReset>(this->joint_);
     if (!reset)
       reset = ecm.CreateComponent(
-          this->joint_, ignition::gazebo::components::JointPositionReset({0.0}));
+          this->joint_, gz::sim::components::JointPositionReset({0.0}));
     else
       reset->Data() = {0.0};
 
@@ -252,11 +251,11 @@ void ROS2ConveyorBeltSystem::publishStatus()
   this->status_pub_->publish(msg);
 }
 
-// Register as an Ignition Gazebo (Fortress) System plugin
-IGNITION_ADD_PLUGIN(
+// Register as a Gazebo Harmonic System plugin
+GZ_ADD_PLUGIN(
   gz_conveyor::ROS2ConveyorBeltSystem,
-  ignition::gazebo::System,
-  ignition::gazebo::ISystemConfigure,
-  ignition::gazebo::ISystemPreUpdate
+  gz::sim::System,
+  gz::sim::ISystemConfigure,
+  gz::sim::ISystemPreUpdate
 )
-IGNITION_ADD_PLUGIN_ALIAS(gz_conveyor::ROS2ConveyorBeltSystem, "ros2_conveyorbelt_system")
+GZ_ADD_PLUGIN_ALIAS(gz_conveyor::ROS2ConveyorBeltSystem, "ros2_conveyorbelt_system")

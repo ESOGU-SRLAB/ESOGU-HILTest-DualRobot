@@ -1,22 +1,22 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-  <!-- ✅ Joint State Publisher (Ignition: gz-sim-joint-state-publisher-system) -->
+  <!-- ✅ Joint State Publisher (Gazebo Harmonic: gz-sim-joint-state-publisher-system) -->
   <xacro:macro name="ota_joints_state_publisher">
     <gazebo>
-      <plugin filename="libignition-gazebo6-joint-state-publisher-system.so" 
-              name="ignition::gazebo::systems::JointStatePublisher">
+      <plugin filename="gz-sim-joint-state-publisher-system"
+              name="gz::sim::systems::JointStatePublisher">
         <update_rate>50</update_rate>
       </plugin>
     </gazebo>
   </xacro:macro>  
 
 
-  <!-- ✅ Differential Drive Plugin (Ignition: gz-sim-diff-drive-system) -->
+  <!-- ✅ Differential Drive Plugin (Gazebo Harmonic: gz-sim-diff-drive-system) -->
   <xacro:macro name="ota_diff_drive" params="base_link">
     <gazebo>
-      <plugin name="ignition::gazebo::systems::DiffDrive"
-              filename="libignition-gazebo6-diff-drive-system.so">
+      <plugin name="gz::sim::systems::DiffDrive"
+              filename="gz-sim-diff-drive-system">  
 
         <!-- Tekerlek eklemleri (ota_wheel.xacro'daki joint isimleri) -->
         <left_joint>wheel_left_base</left_joint>

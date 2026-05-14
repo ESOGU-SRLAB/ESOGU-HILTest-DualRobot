@@ -93,7 +93,8 @@
     trajectory_port:=50003
     non_blocking_read:=true
     keep_alive_count:=2
-    use_gripper:=false"
+    use_gripper:=false
+    use_vacuum_gripper:=false"
     >
 
     <!-- Load configuration data from the provided .yaml files -->
@@ -140,6 +141,7 @@
         non_blocking_read="${non_blocking_read}"
         keep_alive_count="${keep_alive_count}"
         use_gripper="${use_gripper}"
+        use_vacuum_gripper="${use_vacuum_gripper}"
         />
     </xacro:if>
 
@@ -651,6 +653,64 @@
         position_filtering=""
         velocity_filtering=""
         use_fake_hardware="$(arg use_fake_hardware)" />
+      
+    </xacro:if>
+    <xacro:arg name="use_vacuum_gripper" default="$(optenv ENV_USE_VACUUM_GRIPPER false)"/>
+    <xacro:if value="$(arg use_vacuum_gripper)">
+
+      <link name="${tf_prefix}vacuum_gripper">
+        <inertial>
+          <origin xyz="0.03840935181996907 0.02553282574514726 0.01947430811837292" rpy="0 0 0"/>
+          <mass value="5.206908838469105"/>
+          <inertia ixx="0.007119" iyy="0.00672" izz="0.006537" ixy="0.000313" iyz="1e-06" ixz="-1e-06"/>
+        </inertial>
+        <visual>
+          <origin xyz="-1.120802 -0.533941 -0.69825" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/vacuum_gripper.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="silver"/>
+        </visual>
+        <collision>
+          <origin xyz="-1.120802 -0.533941 -0.69825" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/vacuum_gripper.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+        </collision>
+      </link>
+
+      <link name="${tf_prefix}suction_cup">
+        <inertial>
+          <origin xyz="0.047500844943701104 0.027424316463654064 -9.637760878256074e-08" rpy="0 0 0"/>
+          <mass value="0.11348172115824295"/>
+          <inertia ixx="2.6e-05" iyy="5.2e-05" izz="6.5e-05" ixy="-2.3e-05" iyz="0.0" ixz="-0.0"/>
+        </inertial>
+        <visual>
+          <origin xyz="-1.19139 -0.578159 -0.71775" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/suction_cup.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="silver"/>
+        </visual>
+        <collision>
+          <origin xyz="-1.19139 -0.578159 -0.71775" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/suction_cup.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+        </collision>
+      </link>
+
+      <joint name="${tf_prefix}vacuum_gripper_joint" type="fixed">
+        <origin xyz="0.04267 0.056052 -0.0195" rpy="0 0 0"/>
+        <parent link="${tf_prefix}tool0"/>
+        <child link="${tf_prefix}vacuum_gripper"/>
+      </joint>
+
+      <joint name="${tf_prefix}suction_cup_joint" type="fixed">
+        <origin xyz="0.070588 0.044218 0.0195" rpy="0 0 0"/>
+        <parent link="${tf_prefix}vacuum_gripper"/>
+        <child link="${tf_prefix}suction_cup"/>
+      </joint>
       
     </xacro:if>
 
