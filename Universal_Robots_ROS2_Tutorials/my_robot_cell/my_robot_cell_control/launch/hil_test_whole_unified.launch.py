@@ -98,6 +98,12 @@ def launch_setup(context, *args, **kwargs):
         os.path.dirname(os.path.dirname(_conveyor_pkg)), "lib"
     )
 
+    # gz_ros2_control plugin yolu (kaynak derlemede GZ_SIM_SYSTEM_PLUGIN_PATH gerekmez)
+    _gz_ros2_control_pkg = get_package_share_directory("gz_ros2_control")
+    _gz_ros2_control_lib = os.path.join(
+        os.path.dirname(os.path.dirname(_gz_ros2_control_pkg)), "lib"
+    )
+
     set_ign_resource = SetEnvironmentVariable(
         name="IGN_GAZEBO_RESOURCE_PATH",
         value=[
@@ -121,8 +127,18 @@ def launch_setup(context, *args, **kwargs):
     set_gz_system_plugin = SetEnvironmentVariable(
         name="IGN_GAZEBO_SYSTEM_PLUGIN_PATH",
         value=[
+            _gz_ros2_control_lib, ":",
             _conveyor_lib, ":",
             EnvironmentVariable("IGN_GAZEBO_SYSTEM_PLUGIN_PATH", default_value=""),
+        ],
+    )
+
+    set_gz_sim_system_plugin = SetEnvironmentVariable(
+        name="GZ_SIM_SYSTEM_PLUGIN_PATH",
+        value=[
+            _gz_ros2_control_lib, ":",
+            _conveyor_lib, ":",
+            EnvironmentVariable("GZ_SIM_SYSTEM_PLUGIN_PATH", default_value=""),
         ],
     )
 
@@ -179,7 +195,7 @@ def launch_setup(context, *args, **kwargs):
                     "use_fake_hardware": use_fake_hardware,
                     "fake_sensor_commands": fake_sensor_commands,
                     "description_package": "my_robot_cell_control",
-                    "description_file": "whole_cell_real.urdf.xacro",
+                    "description_file": "whole_cell_hw.urdf.xacro",
                     "kinematics_params_file": kinematics_params_file,
                     "initial_joint_controller": initial_joint_controller,
                     "activate_joint_controller": activate_joint_controller,
@@ -205,28 +221,48 @@ def launch_setup(context, *args, **kwargs):
             # world_to_agv prismatik joint'ini /joint_states'e publish eder;
             # robot_state_publisher bu olmadan AGV + Kawasaki TF ağacını yayımlamaz.
             # roslibpy bağlantı yoksa kendi içinde retry yapar, timer gerekmez.
-            # Node(
-            #     package="agv_nodes",
-            #     executable="bridge_node",
-            #     name="agv_bridge_node",
-            #     output="screen",
-            #     parameters=[{"use_sim_time": False}],
-            # ),
+            Node(
+                package="agv_nodes",
+                executable="bridge_node",
+                name="agv_bridge_node",
+                output="screen",
+                parameters=[{"use_sim_time": False}],
+                condition=UnlessCondition(use_fake_hardware),
+            ),
 
-            # # AGV Controller Node — /agv/goal_position → ROS1 action goal
-            # Node(
-            #     package="agv_nodes",
-            #     executable="agv_controller_node",
-            #     name="agv_controller_node",
-            #     output="screen",
-            #     parameters=[{"use_sim_time": False}],
-            # ),
+            # AGV Controller Node — /agv/goal_position → ROS1 action goal
+            Node(
+                package="agv_nodes",
+                executable="agv_controller_node",
+                name="agv_controller_node",
+                output="screen",
+                parameters=[{"use_sim_time": False}],
+                condition=UnlessCondition(use_fake_hardware),
+            ),
 
-            # # Kawasaki RS005L Joint State Publisher
-            # # TCP bağlantısı (192.168.3.7:11111) için robot_state_publisher
-            # # ve UR driver hazır olduktan sonra başlatılır.
-            # # /joint_states  → robot_state_publisher TF ağacını tamamlar (RViz)
-            # # /kawasaki/joint_states → real_to_sim_bridge sim senkronizasyonu
+            # Kawasaki RS005L controller (whole_cell_hw.urdf.xacro ile ros2_control aktif)
+            # ur_control.launch.py'nin ur_controllers.yaml'ını kullandığından
+            # kawasaki_controller dinamik olarak --controller-type ile yüklenir.
+            TimerAction(
+                period=15.0,  # UR driver + controller_manager hazır olduktan sonra
+                actions=[
+                    Node(
+                        package="controller_manager",
+                        executable="spawner",
+                        arguments=[
+                            "kawasaki_controller",
+                            "--controller-manager", "/controller_manager",
+                            "--controller-type",
+                            "joint_trajectory_controller/JointTrajectoryController",
+                            "--param-file",
+                            os.path.join(kawasaki_pkg_share, "config", "whole_cell_hw_controllers.yaml"),
+                        ],
+                        output="screen",
+                    ),
+                ],
+            ),
+
+            # TimerAction (aşağıdaki yorum bloğu kaldırıldı, yukarıdaki ile değiştirildi)
             # TimerAction(
             #     period=8.0,
             #     actions=[
@@ -462,7 +498,7 @@ def launch_setup(context, *args, **kwargs):
 
     # Sim spawn ve node'ları 10 sn gecikme ile başlat (Gazebo hazır olsun)
     delayed_sim_spawn_and_nodes = TimerAction(
-        period=10.0,
+        period=25.0,
         actions=[
             sim_gz_spawn_entity,
             sim_nodes_in_namespace,
@@ -511,25 +547,25 @@ def launch_setup(context, *args, **kwargs):
     # === MoveIt Move Group (sim namespace) ===
     # TimerAction içindeki GroupAction ile namespace'i garanti ediyoruz.
     # (TimerAction, üst GroupAction'daki PushRosNamespace scope'unu kaybeder.)
-    delayed_sim_moveit = TimerAction(
-        period=25.0,  # Sim spawn(10) + controller'lar(7) + buffer
-        actions=[
-            GroupAction(
-                actions=[
-                    PushRosNamespace(sim_namespace),
-                    IncludeLaunchDescription(
-                        PythonLaunchDescriptionSource(
-                            PathJoinSubstitution([
-                                FindPackageShare("sim_ifarlab_moveit_config"),
-                                "launch",
-                                "move_group.launch.py",
-                            ])
-                        ),
-                    ),
-                ]
-            ),
-        ],
-    )
+    # delayed_sim_moveit = TimerAction(
+    #     period=25.0,  # Sim spawn(10) + controller'lar(7) + buffer
+    #     actions=[
+    #         GroupAction(
+    #             actions=[
+    #                 PushRosNamespace(sim_namespace),
+    #                 IncludeLaunchDescription(
+    #                     PythonLaunchDescriptionSource(
+    #                         PathJoinSubstitution([
+    #                             FindPackageShare("sim_ifarlab_moveit_config"),
+    #                             "launch",
+    #                             "move_group.launch.py",
+    #                         ])
+    #                     ),
+    #                 ),
+    #             ]
+    #         ),
+    #     ],
+    # )
 
     # Real-to-Sim Bridge (gerçek robottan sim'e joint state senkronizasyonu)
     # Tüm controller'lar hazır olduktan sonra başlat (15 sn)
@@ -617,19 +653,19 @@ def launch_setup(context, *args, **kwargs):
     # === ROSBRIDGE WEBSOCKET SERVER ===
     # Foxglove, web arayüzleri veya harici istemciler için WebSocket bridge (port 9090)
     # Gazebo Harmonic built-in WebSocket plugin kaldırıldığından rosbridge kullanıyoruz.
-    rosbridge_server = IncludeLaunchDescription(
-        AnyLaunchDescriptionSource(
-            PathJoinSubstitution([
-                FindPackageShare("rosbridge_server"),
-                "launch",
-                "rosbridge_websocket_launch.xml",
-            ])
-        ),
-        launch_arguments={
-            "port": "9090",
-            "address": "0.0.0.0",
-        }.items(),
-    )
+    # rosbridge_server = IncludeLaunchDescription(
+    #     AnyLaunchDescriptionSource(
+    #         PathJoinSubstitution([
+    #             FindPackageShare("rosbridge_server"),
+    #             "launch",
+    #             "rosbridge_websocket_launch.xml",
+    #         ])
+    #     ),
+    #     launch_arguments={
+    #         "port": "9090",
+    #         "address": "0.0.0.0",
+    #     }.items(),
+    # )
 
     # ==================== Başlatılacak Tüm Düğümler ====================
     nodes_to_start = [
@@ -637,6 +673,7 @@ def launch_setup(context, *args, **kwargs):
         set_ign_resource,
         set_gz_resource,
         set_gz_system_plugin,
+        set_gz_sim_system_plugin,
 
         # Gazebo başlat
         gz_launch_description_with_gui,
@@ -661,13 +698,13 @@ def launch_setup(context, *args, **kwargs):
         conveyor_spawn,
 
         # 4. MoveIt (25 sn sonra - kendi GroupAction ile /sim namespace)
-        delayed_sim_moveit,
+        # delayed_sim_moveit,
 
         # 5. Real-to-Sim Bridge (30 sn sonra)
         # real_to_sim_bridge_delayed,
 
         # 6. Rosbridge WebSocket Server (port 9090)
-        rosbridge_server,
+        # rosbridge_server,
     ]
 
     if gripper_controller_spawner:

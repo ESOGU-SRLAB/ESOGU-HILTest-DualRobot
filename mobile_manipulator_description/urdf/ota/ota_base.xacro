@@ -1,9 +1,9 @@
 <?xml version='1.0'?>
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:macro name="ota_base" params="link_name">
+  <xacro:macro name="ota_base" params="link_name prefix:=''">
     <!-- <link name="world"/> -->
-    <link name="ifarlab_ray_link">
+    <link name="${prefix}ifarlab_ray_link">
       <inertial>
         <mass value="1.0"/>
         <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
@@ -12,7 +12,7 @@
         <geometry>
           <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/ifarlab_ray.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="ifarlab_ray_material">
+        <material name="${prefix}ifarlab_ray_material">
           <color rgba="0.75 0.75 0.75 1"/>
         </material>
       </visual>
@@ -33,7 +33,7 @@
         <geometry>
           <mesh filename="file:////home/cem/colcon_ws/src/mobile_manipulator_description/meshes/ota/OTA-v0.7.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="DefaultWhite">
+        <material name="${prefix}DefaultWhite">
           <color rgba="1 1 1 1"/>
         </material>
       </visual>    
@@ -69,7 +69,7 @@
       </visual>
     </gazebo>
 
-    <link name='manipulator_base_link'>
+    <link name='${prefix}manipulator_base_link'>
       <origin xyz="0 0 0" rpy=" 0 0 0"/>
       
       <visual>
@@ -89,7 +89,7 @@
       <xacro:box_inertial x="0.187945" y="0.190701"  z="0.103" mass="5.0" />
     </link>
 
-    <!-- <gazebo reference="manipulator_base_link">
+    <!-- <gazebo reference="${prefix}manipulator_base_link">
       <material>Gazebo/Orange</material>
       <visual>
         <material>
@@ -101,9 +101,9 @@
     </gazebo> -->
 
     <!-- cem.sdf: ifarlab_ray model pose = "0 0 0 0 0 0" → world origin -->
-    <joint name="ifarlab_ray_joint" type="fixed">
+    <joint name="${prefix}ifarlab_ray_joint" type="fixed">
       <parent link="world"/>
-      <child link="ifarlab_ray_link"/>
+      <child link="${prefix}ifarlab_ray_link"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
@@ -111,8 +111,8 @@
          x=-2.301949  y=0.135135131  z=0.17  yaw=1.570796 (90°)
          axis 1 0 0 = joint frame local X = yaw 90° nedeniyle world +Y yönü
          Bu eksende AGV ileri/geri hareket eder (ray üzerinde kayar) -->
-    <joint name="world_to_agv" type="prismatic">
-      <parent link="ifarlab_ray_link"/>
+    <joint name="${prefix}world_to_agv" type="prismatic">
+      <parent link="${prefix}ifarlab_ray_link"/>
       <child link="${link_name}"/>
       <origin xyz="-2.301959 0.135135131 0.165" rpy="0 0 1.570796"/>
       <axis xyz="1.0 0.0 0.0"/>
@@ -120,9 +120,9 @@
       <dynamics damping="100.0" friction="50.0"/>
     </joint>
     
-    <joint name="base2manipulatorbase" type="fixed">
+    <joint name="${prefix}base2manipulatorbase" type="fixed">
       <parent link="${link_name}"/>
-      <child link="manipulator_base_link"/>
+      <child link="${prefix}manipulator_base_link"/>
       <origin rpy="0 0 0" xyz="0.001 -0.26 0.212"/>
     </joint>
 

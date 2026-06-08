@@ -215,9 +215,9 @@
 
     <link name="${tf_prefix}alumunium_table">
       <inertial>
-        <origin rpy="0 0 0" xyz="681.141 2464.643 737.851"/>
-        <mass value="20.04925448455695"/>
-        <inertia ixx="130.9" ixy="0.04503" ixz="0.9303" iyy="70.758" iyz="-0.03313" izz="139.1"/>
+        <origin rpy="0 0 0" xyz="0.713931 2.546776 0.955293"/>
+        <mass value="82.723802"/>
+        <inertia ixx="21.46" ixy="-0.6779" ixz="-0.1229" iyy="14.70" iyz="-2.239" izz="16.12"/>
       </inertial>
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -234,11 +234,53 @@
       </collision>
     </link>
 
+    <link name="${tf_prefix}screwdriver">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0.698999 2.916019 1.646605"/>
+        <mass value="2.400984"/>
+        <inertia ixx="0.004047" ixy="-4.087e-08" ixz="-1.236e-07" iyy="0.004295" iyz="2.148e-05" izz="0.001060"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/screwdriver.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/screwdriver.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="${tf_prefix}screw_feeder">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0.47973 2.996281 0.677038"/>
+        <mass value="64.903172"/>
+        <inertia ixx="5.385" ixy="3.3487e-05" ixz="-0.03657" iyy="5.631" iyz="0.003393" izz="0.4777"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/screw_feeder.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/screw_feeder.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
     <link name="${tf_prefix}conveyor_belt">
       <inertial>
-        <origin rpy="0 0 0" xyz="736.828 104.977 664.295"/>
-        <mass value="15.04925448455695"/>
-        <inertia ixx="0.061984" ixy="-0.003503" ixz="0.001551" iyy="0.069314" iyz="0.000564" izz="0.125682"/>
+        <origin rpy="0 0 0" xyz="0.651237 0.086681 0.615798"/>
+        <mass value="26.689341"/>
+        <inertia ixx="3.942" ixy="-0.008312" ixz="-0.009881" iyy="2.162" iyz="0.06187" izz="2.363"/>
       </inertial>
       <visual>
         <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -329,6 +371,18 @@
     <joint name="${tf_prefix}base_to_alumuniumtable" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}alumunium_table"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="${tf_prefix}base_to_screwdriver" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${tf_prefix}screwdriver"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="${tf_prefix}base_to_screw_feeder" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${tf_prefix}screw_feeder"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 

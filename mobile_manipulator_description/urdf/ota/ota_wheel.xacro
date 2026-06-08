@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:macro name="ota_wheel" params="base_link xyz_hub rpy_hub side">
+  <xacro:macro name="ota_wheel" params="base_link xyz_hub rpy_hub side prefix:=''">
 
     <!-- === WHEEL VISUAL === -->
-    <link name="wheel_${side}_link">
+    <link name="${prefix}wheel_${side}_link">
 
       <visual>
         <origin xyz="0 0 0" rpy="0 0 1.570796"/>
@@ -34,15 +34,15 @@
     </link>
 
     <!-- === WHEEL JOINT === -->
-    <joint name="wheel_${side}_base" type="continuous">
+    <joint name="${prefix}wheel_${side}_base" type="continuous">
       <origin xyz="${xyz_hub}" rpy="${rpy_hub}"/>
       <parent link="${base_link}"/>
-      <child link="wheel_${side}_link"/>
+      <child link="${prefix}wheel_${side}_link"/>
       <axis xyz="0 1 0"/>
     </joint>
 
     <!-- Gazebo wheel parameters -->
-    <gazebo reference="wheel_${side}_link">
+    <gazebo reference="${prefix}wheel_${side}_link">
       <mu1>1.0</mu1>
       <mu2>1.0</mu2>
       <kp>1000000.0</kp>

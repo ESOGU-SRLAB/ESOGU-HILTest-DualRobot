@@ -7,7 +7,7 @@ moveit_setup_assistant_config:
   package_settings:
     author_name: Cem Süha Yılmaz
     author_email: cshyilmaz@gmail.com
-    generated_timestamp: 1763216883
+    generated_timestamp: 1779202345
   control_xacro:
     command:
       - position

@@ -34,6 +34,7 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/real_cleaning_mission_runner_v3.py
     ${EXAMPLES_DIR}/real_detection_to_3d_node.py
     ${EXAMPLES_DIR}/real_dual_executor.py
+    ${EXAMPLES_DIR}/real_robot_gripper_goal.py
     DESTINATION lib/${PROJECT_NAME}
 )
 

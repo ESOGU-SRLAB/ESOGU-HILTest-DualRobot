@@ -88,29 +88,30 @@
   </joint> -->
 
   <!-- AGV gövdesi -->
-  <xacro:ota_base link_name="ota_base_link"/>
+  <xacro:ota_base link_name="sim_ota_base_link" prefix="sim_"/>
 
   <!-- AGV ros2_control (tekerlek velocity interface) -->
   <xacro:ota_ros2_control
     name="ota_system"
     sim_ignition="$(arg kawasaki_sim_ignition)"
-    use_fake_hardware="$(arg kawasaki_use_fake_hardware)"/>
+    use_fake_hardware="$(arg kawasaki_use_fake_hardware)"
+    prefix="sim_"/>
 
   <!-- IR sensör -->
-  <xacro:ota_ir base_link="ota_base_link" link_name="ota_ir" xyz_ir="0.403 0.0 0.03" rpy_ir="0 0 0"/>
+  <xacro:ota_ir base_link="sim_ota_base_link" link_name="sim_ota_ir" xyz_ir="0.403 0.0 0.03" rpy_ir="0 0 0"/>
 
   <!-- Tahrik tekerlekleri -->
-  <xacro:ota_wheel base_link="ota_base_link" xyz_hub="0 -0.30 -0.06" rpy_hub="0 0 0" side="left"/>
-  <xacro:ota_wheel base_link="ota_base_link" xyz_hub="0 0.30 -0.06" rpy_hub="0 0 0" side="right"/>
+  <xacro:ota_wheel base_link="sim_ota_base_link" xyz_hub="0 -0.30 -0.06" rpy_hub="0 0 0" side="left" prefix="sim_"/>
+  <xacro:ota_wheel base_link="sim_ota_base_link" xyz_hub="0 0.30 -0.06" rpy_hub="0 0 0" side="right" prefix="sim_"/>
 
   <!-- Sarhoş tekerlekler -->
-  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="0.37 -0.22 -0.048" rpy_caster="0 0 0" side="front_right"/>
-  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="0.37 0.22 -0.048" rpy_caster="0 0 0" side="front_left"/>
-  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="-0.37 -0.22 -0.048" rpy_caster="0 0 0" side="back_right"/>
-  <xacro:ota_swivel base_link="ota_base_link" xyz_caster="-0.37 0.22 -0.048" rpy_caster="0 0 0" side="back_left"/>
+  <xacro:ota_swivel base_link="sim_ota_base_link" xyz_caster="0.37 -0.22 -0.048" rpy_caster="0 0 0" side="front_right" prefix="sim_"/>
+  <xacro:ota_swivel base_link="sim_ota_base_link" xyz_caster="0.37 0.22 -0.048" rpy_caster="0 0 0" side="front_left" prefix="sim_"/>
+  <xacro:ota_swivel base_link="sim_ota_base_link" xyz_caster="-0.37 -0.22 -0.048" rpy_caster="0 0 0" side="back_right" prefix="sim_"/>
+  <xacro:ota_swivel base_link="sim_ota_base_link" xyz_caster="-0.37 0.22 -0.048" rpy_caster="0 0 0" side="back_left" prefix="sim_"/>
 
   <!-- Diff Drive Plugin (AGV hareketi için) -->
-  <xacro:ota_diff_drive base_link="ota_base_link"/>
+  <xacro:ota_diff_drive base_link="sim_ota_base_link" prefix="sim_"/>
   <!-- Joint State Publisher Plugin -->
   <xacro:ota_joints_state_publisher/>
 
@@ -118,7 +119,7 @@
   <xacro:khi_rs005l
     name="$(arg kawasaki_name)"
     tf_prefix="$(arg kawasaki_tf_prefix)"
-    parent="manipulator_base_link"
+    parent="sim_manipulator_base_link"
     sim_ignition="$(arg kawasaki_sim_ignition)"
     use_fake_hardware="$(arg kawasaki_use_fake_hardware)">
     <origin xyz="0 0 0.051" rpy="0 0 3.141593" />

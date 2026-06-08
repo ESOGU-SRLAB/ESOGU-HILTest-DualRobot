@@ -13,14 +13,14 @@
 
 
   <!-- ✅ Differential Drive Plugin (Gazebo Harmonic: gz-sim-diff-drive-system) -->
-  <xacro:macro name="ota_diff_drive" params="base_link">
+  <xacro:macro name="ota_diff_drive" params="base_link prefix:=''">
     <gazebo>
       <plugin name="gz::sim::systems::DiffDrive"
               filename="gz-sim-diff-drive-system">  
 
         <!-- Tekerlek eklemleri (ota_wheel.xacro'daki joint isimleri) -->
-        <left_joint>wheel_left_base</left_joint>
-        <right_joint>wheel_right_base</right_joint>
+        <left_joint>${prefix}wheel_left_base</left_joint>
+        <right_joint>${prefix}wheel_right_base</right_joint>
 
         <!-- Geometri -->
         <wheel_separation>0.60</wheel_separation>

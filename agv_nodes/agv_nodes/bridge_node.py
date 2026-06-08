@@ -7,7 +7,7 @@ Noetic PC'deki rosbridge_websocket'e bağlanır.
 
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String, Int8, Bool
+from std_msgs.msg import String, Int8, Bool, Float64
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
@@ -41,6 +41,22 @@ class AGVBridgeNode(Node):
         self._agv_position = 0.0
         self._agv_velocity = 0.0
         self._agv_lock = threading.Lock()
+
+        # AGV goal rate-limiter: topic_based_ros2_control 100Hz komut yazar;
+        # her komut ROS1 action server'a yeni goal gönderir ve öncekini iptal eder.
+        # Bunu önlemek için en fazla 2Hz (500ms) ve min 2cm değişimde goal gönder.
+        self._last_sent_agv_goal = None
+        self._last_goal_send_time = 0.0
+        self._goal_update_interval = 0.5   # saniye (2 Hz)
+        self._goal_min_change = 0.05       # metre (5 cm) — acil hedef değişimi
+
+        # ros2_control → AGV komut köprüsü:
+        # topic_based_ros2_control/TopicBasedSystem, JointState olarak /agv/joint_cmd'e yazar;
+        # buradan world_to_agv pozisyonu alınıp /agv/goal_position (Float64)'e çevrilir;
+        # agv_controller_node oradan rosbridge üzerinden ROS1 action server'a iletir.
+        self.goal_pub = self.create_publisher(Float64, '/agv/goal_position', 10)
+        self.joint_cmd_sub = self.create_subscription(
+            JointState, '/agv/joint_cmd', self._joint_cmd_callback, 10)
 
         # 50 Hz sabit timer — TF_OLD_DATA'yı önlemek için JointState burada
         # publish edilir; böylece robot_state_publisher her zaman monoton artan
@@ -138,6 +154,51 @@ class AGVBridgeNode(Node):
         odom.twist.twist.angular.y = msg['twist']['twist']['angular']['y']
         odom.twist.twist.angular.z = msg['twist']['twist']['angular']['z']
         self.odom_pub.publish(odom)
+
+    def _joint_cmd_callback(self, msg: JointState):
+        """ros2_control'dan gelen JointState komutunu /agv/goal_position (Float64)'e çevirir.
+        topic_based_ros2_control/TopicBasedSystem, komutları JointState olarak /agv/joint_cmd'e yazar;
+        bu callback world_to_agv pozisyonunu alıp agv_controller_node'un beklediği
+        Float64 formatına dönüştürür.
+
+        Rate-limit: 100Hz komut akışını 2Hz'e düşürür. Her güncellemede ROS1
+        action server'a yeni goal gönderilmesi AGV'nin sürekli iptal/yeniden
+        başlatma döngüsüne girmesini engeller."""
+        if 'world_to_agv' not in msg.name:
+            return  # bu mesajda world_to_agv yok, atla
+
+        if len(msg.position) == 0:
+            return
+
+        # topic_based_ros2_control yalnızca position command interface'i olan
+        # joint'leri position[] array'ine yazar. world_to_agv bu sistemdeki tek
+        # position-commanded joint olduğundan position[0] her zaman world_to_agv'dir.
+        new_goal = msg.position[0]
+        now = self.get_clock().now().nanoseconds * 1e-9
+
+        # İlk goal, anlamlı değişim varsa VEYA büyük ani değişimde gönder
+        # NOT: Eski logic "elapsed >= 0.5 OR change >= 0.05" idi → değer
+        # değişmese bile her 0.5s'de goal gönderiyordu → ROS1 action server
+        # sürekli preempt olup AGV hiç hareket edemiyordu.
+        # Düzeltme: zaman geçse bile minimum 2mm değişim şartı eklendi.
+        if self._last_sent_agv_goal is None:
+            send = True
+        else:
+            change = abs(new_goal - self._last_sent_agv_goal)
+            elapsed = now - self._last_goal_send_time
+            min_meaningful_change = 0.002  # 2mm — gürültüyü filtrele
+            send = (change >= self._goal_min_change) or \
+                   (elapsed >= self._goal_update_interval and change >= min_meaningful_change)
+
+        if not send:
+            return
+
+        self._last_sent_agv_goal = new_goal
+        self._last_goal_send_time = now
+
+        goal = Float64()
+        goal.data = new_goal
+        self.goal_pub.publish(goal)
 
     def _publish_agv_joint_state(self):
         """50 Hz timer callback — world_to_agv joint'ini her zaman ROS2

@@ -171,7 +171,7 @@
 /sim/kawasaki_controller:
   ros__parameters:
     joints:
-      - world_to_agv
+      - sim_world_to_agv
       - sim_kawasaki_joint1
       - sim_kawasaki_joint2
       - sim_kawasaki_joint3
@@ -192,16 +192,16 @@
   ros__parameters:
     # Teker joint isimleri (URDF ile birebir aynı olmalı)
     left_wheel_names:
-      - wheel_left_base
+      - sim_wheel_left_base
     right_wheel_names:
-      - wheel_right_base
+      - sim_wheel_right_base
 
     # Geometri
     wheel_separation: 0.60    # tekerlekler arası mesafe [m]
     wheel_radius: 0.102       # teker yarıçapı [m]
 
     # Frame isimleri
-    base_frame_id: ota_base_link
+    base_frame_id: sim_ota_base_link
     odom_frame_id: odom
 
     # cmd_vel davranışı

@@ -1,0 +1,74 @@
+============================================================
+KIRMIZI NOKTA TESPİT RAPORU (PointCloud2)
+Tarih: 2026-01-23 13:45:24
+============================================================
+
+Toplam tespit: 11
+Toplam tarama: 576
+
+--- Nokta 1 ---
+Waypoint: 0
+Piksel: (23, 197)
+Alan: 629.5
+World: (-0.7549, 1.6103, 1.0338)
+
+--- Nokta 2 ---
+Waypoint: 0
+Piksel: (9, 410)
+Alan: 527.0
+World: (-0.7530, 0.7074, 1.0785)
+
+--- Nokta 3 ---
+Waypoint: 7
+Piksel: (380, 38)
+Alan: 5024.0
+World: (-0.7582, 0.5435, 0.9431)
+
+--- Nokta 4 ---
+Waypoint: 0
+Piksel: (194, 321)
+Alan: 624.5
+World: (-2.7313, 0.9600, -0.0542)
+
+--- Nokta 5 ---
+Waypoint: 0
+Piksel: (174, 280)
+Alan: 617.5
+World: (-0.9435, 1.5464, 0.8814)
+
+--- Nokta 6 ---
+Waypoint: 0
+Piksel: (144, 226)
+Alan: 642.0
+World: (-2.5891, 1.5561, -0.0793)
+
+--- Nokta 7 ---
+Waypoint: 0
+Piksel: (96, 122)
+Alan: 713.5
+World: (-2.1165, 2.0034, -0.0899)
+
+--- Nokta 8 ---
+Waypoint: 0
+Piksel: (68, 57)
+Alan: 814.0
+World: (-1.9123, 2.2127, -0.1518)
+
+--- Nokta 9 ---
+Waypoint: 1
+Piksel: (43, 254)
+Alan: 1627.5
+World: (-1.1643, 0.5926, 0.4755)
+
+--- Nokta 10 ---
+Waypoint: 1
+Piksel: (501, 268)
+Alan: 1764.0
+World: (-0.9652, 0.5450, 0.4459)
+
+--- Nokta 11 ---
+Waypoint: 7
+Piksel: (148, 148)
+Alan: 12243.5
+World: (-1.4730, 0.7889, 1.1797)
+

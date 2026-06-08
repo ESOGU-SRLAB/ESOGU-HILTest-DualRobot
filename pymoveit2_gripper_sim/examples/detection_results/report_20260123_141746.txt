@@ -1,0 +1,26 @@
+============================================================
+KIRMIZI NOKTA TESPİT RAPORU (PointCloud2)
+Tarih: 2026-01-23 14:17:46
+============================================================
+
+Toplam tespit: 3
+Toplam tarama: 391
+
+--- Nokta 1 ---
+Waypoint: 0
+Piksel: (23, 197)
+Alan: 629.5
+World: (-0.7549, 1.6103, 1.0338)
+
+--- Nokta 2 ---
+Waypoint: 0
+Piksel: (10, 410)
+Alan: 553.5
+World: (-0.7528, 0.7164, 1.0772)
+
+--- Nokta 3 ---
+Waypoint: 6
+Piksel: (508, 360)
+Alan: 680.5
+World: (nan, nan, nan)
+
