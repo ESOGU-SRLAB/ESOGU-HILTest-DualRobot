@@ -23,8 +23,8 @@ public:
     ur_last_update_time_(this->now())
   {
     // Parameters
-    update_rate_ = this->declare_parameter<double>("update_rate", 10.0);
-    trajectory_time_ = this->declare_parameter<double>("trajectory_time", 0.5);
+    update_rate_ = this->declare_parameter<double>("update_rate", 50.0);
+    trajectory_time_ = this->declare_parameter<double>("trajectory_time", 1.0 / update_rate_);
     
     // ...existing code...
     
@@ -70,6 +70,16 @@ public:
       "/sim/sim_gripper_controller/joint_trajectory",
       rclcpp::QoS(10).best_effort());
 
+    // Precompute reverse mapping: sim_joint_name -> real_joint_name
+    for (const auto& sim_joint_name : ur_sim_joint_order_) {
+      for (const auto& pair : ur_joint_mapping_) {
+        if (pair.second == sim_joint_name) {
+          ur_reverse_mapping_[sim_joint_name] = pair.first;
+          break;
+        }
+      }
+    }
+
     // ==================== LOG INFO ====================
     RCLCPP_INFO(this->get_logger(), "Real-to-Sim Bridge Node started (UR10E + Gripper)");
     RCLCPP_INFO(this->get_logger(), "Update rate: %.2f Hz", update_rate_);
@@ -107,15 +117,9 @@ private:
     sim_joint_positions.reserve(ur_sim_joint_order_.size());
     
     for (const auto& sim_joint_name : ur_sim_joint_order_) {
-      // Find the corresponding real joint name
-      std::string real_joint_name;
-      for (const auto& pair : ur_joint_mapping_) {
-        if (pair.second == sim_joint_name) {
-          real_joint_name = pair.first;
-          break;
-        }
-      }
-      
+      // Use precomputed reverse mapping
+      const std::string& real_joint_name = ur_reverse_mapping_.at(sim_joint_name);
+
       // Get the position from real robot
       auto it = real_joint_positions.find(real_joint_name);
       if (it != real_joint_positions.end()) {
@@ -139,7 +143,7 @@ private:
     point.accelerations.resize(sim_joint_positions.size(), 0.0);
     
     // Time from start for smooth motion
-    point.time_from_start = rclcpp::Duration::from_seconds(0.1);
+    point.time_from_start = rclcpp::Duration::from_seconds(trajectory_time_);
 
     traj_msg.points.push_back(point);
 
@@ -159,7 +163,7 @@ private:
       gp.positions     = {gripper_it->second};
       gp.velocities    = {0.0};
       gp.accelerations = {0.0};
-      gp.time_from_start = rclcpp::Duration::from_seconds(0.1);
+      gp.time_from_start = rclcpp::Duration::from_seconds(trajectory_time_);
 
       gripper_traj.points.push_back(gp);
       gripper_trajectory_pub_->publish(gripper_traj);
@@ -196,6 +200,7 @@ private:
   
   // ==================== UR10E members ====================
   std::map<std::string, std::string> ur_joint_mapping_;
+  std::map<std::string, std::string> ur_reverse_mapping_;  // sim -> real (precomputed)
   std::vector<std::string> ur_sim_joint_order_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr ur_joint_state_sub_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr ur_trajectory_pub_;

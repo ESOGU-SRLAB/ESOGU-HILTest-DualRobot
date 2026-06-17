@@ -35,6 +35,7 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/real_detection_to_3d_node.py
     ${EXAMPLES_DIR}/real_dual_executor.py
     ${EXAMPLES_DIR}/real_robot_gripper_goal.py
+    ${EXAMPLES_DIR}/vidalama.py
     DESTINATION lib/${PROJECT_NAME}
 )
 

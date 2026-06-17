@@ -10,9 +10,9 @@ For example, line 83 of the firstrobot_my_robot_cell_macro.xacro file, located i
 ```bash
     <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/linear_axis_moving_link.stl" scale="0.001 0.001 0.001"/>
 ```
-You must replace the /home/cem/ part in this line with your own username. For example, if your username is ifarlab, the line should be updated as follows:
+You must replace the /home/cem/ part in this line with your own username. For example, if your username is cem, the line should be updated as follows:
 ```bash
-    <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/linear_axis_moving_link.stl" scale="0.001 0.001 0.001"/>
+    <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/linear_axis_moving_link.stl" scale="0.001 0.001 0.001"/>
 ```
 Getting Started
 

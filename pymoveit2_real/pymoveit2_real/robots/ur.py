@@ -1,7 +1,7 @@
 from typing import List
 
 MOVE_GROUP_ARM: str = "real_ur10e"
-MOVE_GROUP_GRIPPER: str = "gripper"
+MOVE_GROUP_GRIPPER: str = "real_gripper"
 
 prefix: str = "ur10e_"
 
@@ -30,4 +30,4 @@ def end_effector_name(prefix: str = prefix) -> str:
 
 
 def gripper_joint_names(prefix: str = prefix) -> List[str]:
-    return []
+    return prefix + "gripper_joint"
