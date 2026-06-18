@@ -730,7 +730,7 @@ def launch_setup(context, *args, **kwargs):
         delayed_real_moveit,
 
         # 6. Real-to-Sim Bridge (30 sn sonra)
-        # real_to_sim_bridge_delayed,
+        real_to_sim_bridge_delayed,
 
         # 7. Rosbridge WebSocket Server (port 9090)
         # rosbridge_server,

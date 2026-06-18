@@ -322,10 +322,11 @@ class JointStateCollector:
         self.socketio = socketio_instance
         self.buffer_seconds = buffer_seconds
         # Circular buffers: deque of {timestamp, joint_name: angle}
-        self.real_data = deque(maxlen=buffer_seconds * 50)  # ~50 Hz max
-        self.sim_data = deque(maxlen=buffer_seconds * 50)
+        self.real_data = deque(maxlen=buffer_seconds * 1000)  # up to 1000 Hz
+        self.sim_data = deque(maxlen=buffer_seconds * 1000)
         self._rclpy_thread = None
         self._running = False
+        self._data_lock = threading.Lock()
 
     def start(self):
         """Start the ROS2 subscriber thread."""
@@ -351,13 +352,15 @@ class JointStateCollector:
                 data = {"t": time.time()}
                 for name, pos in zip(msg.name, msg.position):
                     data[name] = pos
-                self.real_data.append(data)
+                with self._data_lock:
+                    self.real_data.append(data)
 
             def sim_cb(msg):
                 data = {"t": time.time()}
                 for name, pos in zip(msg.name, msg.position):
                     data[name] = pos
-                self.sim_data.append(data)
+                with self._data_lock:
+                    self.sim_data.append(data)
 
             node.create_subscription(JointState, "/joint_states", real_cb, 10)
             node.create_subscription(JointState, "/sim/joint_states", sim_cb, 10)
@@ -379,23 +382,27 @@ class JointStateCollector:
         while self._running:
             time.sleep(0.2)  # 5 Hz update rate for charts
 
-            now = time.time()
-            cutoff = now - self.buffer_seconds
+            try:
+                now = time.time()
+                cutoff = now - self.buffer_seconds
 
-            # Filter to last N seconds and downsample
-            real_filtered = [d for d in self.real_data if d["t"] > cutoff]
-            sim_filtered = [d for d in self.sim_data if d["t"] > cutoff]
+                # Filter to last N seconds and downsample
+                with self._data_lock:
+                    real_filtered = [d for d in self.real_data if d["t"] > cutoff]
+                    sim_filtered = [d for d in self.sim_data if d["t"] > cutoff]
 
-            # Downsample to max ~100 points for performance
-            real_sampled = self._downsample(real_filtered, 100)
-            sim_sampled = self._downsample(sim_filtered, 100)
+                # Downsample to max ~100 points for performance
+                real_sampled = self._downsample(real_filtered, 100)
+                sim_sampled = self._downsample(sim_filtered, 100)
 
-            self.socketio.emit("joint_states", {
-                "real": real_sampled,
-                "sim": sim_sampled,
-                "now": now,
-                "window": self.buffer_seconds,
-            })
+                self.socketio.emit("joint_states", {
+                    "real": real_sampled,
+                    "sim": sim_sampled,
+                    "now": now,
+                    "window": self.buffer_seconds,
+                })
+            except Exception as e:
+                print(f"[JointStateCollector] Push error: {e}")
 
     def _downsample(self, data, max_points):
         """Simple downsample by skipping entries."""
