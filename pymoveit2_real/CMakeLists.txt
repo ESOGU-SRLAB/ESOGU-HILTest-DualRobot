@@ -36,6 +36,7 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/real_dual_executor.py
     ${EXAMPLES_DIR}/real_robot_gripper_goal.py
     ${EXAMPLES_DIR}/vidalama.py
+    ${EXAMPLES_DIR}/pickandplace.py
     DESTINATION lib/${PROJECT_NAME}
 )
 

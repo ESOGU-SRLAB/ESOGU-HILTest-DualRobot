@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Çarpışma önleyici fonksiyon tabanlı pose ve joint hedefleri ile robot hareketi
+Çarpışma önleyici fonksiyon tabanlı pose ve joint hedefleri ile robot hareketi.
+Vidalama aleti (screwdriver) pick & place için Planning Scene attach/detach mekanizması içerir.
 """
 
 from threading import Thread
@@ -59,6 +60,9 @@ class CollisionAwareRobotController(Node):
             "/gripper_controller/follow_joint_trajectory",
             callback_group=callback_group,
         )
+
+        # Screwdriver Planning Scene durumu
+        self._screwdriver_attached = False
 
         self.get_logger().info("Çarpışma önleyici robot kontrolcüsü başlatıldı")
         
@@ -193,6 +197,91 @@ class CollisionAwareRobotController(Node):
             self.get_logger().error(f"Gripper hareket hatası: {str(e)}")
             return False
 
+    def attach_screwdriver(self):
+        """
+        Vidalama aletini gripper'a attach eder (Planning Scene).
+        Gripper kapandıktan SONRA çağrılmalıdır.
+        
+        Yaklaşım:
+        1. Screwdriver'ı basit bir silindir primitif olarak gripper frame'ine ekler
+        2. attach_collision_object() ile gripper linkine bağlar
+        3. touch_links ile gripper ↔ screwdriver collision kontrolünü devre dışı bırakır
+        """
+        if self._screwdriver_attached:
+            self.get_logger().warn("Screwdriver zaten attach edilmiş, tekrar eklenmeyecek.")
+            return True
+
+        self.get_logger().info("=== SCREWDRIVER ATTACH EDİLİYOR ===")
+        
+        try:
+            # Screwdriver'ı basit silindir olarak gripper frame'inde ekle
+            # Gripper'ın altına doğru uzanan silindir (screwdriver gövdesi)
+            self.moveit2.add_collision_cylinder(
+                id="screwdriver",
+                height=0.02,
+                radius=0.002,
+                position=(0.077, 0.16, -0.026),  # Tırnakların merkezinden tam zıt yöne (aşağıya / z- yönüne) kaydırıldı
+                #birinci değer sopaya olan uzaklığı ayarlıyor. normalde x ekseni olan
+                #üçüncü değer ise üst sopaya uzaklığı ayarlıyor. normalde y ekseni olan
+                quat_xyzw=(-0.679113, -0.196990, 0.196990, 0.679113), # Z ekseninde aynı hizalama + X ekseninde -90 derece dönüş (silindiri aşağı çevirmek için)
+                frame_id="ur10e_gripper_base_link",
+            )
+            time.sleep(0.5)
+
+            # Screwdriver'ı gripper_base_link'e attach et
+            touch_links = [
+                "ur10e_gripper_base_link",
+                "ur10e_gripper_lower_1",
+                "ur10e_gripper_upper_1",
+                "ur10e_tool0",
+                "ur10e_flange",
+                "ur10e_wrist_3_link",
+            ]
+            
+            self.moveit2.attach_collision_object(
+                id="screwdriver",
+                link_name="ur10e_gripper_base_link",
+                touch_links=touch_links,
+                weight=2.4,
+            )
+            time.sleep(0.5)
+            
+            self._screwdriver_attached = True
+            self.get_logger().info("Screwdriver başarıyla gripper'a attach edildi!")
+            return True
+            
+        except Exception as e:
+            self.get_logger().error(f"Screwdriver attach hatası: {str(e)}")
+            return False
+    
+    def detach_screwdriver(self):
+        """
+        Vidalama aletini gripper'dan detach eder (Planning Scene).
+        Gripper açılmadan ÖNCE çağrılmalıdır.
+        """
+        if not self._screwdriver_attached:
+            self.get_logger().warn("Screwdriver zaten detach edilmiş.")
+            return True
+
+        self.get_logger().info("=== SCREWDRIVER DETACH EDİLİYOR ===")
+        
+        try:
+            # Screwdriver'ı gripper'dan ayır
+            self.moveit2.detach_collision_object(id="screwdriver")
+            time.sleep(0.5)
+            
+            # Collision object'i tamamen kaldır
+            self.moveit2.remove_collision_object(id="screwdriver")
+            time.sleep(0.5)
+            
+            self._screwdriver_attached = False
+            self.get_logger().info("Screwdriver başarıyla detach edildi!")
+            return True
+            
+        except Exception as e:
+            self.get_logger().error(f"Screwdriver detach hatası: {str(e)}")
+            return False
+
     def safe_pose_sequence(self, positions_list, orientations_list=None, wait_time=2.0):
         """
         Güvenli sıralı POSE hareketi. (Fonksiyon adı daha açıklayıcı olması için değiştirildi)
@@ -225,9 +314,15 @@ class CollisionAwareRobotController(Node):
         for i, joint_angles in enumerate(list_of_joint_angles):
             self.get_logger().info(f"Sıradaki hedefe gidiliyor: {i+1}/{len(list_of_joint_angles)}")
 
-            # Gripper komutu kontrolü
-            if isinstance(joint_angles, dict) and "gripper_position" in joint_angles:
-                self.move_gripper(joint_angles["gripper_position"], synchronous=True)
+            # Dict komutu kontrolü (gripper, attach, detach)
+            if isinstance(joint_angles, dict):
+                if "gripper_position" in joint_angles:
+                    self.move_gripper(joint_angles["gripper_position"], synchronous=True)
+                elif "attach_screwdriver" in joint_angles:
+                    self.attach_screwdriver()
+                elif "detach_screwdriver" in joint_angles:
+                    self.detach_screwdriver()
+                
                 if i < len(list_of_joint_angles) - 1:
                     self.get_logger().info(f"Sonraki hareket için {wait_time} saniye bekleniyor...")
                     time.sleep(wait_time)
@@ -336,7 +431,8 @@ def main():
     frontOfScrewer,
     aboveScrewer,
     holdScrewer,
-    {"gripper_position": 0.015},  # Gripper kapat -> vida tut
+    {"gripper_position": 0.02},  # Gripper kapat -> vida tut
+    {"attach_screwdriver": True},  # Screwdriver'ı robotun planlamasına dahil et
     aboveScrewer,
     safeWaypoint2,
     safeWaypoint1,
@@ -357,9 +453,10 @@ def main():
     fourthTop,
     Waypoint1,
     frontOfScrewer,
-    {"gripper_position": 0.003},  # Gripper aç -> vidayı bırak
     aboveScrewer,
     holdScrewer,
+    {"detach_screwdriver": True},  # Screwdriver'ı robottan ayır
+    {"gripper_position": 0.003},  # Gripper aç -> vidayı bırak
     frontOfScrewer,
     ]
     
@@ -370,7 +467,7 @@ def main():
         robot_controller.get_logger().info("Durdurmak için Ctrl+C tuşlayın")
         
         robot_controller.get_logger().info("Başlangıç için `home_joints` pozisyonuna gidiliyor...")
-        robot_controller.move_to_joint_angles(home_joints, synchronous=True)
+        # robot_controller.move_to_joint_angles(home_joints, synchronous=True)
         time.sleep(2.0)
         
         while rclpy.ok():
@@ -378,7 +475,7 @@ def main():
             robot_controller.get_logger().info(f"=== EKLEM DÖNGÜSÜ {loop_counter} BAŞLIYOR ===")
             
             # Güvenli sıralı eklem hareketi (deneme sayısı 3 olacak şekilde)
-            robot_controller.safe_joint_sequence(safe_joint_configurations, wait_time=1.5, max_retries=3)
+            robot_controller.safe_joint_sequence(safe_joint_configurations, wait_time=0.5, max_retries=3)
             
             robot_controller.get_logger().info(f"Döngü {loop_counter} tamamlandı. 3 saniye bekleniyor...")
             time.sleep(3.0)

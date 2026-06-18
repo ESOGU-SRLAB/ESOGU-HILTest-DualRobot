@@ -1,0 +1,26 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: my_robot_cell_control
+    relative_path: urdf/whole_cell_hw.urdf.xacro
+    xacro_args: use_gripper:=true
+  srdf:
+    relative_path: config/whole_cell_hw.srdf
+  package_settings:
+    author_name: Cem Süha Yılmaz
+    author_email: cshyilmaz@gmail.com
+    generated_timestamp: 1781762346
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity

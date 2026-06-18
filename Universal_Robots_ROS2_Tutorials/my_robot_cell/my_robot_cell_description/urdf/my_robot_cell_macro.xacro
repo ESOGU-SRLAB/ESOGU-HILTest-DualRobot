@@ -247,12 +247,14 @@
         </geometry>
         <material name="silver"/>
       </visual>
-      <collision>
+      <!-- Collision geometry devre dışı: Screwdriver Planning Scene üzerinden
+           attach/detach ile yönetilecek. Gripper kapandığında collision olmasın diye kaldırıldı. -->
+      <!-- <collision>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <geometry>
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/screwdriver.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <link name="${tf_prefix}screw_feeder">

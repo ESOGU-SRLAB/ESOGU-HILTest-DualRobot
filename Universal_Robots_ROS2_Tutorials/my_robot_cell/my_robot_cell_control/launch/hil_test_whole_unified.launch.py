@@ -143,22 +143,9 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # ==================== Gazebo Başlatma ====================
-    gz_launch_description_with_gui = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [FindPackageShare("ros_gz_sim"), "/launch/gz_sim.launch.py"]
-        ),
-        launch_arguments={"gz_args": [" -r -v 4 ", world_file],
-                          "gz_version": "8",}.items(),
-        condition=IfCondition(gazebo_gui),
-    )
-
-    gz_launch_description_without_gui = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [FindPackageShare("ros_gz_sim"), "/launch/gz_sim.launch.py"]
-        ),
-        launch_arguments={"gz_args": [" -s -r -v 4 ", world_file]}.items(),
-        condition=UnlessCondition(gazebo_gui),
-    )
+    # NOT: Gazebo, sim GroupAction'ı (PushRosNamespace) içinde başlatılır.
+    # Çalışan hil_test.launch.py ile aynı yapı. Bu, gz_ros2_control
+    # plugin'inin /sim namespace'inde controller_manager oluşturmasını sağlar.
 
     # ======================================================================
     # 1. GERÇEK ROBOT TARAFI (NAMESPACE YOK) - whole_cell_real.urdf.xacro
@@ -314,26 +301,13 @@ def launch_setup(context, *args, **kwargs):
         " simulation_controllers:=", sim_controllers_yaml,
     ])
 
-    # Gazebo'ya model spawn (tek model, tüm bileşenler dahil)
-    sim_gz_spawn_entity = Node(
-        package="ros_gz_sim",
-        executable="create",
-        arguments=[
-            "-world", "cem",
-            "-topic", "/sim/robot_description",
-            "-name", "whole_cell_sim",
-            "-allow_renaming", "true",
-            "-x", "0",
-            "-y", "0",
-            "-z", "0",
-        ],
-        output="screen",
-    )
-
     sim_rviz_config_file = PathJoinSubstitution(
         [FindPackageShare("my_robot_cell_description"), "rviz", "whole_real.rviz"]
     )
 
+    # Simülasyon GroupAction: Gazebo, spawn, robot_state_publisher ve
+    # controller spawner'lar hepsi aynı PushRosNamespace içinde.
+    # Bu yapı çalışan hil_test.launch.py ile aynıdır.
     sim_nodes_in_namespace = GroupAction(
         actions=[
             LogInfo(msg="[2/2] Simülasyon bileşenleri başlatılıyor (unified URDF)..."),
@@ -348,6 +322,33 @@ def launch_setup(context, *args, **kwargs):
                     {"robot_description": ParameterValue(sim_robot_description_content, value_type=str)},
                     {"use_sim_time": True},
                 ],
+            ),
+
+            # Gazebo Başlatma (GroupAction içinde, namespace ile birlikte)
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    [FindPackageShare("ros_gz_sim"), "/launch/gz_sim.launch.py"]
+                ),
+                launch_arguments={
+                    "gz_args": ["-r -v4 ", world_file],
+                    "on_exit_shutdown": "true",
+                }.items(),
+            ),
+
+            # Gazebo'ya model spawn (tek model, tüm bileşenler dahil)
+            Node(
+                package="ros_gz_sim",
+                executable="create",
+                arguments=[
+                    "-world", "cem",
+                    "-topic", "/sim/robot_description",
+                    "-name", "whole_cell_sim",
+                    "-allow_renaming", "true",
+                    "-x", "0",
+                    "-y", "0",
+                    "-z", "0",
+                ],
+                output="screen",
             ),
 
             # Gazebo-ROS Bridge (sensör verileri için)
@@ -496,11 +497,10 @@ def launch_setup(context, *args, **kwargs):
         ]
     )
 
-    # Sim spawn ve node'ları 10 sn gecikme ile başlat (Gazebo hazır olsun)
+    # Sim GroupAction'ı gecikmeli başlat (gerçek robot hazır olsun)
     delayed_sim_spawn_and_nodes = TimerAction(
-        period=25.0,
+        period=3.0,  # Çalışan hil_test.launch.py ile aynı (3 sn)
         actions=[
-            sim_gz_spawn_entity,
             sim_nodes_in_namespace,
         ],
     )
@@ -675,9 +675,7 @@ def launch_setup(context, *args, **kwargs):
         set_gz_system_plugin,
         set_gz_sim_system_plugin,
 
-        # Gazebo başlat
-        gz_launch_description_with_gui,
-        gz_launch_description_without_gui,
+        # Gazebo artık sim GroupAction içinde başlatılıyor (satır yukarıda)
 
         # Gazebo → ROS TF bridge
         # gz_tf_bridge,

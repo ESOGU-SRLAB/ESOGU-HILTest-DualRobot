@@ -62,7 +62,7 @@
   gz_type_name: "ignition.msgs.Image"
   direction: GZ_TO_ROS
   qos_profile: SENSOR_DATA
-  lazy: false
+  lazy: true
 
 - ros_topic_name: "camera_info"
   gz_topic_name: "/world/cem/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/camera_info"
@@ -70,4 +70,4 @@
   gz_type_name: "ignition.msgs.CameraInfo"
   direction: GZ_TO_ROS
   qos_profile: SENSOR_DATA
-  lazy: false
+  lazy: true

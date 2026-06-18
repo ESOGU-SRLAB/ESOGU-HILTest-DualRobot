@@ -1694,11 +1694,18 @@ class MoveIt2:
             np.fill_diagonal(transform, scale)
             mesh.apply_transform(transform)
 
+        # trimesh face'lerini uint32'ye çevir (ROS2 MeshTriangle gerekliliği)
+        faces_uint32 = np.array(mesh.faces, dtype=np.uint32)
+        
         msg.meshes.append(
             Mesh(
-                triangles=[MeshTriangle(vertex_indices=face) for face in mesh.faces],
+                triangles=[
+                    MeshTriangle(vertex_indices=np.array([faces_uint32[i, 0], faces_uint32[i, 1], faces_uint32[i, 2]], dtype=np.uint32))
+                    for i in range(len(faces_uint32))
+                ],
                 vertices=[
-                    Point(x=vert[0], y=vert[1], z=vert[2]) for vert in mesh.vertices
+                    Point(x=float(vert[0]), y=float(vert[1]), z=float(vert[2]))
+                    for vert in mesh.vertices
                 ],
             )
         )

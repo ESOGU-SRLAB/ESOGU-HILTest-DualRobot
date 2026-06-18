@@ -99,7 +99,7 @@ def launch_setup(context, *args, **kwargs):
             # IncludeLaunchDescription(
             #     PythonLaunchDescriptionSource(
             #         os.path.join(
-            #             get_package_share_directory('real_robot_moveit_config'),
+            #             get_package_share_directory('real_ur10egripper_moveit_config'),
             #             'launch',
             #             'move_group.launch.py'
             #         )
@@ -318,13 +318,13 @@ def launch_setup(context, *args, **kwargs):
                 # ),
                 
                 # Real to Sim Bridge Node - Gerçek robot ile simüle robot arasında köprü
-                Node(
-                    package="my_robot_cell_control",
-                    executable="real_to_sim_bridge",
-                    name="real_to_sim_bridge",
-                    output="screen",
-                    parameters=[{"use_sim_time": True}],
-                ),
+                # Node(
+                #     package="my_robot_cell_control",
+                #     executable="real_to_sim_bridge",
+                #     name="real_to_sim_bridge",
+                #     output="screen",
+                #     parameters=[{"use_sim_time": True}],
+                # ),
                 
                 # Gerçek robot için RViz (namespace olmadan)
                 Node(
