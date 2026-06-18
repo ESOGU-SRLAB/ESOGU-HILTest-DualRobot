@@ -9,7 +9,7 @@ kalan 3 bileşeni sıralı olarak başlatır:
            hazır olduktan sonra başlatılır
 
 Terminal 3:
-  ros2 launch pymoveit2_real real_dual_execution.launch.py
+  ros2 launch pymoveit2_real multirobot_inspection_scenario.launch.py
 
 Argümanlar:
   rosbridge_host  : AGV ROS1 PC adresi   (default: 192.168.3.6)

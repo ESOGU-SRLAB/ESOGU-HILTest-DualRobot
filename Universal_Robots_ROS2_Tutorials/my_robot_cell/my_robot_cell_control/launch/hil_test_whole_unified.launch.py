@@ -202,6 +202,7 @@ def launch_setup(context, *args, **kwargs):
                 name="linear_axis_adapter_node",
                 output="screen",
                 parameters=[{"use_sim_time": False}],
+                condition=UnlessCondition(use_fake_hardware),
             ),
 
             # AGV Bridge Node — ROS1 Noetic PC (192.168.3.6:9090) ile köprü
@@ -330,7 +331,7 @@ def launch_setup(context, *args, **kwargs):
                     [FindPackageShare("ros_gz_sim"), "/launch/gz_sim.launch.py"]
                 ),
                 launch_arguments={
-                    "gz_args": ["-r -v4 ", world_file],
+                    "gz_args": ["-r -v 8 ", world_file],
                     "on_exit_shutdown": "true",
                 }.items(),
             ),
@@ -586,6 +587,33 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
+    # === MoveIt Move Group (Real Robot) ===
+    # Seçilen gripper/vacuum ayarlarına göre doğru MoveIt config paketini dinamik olarak yükler.
+    use_vac_str = LaunchConfiguration("use_vacuum_gripper").perform(context)
+    use_grip_str = LaunchConfiguration("use_gripper").perform(context)
+
+    if use_vac_str.lower() == 'true':
+        real_moveit_pkg = "real_ifarlab_vacuum_moveit_config"
+    elif use_grip_str.lower() == 'true':
+        real_moveit_pkg = "real_ifarlab_gripper_moveit_config"
+    else:
+        real_moveit_pkg = "real_ifarlab_moveit_config"
+
+    delayed_real_moveit = TimerAction(
+        period=25.0,  # Controller'lar ve ortam hazır olduktan sonra
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution([
+                        FindPackageShare(real_moveit_pkg),
+                        "launch",
+                        "move_group.launch.py",
+                    ])
+                ),
+            ),
+        ],
+    )
+
     # === KONVEYÖR BELT (Gazebo plugin'li, hareketli) ===
     # URDF'deki statik conveyor_belt linki devre dışı; aynı pozisyonda plugin'li SDF spawn edilir.
     # Pozisyon: STL mesh origin offset'i telafi etmek için x=0.7422, y=0.0966
@@ -698,10 +726,13 @@ def launch_setup(context, *args, **kwargs):
         # 4. MoveIt (25 sn sonra - kendi GroupAction ile /sim namespace)
         # delayed_sim_moveit,
 
-        # 5. Real-to-Sim Bridge (30 sn sonra)
+        # 5. Real MoveIt (25 sn sonra - namespace yok)
+        delayed_real_moveit,
+
+        # 6. Real-to-Sim Bridge (30 sn sonra)
         # real_to_sim_bridge_delayed,
 
-        # 6. Rosbridge WebSocket Server (port 9090)
+        # 7. Rosbridge WebSocket Server (port 9090)
         # rosbridge_server,
     ]
 

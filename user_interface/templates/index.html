@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ESOGÜ Robotics Lab — Scenario Control Dashboard for multi-robot HIL testing">
+    <title>ESOGÜ Robotics Lab — Dashboard</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+
+<div class="dashboard">
+
+    <!-- ===== HEADER (Logos + Title) ===== -->
+    <header class="header fade-in">
+        <div class="header-logos">
+            <img src="/figures/ifarlab.png" alt="ESOGÜ IFARLAB" title="ESOGÜ IFARLAB" id="logo-ifarlab">
+            <img src="/figures/asrlab.jpg" alt="ESOGÜ ASRLAB" title="ESOGÜ ASRLAB" id="logo-asrlab">
+            <img src="/figures/matisse.png" alt="MATISSE" title="MATISSE Project" id="logo-matisse">
+        </div>
+        <div class="header-title">
+            <h1>Scenario Control Dashboard</h1>
+            <p>ESOGÜ Robotics Lab — HIL Test Environment</p>
+        </div>
+    </header>
+
+    <!-- ===== CONTROL BAR (Scenario Buttons + Emergency Stop) ===== -->
+    <nav class="control-bar fade-in" id="control-bar">
+        <button class="scenario-btn" id="btn-multi_robot_inspection" onclick="startScenario('multi_robot_inspection')">
+            <span class="btn-icon">🤖</span>
+            Multi-Robot Inspection
+        </button>
+        <button class="scenario-btn" id="btn-ur10e_inspection" onclick="startScenario('ur10e_inspection')">
+            <span class="btn-icon">🔍</span>
+            UR10e Inspection
+        </button>
+        <button class="scenario-btn" id="btn-pick_and_place" onclick="startScenario('pick_and_place')">
+            <span class="btn-icon">📦</span>
+            Pick &amp; Place
+        </button>
+        <button class="scenario-btn" id="btn-human_robot_collaboration" onclick="startScenario('human_robot_collaboration')">
+            <span class="btn-icon">🤝</span>
+            Human-Robot Collaboration
+        </button>
+
+        <div class="control-separator"></div>
+
+        <div class="toggle-container" title="Gerçek donanıma bağlı değilken bu anahtarı açın">
+            <label class="toggle-switch">
+                <input type="checkbox" id="fake-hardware-toggle" checked>
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Use Fake Hardware</span>
+        </div>
+
+        <button class="emergency-btn" id="btn-emergency" onclick="emergencyStop()">
+            🛑 STOP ALL
+        </button>
+    </nav>
+
+    <!-- ===== STATUS BAR ===== -->
+    <div class="status-bar fade-in" id="status-bar">
+        <div class="status-item">
+            <span class="status-dot stopped" id="hil-dot"></span>
+            <span class="status-label">HIL:</span>
+            <span class="status-value" id="hil-status-text">Kapalı</span>
+        </div>
+        <div class="status-item">
+            <span class="status-dot stopped" id="scenario-dot"></span>
+            <span class="status-label">Senaryo:</span>
+            <span class="status-value" id="scenario-status-text">—</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Aktif:</span>
+            <span class="status-value" id="active-scenario-text">—</span>
+        </div>
+
+        <div class="health-indicators" id="health-indicators">
+            <div class="health-chip fail" id="health-js">
+                <span class="chip-dot"></span>
+                /joint_states
+            </div>
+            <div class="health-chip fail" id="health-sim-js">
+                <span class="chip-dot"></span>
+                /sim/joint_states
+            </div>
+            <div class="health-chip fail" id="health-cm">
+                <span class="chip-dot"></span>
+                controller_mgr
+            </div>
+            <div class="health-chip fail" id="health-sim-cm">
+                <span class="chip-dot"></span>
+                sim/controller_mgr
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CONFIRM ROBOT READY BANNER ===== -->
+    <div class="confirm-banner" id="confirm-banner">
+        <span class="banner-icon">⚠️</span>
+        <span class="banner-text">HIL başlatıldı. Robot hazır olduğunda onaylayın.</span>
+        <button class="confirm-btn" id="btn-confirm" onclick="confirmRobot()">
+            ✅ Robot Hazır — Senaryoyu Başlat
+        </button>
+    </div>
+
+    <!-- ===== CAMERA FEEDS ===== -->
+    <div class="content-grid">
+        <!-- Real Camera (Left) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>🎥 Gerçek Dünya Kamerası</h3>
+                <span class="panel-badge live">● LIVE</span>
+            </div>
+            <div class="camera-container" id="real-camera-wrapper">
+                <img src="/stream/real" alt="Real World Camera" id="real-camera"
+                     onerror="this.style.display='none'; document.getElementById('real-placeholder').style.display='flex';">
+                <div class="camera-placeholder" id="real-placeholder" style="display:none;">
+                    <span class="placeholder-icon">📷</span>
+                    <span class="placeholder-text">Kamera bağlantısı bekleniyor...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gazebo Camera (Right) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>🎮 Gazebo Simülasyon Kamerası</h3>
+                <span class="panel-badge sim">● SIM</span>
+            </div>
+            <div class="camera-container" id="gazebo-camera-wrapper">
+                <img src="/stream/gazebo" alt="Gazebo Simulation Camera" id="gazebo-camera"
+                     onerror="this.style.display='none'; document.getElementById('gazebo-placeholder').style.display='flex';">
+                <div class="camera-placeholder" id="gazebo-placeholder" style="display:none;">
+                    <span class="placeholder-icon">🎮</span>
+                    <span class="placeholder-text">Simülasyon görüntüsü bekleniyor...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real Joint States Chart (Left) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>📊 Gerçek Dünya — Joint States</h3>
+                <span class="panel-badge live">● LIVE</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="real-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Sim Joint States Chart (Right) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>📊 Simülasyon — Joint States</h3>
+                <span class="panel-badge sim">● SIM</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="sim-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Log Panel (Full Width) -->
+        <div class="panel log-section fade-in">
+            <div class="panel-header">
+                <h3>📋 Sistem Logları</h3>
+                <div class="log-controls">
+                    <button class="log-control-btn" onclick="toggleAutoScroll()">
+                        ⬇️ Auto-Scroll: <span id="autoscroll-label">ON</span>
+                    </button>
+                    <button class="log-control-btn" onclick="clearLogs()">
+                        🗑️ Temizle
+                    </button>
+                </div>
+            </div>
+            <div class="log-container" id="log-container">
+                <div class="log-entry">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-source system">SYSTEM</span>
+                    <span class="log-msg">Dashboard başlatıldı. Bir senaryo seçerek başlayabilirsiniz.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== JavaScript ===== -->
+<script src="/static/js/dashboard.js"></script>
+
+</body>
+</html>

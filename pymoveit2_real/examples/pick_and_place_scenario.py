@@ -37,8 +37,8 @@ class CollisionAwareRobotController(Node):
         self.moveit2.planner_id = "RRTstarkConfigDefault"
 
         # Güvenlik için daha düşük hızlar
-        self.moveit2.max_velocity = 0.1
-        self.moveit2.max_acceleration = 0.1
+        self.moveit2.max_velocity = 0.03
+        self.moveit2.max_acceleration = 0.03
         
         # ÖNEMLI: Çarpışma önleme ayarları
         self.moveit2.cartesian_avoid_collisions = True
@@ -242,11 +242,11 @@ def main():
 
     # hop.zip -> 1.jpeg .. 7.jpeg
     wp1 = [0.1, math.radians(-46.89), math.radians(-69.76), math.radians(61.16), math.radians(-58.84), math.radians(322.54), math.radians(150.82)]
-    wp2 = [0.1, math.radians(-46.89), math.radians(-69.76), math.radians(61.16), math.radians(-58.84), math.radians(322.54), math.radians(150.82)]
-    wp3 = [0.1, math.radians(-43.01), math.radians(-99.43), math.radians(77.61), math.radians(-30.17), math.radians(327.27), math.radians(134.62)]
-    wp4 = [0.1, math.radians(-46.89), math.radians(-69.76), math.radians(61.16), math.radians(-58.84), math.radians(322.54), math.radians(150.82)]
-    wp5 = [1.9, math.radians(-42.97), math.radians(-102.07), math.radians(114.24), math.radians(-64.30), math.radians(327.41), math.radians(134.81)]
-    wp6 = [1.9, math.radians(-43.01), math.radians(-99.43), math.radians(77.61), math.radians(-30.17), math.radians(327.27), math.radians(134.62)]
+    wp2 = [0.1, math.radians(-46.89), math.radians(-69.29), math.radians(80.53), math.radians(-78.76), math.radians(322.59), math.radians(150.93)]
+    wp3 = [0.1, math.radians(-46.89), math.radians(-69.76), math.radians(61.16), math.radians(-58.84), math.radians(322.54), math.radians(150.82)]
+    wp4 = [1.943, math.radians(-43.01), math.radians(-99.43), math.radians(77.61), math.radians(-30.17), math.radians(327.27), math.radians(134.62)]
+    wp5 = [1.943, math.radians(-42.97), math.radians(-102.07), math.radians(114.24), math.radians(-64.30), math.radians(327.41), math.radians(134.81)]
+    wp6 = [1.943, math.radians(-43.01), math.radians(-99.43), math.radians(77.61), math.radians(-30.17), math.radians(327.27), math.radians(134.62)]
     wp7 = [1.0, math.radians(0.0), math.radians(-90.0), math.radians(0.0), math.radians(-90.0), math.radians(0.0), math.radians(0.0)]
 
     # Sıralı hareket için waypoint listesi (1 -> 7)

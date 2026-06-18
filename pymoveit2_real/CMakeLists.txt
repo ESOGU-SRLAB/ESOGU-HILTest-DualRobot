@@ -26,7 +26,7 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/real_robot_goal.py
     ${EXAMPLES_DIR}/real_robot_joint_goal.py
     ${EXAMPLES_DIR}/ex_servo.py
-    ${EXAMPLES_DIR}/recording.py
+    ${EXAMPLES_DIR}/ur_inspection_scenario.py
     ${EXAMPLES_DIR}/cup_detection_node.py
     ${EXAMPLES_DIR}/real_sensing_mirror_node.py
     ${EXAMPLES_DIR}/real_cleaning_mirror_node.py
@@ -35,8 +35,8 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/real_detection_to_3d_node.py
     ${EXAMPLES_DIR}/real_dual_executor.py
     ${EXAMPLES_DIR}/real_robot_gripper_goal.py
-    ${EXAMPLES_DIR}/vidalama.py
-    ${EXAMPLES_DIR}/pickandplace.py
+    ${EXAMPLES_DIR}/human_robot_collaboration_scenario.py
+    ${EXAMPLES_DIR}/pick_and_place_scenario.py
     DESTINATION lib/${PROJECT_NAME}
 )
 
