@@ -109,17 +109,17 @@
     speed_scaling_interface_name: ""
     state_publish_rate: 100.0
     action_monitor_rate: 20.0
-    allow_partial_joints_goal: false
+    allow_partial_joints_goal: true
     constraints:
-      stopped_velocity_tolerance: 0.2
+      stopped_velocity_tolerance: 0.0  # devre dışı - mirror controller
       goal_time: 0.0
-      sim_ur10e_base_to_robot_mount: { trajectory: 0.5, goal: 0.3 }
-      sim_ur10e_shoulder_pan_joint: { trajectory: 0.2, goal: 0.1 }
-      sim_ur10e_shoulder_lift_joint: { trajectory: 0.2, goal: 0.1 }
-      sim_ur10e_elbow_joint: { trajectory: 0.2, goal: 0.1 }
-      sim_ur10e_wrist_1_joint: { trajectory: 0.2, goal: 0.1 }
-      sim_ur10e_wrist_2_joint: { trajectory: 0.2, goal: 0.1 }
-      sim_ur10e_wrist_3_joint: { trajectory: 0.2, goal: 0.1 }
+      sim_ur10e_base_to_robot_mount: { trajectory: 0.0, goal: 0.0 }
+      sim_ur10e_shoulder_pan_joint: { trajectory: 0.0, goal: 0.0 }
+      sim_ur10e_shoulder_lift_joint: { trajectory: 0.0, goal: 0.0 }
+      sim_ur10e_elbow_joint: { trajectory: 0.0, goal: 0.0 }
+      sim_ur10e_wrist_1_joint: { trajectory: 0.0, goal: 0.0 }
+      sim_ur10e_wrist_2_joint: { trajectory: 0.0, goal: 0.0 }
+      sim_ur10e_wrist_3_joint: { trajectory: 0.0, goal: 0.0 }
 
 # Forward Velocity Controller
 /sim/sim_forward_velocity_controller:
@@ -183,6 +183,19 @@
     state_interfaces:
       - position
       - velocity
+    allow_partial_joints_goal: true
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    constraints:
+      stopped_velocity_tolerance: 0.0  # devre dışı - mirror controller
+      goal_time: 0.0
+      sim_world_to_agv: { trajectory: 0.0, goal: 0.0 }
+      sim_kawasaki_joint1: { trajectory: 0.0, goal: 0.0 }
+      sim_kawasaki_joint2: { trajectory: 0.0, goal: 0.0 }
+      sim_kawasaki_joint3: { trajectory: 0.0, goal: 0.0 }
+      sim_kawasaki_joint4: { trajectory: 0.0, goal: 0.0 }
+      sim_kawasaki_joint5: { trajectory: 0.0, goal: 0.0 }
+      sim_kawasaki_joint6: { trajectory: 0.0, goal: 0.0 }
 
 # ==============================================================================
 # AGV (OTA) Diff Drive Controller Parametreleri

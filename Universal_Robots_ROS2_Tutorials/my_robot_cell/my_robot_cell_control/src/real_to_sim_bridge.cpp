@@ -1,5 +1,9 @@
 // real_to_sim_bridge.cpp - Bridge between real robots and simulated robots
 // Supports: UR10E arm joints + OnRobot 2FG7 gripper + Kawasaki RS005L + AGV (real → sim mirroring)
+//
+// İlk senkronizasyonda uzun trajectory_time kullanılır (sim robotun gerçek
+// robot pozisyonuna yumuşak şekilde gitmesi için). Ardından normal rate'e geçer.
+// Eksik joint'ler sessizce atlanır (driver henüz hazır değilse).
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -20,13 +24,16 @@ class RealToSimBridge : public rclcpp::Node
 public:
   RealToSimBridge()
   : Node("real_to_sim_bridge"),
-    ur_last_update_time_(this->now())
+    last_update_time_(this->now()),
+    ur_initial_sync_done_(false),
+    kawasaki_initial_sync_done_(false)
   {
     // Parameters
     update_rate_ = this->declare_parameter<double>("update_rate", 50.0);
     trajectory_time_ = this->declare_parameter<double>("trajectory_time", 1.0 / update_rate_);
-    
-    // ...existing code...
+    // İlk senkronizasyon süresi: sim robot mevcut pozisyonundan gerçek robot
+    // pozisyonuna bu sürede gider. Büyük değer = daha yumuşak geçiş.
+    initial_sync_time_ = this->declare_parameter<double>("initial_sync_time", 3.0);
     
     // ==================== UR10E CONFIGURATION ====================
     // Joint name mapping: real -> sim
@@ -51,11 +58,11 @@ public:
       "sim_ur10e_wrist_3_joint"
     };
 
-    // Subscriber to real UR10E robot joint states
-    ur_joint_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
+    // Subscriber to real robot joint states (UR + Kawasaki + AGV share /joint_states)
+    joint_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
       "/joint_states", 
       rclcpp::QoS(10).best_effort(),
-      std::bind(&RealToSimBridge::urJointStateCallback, this, std::placeholders::_1));
+      std::bind(&RealToSimBridge::jointStateCallback, this, std::placeholders::_1));
 
     // Publisher to UR sim robot trajectory controller (BEST_EFFORT to match controller)
     ur_trajectory_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>(
@@ -72,8 +79,6 @@ public:
 
     // ==================== KAWASAKI + AGV CONFIGURATION ====================
     // Joint name mapping: real -> sim
-    // Real joint names come from whole_cell_hw_controllers.yaml (kawasaki_controller)
-    // Sim joint names come from whole_cell_sim_controllers.yaml (/sim/kawasaki_controller)
     kawasaki_joint_mapping_ = {
       {"world_to_agv", "sim_world_to_agv"},
       {"joint1", "sim_kawasaki_joint1"},
@@ -85,7 +90,6 @@ public:
     };
 
     // Define the correct joint order for the Kawasaki sim controller
-    // Must match the order in whole_cell_sim_controllers.yaml
     kawasaki_sim_joint_order_ = {
       "sim_world_to_agv",
       "sim_kawasaki_joint1",
@@ -123,27 +127,27 @@ public:
 
     // ==================== LOG INFO ====================
     RCLCPP_INFO(this->get_logger(), "Real-to-Sim Bridge Node started (UR10E + Gripper + Kawasaki + AGV)");
-    RCLCPP_INFO(this->get_logger(), "Update rate: %.2f Hz", update_rate_);
+    RCLCPP_INFO(this->get_logger(), "  Update rate: %.1f Hz, trajectory_time: %.3f s", update_rate_, trajectory_time_);
+    RCLCPP_INFO(this->get_logger(), "  Initial sync time: %.1f s (smooth first move)", initial_sync_time_);
     RCLCPP_INFO(this->get_logger(), "  Listening to: /joint_states");
-    RCLCPP_INFO(this->get_logger(), "  Publishing to: /sim/sim_scaled_joint_trajectory_controller/joint_trajectory");
-    RCLCPP_INFO(this->get_logger(), "  Publishing to: /sim/sim_gripper_controller/joint_trajectory");
-    RCLCPP_INFO(this->get_logger(), "  Publishing to: /sim/kawasaki_controller/joint_trajectory");
+    RCLCPP_INFO(this->get_logger(), "  Publishing UR to:       /sim/sim_scaled_joint_trajectory_controller/joint_trajectory");
+    RCLCPP_INFO(this->get_logger(), "  Publishing Gripper to:  /sim/sim_gripper_controller/joint_trajectory");
+    RCLCPP_INFO(this->get_logger(), "  Publishing Kawasaki to: /sim/kawasaki_controller/joint_trajectory");
   }
 
 private:
   // ==================== JOINT STATE CALLBACK ====================
-  // Both UR10E and Kawasaki+AGV share /joint_states (same controller_manager)
-  void urJointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
+  void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
   {
     // Rate limiting
     auto current_time = this->now();
-    auto time_diff = (current_time - ur_last_update_time_).seconds();
+    auto time_diff = (current_time - last_update_time_).seconds();
     
     if (time_diff < (1.0 / update_rate_)) {
       return;  // Skip this update
     }
     
-    ur_last_update_time_ = current_time;
+    last_update_time_ = current_time;
 
     // Build a map of real joint name to position (used by all bridges)
     std::map<std::string, double> real_joint_positions;
@@ -164,49 +168,55 @@ private:
   // ==================== UR10E TRAJECTORY PUBLISH ====================
   void publishUrTrajectory(const std::map<std::string, double>& real_joint_positions)
   {
-    // Create joint trajectory message for sim robot
-    trajectory_msgs::msg::JointTrajectory traj_msg;
-    traj_msg.header.stamp = rclcpp::Time(0);  // Execute immediately
-
-    // Prepare joint names and positions in the correct order for sim robot
+    // Collect positions; skip entirely if no UR joints found
     std::vector<double> sim_joint_positions;
+    std::vector<std::string> found_sim_joints;
     sim_joint_positions.reserve(ur_sim_joint_order_.size());
-    
-    for (const auto& sim_joint_name : ur_sim_joint_order_) {
-      // Use precomputed reverse mapping
-      const std::string& real_joint_name = ur_reverse_mapping_.at(sim_joint_name);
+    found_sim_joints.reserve(ur_sim_joint_order_.size());
 
-      // Get the position from real robot
+    for (const auto& sim_joint_name : ur_sim_joint_order_) {
+      const std::string& real_joint_name = ur_reverse_mapping_.at(sim_joint_name);
       auto it = real_joint_positions.find(real_joint_name);
       if (it != real_joint_positions.end()) {
+        found_sim_joints.push_back(sim_joint_name);
         sim_joint_positions.push_back(it->second);
       } else {
-        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
-                             "UR joint %s not found in real robot data", real_joint_name.c_str());
-        sim_joint_positions.push_back(0.0);  // Default value
+        // Joint not yet available — log once per 10s, don't add to trajectory
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 10000,
+                             "UR joint '%s' not found in /joint_states (driver not ready?)",
+                             real_joint_name.c_str());
       }
     }
 
-    // Set joint names in correct order
-    traj_msg.joint_names = ur_sim_joint_order_;
+    if (found_sim_joints.empty()) {
+      return;  // No UR joints available yet
+    }
 
-    // Create trajectory point
+    // Determine trajectory_time: use initial_sync_time for the first command
+    double traj_time = trajectory_time_;
+    if (!ur_initial_sync_done_) {
+      traj_time = initial_sync_time_;
+      ur_initial_sync_done_ = true;
+      RCLCPP_INFO(this->get_logger(),
+                  "UR initial sync: sending first trajectory with %.1f s duration (%zu joints)",
+                  traj_time, found_sim_joints.size());
+    }
+
+    // Create joint trajectory message
+    trajectory_msgs::msg::JointTrajectory traj_msg;
+    traj_msg.header.stamp = rclcpp::Time(0);  // Execute immediately
+    traj_msg.joint_names = found_sim_joints;
+
     trajectory_msgs::msg::JointTrajectoryPoint point;
     point.positions = sim_joint_positions;
-    
-    // Set velocities to zero (let controller handle interpolation)
     point.velocities.resize(sim_joint_positions.size(), 0.0);
     point.accelerations.resize(sim_joint_positions.size(), 0.0);
-    
-    // Time from start for smooth motion
-    point.time_from_start = rclcpp::Duration::from_seconds(trajectory_time_);
+    point.time_from_start = rclcpp::Duration::from_seconds(traj_time);
 
     traj_msg.points.push_back(point);
-
-    // Publish trajectory
     ur_trajectory_pub_->publish(traj_msg);
 
-    RCLCPP_DEBUG(this->get_logger(), "Published UR trajectory with %zu joints", ur_sim_joint_order_.size());
+    RCLCPP_DEBUG(this->get_logger(), "Published UR trajectory with %zu joints", found_sim_joints.size());
   }
 
   // ==================== GRIPPER TRAJECTORY PUBLISH ====================
@@ -234,56 +244,55 @@ private:
   // ==================== KAWASAKI + AGV TRAJECTORY PUBLISH ====================
   void publishKawasakiTrajectory(const std::map<std::string, double>& real_joint_positions)
   {
-    // Create joint trajectory message for Kawasaki sim controller
-    trajectory_msgs::msg::JointTrajectory traj_msg;
-    traj_msg.header.stamp = rclcpp::Time(0);  // Execute immediately
-
-    // Prepare joint names and positions in the correct order
+    // Collect positions; skip entirely if no Kawasaki/AGV joints found
     std::vector<double> sim_joint_positions;
+    std::vector<std::string> found_sim_joints;
     sim_joint_positions.reserve(kawasaki_sim_joint_order_.size());
-    bool any_found = false;
+    found_sim_joints.reserve(kawasaki_sim_joint_order_.size());
 
     for (const auto& sim_joint_name : kawasaki_sim_joint_order_) {
-      // Use precomputed reverse mapping
       const std::string& real_joint_name = kawasaki_reverse_mapping_.at(sim_joint_name);
-
-      // Get the position from real robot
       auto it = real_joint_positions.find(real_joint_name);
       if (it != real_joint_positions.end()) {
+        found_sim_joints.push_back(sim_joint_name);
         sim_joint_positions.push_back(it->second);
-        any_found = true;
       } else {
-        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
-                             "Kawasaki joint %s not found in real robot data", real_joint_name.c_str());
-        sim_joint_positions.push_back(0.0);  // Default value
+        // Joint not yet available — log once per 10s
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 10000,
+                             "Kawasaki joint '%s' not found in /joint_states (driver not ready?)",
+                             real_joint_name.c_str());
       }
     }
 
-    // Only publish if at least one Kawasaki/AGV joint was found
-    if (!any_found) {
-      return;
+    if (found_sim_joints.empty()) {
+      return;  // No Kawasaki/AGV joints available yet
     }
 
-    // Set joint names in correct order
-    traj_msg.joint_names = kawasaki_sim_joint_order_;
+    // Determine trajectory_time: use initial_sync_time for the first command
+    double traj_time = trajectory_time_;
+    if (!kawasaki_initial_sync_done_) {
+      traj_time = initial_sync_time_;
+      kawasaki_initial_sync_done_ = true;
+      RCLCPP_INFO(this->get_logger(),
+                  "Kawasaki initial sync: sending first trajectory with %.1f s duration (%zu joints)",
+                  traj_time, found_sim_joints.size());
+    }
 
-    // Create trajectory point
+    // Create joint trajectory message
+    trajectory_msgs::msg::JointTrajectory traj_msg;
+    traj_msg.header.stamp = rclcpp::Time(0);  // Execute immediately
+    traj_msg.joint_names = found_sim_joints;
+
     trajectory_msgs::msg::JointTrajectoryPoint point;
     point.positions = sim_joint_positions;
-
-    // Set velocities to zero (let controller handle interpolation)
     point.velocities.resize(sim_joint_positions.size(), 0.0);
     point.accelerations.resize(sim_joint_positions.size(), 0.0);
-
-    // Time from start for smooth motion
-    point.time_from_start = rclcpp::Duration::from_seconds(trajectory_time_);
+    point.time_from_start = rclcpp::Duration::from_seconds(traj_time);
 
     traj_msg.points.push_back(point);
-
-    // Publish trajectory
     kawasaki_trajectory_pub_->publish(traj_msg);
 
-    RCLCPP_DEBUG(this->get_logger(), "Published Kawasaki trajectory with %zu joints", kawasaki_sim_joint_order_.size());
+    RCLCPP_DEBUG(this->get_logger(), "Published Kawasaki trajectory with %zu joints", found_sim_joints.size());
   }
 
   // ==================== UTILITY FUNCTIONS ====================
@@ -311,14 +320,18 @@ private:
   // Parameters
   double update_rate_;
   double trajectory_time_;
+  double initial_sync_time_;
   
+  // Shared
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
+  rclcpp::Time last_update_time_;
+
   // ==================== UR10E members ====================
   std::map<std::string, std::string> ur_joint_mapping_;
   std::map<std::string, std::string> ur_reverse_mapping_;  // sim -> real (precomputed)
   std::vector<std::string> ur_sim_joint_order_;
-  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr ur_joint_state_sub_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr ur_trajectory_pub_;
-  rclcpp::Time ur_last_update_time_;
+  bool ur_initial_sync_done_;
 
   // ==================== GRIPPER members ====================
   std::string gripper_real_joint_name_;
@@ -330,6 +343,7 @@ private:
   std::map<std::string, std::string> kawasaki_reverse_mapping_;  // sim -> real (precomputed)
   std::vector<std::string> kawasaki_sim_joint_order_;
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr kawasaki_trajectory_pub_;
+  bool kawasaki_initial_sync_done_;
 };
 
 int main(int argc, char** argv)
