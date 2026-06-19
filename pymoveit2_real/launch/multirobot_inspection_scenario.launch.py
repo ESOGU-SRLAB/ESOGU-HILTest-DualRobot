@@ -17,9 +17,9 @@ def generate_launch_description():
 
     # The C++ Arm Executor bypassing ros2_control to talk to Kawasaki via TCP
     kawasaki_arm_node = Node(
-        package="sir_robot_ros_interface",
-        executable="KawasakiArmNode",
-        name="kawasaki_arm_executor",
+        package="pymoveit2_kawasaki_real",
+        executable="real_kawasaki_waypoints.py",
+        name="real_kawasaki_agv_waypoints",
         output="screen",
         emulate_tty=True,
     )

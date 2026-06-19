@@ -31,7 +31,7 @@
 
     <model name="web_camera">
       <static>true</static>
-      <pose>-1 -2.5 6 0 1 1.5</pose>  <!-- istediğiniz açı -->
+      <pose>1 -1 2.2 0 0.4 2.15</pose>  <!-- istediğiniz açı -->
       <link name="link">
         <sensor name="camera" type="camera">
           <camera>

@@ -479,7 +479,7 @@ class CameraStreamer:
         """Capture RTSP stream and convert to MJPEG."""
         try:
             import cv2
-            rtsp_url = "rtsp://192.168.4.51:554/live/0"
+            rtsp_url = "rtsp://192.168.3.51:554/live/0"
 
             while self._real_running:
                 cap = cv2.VideoCapture(rtsp_url)

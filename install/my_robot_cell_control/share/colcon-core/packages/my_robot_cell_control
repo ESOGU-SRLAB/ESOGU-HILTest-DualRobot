@@ -1,0 +1,1 @@
+controller_manager:cv_bridge:joint_state_broadcaster:joint_trajectory_controller:my_robot_cell_description:position_controllers:python3-numpy:python3-opencv:rclcpp:robot_state_publisher:sensor_msgs:std_msgs:trajectory_msgs:ur_client_library:ur_controllers:ur_robot_driver:xacro
