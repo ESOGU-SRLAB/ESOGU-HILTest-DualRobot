@@ -61,7 +61,7 @@ def main():
     rclpy.init()
     node = URExecutor()
 
-    ur_file = "real_ur_trajectories.json"
+    ur_file = os.path.expanduser("~/colcon_ws/real_ur_trajectories.json")
     if not os.path.exists(ur_file):
         node.get_logger().error(f"JSON file not found: {ur_file}")
         rclpy.shutdown()

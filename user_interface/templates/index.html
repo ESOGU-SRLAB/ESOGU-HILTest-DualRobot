@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ESOGÜ Robotics Lab — Scenario Control Dashboard for multi-robot HIL testing">
-    <title>ESOGÜ Robotics Lab — Dashboard</title>
+    <meta name="description" content="ESOGÜ - IFARLAB — Scenario Control Dashboard for multi-robot HIL testing">
+    <title>ESOGÜ - IFARLAB — Dashboard</title>
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="/static/css/style.css">
@@ -21,14 +21,16 @@
 
     <!-- ===== HEADER (Logos + Title) ===== -->
     <header class="header fade-in">
-        <div class="header-logos">
+        <div class="header-left">
             <img src="/figures/ifarlab.png" alt="ESOGÜ IFARLAB" title="ESOGÜ IFARLAB" id="logo-ifarlab">
             <img src="/figures/asrlab.jpg" alt="ESOGÜ ASRLAB" title="ESOGÜ ASRLAB" id="logo-asrlab">
-            <img src="/figures/matisse.png" alt="MATISSE" title="MATISSE Project" id="logo-matisse">
         </div>
-        <div class="header-title">
+        <div class="header-center">
             <h1>Scenario Control Dashboard</h1>
-            <p>ESOGÜ Robotics Lab — HIL Test Environment</p>
+            <p>ESOGÜ - IFARLAB — HIL Test Environment</p>
+        </div>
+        <div class="header-right">
+            <img src="/figures/matisse.png" alt="MATISSE" title="MATISSE Project" id="logo-matisse">
         </div>
     </header>
 
@@ -53,7 +55,7 @@
 
         <div class="control-separator"></div>
 
-        <div class="toggle-container" title="Gerçek donanıma bağlı değilken bu anahtarı açın">
+        <div class="toggle-container" title="Enable this switch when not connected to real hardware">
             <label class="toggle-switch">
                 <input type="checkbox" id="fake-hardware-toggle" checked>
                 <span class="slider"></span>
@@ -71,44 +73,26 @@
         <div class="status-item">
             <span class="status-dot stopped" id="hil-dot"></span>
             <span class="status-label">HIL:</span>
-            <span class="status-value" id="hil-status-text">Kapalı</span>
+            <span class="status-value" id="hil-status-text">Offline</span>
         </div>
         <div class="status-item">
             <span class="status-dot stopped" id="scenario-dot"></span>
-            <span class="status-label">Senaryo:</span>
+            <span class="status-label">Scenario:</span>
             <span class="status-value" id="scenario-status-text">—</span>
         </div>
         <div class="status-item">
-            <span class="status-label">Aktif:</span>
+            <span class="status-label">Active:</span>
             <span class="status-value" id="active-scenario-text">—</span>
         </div>
 
-        <div class="health-indicators" id="health-indicators">
-            <div class="health-chip fail" id="health-js">
-                <span class="chip-dot"></span>
-                /joint_states
-            </div>
-            <div class="health-chip fail" id="health-sim-js">
-                <span class="chip-dot"></span>
-                /sim/joint_states
-            </div>
-            <div class="health-chip fail" id="health-cm">
-                <span class="chip-dot"></span>
-                controller_mgr
-            </div>
-            <div class="health-chip fail" id="health-sim-cm">
-                <span class="chip-dot"></span>
-                sim/controller_mgr
-            </div>
-        </div>
     </div>
 
     <!-- ===== CONFIRM ROBOT READY BANNER ===== -->
     <div class="confirm-banner" id="confirm-banner">
         <span class="banner-icon">⚠️</span>
-        <span class="banner-text">HIL başlatıldı. Robot hazır olduğunda onaylayın.</span>
+        <span class="banner-text">HIL initialized. Please confirm when the robot is ready.</span>
         <button class="confirm-btn" id="btn-confirm" onclick="confirmRobot()">
-            ✅ Robot Hazır — Senaryoyu Başlat
+            ✅ Robot is Ready — Start Scenario
         </button>
     </div>
 
@@ -117,7 +101,7 @@
         <!-- Real Camera (Left) -->
         <div class="panel fade-in">
             <div class="panel-header">
-                <h3>🎥 Gerçek Dünya Kamerası</h3>
+                <h3>🎥 Real World Camera</h3>
                 <span class="panel-badge live">● LIVE</span>
             </div>
             <div class="camera-container" id="real-camera-wrapper">
@@ -125,7 +109,7 @@
                      onerror="this.style.display='none'; document.getElementById('real-placeholder').style.display='flex';">
                 <div class="camera-placeholder" id="real-placeholder" style="display:none;">
                     <span class="placeholder-icon">📷</span>
-                    <span class="placeholder-text">Kamera bağlantısı bekleniyor...</span>
+                    <span class="placeholder-text">Waiting for camera connection...</span>
                 </div>
             </div>
         </div>
@@ -133,7 +117,7 @@
         <!-- Gazebo Camera (Right) -->
         <div class="panel fade-in">
             <div class="panel-header">
-                <h3>🎮 Gazebo Simülasyon Kamerası</h3>
+                <h3>🎮 Gazebo Simulation Camera</h3>
                 <span class="panel-badge sim">● SIM</span>
             </div>
             <div class="camera-container" id="gazebo-camera-wrapper">
@@ -141,7 +125,7 @@
                      onerror="this.style.display='none'; document.getElementById('gazebo-placeholder').style.display='flex';">
                 <div class="camera-placeholder" id="gazebo-placeholder" style="display:none;">
                     <span class="placeholder-icon">🎮</span>
-                    <span class="placeholder-text">Simülasyon görüntüsü bekleniyor...</span>
+                    <span class="placeholder-text">Waiting for simulation stream...</span>
                 </div>
             </div>
         </div>
@@ -149,7 +133,7 @@
         <!-- Real Joint States Chart (Left) -->
         <div class="panel fade-in">
             <div class="panel-header">
-                <h3>📊 Gerçek Dünya — Joint States</h3>
+                <h3>📊 Real World — Joint States</h3>
                 <span class="panel-badge live">● LIVE</span>
             </div>
             <div class="chart-container">
@@ -160,7 +144,7 @@
         <!-- Sim Joint States Chart (Right) -->
         <div class="panel fade-in">
             <div class="panel-header">
-                <h3>📊 Simülasyon — Joint States</h3>
+                <h3>📊 Simulation — Joint States</h3>
                 <span class="panel-badge sim">● SIM</span>
             </div>
             <div class="chart-container">
@@ -171,13 +155,13 @@
         <!-- Log Panel (Full Width) -->
         <div class="panel log-section fade-in">
             <div class="panel-header">
-                <h3>📋 Sistem Logları</h3>
+                <h3>📋 System Logs</h3>
                 <div class="log-controls">
                     <button class="log-control-btn" onclick="toggleAutoScroll()">
                         ⬇️ Auto-Scroll: <span id="autoscroll-label">ON</span>
                     </button>
                     <button class="log-control-btn" onclick="clearLogs()">
-                        🗑️ Temizle
+                        🗑️ Clear
                     </button>
                 </div>
             </div>
@@ -185,7 +169,7 @@
                 <div class="log-entry">
                     <span class="log-time">--:--:--</span>
                     <span class="log-source system">SYSTEM</span>
-                    <span class="log-msg">Dashboard başlatıldı. Bir senaryo seçerek başlayabilirsiniz.</span>
+                    <span class="log-msg">Dashboard started. You can select a scenario to begin.</span>
                 </div>
             </div>
         </div>

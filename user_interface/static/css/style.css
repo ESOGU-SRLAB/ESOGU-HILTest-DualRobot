@@ -118,9 +118,9 @@ body::before {
 
 /* ========== HEADER ========== */
 .header {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     background: var(--gradient-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
@@ -128,30 +128,37 @@ body::before {
     box-shadow: var(--shadow-md);
 }
 
-.header-logos {
+.header-left {
     display: flex;
     align-items: center;
     gap: 32px;
+    justify-content: flex-start;
 }
 
-.header-logos img {
-    height: 52px;
+.header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.header-left img, .header-right img {
+    height: 72px;
     object-fit: contain;
     filter: brightness(1.05);
     transition: transform var(--transition-normal);
 }
 
-.header-logos img:hover {
+.header-left img:hover, .header-right img:hover {
     transform: scale(1.08);
 }
 
-.header-title {
-    text-align: right;
+.header-center {
+    text-align: center;
 }
 
-.header-title h1 {
-    font-size: 1.15rem;
-    font-weight: 700;
+.header-center h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
     background-clip: text;
@@ -159,10 +166,10 @@ body::before {
     letter-spacing: -0.02em;
 }
 
-.header-title p {
-    font-size: 0.75rem;
+.header-center p {
+    font-size: 0.95rem;
     color: var(--text-muted);
-    font-weight: 400;
+    font-weight: 500;
 }
 
 /* ========== CONTROL BAR ========== */
@@ -675,12 +682,16 @@ body::before {
         grid-template-columns: 1fr;
     }
     .header {
+        display: flex;
         flex-direction: column;
         gap: 12px;
         text-align: center;
     }
-    .header-title {
+    .header-center {
         text-align: center;
+    }
+    .header-left, .header-right {
+        justify-content: center;
     }
     .control-bar {
         flex-direction: column;

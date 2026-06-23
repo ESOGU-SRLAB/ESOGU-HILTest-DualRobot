@@ -558,7 +558,8 @@
       </xacro:gripper>
     </xacro:if> -->
 
-    <xacro:if value="${use_gripper}">
+    <xacro:arg name="use_gripper" default="$(optenv ENV_USE_GRIPPER false)"/>
+    <xacro:if value="$(arg use_gripper)">
       <link name="${tf_prefix}gripper_body_1">
         <inertial>
           <origin xyz="0.046201794305521515 0.04641351769017876 -0.017675503740650633" rpy="0 0 0"/>

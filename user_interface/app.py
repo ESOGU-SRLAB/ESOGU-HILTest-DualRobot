@@ -76,7 +76,7 @@ class ScenarioManager:
         os.makedirs(log_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.log_filepath = os.path.join(log_dir, f"dashboard_log_{timestamp}.txt")
-        print(f"[Log] Loglar şu dosyaya yazılacak: {self.log_filepath}")
+        print(f"[Log] Logs will be written to: {self.log_filepath}")
 
     def _emit_status(self):
         """Push current status to all connected clients."""
@@ -121,7 +121,7 @@ class ScenarioManager:
         if process is None or process.poll() is not None:
             return
 
-        self._emit_log("SYSTEM", f"🛑 {name} durduruluyor (SIGINT)...")
+        self._emit_log("SYSTEM", f"🛑 Stopping {name} (SIGINT)...")
 
         try:
             # Send SIGINT to process group (like Ctrl+C)
@@ -132,34 +132,34 @@ class ScenarioManager:
         # Wait for graceful shutdown
         try:
             process.wait(timeout=timeout)
-            self._emit_log("SYSTEM", f"✅ {name} başarıyla durduruldu.")
+            self._emit_log("SYSTEM", f"✅ {name} successfully stopped.")
             return
         except subprocess.TimeoutExpired:
             pass
 
         # SIGTERM
-        self._emit_log("SYSTEM", f"⚠️ {name} yanıt vermedi, SIGTERM gönderiliyor...")
+        self._emit_log("SYSTEM", f"⚠️ {name} did not respond, sending SIGTERM...")
         try:
             os.killpg(os.getpgid(process.pid), signal.SIGTERM)
             process.wait(timeout=5)
-            self._emit_log("SYSTEM", f"✅ {name} SIGTERM ile durduruldu.")
+            self._emit_log("SYSTEM", f"✅ {name} stopped via SIGTERM.")
             return
         except (subprocess.TimeoutExpired, ProcessLookupError, OSError):
             pass
 
         # SIGKILL (last resort)
-        self._emit_log("SYSTEM", f"🔴 {name} zorla kapatılıyor (SIGKILL)...")
+        self._emit_log("SYSTEM", f"🔴 Force killing {name} (SIGKILL)...")
         try:
             os.killpg(os.getpgid(process.pid), signal.SIGKILL)
             process.wait(timeout=3)
         except (ProcessLookupError, OSError, subprocess.TimeoutExpired):
             pass
 
-        self._emit_log("SYSTEM", f"✅ {name} kapatıldı.")
+        self._emit_log("SYSTEM", f"✅ {name} closed.")
 
     def _start_process(self, cmd, name):
         """Start a subprocess with process group for clean shutdown."""
-        self._emit_log("SYSTEM", f"🚀 Başlatılıyor: {cmd}")
+        self._emit_log("SYSTEM", f"🚀 Starting: {cmd}")
         
         # Her komuttan önce ROS 2 ortam değişkenlerini (workspace) yüklüyoruz
         full_cmd = f"source /opt/ros/humble/setup.bash && source /home/cem/colcon_ws/install/setup.bash && {cmd}"
@@ -200,7 +200,7 @@ class ScenarioManager:
     def stop_all(self):
         """Emergency stop: kill everything."""
         with self._lock:
-            self._emit_log("SYSTEM", "🚨 ACİL DURDURMA — Tüm süreçler kapatılıyor!")
+            self._emit_log("SYSTEM", "🚨 EMERGENCY STOP — Terminating all processes!")
 
             self.scenario_status = "stopping"
             self._emit_status()
@@ -218,12 +218,12 @@ class ScenarioManager:
             self.robot_confirmed = False
 
             self._emit_status()
-            self._emit_log("SYSTEM", "✅ Tüm süreçler durduruldu.")
+            self._emit_log("SYSTEM", "✅ All processes stopped.")
 
     def start_scenario(self, scenario_key, use_fake_hardware=False):
         """Start a scenario: stop existing → start HIL → wait for confirm → start scenario."""
         if scenario_key not in self.SCENARIOS:
-            self._emit_log("SYSTEM", f"❌ Bilinmeyen senaryo: {scenario_key}")
+            self._emit_log("SYSTEM", f"❌ Unknown scenario: {scenario_key}")
             return
 
         def _run():
@@ -232,7 +232,7 @@ class ScenarioManager:
 
                 # 1. Stop existing processes
                 if self.scenario_process or self.hil_process:
-                    self._emit_log("SYSTEM", "📋 Mevcut süreçler durduruluyor...")
+                    self._emit_log("SYSTEM", "📋 Stopping current processes...")
                     self.scenario_status = "stopping"
                     self._emit_status()
                     self._kill_process(self.scenario_process, "Senaryo")
@@ -265,8 +265,8 @@ class ScenarioManager:
                 self._emit_status()
 
                 self._emit_log("SYSTEM",
-                    f"✅ HIL başlatıldı: {scenario['label']}. "
-                    "Robotun hazır olduğunu onaylayın.")
+                    f"✅ HIL initialized: {scenario['label']}. "
+                    "Please confirm that the robot is ready.")
 
         thread = threading.Thread(target=_run, daemon=True)
         thread.start()
@@ -276,7 +276,7 @@ class ScenarioManager:
         def _run():
             with self._lock:
                 if not self.current_scenario or self.hil_status != "running":
-                    self._emit_log("SYSTEM", "❌ HIL çalışmıyor, onay verilemez.")
+                    self._emit_log("SYSTEM", "❌ HIL is not running, cannot confirm.")
                     return
 
                 scenario = self.SCENARIOS[self.current_scenario]
@@ -284,7 +284,7 @@ class ScenarioManager:
                 self.scenario_status = "starting"
                 self._emit_status()
 
-                self._emit_log("SYSTEM", "✅ Robot hazır onayı alındı. Senaryo başlatılıyor...")
+                self._emit_log("SYSTEM", "✅ Robot confirmation received. Starting scenario...")
 
                 self.scenario_process = self._start_process(
                     scenario["scenario_cmd"], "SENARYO"
@@ -292,7 +292,7 @@ class ScenarioManager:
                 self.scenario_status = "running"
                 self._emit_status()
 
-                self._emit_log("SYSTEM", f"🚀 {scenario['label']} çalışıyor!")
+                self._emit_log("SYSTEM", f"🚀 {scenario['label']} is running!")
 
         thread = threading.Thread(target=_run, daemon=True)
         thread.start()
@@ -475,8 +475,54 @@ class CameraStreamer:
         thread = threading.Thread(target=self._real_worker, daemon=True)
         thread.start()
 
+    def _get_rviz_window(self):
+        try:
+            from Xlib import display
+            def get_window_by_name(window, name):
+                try:
+                    w_name = window.get_wm_name()
+                except Exception:
+                    w_name = None
+                if w_name and name in w_name:
+                    return window
+                for child in window.query_tree().children:
+                    res = get_window_by_name(child, name)
+                    if res:
+                        return res
+                return None
+            
+            d = display.Display()
+            root = d.screen().root
+            return get_window_by_name(root, "RViz")
+        except Exception:
+            return None
+
+    def _try_rviz_capture(self, rviz_win):
+        try:
+            from Xlib import X
+            from PIL import Image
+            import numpy as np
+            import cv2
+            
+            if rviz_win:
+                geom = rviz_win.get_geometry()
+                raw = rviz_win.get_image(0, 0, geom.width, geom.height, X.ZPixmap, 0xffffffff)
+                img = Image.frombytes("RGB", (geom.width, geom.height), raw.data, "raw", "BGRX")
+                cv_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+                
+                # Resize if the window is too large (to save bandwidth)
+                if geom.width > 1280:
+                    scale = 1280 / geom.width
+                    cv_img = cv2.resize(cv_img, (1280, int(geom.height * scale)))
+                    
+                _, jpeg = cv2.imencode(".jpg", cv_img, [cv2.IMWRITE_JPEG_QUALITY, 70])
+                return jpeg.tobytes()
+        except Exception:
+            pass
+        return None
+
     def _real_worker(self):
-        """Capture RTSP stream and convert to MJPEG."""
+        """Capture RTSP stream and convert to MJPEG, fallback to RViz."""
         try:
             import cv2
             rtsp_url = "rtsp://192.168.3.51:554/live/0"
@@ -484,16 +530,33 @@ class CameraStreamer:
             while self._real_running:
                 cap = cv2.VideoCapture(rtsp_url)
                 if not cap.isOpened():
-                    print(f"[CameraStreamer] RTSP bağlantısı başarısız: {rtsp_url}")
-                    print("[CameraStreamer] 5 saniye sonra tekrar denenecek...")
-                    time.sleep(5)
+                    print(f"[CameraStreamer] RTSP connection failed: {rtsp_url}")
+                    print("[CameraStreamer] Fallback: Searching for RViz window...")
+                    
+                    # Try RViz streaming for 5 seconds, then check RTSP again
+                    start_time = time.time()
+                    rviz_win = self._get_rviz_window()
+                    
+                    while self._real_running and (time.time() - start_time) < 5:
+                        # Geriye dönük pencere kontrolü
+                        if not rviz_win:
+                            rviz_win = self._get_rviz_window()
+                            
+                        rviz_frame = self._try_rviz_capture(rviz_win) if rviz_win else None
+                        
+                        if rviz_frame:
+                            with self._real_lock:
+                                self._real_frame = rviz_frame
+                            time.sleep(0.05)  # ~20 FPS
+                        else:
+                            time.sleep(1.0)
                     continue
 
                 print("[CameraStreamer] Real camera connected.")
                 while self._real_running:
                     ret, frame = cap.read()
                     if not ret:
-                        print("[CameraStreamer] RTSP frame alınamadı, yeniden bağlanılıyor...")
+                        print("[CameraStreamer] Failed to capture RTSP frame, reconnecting...")
                         break
                     _, jpeg = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
                     with self._real_lock:
@@ -641,7 +704,7 @@ def handle_health_check():
 
 def main():
     print("=" * 60)
-    print("  ESOGÜ Robotics Lab — Scenario Control Dashboard")
+    print("  ESOGÜ - IFARLAB — Scenario Control Dashboard")
     print("  http://localhost:8080")
     print("=" * 60)
 

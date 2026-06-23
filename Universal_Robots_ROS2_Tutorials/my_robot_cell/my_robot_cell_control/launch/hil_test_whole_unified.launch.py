@@ -300,6 +300,8 @@ def launch_setup(context, *args, **kwargs):
         " tf_prefix:=", sim_tf_prefix,
         " sim_ignition:=true",
         " simulation_controllers:=", sim_controllers_yaml,
+        " use_gripper:=", LaunchConfiguration("use_gripper"),
+        " use_vacuum_gripper:=", LaunchConfiguration("use_vacuum_gripper"),
     ])
 
     sim_rviz_config_file = PathJoinSubstitution(
@@ -927,6 +929,7 @@ def generate_launch_description():
         LogInfo(msg=["SIM:  UR10e + Lineer Eksen + AGV + Kawasaki (tek Gazebo model)"]),
         LogInfo(msg=["============================================================"]),
         SetEnvironmentVariable('ENV_USE_GRIPPER', LaunchConfiguration('use_gripper')),
+        SetEnvironmentVariable('ENV_USE_VACUUM_GRIPPER', LaunchConfiguration('use_vacuum_gripper')),
         SetEnvironmentVariable('ENV_USE_FAKE_HARDWARE', LaunchConfiguration('use_fake_hardware')),
         SetEnvironmentVariable('ENV_GRIPPER_IP', LaunchConfiguration('gripper_ip')),
         SetEnvironmentVariable('ENV_GRIPPER_PORT', LaunchConfiguration('gripper_port')),

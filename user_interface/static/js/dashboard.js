@@ -22,10 +22,10 @@ const SCENARIO_LABELS = {
 // ==============================================================================
 
 const STATUS_TEXT = {
-    stopped: "Kapalı",
-    starting: "Başlatılıyor...",
-    running: "Çalışıyor",
-    stopping: "Durduruluyor...",
+    stopped: "Offline",
+    starting: "Starting...",
+    running: "Running",
+    stopping: "Stopping...",
 };
 
 socket.on("status_update", (data) => {
@@ -130,7 +130,7 @@ function clearLogs() {
 
 function startScenario(scenarioKey) {
     const useFakeHardware = document.getElementById("fake-hardware-toggle").checked;
-    socket.emit("start_scenario", { 
+    socket.emit("start_scenario", {
         scenario: scenarioKey,
         use_fake_hardware: useFakeHardware
     });
@@ -141,36 +141,10 @@ function confirmRobot() {
 }
 
 function emergencyStop() {
-    if (confirm("🛑 Tüm süreçler durdurulacak. Emin misiniz?")) {
+    if (confirm("🛑 All processes will be stopped. Are you sure?")) {
         socket.emit("stop_all");
     }
 }
-
-// ==============================================================================
-// Health Check (periodic)
-// ==============================================================================
-
-function requestHealthCheck() {
-    socket.emit("request_health");
-}
-
-socket.on("health_update", (data) => {
-    updateHealthChip("health-js", data.joint_states);
-    updateHealthChip("health-sim-js", data.sim_joint_states);
-    updateHealthChip("health-cm", data.controller_manager);
-    updateHealthChip("health-sim-cm", data.sim_controller_manager);
-});
-
-function updateHealthChip(id, ok) {
-    const chip = document.getElementById(id);
-    if (chip) {
-        chip.className = `health-chip ${ok ? "ok" : "fail"}`;
-    }
-}
-
-// Check health every 5 seconds
-setInterval(requestHealthCheck, 5000);
-requestHealthCheck(); // Initial check
 
 // ==============================================================================
 // Chart.js — Live Joint State Graphs
@@ -259,7 +233,7 @@ function createJointChart(canvasId, titleLabel) {
                     type: "linear",
                     title: {
                         display: true,
-                        text: "Zaman (s)",
+                        text: "Time (s)",
                         color: "#64748b",
                         font: { size: 10, family: "'Inter', sans-serif" },
                     },
@@ -278,7 +252,7 @@ function createJointChart(canvasId, titleLabel) {
                 y: {
                     title: {
                         display: true,
-                        text: "Açı (rad)",
+                        text: "Angle (rad)",
                         color: "#64748b",
                         font: { size: 10, family: "'Inter', sans-serif" },
                     },

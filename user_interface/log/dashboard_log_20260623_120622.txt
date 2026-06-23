@@ -1,0 +1,2 @@
+[12:07:13] [SYSTEM] 🚨 ACİL DURDURMA — Tüm süreçler kapatılıyor!
+[12:07:13] [SYSTEM] ✅ Tüm süreçler durduruldu.
