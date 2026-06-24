@@ -41,12 +41,12 @@ controller_manager:
       type: position_controllers/JointGroupPositionController
 
     # --- Kawasaki RS005L ---
-    kawasaki_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
+    # kawasaki_controller:
+    #   type: joint_trajectory_controller/JointTrajectoryController
 
-    # --- AGV ---
-    ota_base_controller:
-      type: diff_drive_controller/DiffDriveController
+    # # --- AGV ---
+    # ota_base_controller:
+    #   type: diff_drive_controller/DiffDriveController
 
 
 # ==============================================================================
@@ -154,6 +154,88 @@ forward_position_controller:
 # Kawasaki RS005L Controller Parametreleri
 # ==============================================================================
 # kawasaki_controller: AGV pozisyonu + 6 eksen kol (7 DOF mobil manipülatör)
+# kawasaki_controller:
+#   ros__parameters:
+#     joints:
+#       - world_to_agv
+#       - joint1
+#       - joint2
+#       - joint3
+#       - joint4
+#       - joint5
+#       - joint6
+#     command_interfaces:
+#       - position
+#     state_interfaces:
+#       - position
+#       - velocity
+#     state_publish_rate: 100.0
+#     action_monitor_rate: 20.0
+#     allow_partial_joints_goal: true
+#     constraints:
+#       stopped_velocity_tolerance: 0.5
+#       goal_time: 0.0
+#       world_to_agv: { trajectory: 0.5, goal: 0.3 }
+#       joint1: { trajectory: 0.2, goal: 0.1 }
+#       joint2: { trajectory: 0.2, goal: 0.1 }
+#       joint3: { trajectory: 0.2, goal: 0.1 }
+#       joint4: { trajectory: 0.2, goal: 0.1 }
+#       joint5: { trajectory: 0.2, goal: 0.1 }
+#       joint6: { trajectory: 0.2, goal: 0.1 }
+
+# # ==============================================================================
+# # AGV (OTA) Diff Drive Controller Parametreleri
+# # ==============================================================================
+# ota_base_controller:
+#   ros__parameters:
+#     left_wheel_names:
+#       - wheel_left_base
+#     right_wheel_names:
+#       - wheel_right_base
+
+#     wheel_separation: 0.60
+#     wheel_radius: 0.102
+
+#     base_frame_id: ota_base_link
+#     odom_frame_id: odom
+
+#     cmd_vel_timeout: 0.25
+#     use_stamped_vel: false
+
+#     publish_rate: 50.0
+#     velocity_rolling_window_size: 10
+
+#     enable_odom_tf: true
+
+#     linear:
+#       x:
+#         has_velocity_limits: true
+#         max_velocity: 1.0
+#         has_acceleration_limits: true
+#         max_acceleration: 1.5
+
+#     angular:
+#       z:
+#         has_velocity_limits: true
+#         max_velocity: 2.0
+#         has_acceleration_limits: true
+#         max_acceleration: 3.0
+
+kawasaki_controller_manager:
+  ros__parameters:
+    update_rate: 500  # Hz
+
+    # --- Kawasaki RS005L ---
+    kawasaki_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    kawasaki_joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # --- AGV ---
+    ota_base_controller:
+      type: diff_drive_controller/DiffDriveController
+
 kawasaki_controller:
   ros__parameters:
     joints:

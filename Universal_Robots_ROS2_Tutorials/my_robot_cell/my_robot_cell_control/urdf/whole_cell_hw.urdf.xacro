@@ -65,6 +65,21 @@
   <!-- Kawasaki argümanları -->
   <xacro:arg name="kawasaki_tf_prefix" default=""/>
 
+  <!-- ==================== CONTROLLER GRUBU ==================== -->
+  <!-- control_group: hangi ros2_control bloklarının üretileceğini belirler.
+       Tek URDF'ten iki ayrı controller_manager beslemek için kullanılır.
+         all      → tüm donanım (UR + lineer eksen + Kawasaki + AGV) - varsayılan,
+                    geriye dönük uyumluluk (eski tek-CM kullanımları bozulmaz).
+         ur       → yalnızca UR10e + lineer eksen ros2_control (UR CM, 500 Hz).
+         kawasaki → yalnızca Kawasaki RS005L + AGV ros2_control (Kawasaki CM).
+       Geometri/link ağacı her durumda tam üretilir; yalnızca <ros2_control>
+       blokları gruba göre koşullanır. Böylece robot_state_publisher tam TF
+       ağacını korurken her CM yalnızca kendi donanımını sahiplenir. -->
+  <xacro:arg name="control_group" default="all"/>
+  <xacro:property name="cg" value="$(arg control_group)"/>
+  <xacro:property name="ur_group" value="${cg == 'all' or cg == 'ur'}"/>
+  <xacro:property name="kawasaki_group" value="${cg == 'all' or cg == 'kawasaki'}"/>
+
   <!-- ==================== PROPERTY'LER ==================== -->
   <xacro:property name="kinematics_params_file" value="$(arg kinematics_params)"/>
   <xacro:property name="kinematics_hash" value="${xacro.load_yaml(kinematics_params_file)['kinematics']['hash']}"/>
@@ -77,11 +92,12 @@
   <!-- AGV gövdesi (world_to_agv prismatic joint ota_base.xacro içinde tanımlı) -->
   <xacro:ota_base link_name="ota_base_link"/>
 
-  <!-- AGV ros2_control (world_to_agv + tekerlekler) -->
+  <!-- AGV ros2_control (world_to_agv + tekerlekler) - sadece kawasaki grubunda -->
   <xacro:ota_ros2_control
     name="ota_system"
     use_fake_hardware="$(arg use_fake_hardware)"
-    sim_ignition="false"/>
+    sim_ignition="false"
+    generate_ros2_control_tag="${kawasaki_group}"/>
 
   <!-- IR sensör -->
   <xacro:ota_ir base_link="ota_base_link" link_name="ota_ir" xyz_ir="0.403 0.0 0.03" rpy_ir="0 0 0"/>
@@ -104,7 +120,7 @@
     parent="manipulator_base_link"
     sim_ignition="false"
     use_fake_hardware="$(arg use_fake_hardware)"
-    generate_ros2_control_tag="true">
+    generate_ros2_control_tag="${kawasaki_group}">
     <origin xyz="0 0 0.051" rpy="0 0 3.141593"/>
   </xacro:khi_rs005l>
 
@@ -118,23 +134,26 @@
     physical_parameters_file="$(arg physical_params)"
     visual_parameters_file="$(arg visual_params)"
     use_fake_hardware="$(arg use_fake_hardware)"
-    tf_prefix="$(arg tf_prefix)">
+    tf_prefix="$(arg tf_prefix)"
+    generate_linear_axis_control_tag="${ur_group}">
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </xacro:my_robot_cell>
 
-  <!-- UR10e ros2_control (ur_robot_driver veya mock_components) -->
-  <xacro:ur_ros2_control
-    name="$(arg ur_type)"
-    tf_prefix="$(arg ur_type)_"
-    hash_kinematics="${kinematics_hash}"
-    robot_ip="$(arg robot_ip)"
-    script_filename="$(arg ur_script_filename)"
-    output_recipe_filename="$(arg ur_output_recipe_filename)"
-    input_recipe_filename="$(arg ur_input_recipe_filename)"
-    use_fake_hardware="$(arg use_fake_hardware)"
-    fake_sensor_commands="$(arg fake_sensor_commands)"
-    headless_mode="$(arg headless_mode)"
-  />
+  <!-- UR10e ros2_control (ur_robot_driver veya mock_components) - sadece ur grubunda -->
+  <xacro:if value="${ur_group}">
+    <xacro:ur_ros2_control
+      name="$(arg ur_type)"
+      tf_prefix="$(arg ur_type)_"
+      hash_kinematics="${kinematics_hash}"
+      robot_ip="$(arg robot_ip)"
+      script_filename="$(arg ur_script_filename)"
+      output_recipe_filename="$(arg ur_output_recipe_filename)"
+      input_recipe_filename="$(arg ur_input_recipe_filename)"
+      use_fake_hardware="$(arg use_fake_hardware)"
+      fake_sensor_commands="$(arg fake_sensor_commands)"
+      headless_mode="$(arg headless_mode)"
+    />
+  </xacro:if>
 
   <!-- ==================== 3. ÇEVRESEL BİLEŞENLER ==================== -->
   <xacro:ifarlab_environment prefix=""/>

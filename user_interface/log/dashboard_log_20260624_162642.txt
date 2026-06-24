@@ -1,0 +1,962 @@
+[16:27:02] [SYSTEM] 🚀 Starting: ros2 launch my_robot_cell_control hil_test_whole_unified.launch.py use_fake_hardware:=true use_mock_hardware:=true fake_sensor_commands:=true
+[16:27:02] [SYSTEM] ✅ HIL initialized: Multi-Robot Inspection Scenario. Please confirm that the robot is ready.
+[16:27:03] [HIL] [INFO] [launch]: All log files can be found below /home/cem/.ros/log/2026-06-24-16-27-03-464120-cem-7094
+[16:27:03] [HIL] [INFO] [launch]: Default logging verbosity is set to INFO
+[16:27:03] [HIL] [INFO] [launch.user]: ============================================================
+[16:27:03] [HIL] [INFO] [launch.user]: HIL Test Whole (Unified URDF) - 2 Taraflı Sistem Başlatılıyor
+[16:27:03] [HIL] [INFO] [launch.user]: ============================================================
+[16:27:03] [HIL] [INFO] [launch.user]: REAL: UR10e + Lineer Eksen (gerçek hw) + AGV/Kawasaki (collision)
+[16:27:03] [HIL] [INFO] [launch.user]: SIM:  UR10e + Lineer Eksen + AGV + Kawasaki (tek Gazebo model)
+[16:27:03] [HIL] [INFO] [launch.user]: ============================================================
+[16:27:03] [HIL] [INFO] [launch.user]: [1/2] Gerçek robot bileşenleri başlatılıyor (unified URDF)...
+[16:27:04] [HIL] [INFO] [static_transform_publisher-1]: process started with pid [7113]
+[16:27:04] [HIL] [INFO] [parameter_bridge-2]: process started with pid [7115]
+[16:27:04] [HIL] [INFO] [ros2_control_node-3]: process started with pid [7117]
+[16:27:04] [HIL] [INFO] [urscript_interface-4]: process started with pid [7119]
+[16:27:04] [HIL] [INFO] [robot_state_publisher-5]: process started with pid [7121]
+[16:27:04] [HIL] [INFO] [spawner-6]: process started with pid [7123]
+[16:27:04] [HIL] [INFO] [spawner-7]: process started with pid [7125]
+[16:27:04] [HIL] [INFO] [ros2_control_node-8]: process started with pid [7127]
+[16:27:04] [HIL] [static_transform_publisher-1] [WARN] [1782307624.116840252] []: Old-style arguments are deprecated; see --help for new-style arguments
+[16:27:04] [HIL] [static_transform_publisher-1] [INFO] [1782307624.134248859] [static_transform_publisher_Hm9sgloJsuVsGxUl]: Spinning until stopped - publishing transform
+[16:27:04] [HIL] [static_transform_publisher-1] translation: ('-2.301949', '0.530401', '0.170000')
+[16:27:04] [HIL] [static_transform_publisher-1] rotation: ('0.000000', '0.000000', '0.707107', '0.707107')
+[16:27:04] [HIL] [static_transform_publisher-1] from 'world' to 'odom'
+[16:27:04] [HIL] [ros2_control_node-8] [WARN] [1782307624.153589035] [kawasaki.controller_manager]: [Deprecated] Passing the robot description parameter directly to the control_manager node is deprecated. Use '~/robot_description' topic from 'robot_state_publisher' instead.
+[16:27:04] [HIL] [ros2_control_node-3] [WARN] [1782307624.153608024] [controller_manager]: [Deprecated] Passing the robot description parameter directly to the control_manager node is deprecated. Use '~/robot_description' topic from 'robot_state_publisher' instead.
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.154153778] [resource_manager]: Loading hardware 'ota_system'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.154502436] [resource_manager]: Loading hardware 'LinearAxisHardwareInterface'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155158939] [resource_manager]: Initialize hardware 'ota_system'
+[16:27:04] [HIL] [ros2_control_node-8] [WARN] [1782307624.155183545] [mock_generic_system]: Parameter 'fake_sensor_commands' has been deprecated from usage. Use'mock_sensor_commands' instead.
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155193779] [resource_manager]: Successful initialization of hardware 'ota_system'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155202653] [resource_manager]: Loading hardware 'rs005l'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155214747] [resource_manager]: Initialize hardware 'rs005l'
+[16:27:04] [HIL] [ros2_control_node-8] [WARN] [1782307624.155224543] [mock_generic_system]: Parameter 'fake_sensor_commands' has been deprecated from usage. Use'mock_sensor_commands' instead.
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155240146] [resource_manager]: Successful initialization of hardware 'rs005l'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155281664] [resource_manager]: 'configure' hardware 'rs005l'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155285842] [resource_manager]: Successful 'configure' of hardware 'rs005l'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155290074] [resource_manager]: 'activate' hardware 'rs005l'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155166054] [resource_manager]: Initialize hardware 'LinearAxisHardwareInterface'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155208079] [resource_manager]: Successful initialization of hardware 'LinearAxisHardwareInterface'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155221547] [resource_manager]: Loading hardware 'ur10e'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155228555] [resource_manager]: Initialize hardware 'ur10e'
+[16:27:04] [HIL] [ros2_control_node-3] [WARN] [1782307624.155247474] [mock_generic_system]: Parameter 'fake_sensor_commands' has been deprecated from usage. Use'mock_sensor_commands' instead.
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155293104] [resource_manager]: Successful 'activate' of hardware 'rs005l'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155295770] [resource_manager]: 'configure' hardware 'ota_system'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155298225] [resource_manager]: Successful 'configure' of hardware 'ota_system'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155300742] [resource_manager]: 'activate' hardware 'ota_system'
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.155303285] [resource_manager]: Successful 'activate' of hardware 'ota_system'
+[16:27:04] [HIL] [ros2_control_node-3] [WARN] [1782307624.155304872] [mock_generic_system]: Parsing of optional initial interface values failed or uses a deprecated format. Add initial values for every state interface in the ros2_control.xacro. For example:
+[16:27:04] [HIL] [ros2_control_node-3] <state_interface name="velocity">
+[16:27:04] [HIL] [ros2_control_node-3]   <param name="initial_value">0.0</param>
+[16:27:04] [HIL] [ros2_control_node-3] </state_interface>
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155308620] [resource_manager]: Successful initialization of hardware 'ur10e'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155469225] [resource_manager]: 'configure' hardware 'ur10e'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155473568] [resource_manager]: Successful 'configure' of hardware 'ur10e'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155501139] [resource_manager]: 'activate' hardware 'ur10e'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155504338] [resource_manager]: Successful 'activate' of hardware 'ur10e'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155506706] [resource_manager]: 'configure' hardware 'LinearAxisHardwareInterface'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155509245] [resource_manager]: Successful 'configure' of hardware 'LinearAxisHardwareInterface'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155512165] [resource_manager]: 'activate' hardware 'LinearAxisHardwareInterface'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.155514642] [resource_manager]: Successful 'activate' of hardware 'LinearAxisHardwareInterface'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.159051720] [controller_manager]: update rate is 500 Hz
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.159078041] [controller_manager]: Spawning controller_manager RT thread with scheduler priority: 50
+[16:27:04] [HIL] [ros2_control_node-3] [WARN] [1782307624.159160186] [controller_manager]: Could not enable FIFO RT scheduling policy: with error number <1>(Operation not permitted). See [https://control.ros.org/master/doc/ros2_control/controller_manager/doc/userdoc.html] for details on how to enable realtime scheduling.
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.159778710] [kawasaki.controller_manager]: update rate is 100 Hz
+[16:27:04] [HIL] [ros2_control_node-8] [INFO] [1782307624.159807108] [kawasaki.controller_manager]: Spawning controller_manager RT thread with scheduler priority: 50
+[16:27:04] [HIL] [ros2_control_node-8] [WARN] [1782307624.159889048] [kawasaki.controller_manager]: Could not enable FIFO RT scheduling policy: with error number <1>(Operation not permitted). See [https://control.ros.org/master/doc/ros2_control/controller_manager/doc/userdoc.html] for details on how to enable realtime scheduling.
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168638983] [robot_state_publisher]: got segment barrier_closekabinet_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168813143] [robot_state_publisher]: got segment barrier_closetable_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168825384] [robot_state_publisher]: got segment barrier_kaw1_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168833745] [robot_state_publisher]: got segment barrier_kaw2_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168841066] [robot_state_publisher]: got segment barrier_kaw3_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168847854] [robot_state_publisher]: got segment barrier_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168854804] [robot_state_publisher]: got segment base_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168861624] [robot_state_publisher]: got segment caster_back_left_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168868674] [robot_state_publisher]: got segment caster_back_right_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168875543] [robot_state_publisher]: got segment caster_front_left_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168882217] [robot_state_publisher]: got segment caster_front_right_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168888877] [robot_state_publisher]: got segment caster_wheel_back_left_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168895974] [robot_state_publisher]: got segment caster_wheel_back_right_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168902730] [robot_state_publisher]: got segment caster_wheel_front_left_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168909614] [robot_state_publisher]: got segment caster_wheel_front_right_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168916556] [robot_state_publisher]: got segment human_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168923505] [robot_state_publisher]: got segment ifarlab_ray_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168930356] [robot_state_publisher]: got segment kabinet_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168937067] [robot_state_publisher]: got segment light_curtain_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168943800] [robot_state_publisher]: got segment link1
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168950590] [robot_state_publisher]: got segment link2
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168957375] [robot_state_publisher]: got segment link3
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168964218] [robot_state_publisher]: got segment link4
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168970756] [robot_state_publisher]: got segment link5
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168977701] [robot_state_publisher]: got segment link6
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168984403] [robot_state_publisher]: got segment manipulator_base_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168991353] [robot_state_publisher]: got segment ota_base_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.168998403] [robot_state_publisher]: got segment ota_ir_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169005155] [robot_state_publisher]: got segment ur10e_alumunium_table
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169011885] [robot_state_publisher]: got segment ur10e_base
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169018671] [robot_state_publisher]: got segment ur10e_base_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169025547] [robot_state_publisher]: got segment ur10e_base_link_inertia
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169032493] [robot_state_publisher]: got segment ur10e_cable_channel
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169039266] [robot_state_publisher]: got segment ur10e_cable_channel_flange
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169046130] [robot_state_publisher]: got segment ur10e_conveyor_belt
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169052839] [robot_state_publisher]: got segment ur10e_depth_frame
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169059794] [robot_state_publisher]: got segment ur10e_depth_optical_frame
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169067018] [robot_state_publisher]: got segment ur10e_flange
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169073841] [robot_state_publisher]: got segment ur10e_forearm_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169081039] [robot_state_publisher]: got segment ur10e_ft_frame
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169088201] [robot_state_publisher]: got segment ur10e_platform
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169095062] [robot_state_publisher]: got segment ur10e_rgb_frame
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169101870] [robot_state_publisher]: got segment ur10e_rgb_optical_frame
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169109026] [robot_state_publisher]: got segment ur10e_robot_mount
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169115783] [robot_state_publisher]: got segment ur10e_screw_feeder
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169122474] [robot_state_publisher]: got segment ur10e_screwdriver
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169129161] [robot_state_publisher]: got segment ur10e_shoulder_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169135743] [robot_state_publisher]: got segment ur10e_sick_camera
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169142551] [robot_state_publisher]: got segment ur10e_stackable_bin
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169168949] [robot_state_publisher]: got segment ur10e_table
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169179278] [robot_state_publisher]: got segment ur10e_tool0
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169186350] [robot_state_publisher]: got segment ur10e_upper_arm_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169193490] [robot_state_publisher]: got segment ur10e_windowdoor
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169200324] [robot_state_publisher]: got segment ur10e_windowlessdoor
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169207301] [robot_state_publisher]: got segment ur10e_wrist_1_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169220594] [robot_state_publisher]: got segment ur10e_wrist_2_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169227950] [robot_state_publisher]: got segment ur10e_wrist_3_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169234929] [robot_state_publisher]: got segment wheel_left_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169241665] [robot_state_publisher]: got segment wheel_right_link
+[16:27:04] [HIL] [robot_state_publisher-5] [INFO] [1782307624.169248118] [robot_state_publisher]: got segment world
+[16:27:04] [HIL] [parameter_bridge-2] [INFO] [1782307624.358238092] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/cmd_vel (gz.msgs.Twist) -> /cmd_vel (geometry_msgs/msg/Twist)] (Lazy 0)
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.364073461] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[16:27:04] [HIL] [parameter_bridge-2] [INFO] [1782307624.367336620] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/cmd_vel (geometry_msgs/msg/Twist) -> /cmd_vel (gz.msgs.Twist)] (Lazy 0)
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.374254324] [controller_manager]: Loading controller 'joint_trajectory_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [WARN] [1782307624.384688308] [joint_trajectory_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.388023925] [spawner_joint_state_broadcaster]: [94mLoaded [1mjoint_state_broadcaster[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.389008336] [controller_manager]: Configuring controller 'joint_state_broadcaster'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.389081383] [joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[16:27:04] [HIL] [spawner-7] [INFO] [1782307624.394965865] [spawner_joint_trajectory_controller]: [94mLoaded [1mjoint_trajectory_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.397566011] [controller_manager]: Configuring controller 'joint_trajectory_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.397685897] [joint_trajectory_controller]: No specific joint names are used for command interfaces. Using 'joints' parameter.
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.397699586] [joint_trajectory_controller]: Command interfaces are [position] and state interfaces are [position velocity].
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.397718694] [joint_trajectory_controller]: Using 'splines' interpolation method.
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.397943606] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mjoint_state_broadcaster[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.398214217] [joint_trajectory_controller]: Controller state will be published at 100.00 Hz.
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.399132324] [joint_trajectory_controller]: Action status changes will be monitored at 20.00 Hz.
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.404148759] [controller_manager]: Loading controller 'io_and_status_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.437487716] [controller_manager]: Loading controller 'forward_velocity_controller'
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.438153127] [spawner_joint_state_broadcaster]: [94mLoaded [1mio_and_status_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.449468655] [controller_manager]: Configuring controller 'io_and_status_controller'
+[16:27:04] [HIL] [spawner-7] [INFO] [1782307624.450080324] [spawner_joint_trajectory_controller]: [94mLoaded [1mforward_velocity_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.451655605] [controller_manager]: Configuring controller 'forward_velocity_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.452966049] [forward_velocity_controller]: configure successful
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.470203799] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mio_and_status_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.470318554] [controller_manager]: Loading controller 'forward_position_controller'
+[16:27:04] [HIL] [spawner-7] [INFO] [1782307624.477948814] [spawner_joint_trajectory_controller]: [94mLoaded [1mforward_position_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.478188597] [controller_manager]: Configuring controller 'forward_position_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.478663014] [forward_position_controller]: configure successful
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.479505240] [controller_manager]: Loading controller 'speed_scaling_state_broadcaster'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.484053497] [speed_scaling_state_broadcaster]: Loading UR SpeedScalingStateBroadcaster with tf_prefix: ur10e_
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.485946604] [spawner_joint_state_broadcaster]: [94mLoaded [1mspeed_scaling_state_broadcaster[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.486170218] [controller_manager]: Configuring controller 'speed_scaling_state_broadcaster'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.486225351] [speed_scaling_state_broadcaster]: Publisher rate set to : 100.0 Hz
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.487522761] [controller_manager]: Loading controller 'force_mode_controller'
+[16:27:04] [HIL] [spawner-7] [INFO] [1782307624.493724618] [spawner_joint_trajectory_controller]: [94mLoaded [1mforce_mode_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.497530934] [controller_manager]: Configuring controller 'force_mode_controller'
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.498051283] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mspeed_scaling_state_broadcaster[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.504474746] [controller_manager]: Loading controller 'passthrough_trajectory_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.513578106] [controller_manager]: Loading controller 'force_torque_sensor_broadcaster'
+[16:27:04] [HIL] [spawner-7] [INFO] [1782307624.514042424] [spawner_joint_trajectory_controller]: [94mLoaded [1mpassthrough_trajectory_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.521485448] [controller_manager]: Configuring controller 'passthrough_trajectory_controller'
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.522096207] [spawner_joint_state_broadcaster]: [94mLoaded [1mforce_torque_sensor_broadcaster[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.525568593] [controller_manager]: Configuring controller 'force_torque_sensor_broadcaster'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.531501457] [controller_manager]: Loading controller 'freedrive_mode_controller'
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.532006273] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mforce_torque_sensor_broadcaster[0m
+[16:27:04] [HIL] [spawner-7] [INFO] [1782307624.539763270] [spawner_joint_trajectory_controller]: [94mLoaded [1mfreedrive_mode_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.539991661] [controller_manager]: Configuring controller 'freedrive_mode_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.543487025] [controller_manager]: Loading controller 'ur_configuration_controller'
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.550194425] [spawner_joint_state_broadcaster]: [94mLoaded [1mur_configuration_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.550425957] [controller_manager]: Configuring controller 'ur_configuration_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.553514366] [controller_manager]: Loading controller 'tool_contact_controller'
+[16:27:04] [HIL] [spawner-7] [INFO] [1782307624.559967270] [spawner_joint_trajectory_controller]: [94mLoaded [1mtool_contact_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.563567936] [controller_manager]: Configuring controller 'tool_contact_controller'
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.563807492] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mur_configuration_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.568637603] [controller_manager]: Loading controller 'scaled_joint_trajectory_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.578040176] [scaled_joint_trajectory_controller]: Using scaling state from the hardware from interface ur10e_speed_scaling/speed_scaling_factor.
+[16:27:04] [HIL] [ros2_control_node-3] [WARN] [1782307624.587347653] [scaled_joint_trajectory_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.590521846] [spawner_joint_state_broadcaster]: [94mLoaded [1mscaled_joint_trajectory_controller[0m
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.591015880] [controller_manager]: Configuring controller 'scaled_joint_trajectory_controller'
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.591191900] [scaled_joint_trajectory_controller]: No specific joint names are used for command interfaces. Using 'joints' parameter.
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.591207544] [scaled_joint_trajectory_controller]: Command interfaces are [position] and state interfaces are [position velocity].
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.591228181] [scaled_joint_trajectory_controller]: Using 'splines' interpolation method.
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.591708282] [scaled_joint_trajectory_controller]: Controller state will be published at 100.00 Hz.
+[16:27:04] [HIL] [ros2_control_node-3] [INFO] [1782307624.593036072] [scaled_joint_trajectory_controller]: Action status changes will be monitored at 20.00 Hz.
+[16:27:04] [HIL] [spawner-6] [INFO] [1782307624.602304336] [spawner_joint_state_broadcaster]: [92mConfigured and activated [1mscaled_joint_trajectory_controller[0m
+[16:27:04] [HIL] [INFO] [spawner-7]: process has finished cleanly [pid 7125]
+[16:27:04] [HIL] [INFO] [spawner-6]: process has finished cleanly [pid 7123]
+[16:27:07] [HIL] [INFO] [launch.user]: [2/2] Simülasyon bileşenleri başlatılıyor (unified URDF)...
+[16:27:07] [HIL] [INFO] [robot_state_publisher-9]: process started with pid [7315]
+[16:27:07] [HIL] [INFO] [gz sim-10]: process started with pid [7317]
+[16:27:07] [HIL] [INFO] [create-11]: process started with pid [7319]
+[16:27:07] [HIL] [INFO] [parameter_bridge-12]: process started with pid [7321]
+[16:27:07] [HIL] [INFO] [static_transform_publisher-13]: process started with pid [7324]
+[16:27:07] [HIL] [INFO] [rviz2-14]: process started with pid [7326]
+[16:27:07] [HIL] [static_transform_publisher-13] [WARN] [1782307627.761912535] []: Old-style arguments are deprecated; see --help for new-style arguments
+[16:27:07] [HIL] [static_transform_publisher-13] [INFO] [1782307627.776413856] [sim.static_transform_publisher_ML4KY32CbccgLit3]: Spinning until stopped - publishing transform
+[16:27:07] [HIL] [static_transform_publisher-13] translation: ('0.000000', '0.000000', '0.000000')
+[16:27:07] [HIL] [static_transform_publisher-13] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[16:27:07] [HIL] [static_transform_publisher-13] from 'sim_ur10e_depth_optical_frame' to 'whole_cell_sim/sim_ur10e_wrist_3_link/sim_ur10e_depth_optical_frame'
+[16:27:07] [HIL] [create-11] [INFO] [1782307627.782892149] [sim.ros_gz_sim]: Waiting messages on topic [/sim/robot_description].
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811539240] [sim.robot_state_publisher]: got segment barrier_closekabinet_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811664920] [sim.robot_state_publisher]: got segment barrier_closetable_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811674311] [sim.robot_state_publisher]: got segment barrier_kaw1_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811680047] [sim.robot_state_publisher]: got segment barrier_kaw2_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811684874] [sim.robot_state_publisher]: got segment barrier_kaw3_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811689555] [sim.robot_state_publisher]: got segment barrier_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811694185] [sim.robot_state_publisher]: got segment human_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811698832] [sim.robot_state_publisher]: got segment kabinet_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811703228] [sim.robot_state_publisher]: got segment light_curtain_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811707702] [sim.robot_state_publisher]: got segment sim_caster_back_left_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811712479] [sim.robot_state_publisher]: got segment sim_caster_back_right_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811717043] [sim.robot_state_publisher]: got segment sim_caster_front_left_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811721325] [sim.robot_state_publisher]: got segment sim_caster_front_right_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811725840] [sim.robot_state_publisher]: got segment sim_caster_wheel_back_left_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811730663] [sim.robot_state_publisher]: got segment sim_caster_wheel_back_right_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811735312] [sim.robot_state_publisher]: got segment sim_caster_wheel_front_left_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811739420] [sim.robot_state_publisher]: got segment sim_caster_wheel_front_right_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811743567] [sim.robot_state_publisher]: got segment sim_ifarlab_ray_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811748342] [sim.robot_state_publisher]: got segment sim_kawasaki_base_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811753163] [sim.robot_state_publisher]: got segment sim_kawasaki_link1
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811757500] [sim.robot_state_publisher]: got segment sim_kawasaki_link2
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811761718] [sim.robot_state_publisher]: got segment sim_kawasaki_link3
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811766035] [sim.robot_state_publisher]: got segment sim_kawasaki_link4
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811770370] [sim.robot_state_publisher]: got segment sim_kawasaki_link5
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811774543] [sim.robot_state_publisher]: got segment sim_kawasaki_link6
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811778494] [sim.robot_state_publisher]: got segment sim_manipulator_base_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811782696] [sim.robot_state_publisher]: got segment sim_ota_base_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811786837] [sim.robot_state_publisher]: got segment sim_ota_ir_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811790989] [sim.robot_state_publisher]: got segment sim_ur10e_alumunium_table
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811795057] [sim.robot_state_publisher]: got segment sim_ur10e_base
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811799198] [sim.robot_state_publisher]: got segment sim_ur10e_base_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811803585] [sim.robot_state_publisher]: got segment sim_ur10e_base_link_inertia
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811807721] [sim.robot_state_publisher]: got segment sim_ur10e_cable_channel
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811812286] [sim.robot_state_publisher]: got segment sim_ur10e_cable_channel_flange
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811816808] [sim.robot_state_publisher]: got segment sim_ur10e_depth_frame
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811821543] [sim.robot_state_publisher]: got segment sim_ur10e_depth_optical_frame
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811825822] [sim.robot_state_publisher]: got segment sim_ur10e_flange
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811830351] [sim.robot_state_publisher]: got segment sim_ur10e_forearm_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811834828] [sim.robot_state_publisher]: got segment sim_ur10e_ft_frame
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811839531] [sim.robot_state_publisher]: got segment sim_ur10e_platform
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811843961] [sim.robot_state_publisher]: got segment sim_ur10e_rgb_frame
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811848076] [sim.robot_state_publisher]: got segment sim_ur10e_rgb_optical_frame
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811851997] [sim.robot_state_publisher]: got segment sim_ur10e_robot_mount
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811856082] [sim.robot_state_publisher]: got segment sim_ur10e_screw_feeder
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811877237] [sim.robot_state_publisher]: got segment sim_ur10e_screwdriver
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811882529] [sim.robot_state_publisher]: got segment sim_ur10e_shoulder_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811886308] [sim.robot_state_publisher]: got segment sim_ur10e_sick_camera
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811888892] [sim.robot_state_publisher]: got segment sim_ur10e_stackable_bin
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811892419] [sim.robot_state_publisher]: got segment sim_ur10e_table
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811895979] [sim.robot_state_publisher]: got segment sim_ur10e_tool0
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811899793] [sim.robot_state_publisher]: got segment sim_ur10e_upper_arm_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811904147] [sim.robot_state_publisher]: got segment sim_ur10e_windowdoor
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811907967] [sim.robot_state_publisher]: got segment sim_ur10e_windowlessdoor
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811911966] [sim.robot_state_publisher]: got segment sim_ur10e_wrist_1_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811916072] [sim.robot_state_publisher]: got segment sim_ur10e_wrist_2_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811920180] [sim.robot_state_publisher]: got segment sim_ur10e_wrist_3_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811924302] [sim.robot_state_publisher]: got segment sim_wheel_left_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811928057] [sim.robot_state_publisher]: got segment sim_wheel_right_link
+[16:27:07] [HIL] [robot_state_publisher-9] [INFO] [1782307627.811931935] [sim.robot_state_publisher]: got segment world
+[16:27:08] [HIL] [rviz2-14] [INFO] [1782307628.167250990] [rviz2]: Stereo is NOT SUPPORTED
+[16:27:08] [HIL] [rviz2-14] [INFO] [1782307628.167312916] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[16:27:08] [HIL] [rviz2-14] [INFO] [1782307628.183834032] [rviz2]: Stereo is NOT SUPPORTED
+[16:27:08] [HIL] [create-11] [INFO] [1782307628.429875323] [sim.ros_gz_sim]: Requested creation of entity.
+[16:27:08] [HIL] [create-11] [INFO] [1782307628.429912575] [sim.ros_gz_sim]: OK creation of entity.
+[16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:166] [0m[1;36mSubscribing to [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:168] [0m[1;36mWaiting for a world to be set from the GUI...[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:172] [0m[1;36mUnsubscribing from [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mGazebo Sim Server v[0m[1;32m8.11.0[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m].[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing entity system service on [[0m[1;32m/[0m[1;32mentity/system/add[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [Physics.cc:906] [0m[1;36mLoaded [[0m[1;36mgz::physics::dartsim::Plugin[0m[1;36m] from library [[0m[1;36m/usr/lib/x86_64-linux-gnu/gz-physics-7/engine-plugins/libgz-physics-dartsim-plugin.so[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::Physics[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/cem/create_multiple[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/cem/create_multiple/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/cem/remove[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/cem/remove/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/cem/set_pose[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/cem/set_pose/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/cem/set_pose_vector[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/cem/set_pose_vector/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/cem/light_config[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/cem/light_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/cem/set_physics[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/cem/set_physics/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/cem/set_spherical_coordinates[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/cem/set_spherical_coordinates/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/cem/enable_collision[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/cem/enable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/cem/disable_collision[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/cem/disable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/cem/visual_config[0m[1;32m] (async)[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/cem/visual_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:08] [HIL] [INFO] [create-11]: process has finished cleanly [pid 7319]
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/cem/wheel_slip[0m[1;32m] (async)[0m[1;32m[1;32m[Msg] [0m[1;32mGazebo Sim GUI    v[0m[1;32m8.11.0[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [Gui.cc:275] [0m[1;36mWaiting for subscribers to [[0m[1;36m/gazebo/starting_world[0m[1;36m]...[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [Application.cc:96] [0m[1;36mInitializing application.[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [Application.cc:170] [0m[1;36mQt using OpenGL graphics interface[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:657] [0m[1;36mCreate main window[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [PathManager.cc:68] [0m[1;36mRequesting resource paths through [[0m[1;36m/gazebo/resource_paths/get[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Gui.cc:355] [0m[1;36mGUI requesting list of world names. The server may be busy [0m[1;36mdownloading resources. Please be patient.[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Gui.cc:413] [0m[1;36mRequesting GUI from [[0m[1;36m/world/cem/gui/info[0m[1;36m]...[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [PathManager.cc:57] [0m[1;36mReceived resource paths.[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [GuiRunner.cc:149] [0m[1;36mRequesting initial state from [[0m[1;36m/world/cem/state[0m[1;36m]...[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading config [[0m[1;32m/home/cem/.gz/sim/8/gui.config[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mMinimalScene[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:802] [0m[1;36mCreating gz-rendering interface for OpenGL[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:802] [0m[1;36mCreating gz-rendering interface for OpenGL[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:986] [0m[1;36mCreating render thread interface for OpenGL[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:802] [0m[1;36mCreating gz-rendering interface for OpenGL[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:986] [0m[1;36mCreating render thread interface for OpenGL[0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32m3D View[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mMinimalScene[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libMinimalScene.so[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mEntityContextMenuPlugin[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCurrently tracking topic on [[0m[1;32m/gui/currently_tracked[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mEntity Context Menu[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mEntityContextMenuPlugin[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libEntityContextMenuPlugin.so[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mGzSceneManager[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mScene Manager[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mGzSceneManager[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libGzSceneManager.so[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mInteractiveViewControl[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCamera view controller topic advertised on [[0m[1;32m/gui/camera/view_control[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCamera reference visual topic advertised on [[0m[1;32m/gui/camera/view_control/reference_visual[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCamera view control sensitivity advertised on [[0m[1;32m/gui/camera/view_control/sensitivity[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mInteractive view control[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:08] [HIL] [parameter_bridge-12] [INFO] [1782307628.823120192] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points (ignition.msgs.PointCloudPacked) -> pointcloud (sensor_msgs/msg/PointCloud2)] (Lazy 1)
+[16:27:08] [HIL] [parameter_bridge-12] [INFO] [1782307628.829163945] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image (ignition.msgs.Image) -> depth/image (sensor_msgs/msg/Image)] (Lazy 1)
+[16:27:08] [HIL] [parameter_bridge-12] [INFO] [1782307628.831303711] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/clock (ignition.msgs.Clock) -> clock (rosgraph_msgs/msg/Clock)] (Lazy 1)
+[16:27:08] [HIL] [parameter_bridge-12] [INFO] [1782307628.833260483] [sim.ros_gz_bridge]: Creating ROS->GZ Bridge: [clock (rosgraph_msgs/msg/Clock) -> /clock (ignition.msgs.Clock)] (Lazy 1)
+[16:27:08] [HIL] [parameter_bridge-12] [INFO] [1782307628.833654053] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/dynamic_pose/info (ignition.msgs.Pose_V) -> pose (geometry_msgs/msg/PoseArray)] (Lazy 1)
+[16:27:08] [HIL] [parameter_bridge-12] [INFO] [1782307628.836040218] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/sim_robot_joint_states (ignition.msgs.Model) -> sim_joint_states (sensor_msgs/msg/JointState)] (Lazy 1)
+[16:27:08] [HIL] [parameter_bridge-12] [INFO] [1782307628.837113824] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image (ignition.msgs.Image) -> image (sensor_msgs/msg/Image)] (Lazy 1)
+[16:27:08] [HIL] [parameter_bridge-12] [INFO] [1782307628.837937009] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/camera_info (ignition.msgs.CameraInfo) -> camera_info (sensor_msgs/msg/CameraInfo)] (Lazy 1)
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mInteractiveViewControl[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libInteractiveViewControl.so[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mCameraTracking[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mCamera tracking[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mCameraTracking[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libCameraTracking.so[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mMarkerManager[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/cem/stats[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mMarker Manager[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mMarkerManager[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libMarkerManager.so[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mSelectEntities[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mSelect entities[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mSelectEntities[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libSelectEntities.so[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mSpawn[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mSpawn[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mSpawn[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libSpawn.so[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mVisualizationCapabilities[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView as transparent service on [[0m[1;32m/gui/view/transparent[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView as wireframes service on [[0m[1;32m/gui/view/wireframes[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView center of mass service on [[0m[1;32m/gui/view/com[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView inertia service on [[0m[1;32m/gui/view/inertia[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView collisions service on [[0m[1;32m/gui/view/collisions[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView joints service on [[0m[1;32m/gui/view/joints[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mView frames service on [[0m[1;32m/gui/view/frames[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mVisualization capabilities[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mVisualizationCapabilities[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libVisualizationCapabilities.so[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mWorldControl[0m[1;36m][0m[1;36m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mUsing world control service [[0m[1;32m/world/cem/control[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/cem/stats[0m[1;32m][0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [WorldControl.cc:237] [0m[1;36mUsing an event to share WorldControl msgs with the server[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mWorld control[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mWorldControl[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libWorldControl.so[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mWorldStats[0m[1;36m][0m[1;36m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/cem/stats[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mWorld stats[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mWorldStats[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libWorldStats.so[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mShapes[0m[1;36m][0m[1;36m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mShapes[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mShapes[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libShapes.so[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mLights[0m[1;36m][0m[1;36m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mLights[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mLights[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libLights.so[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mTransformControl[0m[1;36m][0m[1;36m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mTransform control[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mTransformControl[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libTransformControl.so[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mScreenshot[0m[1;36m][0m[1;36m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mScreenshot service on [[0m[1;32m/gui/screenshot[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mScreenshot[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mScreenshot[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libScreenshot.so[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mCopyPaste[0m[1;36m][0m[1;36m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mCopy/Paste[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mCopyPaste[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libCopyPaste.so[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mComponentInspector[0m[1;36m][0m[1;36m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mComponent inspector[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mComponentInspector[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libComponentInspector.so[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mEntityTree[0m[1;36m][0m[1;36m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCurrently tracking topic on [[0m[1;32m/gui/currently_tracked[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mEntity tree[0m[1;32m] to main window[0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mEntityTree[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libEntityTree.so[0m[1;32m][0m[1;32m[0m
+[16:27:09] [HIL] [gz sim-10] [1;33m[GUI] [Wrn] [Application.cc:908] [0m[1;33m[QT] file::/WorldStats/WorldStats.qml:53:3: QML RowLayout: Binding loop detected for property "x"[0m[1;33m[0m
+[16:27:09] [HIL] [gz sim-10] libEGL warning: egl: failed to create dri2 screen
+[16:27:09] [HIL] [gz sim-10] libEGL warning: egl: failed to create dri2 screen
+[16:27:09] [HIL] [gz sim-10] [1;33m[Wrn] [SimulationRunner.cc:768] [0m[1;33mFound additional publishers on /clock,[0m[1;33m using namespaced clock topic only[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:398][0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/cem/wheel_slip/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::UserCommands[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::SceneBroadcaster[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::Contact[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoaded level [[0m[1;32mdefault[0m[1;32m][0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing world controls on [[0m[1;32m/world/cem[0m[1;32m/control], [[0m[1;32m/world/cem[0m[1;32m/control/state] and [[0m[1;32m/world/cem[0m[1;32m/playback/control][0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing GUI information on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mgui/info[0m[1;32m][0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mWorld [[0m[1;32mcem[0m[1;32m] initialized with [[0m[1;32mode[0m[1;32m] physics profile.[0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing world SDF generation service on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mgenerate_world_sdf[0m[1;32m][0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing world names on [[0m[1;32m/gazebo/worlds[0m[1;32m][0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mResource path add service on [[0m[1;32m/gazebo/resource_paths/add[0m[1;32m].[0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mResource path get service on [[0m[1;32m/gazebo/resource_paths/get[0m[1;32m].[0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mResource path resolve service on [[0m[1;32m/gazebo/resource_paths/resolve[0m[1;32m].[0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mResource paths published on [[0m[1;32m/gazebo/resource_paths[0m[1;32m].[0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServer control service on [[0m[1;32m/server_control[0m[1;32m].[0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mFound no publishers on /stats, adding root stats topic[0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:770] [0m[1;36mPublishers [Address, Message Type]:[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:775] [0m[1;36m  [0m[1;36mtcp://172.17.0.1:34933[0m[1;36m, [0m[1;36mgz.msgs.Clock[0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:551] [0m[1;36mCreating PostUpdate worker threads: [0m[1;36m3[0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:562] [0m[1;36mCreating postupdate worker thread ([0m[1;36m0[0m[1;36m)[0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:562] [0m[1;36mCreating postupdate worker thread ([0m[1;36m1[0m[1;36m)[0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33mWarning [Utils.cc:132][0m [/sdf/model[@name="whole_cell_sim"]/link[@name="sim_ur10e_wrist_3_link"]/sensor[@name="sim_ur10e_depth_optical_frame"]/camera[@name="sim_ur10e_rgbd"]/depth_image:<urdf-string>:L0]: XML Element[depth_image], child of element[camera], not defined in SDF. Copying[depth_image] as children of [camera].
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:933] [0m[1;33mGazebo does not support Ogre material scripts. See [0m[1;33mhttps://gazebosim.org/api/sim/8/migrationsdf.html#:~:text=Materials [0m[1;33mfor details.[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:949] [0m[1;33mUsing an internal gazebo.material to parse [0m[1;33mGazebo/Orange[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:933] [0m[1;33mGazebo does not support Ogre material scripts. See [0m[1;33mhttps://gazebosim.org/api/sim/8/migrationsdf.html#:~:text=Materials [0m[1;33mfor details.[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:949] [0m[1;33mUsing an internal gazebo.material to parse [0m[1;33mGazebo/Red[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:933] [0m[1;33mGazebo does not support Ogre material scripts. See [0m[1;33mhttps://gazebosim.org/api/sim/8/migrationsdf.html#:~:text=Materials [0m[1;33mfor details.[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:949] [0m[1;33mUsing an internal gazebo.material to parse [0m[1;33mGazebo/Red[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:933] [0m[1;33mGazebo does not support Ogre material scripts. See [0m[1;33mhttps://gazebosim.org/api/sim/8/migrationsdf.html#:~:text=Materials [0m[1;33mfor details.[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:949] [0m[1;33mUsing an internal gazebo.material to parse [0m[1;33mGazebo/Red[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:933] [0m[1;33mGazebo does not support Ogre material scripts. See [0m[1;33mhttps://gazebosim.org/api/sim/8/migrationsdf.html#:~:text=Materials [0m[1;33mfor details.[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:949] [0m[1;33mUsing an internal gazebo.material to parse [0m[1;33mGazebo/Red[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:933] [0m[1;33mGazebo does not support Ogre material scripts. See [0m[1;33mhttps://gazebosim.org/api/sim/8/migrationsdf.html#:~:text=Materials [0m[1;33mfor details.[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:949] [0m[1;33mUsing an internal gazebo.material to parse [0m[1;33mGazebo/Red[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:933] [0m[1;33mGazebo does not support Ogre material scripts. See [0m[1;33mhttps://gazebosim.org/api/sim/8/migrationsdf.html#:~:text=Materials [0m[1;33mfor details.[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SdfEntityCreator.cc:949] [0m[1;33mUsing an internal gazebo.material to parse [0m[1;33mGazebo/Red[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SystemLoader.cc:75] [0m[1;33mTrying to load deprecated plugin [[0m[1;33mignition-gazebo-sensors-system[0m[1;33m]. Using [[0m[1;33mgz-sim-sensors-system[0m[1;33m] instead.[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [1;33m[Wrn] [SystemLoader.cc:136] [0m[1;33mTrying to load deprecated plugin name [[0m[1;33mignition::gazebo::systems::Sensors[0m[1;33m]. Using [[0m[1;33mgz::sim::systems::Sensors[0m[1;33m] instead.[0m[1;33m[0m
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.126183028] [GazeboSimROS2ControlPlugin]: robot_param_node is robot_state_publisher
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.126293675] [GazeboSimROS2ControlPlugin]: robot_param_node is robot_description
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.153465210] [sim.gz_ros2_control]: connected to service!! /sim/robot_state_publisher asking for robot_description
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.154699051] [sim.gz_ros2_control]: Received URDF from param server
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170207483] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_closekabinet_joint] (Entity=147)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170252249] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_closetable_joint] (Entity=148)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170257905] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_joint] (Entity=149)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170263396] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_kaw1_joint] (Entity=150)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170267065] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_kaw2_joint] (Entity=151)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170270923] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [barrier_kaw3_joint] (Entity=152)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170275781] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [human_joint] (Entity=153)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170280607] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [kabinet_joint] (Entity=154)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170286067] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [light_curtain_joint] (Entity=155)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170292394] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ifarlab_ray_joint] (Entity=156)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170426870] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_base_to_alumuniumtable] (Entity=166)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170432382] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_base_to_platform] (Entity=167)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170435954] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_base_to_screw_feeder] (Entity=168)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170439394] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_base_to_screwdriver] (Entity=169)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170442741] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_bin_fixed] (Entity=170)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.170446050] [sim.gz_ros2_control]: [gz_ros2_control] Fixed joint [sim_ur10e_table_base_joint] (Entity=171)] is skipped
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.183534980] [sim.gz_ros2_control]: The position_proportional_gain has been set to: 0.1
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184057859] [sim.gz_ros2_control]: Loading joint: sim_wheel_right_base
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184123579] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184138643] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184239453] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184283952] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184291130] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184792588] [sim.gz_ros2_control]: Loading joint: sim_wheel_left_base
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184812315] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184820672] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184830819] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184839072] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184847258] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184916378] [sim.gz_ros2_control]: Loading joint: sim_world_to_agv
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184927668] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184936036] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184963752] [sim.gz_ros2_control]: 			 found initial value: 1.000000
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184976909] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.184984903] [sim.gz_ros2_control]: 		 effort
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.185005254] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.185013942] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.185046840] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.186338425] [resource_manager]: Initialize hardware 'ota_system'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.186680127] [resource_manager]: Successful initialization of hardware 'ota_system'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.186776741] [resource_manager]: 'configure' hardware 'ota_system'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.186808550] [sim.gz_ros2_control]: System Successfully configured!
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.186827497] [resource_manager]: Successful 'configure' of hardware 'ota_system'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.186832857] [resource_manager]: 'activate' hardware 'ota_system'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.186837338] [resource_manager]: Successful 'activate' of hardware 'ota_system'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187092676] [sim.gz_ros2_control]: The position_proportional_gain has been set to: 0.1
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187120491] [sim.gz_ros2_control]: Loading joint: sim_kawasaki_joint1
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187127156] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187132155] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187140226] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187145979] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187150446] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187173230] [sim.gz_ros2_control]: Loading joint: sim_kawasaki_joint2
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187178242] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187182433] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187187198] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187191067] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187194754] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187206887] [sim.gz_ros2_control]: Loading joint: sim_kawasaki_joint3
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187219037] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187225561] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187230531] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187234408] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187238076] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187249074] [sim.gz_ros2_control]: Loading joint: sim_kawasaki_joint4
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187253459] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187257205] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187261379] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187265623] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187269260] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187279661] [sim.gz_ros2_control]: Loading joint: sim_kawasaki_joint5
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187283890] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187287774] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187293466] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187297524] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187301234] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187311157] [sim.gz_ros2_control]: Loading joint: sim_kawasaki_joint6
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187315566] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187319315] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187323281] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187327083] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187330853] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187378233] [resource_manager]: Initialize hardware 'rs005l'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187403359] [resource_manager]: Successful initialization of hardware 'rs005l'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187420654] [resource_manager]: 'configure' hardware 'rs005l'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187423921] [sim.gz_ros2_control]: System Successfully configured!
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187430012] [resource_manager]: Successful 'configure' of hardware 'rs005l'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187435947] [resource_manager]: 'activate' hardware 'rs005l'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187439722] [resource_manager]: Successful 'activate' of hardware 'rs005l'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187494459] [sim.gz_ros2_control]: The position_proportional_gain has been set to: 0.1
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187506162] [sim.gz_ros2_control]: Loading joint: sim_ur10e_base_to_robot_mount
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187510652] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187514795] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187521298] [sim.gz_ros2_control]: 			 found initial value: 1.000000
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187526757] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187531874] [sim.gz_ros2_control]: 		 effort
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187553104] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187557180] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187567355] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187579916] [resource_manager]: Initialize hardware 'LinearAxisHardwareInterface'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187597533] [resource_manager]: Successful initialization of hardware 'LinearAxisHardwareInterface'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187607175] [resource_manager]: 'configure' hardware 'LinearAxisHardwareInterface'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187610136] [sim.gz_ros2_control]: System Successfully configured!
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187615646] [resource_manager]: Successful 'configure' of hardware 'LinearAxisHardwareInterface'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187619506] [resource_manager]: 'activate' hardware 'LinearAxisHardwareInterface'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187622984] [resource_manager]: Successful 'activate' of hardware 'LinearAxisHardwareInterface'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187663933] [sim.gz_ros2_control]: The position_proportional_gain has been set to: 0.1
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187673371] [sim.gz_ros2_control]: Loading joint: sim_ur10e_shoulder_pan_joint
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187677638] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187681414] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187686226] [sim.gz_ros2_control]: 			 found initial value: 0.000000
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187690942] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187695374] [sim.gz_ros2_control]: 		 effort
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187700097] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187703942] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187711927] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187722355] [sim.gz_ros2_control]: Loading joint: sim_ur10e_shoulder_lift_joint
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187727529] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187733841] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187738536] [sim.gz_ros2_control]: 			 found initial value: -1.570000
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187743207] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187747851] [sim.gz_ros2_control]: 		 effort
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187751803] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187755489] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187762732] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187771722] [sim.gz_ros2_control]: Loading joint: sim_ur10e_elbow_joint
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187775957] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187779604] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187783294] [sim.gz_ros2_control]: 			 found initial value: 0.000000
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187787607] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187791434] [sim.gz_ros2_control]: 		 effort
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187796347] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187800101] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187807297] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187816829] [sim.gz_ros2_control]: Loading joint: sim_ur10e_wrist_1_joint
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187820820] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187824477] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187828283] [sim.gz_ros2_control]: 			 found initial value: -1.570000
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187832452] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187837876] [sim.gz_ros2_control]: 		 effort
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187841637] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187845147] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187852866] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187862146] [sim.gz_ros2_control]: Loading joint: sim_ur10e_wrist_2_joint
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187866037] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187870053] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187873785] [sim.gz_ros2_control]: 			 found initial value: 0.000000
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187877888] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187881555] [sim.gz_ros2_control]: 		 effort
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187885238] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187888774] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187902081] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187911401] [sim.gz_ros2_control]: Loading joint: sim_ur10e_wrist_3_joint
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187916170] [sim.gz_ros2_control]: 	State:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187919764] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187923405] [sim.gz_ros2_control]: 			 found initial value: 0.000000
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187927611] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187932906] [sim.gz_ros2_control]: 		 effort
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187936843] [sim.gz_ros2_control]: 	Command:
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187940378] [sim.gz_ros2_control]: 		 position
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187947148] [sim.gz_ros2_control]: 		 velocity
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187956325] [resource_manager]: Initialize hardware 'sim_ur10e_ur10e'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187973998] [resource_manager]: Successful initialization of hardware 'sim_ur10e_ur10e'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187993547] [resource_manager]: 'configure' hardware 'sim_ur10e_ur10e'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.187996139] [sim.gz_ros2_control]: System Successfully configured!
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.188003317] [resource_manager]: Successful 'configure' of hardware 'sim_ur10e_ur10e'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.188010122] [resource_manager]: 'activate' hardware 'sim_ur10e_ur10e'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.188013777] [resource_manager]: Successful 'activate' of hardware 'sim_ur10e_ur10e'
+[16:27:10] [HIL] [gz sim-10] [INFO] [1782307630.188017257] [sim.gz_ros2_control]: Loading controller_manager
+[16:27:10] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mDiffDrive subscribing to twist messages on [[0m[1;32mcmd_vel[0m[1;32m][0m[1;32m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::DiffDrive[0m[1;36m] for entity [[0m[1;36m11[0m[1;36m][0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::JointStatePublisher[0m[1;36m] for entity [[0m[1;36m11[0m[1;36m][0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:697] [0m[1;36mConfiguring Sensors system[0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:557] [0m[1;36mSensorsPrivate::Run[0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mignition::gazebo::systems::Sensors[0m[1;36m] for entity [[0m[1;36m11[0m[1;36m][0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:532] [0m[1;36mSensorsPrivate::RenderThread started[0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:337] [0m[1;36mWaiting for init[0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::JointStatePublisher[0m[1;36m] for entity [[0m[1;36m11[0m[1;36m][0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz_ros2_control::GazeboSimROS2ControlPlugin[0m[1;36m] for entity [[0m[1;36m11[0m[1;36m][0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [UserCommands.cc:1094] [0m[1;36mCreated entity [[0m[1;36m11[0m[1;36m] named [[0m[1;36mwhole_cell_sim[0m[1;36m][0m[1;36m[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36mbarrier_closekabinet_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36mbarrier_closetable_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36mbarrier_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36mbarrier_kaw1_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36mbarrier_kaw2_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36mbarrier_kaw3_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36mhuman_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36mkabinet_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36mlight_curtain_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ifarlab_ray_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ota_base_link_fixed_joint_lump__sim_kawasaki_base_link_collision_2[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_kawasaki_link1_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_kawasaki_link2_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_kawasaki_link3_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_kawasaki_link4_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_kawasaki_link5_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_kawasaki_link6_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_alumunium_table_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_platform_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_platform_fixed_joint_lump__sim_ur10e_windowdoor_collision_1[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_platform_fixed_joint_lump__sim_ur10e_windowlessdoor_collision_2[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_screw_feeder_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_screwdriver_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_stackable_bin_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_table_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_robot_mount_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_robot_mount_fixed_joint_lump__sim_ur10e_base_link_inertia_collision_1[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_shoulder_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_upper_arm_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_forearm_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:10] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_wrist_1_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_wrist_2_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_wrist_3_link_collision[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_wrist_3_link_fixed_joint_lump__sim_ur10e_tool0_collision_1[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_wrist_3_link_fixed_joint_lump__sim_ur10e_cable_channel_flange_collision_2[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_wrist_3_link_fixed_joint_lump__sim_ur10e_cable_channel_collision_3[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_wrist_3_link_fixed_joint_lump__sim_ur10e_flange_collision_4[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:332] [0m[1;36mMesh construction from an SDF has not been implemented yet for [0m[1;36mdartsim. Use AttachMeshShapeFeature to use mesh shapes.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SDFFeatures.cc:864] [0m[1;36mThe geometry element of collision [[0m[1;36msim_ur10e_wrist_3_link_fixed_joint_lump__sim_ur10e_sick_camera_collision_5[0m[1;36m] [0m[1;36mcouldn't be created[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationFeatures.cc:90] [0m[1;36mSimulation timestep set to: [0m[1;36m0.01[0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing scene information on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mscene/info[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing graph information on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mscene/graph[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing full state on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mstate[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing full state (async) on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mstate_async[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPublishing scene information on [[0m[1;32m/world/cem/scene/info[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPublishing entity deletions on [[0m[1;32m/world/cem/scene/deletion[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPublishing state changes on [[0m[1;32m/world/cem/state[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPublishing pose messages on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mpose/info[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPublishing dynamic pose messages on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mdynamic_pose/info[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [ERROR] [1782307632.576803188] [sim.gz_ros2_control]: Desired controller update period (0.002 s) is faster than the gazebo simulation period (0.01 s).
+[16:27:12] [HIL] [gz sim-10] [1;36m[Dbg] [EntityComponentManager.cc:1656] [0m[1;36mUpd [0m[1;36mLoading window config[0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mUsing server control service [[0m[1;32m/server_control[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:671] [0m[1;36mApplying config[0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:802] [0m[1;36mCreating gz-rendering interface for OpenGL[0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:986] [0m[1;36mCreating render thread interface for OpenGL[0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mgz-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:749] [0m[1;36mCreate scene [[0m[1;36mscene[0m[1;36m][0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:1037] [0m[1;36mCreating texture node render interface for OpenGL[0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [TransformControl.cc:453] [0m[1;36mTransformControl plugin is using camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Spawn.cc:308] [0m[1;36mSpawn plugin is using camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [SelectEntities.cc:452] [0m[1;36mSelectEntities plugin is using camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MarkerManager.cc:169] [0m[1;36mAdvertise [0m[1;36m/marker[0m[1;36m/list service.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MarkerManager.cc:179] [0m[1;36mAdvertise [0m[1;36m/marker[0m[1;36m/list.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MarkerManager.cc:189] [0m[1;36mAdvertise [0m[1;36m/marker[0m[1;36m_array.[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [CameraTracking.cc:205] [0m[1;36mCameraTrackingPrivate plugin is moving camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mMove to service on [[0m[1;32m/gui/move_to[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mFollow service on [[0m[1;32m/gui/follow[0m[1;32m] (deprecated)[0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mTracking topic on [[0m[1;32m/gui/track[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mTracking status topic on [[0m[1;32m/gui/currently_tracked[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mMove to pose service on [[0m[1;32m/gui/move_to/pose[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mCamera pose topic advertised on [[0m[1;32m/gui/camera/pose[0m[1;32m][0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mFollow offset service on [[0m[1;32m/gui/follow/offset[0m[1;32m] (deprecated)[0m[1;32m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [InteractiveViewControl.cc:176] [0m[1;36mInteractiveViewControl plugin is moving camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [EntityContextMenuPlugin.cc:79] [0m[1;36mEntity context menu plugin is using camera [[0m[1;36mscene::Camera(65527)[0m[1;36m][0m[1;36m[0m
+[16:27:12] [HIL] [gz sim-10] [1;33mWarning [Utils.cc:132][0m [/sdf/model[@name="whole_cell_sim"]/link[@name="sim_ur10e_wrist_3_link"]/sensor[@name="sim_ur10e_depth_optical_frame"]/camera[@name="sim_ur10e_rgbd"]/depth_image:<data-string>:L2166]: XML Element[depth_image], child of element[camera], not defined in SDF. Copying[depth_image] as children of [camera].
+[16:27:12] [HIL] [gz sim-10] libEGL warning: egl: failed to create dri2 screen
+[16:27:12] [HIL] [gz sim-10] libEGL warning: egl: failed to create dri2 screen
+[16:27:12] [HIL] [INFO] [spawner-15]: process started with pid [7633]
+[16:27:12] [HIL] [INFO] [spawner-16]: process started with pid [7635]
+[16:27:13] [HIL] [gz sim-10] [INFO] [1782307633.017752546] [sim.controller_manager]: Loading controller 'sim_joint_state_broadcaster'
+[16:27:14] [HIL] [gz sim-10] [1;33m[Wrn] [Ogre2Camera.cc:423] [0m[1;33mOgre2Camera::SetVisibilityMask: Mask bits [0m[1;33mc0000000[0m[1;33m are set but will be ignored as they conflict with the [0m[1;33mreserved bits used internally by the ogre2 backend.[0m[1;33m[0m
+[16:27:14] [HIL] [gz sim-10] [INFO] [1782307634.463783184] [sim.controller_manager]: Loading controller 'kawasaki_joint_state_broadcaster'
+[16:27:14] [HIL] [spawner-15] [INFO] [1782307634.490767907] [spawner_sim_joint_state_broadcaster]: [94mLoaded [1msim_joint_state_broadcaster[0m
+[16:27:14] [HIL] [spawner-16] [INFO] [1782307634.491999528] [spawner_kawasaki_joint_state_broadcaster]: [94mLoaded [1mkawasaki_joint_state_broadcaster[0m
+[16:27:14] [HIL] [gz sim-10] [INFO] [1782307634.492321786] [sim.controller_manager]: Configuring controller 'sim_joint_state_broadcaster'
+[16:27:14] [HIL] [gz sim-10] [INFO] [1782307634.492477796] [sim.sim_joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[16:27:14] [HIL] [gz sim-10] [INFO] [1782307634.501794619] [sim.controller_manager]: Configuring controller 'kawasaki_joint_state_broadcaster'
+[16:27:14] [HIL] [gz sim-10] [INFO] [1782307634.501872665] [sim.kawasaki_joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[16:27:14] [HIL] [spawner-15] [INFO] [1782307634.532275548] [spawner_sim_joint_state_broadcaster]: [92mConfigured and activated [1msim_joint_state_broadcaster[0m
+[16:27:14] [HIL] [spawner-16] [INFO] [1782307634.552350677] [spawner_kawasaki_joint_state_broadcaster]: [92mConfigured and activated [1mkawasaki_joint_state_broadcaster[0m
+[16:27:14] [HIL] [INFO] [spawner-15]: process has finished cleanly [pid 7633]
+[16:27:14] [HIL] [INFO] [spawner-16]: process has finished cleanly [pid 7635]
+[16:27:14] [HIL] [INFO] [spawner-17]: process started with pid [7763]
+[16:27:14] [HIL] [INFO] [spawner-18]: process started with pid [7765]
+[16:27:14] [HIL] [INFO] [spawner-19]: process started with pid [7767]
+[16:27:15] [HIL] [gz sim-10] ated state thread iterators: [0m[1;36m20[0m[1;36m threads processing around [0m[1;36m9[0m[1;36m entities each.[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:578] [0m[1;36mExiting postupdate worker thread ([0m[1;36m0[0m[1;36m)[0m[1;36m)[Dbg] [SimulationRunner.cc:578] [0m[1;36mExiting postupdate worker thread ([0m[1;36m1[0m[1;36m)[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:551] [0m[1;36mCreating PostUpdate worker threads: [0m[1;36m8[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:562] [0m[1;36mCreating postupdate worker thread ([0m[1;36m0[0m[1;36m)[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:562] [0m[1;36mCreating postupdate worker thread ([0m[1;36m1[0m[1;36m)[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:562] [0m[1;36mCreating postupdate worker thread ([0m[1;36m2[0m[1;36m)[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:562] [0m[1;36mCreating postupdate worker thread ([0m[1;36m3[0m[1;36m)[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:562] [0m[1;36mCreating postupdate worker thread ([0m[1;36m4[0m[1;36m)[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:562] [0m[1;36mCreating postupdate worker thread ([0m[1;36m5[0m[1;36m)[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:562] [0m[1;36mCreating postupdate worker thread ([0m[1;36m6[0m[1;36m)[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:953] [0m[1;36mInitialization needed[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:349] [0m[1;36mInitializing render context[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading plugin [[0m[1;32mgz-rendering-ogre2[0m[1;32m][0m[1;32m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [RenderUtil.cc:2646] [0m[1;36mCreate scene [[0m[1;36mscene[0m[1;36m][0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:391] [0m[1;36mRendering Thread initialized[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:953] [0m[1;36mInitialization needed[0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [CameraSensor.cc:405] [0m[1;36mCamera images for [[0m[1;36mweb_camera::link::camera[0m[1;36m] advertised on [[0m[1;36mweb_camera/image[0m[1;36m][0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [CameraSensor.cc:695] [0m[1;36mCamera info for [[0m[1;36mweb_camera::link::camera[0m[1;36m] advertised on [[0m[1;36m/web_camera/camera_info[0m[1;36m][0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [RgbdCameraSensor.cc:210] [0m[1;36mRGB images for [[0m[1;36mwhole_cell_sim::sim_ur10e_wrist_3_link::sim_ur10e_depth_optical_frame[0m[1;36m] advertised on [[0m[1;36mworld/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame[0m[1;36m/image][0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [RgbdCameraSensor.cc:224] [0m[1;36mDepth images for [[0m[1;36mwhole_cell_sim::sim_ur10e_wrist_3_link::sim_ur10e_depth_optical_frame[0m[1;36m] advertised on [[0m[1;36mworld/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame[0m[1;36m/depth_image][0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [RgbdCameraSensor.cc:238] [0m[1;36mPoints for [[0m[1;36mwhole_cell_sim::sim_ur10e_wrist_3_link::sim_ur10e_depth_optical_frame[0m[1;36m] advertised on [[0m[1;36mworld/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame[0m[1;36m/points][0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [CameraSensor.cc:695] [0m[1;36mCamera info for [[0m[1;36mwhole_cell_sim::sim_ur10e_wrist_3_link::sim_ur10e_depth_optical_frame[0m[1;36m] advertised on [[0m[1;36mworld/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/camera_info[0m[1;36m][0m[1;36m[0m
+[16:27:15] [HIL] [gz sim-10] [1;36m[Dbg] [CameraSensor.cc:504] [0m[1;36mEnabling camera sensor: '[0m[1;36mweb_camera::link::camera[0m[1;36m' data [0m[1;36mgeneration.[0m[1;36m[0m
+[16:27:15] [HIL] [spawner-18] [INFO] [1782307635.568923144] [spawner_kawasaki_controller]: waiting for service /sim/controller_manager/list_controllers to become available...
+[16:27:15] [HIL] [gz sim-10] [INFO] [1782307635.605148687] [sim.controller_manager]: Loading controller 'sim_scaled_joint_trajectory_controller'
+[16:27:15] [HIL] [gz sim-10] [INFO] [1782307635.660691310] [sim.sim_scaled_joint_trajectory_controller]: No scaling interface set. This controller will not use speed scaling.
+[16:27:15] [HIL] [gz sim-10] [WARN] [1782307635.685671573] [sim.sim_scaled_joint_trajectory_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[16:27:15] [HIL] [spawner-17] [INFO] [1782307635.749247772] [spawner_sim_scaled_joint_trajectory_controller]: [94mLoaded [1msim_scaled_joint_trajectory_controller[0m
+[16:27:15] [HIL] [gz sim-10] [INFO] [1782307635.750889415] [sim.controller_manager]: Configuring controller 'sim_scaled_joint_trajectory_controller'
+[16:27:15] [HIL] [gz sim-10] [INFO] [1782307635.751170928] [sim.sim_scaled_joint_trajectory_controller]: No specific joint names are used for command interfaces. Using 'joints' parameter.
+[16:27:15] [HIL] [gz sim-10] [INFO] [1782307635.751204540] [sim.sim_scaled_joint_trajectory_controller]: Command interfaces are [position] and state interfaces are [position velocity].
+[16:27:15] [HIL] [gz sim-10] [INFO] [1782307635.751596547] [sim.sim_scaled_joint_trajectory_controller]: Using 'splines' interpolation method.
+[16:27:15] [HIL] [gz sim-10] [INFO] [1782307635.753079506] [sim.sim_scaled_joint_trajectory_controller]: Controller state will be published at 100.00 Hz.
+[16:27:15] [HIL] [gz sim-10] [INFO] [1782307635.755160424] [sim.sim_scaled_joint_trajectory_controller]: Goals with partial set of joints are allowed
+[16:27:15] [HIL] [gz sim-10] [INFO] [1782307635.755194093] [sim.sim_scaled_joint_trajectory_controller]: Action status changes will be monitored at 20.00 Hz.
+[16:27:15] [HIL] [spawner-17] [INFO] [1782307635.797146854] [spawner_sim_scaled_joint_trajectory_controller]: [92mConfigured and activated [1msim_scaled_joint_trajectory_controller[0m
+[16:27:15] [HIL] [INFO] [spawner-17]: process has finished cleanly [pid 7763]
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.227723740] [sim.controller_manager]: Loading controller 'kawasaki_controller'
+[16:27:16] [HIL] [gz sim-10] [WARN] [1782307636.249794980] [sim.kawasaki_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[16:27:16] [HIL] [spawner-18] [INFO] [1782307636.257790078] [spawner_kawasaki_controller]: [94mLoaded [1mkawasaki_controller[0m
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.259093588] [sim.controller_manager]: Configuring controller 'kawasaki_controller'
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.259240993] [sim.kawasaki_controller]: No specific joint names are used for command interfaces. Using 'joints' parameter.
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.259254973] [sim.kawasaki_controller]: Command interfaces are [position] and state interfaces are [position velocity].
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.259287559] [sim.kawasaki_controller]: Using 'splines' interpolation method.
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.259663608] [sim.kawasaki_controller]: Controller state will be published at 100.00 Hz.
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.265343836] [sim.kawasaki_controller]: Goals with partial set of joints are allowed
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.265705150] [sim.kawasaki_controller]: Action status changes will be monitored at 20.00 Hz.
+[16:27:16] [HIL] [spawner-18] [INFO] [1782307636.300841210] [spawner_kawasaki_controller]: [92mConfigured and activated [1mkawasaki_controller[0m
+[16:27:16] [HIL] [INFO] [spawner-18]: process has finished cleanly [pid 7765]
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.581567337] [sim.controller_manager]: Loading controller 'ota_base_controller'
+[16:27:16] [HIL] [spawner-19] [INFO] [1782307636.658826953] [spawner_ota_base_controller]: [94mLoaded [1mota_base_controller[0m
+[16:27:16] [HIL] [gz sim-10] [INFO] [1782307636.659834711] [sim.controller_manager]: Configuring controller 'ota_base_controller'
+[16:27:16] [HIL] [spawner-19] [INFO] [1782307636.687521261] [spawner_ota_base_controller]: [92mConfigured and activated [1mota_base_controller[0m
+[16:27:16] [HIL] [INFO] [spawner-19]: process has finished cleanly [pid 7767]
+[16:27:19] [HIL] [INFO] [spawner-20]: process started with pid [7867]
+[16:27:19] [HIL] [INFO] [spawner-21]: process started with pid [7869]
+[16:27:19] [HIL] [spawner-20] [INFO] [1782307639.636171842] [kawasaki.spawner_kawasaki_joint_state_broadcaster]: waiting for service /kawasaki/controller_manager/list_controllers to become available...
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.811612623] [kawasaki.controller_manager]: Loading controller 'kawasaki_controller'
+[16:27:19] [HIL] [ros2_control_node-8] [WARN] [1782307639.840280096] [kawasaki.kawasaki_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[16:27:19] [HIL] [spawner-21] [INFO] [1782307639.872908822] [kawasaki.spawner_kawasaki_controller]: [94mLoaded [1mkawasaki_controller[0m
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.874107658] [kawasaki.controller_manager]: Configuring controller 'kawasaki_controller'
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.874278738] [kawasaki.kawasaki_controller]: No specific joint names are used for command interfaces. Using 'joints' parameter.
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.874292271] [kawasaki.kawasaki_controller]: Command interfaces are [position] and state interfaces are [position velocity].
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.874306789] [kawasaki.kawasaki_controller]: Using 'splines' interpolation method.
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.875646340] [kawasaki.kawasaki_controller]: Controller state will be published at 100.00 Hz.
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.878722242] [kawasaki.kawasaki_controller]: Goals with partial set of joints are allowed
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.878749855] [kawasaki.kawasaki_controller]: Action status changes will be monitored at 20.00 Hz.
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.902891263] [kawasaki.controller_manager]: Loading controller 'kawasaki_joint_state_broadcaster'
+[16:27:19] [HIL] [spawner-20] [INFO] [1782307639.931004690] [kawasaki.spawner_kawasaki_joint_state_broadcaster]: [94mLoaded [1mkawasaki_joint_state_broadcaster[0m
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.950319775] [kawasaki.controller_manager]: Configuring controller 'kawasaki_joint_state_broadcaster'
+[16:27:19] [HIL] [ros2_control_node-8] [INFO] [1782307639.950376214] [kawasaki.kawasaki_joint_state_broadcaster]: 'joints' or 'interfaces' parameter is empty. All available state interfaces will be published
+[16:27:19] [HIL] [spawner-21] [INFO] [1782307639.951095069] [kawasaki.spawner_kawasaki_controller]: [92mConfigured and activated [1mkawasaki_controller[0m
+[16:27:19] [HIL] [spawner-20] [INFO] [1782307639.981159066] [kawasaki.spawner_kawasaki_joint_state_broadcaster]: [92mConfigured and activated [1mkawasaki_joint_state_broadcaster[0m
+[16:27:20] [HIL] [INFO] [spawner-21]: process has finished cleanly [pid 7869]
+[16:27:20] [HIL] [INFO] [spawner-20]: process has finished cleanly [pid 7867]
+[16:27:22] [SYSTEM] 🚨 EMERGENCY STOP — Terminating all processes!
+[16:27:22] [SYSTEM] 🛑 Stopping HIL (SIGINT)...
+[16:27:22] [HIL] [WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[16:27:22] [HIL] [INFO] [rviz2-14]: sending signal 'SIGINT' to process[rviz2-14]
+[16:27:22] [HIL] [INFO] [static_transform_publisher-13]: sending signal 'SIGINT' to process[static_transform_publisher-13]
+[16:27:23] [HIL] [INFO] [parameter_bridge-12]: sending signal 'SIGINT' to process[parameter_bridge-12]
+[16:27:23] [HIL] [INFO] [gz sim-10]: sending signal 'SIGINT' to process[gz sim-10]
+[16:27:23] [HIL] [ERROR] [static_transform_publisher-13]: process has died [pid 7324, exit code -2, cmd '/opt/ros/humble/lib/tf2_ros/static_transform_publisher 0 0 0 0 0 0 sim_ur10e_depth_optical_frame whole_cell_sim/sim_ur10e_wrist_3_link/sim_ur10e_depth_optical_frame --ros-args -r __ns:=/sim --params-file /tmp/launch_params_k02l_2n7'].
+[16:27:23] [HIL] [INFO] [robot_state_publisher-9]: sending signal 'SIGINT' to process[robot_state_publisher-9]
+[16:27:23] [HIL] [INFO] [ros2_control_node-8]: sending signal 'SIGINT' to process[ros2_control_node-8]
+[16:27:23] [HIL] [INFO] [robot_state_publisher-5]: sending signal 'SIGINT' to process[robot_state_publisher-5]
+[16:27:23] [HIL] [ERROR] [robot_state_publisher-9]: process has died [pid 7315, exit code -2, cmd '/opt/ros/humble/lib/robot_state_publisher/robot_state_publisher --ros-args -r __ns:=/sim --params-file /tmp/launch_params_5uotzy12 --params-file /tmp/launch_params_3s_9n2z_'].
+[16:27:23] [HIL] [INFO] [urscript_interface-4]: sending signal 'SIGINT' to process[urscript_interface-4]
+[16:27:23] [HIL] [ERROR] [ros2_control_node-8]: process has died [pid 7127, exit code -2, cmd '/opt/ros/humble/lib/controller_manager/ros2_control_node --ros-args -r __ns:=/kawasaki --params-file /tmp/launch_params_v7qsl3ux --params-file /tmp/launch_params_b8m5cfsq --params-file /tmp/launch_params_zjo7kd6i -r /kawasaki/joint_states:=/joint_states'].
+[16:27:23] [HIL] [INFO] [ros2_control_node-3]: sending signal 'SIGINT' to process[ros2_control_node-3]
+[16:27:23] [HIL] [ERROR] [robot_state_publisher-5]: process has died [pid 7121, exit code -2, cmd '/opt/ros/humble/lib/robot_state_publisher/robot_state_publisher --ros-args --params-file /tmp/launch_params_e724hlsu'].
+[16:27:23] [HIL] [INFO] [parameter_bridge-2]: sending signal 'SIGINT' to process[parameter_bridge-2]
+[16:27:23] [HIL] [ERROR] [urscript_interface-4]: process has died [pid 7119, exit code -2, cmd '/home/cem/colcon_ws/install/ur_robot_driver/lib/ur_robot_driver/urscript_interface --ros-args --params-file /tmp/launch_params_4caepa_r'].
+[16:27:23] [HIL] [INFO] [static_transform_publisher-1]: sending signal 'SIGINT' to process[static_transform_publisher-1]
+[16:27:23] [HIL] [rviz2-14] [INFO] [1782307642.973035697] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [static_transform_publisher-13] [INFO] [1782307642.973046849] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [parameter_bridge-12] [INFO] [1782307642.973053544] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [static_transform_publisher-1] [INFO] [1782307642.973059369] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [parameter_bridge-2] [INFO] [1782307642.973066616] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [robot_state_publisher-5] [INFO] [1782307642.973103731] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [robot_state_publisher-9] [INFO] [1782307642.973195731] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [urscript_interface-4] [INFO] [1782307642.973330817] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.973734360] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.973802894] [kawasaki.controller_manager]: Shutdown request received....
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.973860826] [kawasaki.controller_manager]: Shutting down all controllers in the controller manager.
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.973889680] [kawasaki.controller_manager]: Deactivating controller 'kawasaki_controller'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.973937017] [kawasaki.controller_manager]: Shutting down controller 'kawasaki_controller'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.973978865] [kawasaki.controller_manager]: Deactivating controller 'kawasaki_joint_state_broadcaster'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974007330] [kawasaki.controller_manager]: Shutting down controller 'kawasaki_joint_state_broadcaster'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974035501] [resource_manager]: 'deactivate' hardware 'rs005l'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974048609] [resource_manager]: Successful 'deactivate' of hardware 'rs005l'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974053938] [resource_manager]: 'shutdown' hardware 'rs005l'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974059937] [resource_manager]: Successful 'shutdown' of hardware 'rs005l'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974065931] [resource_manager]: 'deactivate' hardware 'ota_system'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974071208] [resource_manager]: Successful 'deactivate' of hardware 'ota_system'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974075185] [resource_manager]: 'shutdown' hardware 'ota_system'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974080048] [resource_manager]: Successful 'shutdown' of hardware 'ota_system'
+[16:27:23] [HIL] [ros2_control_node-8] [INFO] [1782307642.974084351] [kawasaki.controller_manager]: Shutting down the controller manager.
+[16:27:23] [HIL] [ERROR] [static_transform_publisher-1]: process has died [pid 7113, exit code -2, cmd '/opt/ros/humble/lib/tf2_ros/static_transform_publisher -2.301949 0.530401 0.17 0 0 0.707107 0.707107 world odom --ros-args'].
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307642.979387586] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307642.979524378] [controller_manager]: Shutdown request received....
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307642.979597105] [controller_manager]: Shutting down all controllers in the controller manager.
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307642.979637756] [controller_manager]: Deactivating controller 'joint_state_broadcaster'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307642.979699897] [controller_manager]: Shutting down controller 'joint_state_broadcaster'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307642.979744776] [controller_manager]: Shutting down controller 'joint_trajectory_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307642.979773455] [controller_manager]: Deactivating controller 'io_and_status_controller'
+[16:27:23] [HIL] [rviz2-14] [INFO] [1782307642.982388697] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [parameter_bridge-12] [INFO] [1782307642.992274358] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.006121449] [controller_manager]: Shutting down controller 'io_and_status_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.006501333] [controller_manager]: Shutting down controller 'forward_velocity_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.006687315] [controller_manager]: Shutting down controller 'forward_position_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.006850461] [controller_manager]: Deactivating controller 'speed_scaling_state_broadcaster'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.006989536] [controller_manager]: Shutting down controller 'speed_scaling_state_broadcaster'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.007193994] [controller_manager]: Shutting down controller 'force_mode_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.008334790] [controller_manager]: Shutting down controller 'passthrough_trajectory_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.008528062] [controller_manager]: Deactivating controller 'force_torque_sensor_broadcaster'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.008685012] [controller_manager]: Shutting down controller 'force_torque_sensor_broadcaster'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.008844968] [controller_manager]: Shutting down controller 'freedrive_mode_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.009010394] [controller_manager]: Deactivating controller 'ur_configuration_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.009106950] [controller_manager]: Shutting down controller 'ur_configuration_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.009125662] [controller_manager]: Shutting down controller 'tool_contact_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023534337] [controller_manager]: Deactivating controller 'scaled_joint_trajectory_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023615399] [controller_manager]: Shutting down controller 'scaled_joint_trajectory_controller'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023657601] [resource_manager]: 'deactivate' hardware 'ur10e'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023666930] [resource_manager]: Successful 'deactivate' of hardware 'ur10e'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023672149] [resource_manager]: 'shutdown' hardware 'ur10e'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023678174] [resource_manager]: Successful 'shutdown' of hardware 'ur10e'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023684155] [resource_manager]: 'deactivate' hardware 'LinearAxisHardwareInterface'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023689659] [resource_manager]: Successful 'deactivate' of hardware 'LinearAxisHardwareInterface'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023694068] [resource_manager]: 'shutdown' hardware 'LinearAxisHardwareInterface'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023699139] [resource_manager]: Successful 'shutdown' of hardware 'LinearAxisHardwareInterface'
+[16:27:23] [HIL] [ros2_control_node-3] [INFO] [1782307643.023703741] [controller_manager]: Shutting down the controller manager.
+[16:27:23] [HIL] [ERROR] [ros2_control_node-3]: process has died [pid 7117, exit code -2, cmd '/opt/ros/humble/lib/controller_manager/ros2_control_node --ros-args --params-file /tmp/launch_params_v9175_xp --params-file /home/cem/colcon_ws/install/ur_robot_driver/share/ur_robot_driver/config/ur10e_update_rate.yaml --params-file /tmp/launch_params_bczqefr6'].
+[16:27:23] [HIL] [parameter_bridge-2] [INFO] [1782307643.033891828] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [INFO] [parameter_bridge-12]: process has finished cleanly [pid 7321]
+[16:27:23] [HIL] [INFO] [parameter_bridge-2]: process has finished cleanly [pid 7115]
+[16:27:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [SignalHandler.cc:142] [0m[1;36mReceived signal[[0m[1;36m2[0m[1;36m].[0m
+[16:27:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Gui.cc:535] [0m[1;36mShutting down gz-sim-gui[0m[1;36m[0m
+[16:27:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:237] [0m[1;36mTerminating application.[0m[1;36m[0m
+[16:27:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:841] [0m[1;36mDestroy scene [[0m[1;36mscene[0m[1;36m][0m[1;36m[0m
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.635932953] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636057140] [sim.controller_manager]: Shutdown request received....
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636133041] [sim.controller_manager]: Shutting down all controllers in the controller manager.
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636164528] [sim.controller_manager]: Deactivating controller 'sim_joint_state_broadcaster'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636218645] [sim.controller_manager]: Shutting down controller 'sim_joint_state_broadcaster'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636276121] [sim.controller_manager]: Deactivating controller 'kawasaki_joint_state_broadcaster'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636321715] [sim.controller_manager]: Shutting down controller 'kawasaki_joint_state_broadcaster'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636350009] [sim.controller_manager]: Deactivating controller 'sim_scaled_joint_trajectory_controller'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636451282] [sim.controller_manager]: Shutting down controller 'sim_scaled_joint_trajectory_controller'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636488916] [sim.controller_manager]: Deactivating controller 'kawasaki_controller'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636506792] [sim.controller_manager]: Shutting down controller 'kawasaki_controller'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636516360] [sim.controller_manager]: Deactivating controller 'ota_base_controller'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636534007] [sim.controller_manager]: Shutting down controller 'ota_base_controller'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636551722] [resource_manager]: 'deactivate' hardware 'sim_ur10e_ur10e'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636561210] [resource_manager]: Successful 'deactivate' of hardware 'sim_ur10e_ur10e'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636563689] [resource_manager]: 'shutdown' hardware 'sim_ur10e_ur10e'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636566938] [resource_manager]: Successful 'shutdown' of hardware 'sim_ur10e_ur10e'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636570095] [resource_manager]: 'deactivate' hardware 'LinearAxisHardwareInterface'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636572919] [resource_manager]: Successful 'deactivate' of hardware 'LinearAxisHardwareInterface'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636575026] [resource_manager]: 'shutdown' hardware 'LinearAxisHardwareInterface'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636577683] [resource_manager]: Successful 'shutdown' of hardware 'LinearAxisHardwareInterface'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636580648] [resource_manager]: 'deactivate' hardware 'rs005l'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636583478] [resource_manager]: Successful 'deactivate' of hardware 'rs005l'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636585594] [resource_manager]: 'shutdown' hardware 'rs005l'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636588204] [resource_manager]: Successful 'shutdown' of hardware 'rs005l'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636590937] [resource_manager]: 'deactivate' hardware 'ota_system'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636593619] [resource_manager]: Successful 'deactivate' of hardware 'ota_system'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636595686] [resource_manager]: 'shutdown' hardware 'ota_system'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636598353] [resource_manager]: Successful 'shutdown' of hardware 'ota_system'
+[16:27:23] [HIL] [gz sim-10] [INFO] [1782307643.636600626] [sim.controller_manager]: Shutting down the controller manager.
+[16:27:23] [HIL] [gz sim-10] [1;36m[Dbg] [SignalHandler.cc:142] [0m[1;36mReceived signal[[0m[1;36m2[0m[1;36m].[0m
+[16:27:23] [HIL] [gz sim-10] [1;36m[Dbg] [ServerPrivate.cc:122] [0m[1;36mServer received signal[[0m[1;36m2[0m[1;36m][0m
+[16:27:23] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:565] [0m[1;36mSensorsPrivate::Stop[0m[1;36m[0m
+[16:27:23] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:551] [0m[1;36mSensorsPrivate::RenderThread stopped[0m[1;36m[0m
+[16:27:23] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:434] [0m[1;36mShutting down gz-sim-server[0m[1;36m[0m
+[16:27:23] [HIL] [gz sim-10] [1;36m[Dbg] [SimulationRunner.cc:578] [0m[1;36mExiting postupdate worker thread ([0m[1;36mExiting postupdate worker thread ([0m[1;36m6[0m[1;36m0[0m[1;36m)[0m[1;36m[0m
+[16:27:23] [HIL] [gz sim-10] [1;36mExiting postupdate worker thread ([0m[1;36m[Dbg] [SimulationRunner.cc:578] [0m[1;36m[Dbg] [SimulationRunner.cc:578] [0m[1;36mExiting postupdate worker thread (Exiting postupdate worker thread ([0m[1;36mExiting postupdate worker thread ([0m[1;36m[Dbg] [SimulationRunner.cc:578] )[0m[1;36m2[0m[1;36m)[0m[1;36m[0m
+[16:27:23] [HIL] [gz sim-10] [1;36m)[0m[1;36m)5[0m[1;36m)[0m[1;36m)[0m[1;36m)[0m[1;36m3[0m[1;36m3[0m[1;36m3[0m[1;36m)[0m[1;36m)[0m[1;36m[0m
+[16:27:23] [HIL] [gz sim-10] [1;36m)[0m[1;36m[Dbg] [Sensors.cc:565] [0m[1;36mSensorsPrivate::Stop[0m[1;36m[0m
+[16:27:23] [HIL] [INFO] [rviz2-14]: process has finished cleanly [pid 7326]
+[16:27:23] [HIL] [ERROR] [gz sim-10]: process has died [pid 7317, exit code -2, cmd 'ruby /usr/bin/gz sim -r -v 8 /home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf --force-version 8'].
+[16:27:23] [HIL] [INFO] [launch]: process[gz sim-10] was required: shutting down launched system
+[16:27:23] [SYSTEM] ✅ HIL successfully stopped.
+[16:27:23] [SYSTEM] ✅ All processes stopped.
+[16:27:28] [SYSTEM] 🚨 EMERGENCY STOP — Terminating all processes!
+[16:27:28] [SYSTEM] ✅ All processes stopped.

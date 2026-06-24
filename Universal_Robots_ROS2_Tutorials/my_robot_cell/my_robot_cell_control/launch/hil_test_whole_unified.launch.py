@@ -52,7 +52,7 @@ from launch.substitutions import (
 from launch_ros.actions import Node, PushRosNamespace
 from launch_ros.substitutions import FindPackageShare
 from launch.conditions import IfCondition, UnlessCondition
-from launch_ros.parameter_descriptions import ParameterValue
+from launch_ros.parameter_descriptions import ParameterFile, ParameterValue
 
 
 def launch_setup(context, *args, **kwargs):
@@ -159,6 +159,99 @@ def launch_setup(context, *args, **kwargs):
         [FindPackageShare("my_robot_cell_control"), "rviz", "whole_real.rviz"]
     )
 
+    # ======================================================================
+    # KAWASAKI + AGV CONTROLLER YERLEŞİMİ (fake ve gerçek için AYNI topoloji)
+    # ======================================================================
+    # Her iki modda da (use_fake_hardware true/false) Kawasaki + AGV, UR CM'inden
+    # AYRI bir controller_manager'da çalışır. UR CM control_group:=ur ile yalnızca
+    # UR10e + lineer ekseni yükler; Kawasaki + AGV ise control_group:=kawasaki ile
+    # üretilen ikinci CM'e taşınır.
+    #   * false (gerçek): bloklayan Kawasaki SIR TCP soketini (KawasakiHardwareInterface)
+    #     UR'ın 500 Hz gerçek zamanlı döngüsünden izole eder.
+    #   * true  (fake): aynı CM mock_components ile çalışır; tek fark URDF'e
+    #     use_fake_hardware:=true geçilmesidir.
+    # Bu ikinci CM "/kawasaki" NAMESPACE'inde koşar (node: /kawasaki/controller_manager).
+    #   ÖNEMLİ: CM'i `name:=...` ile yeniden adlandırmak YASAK — bu global
+    #   `-r __node:=...` remap'ine dönüşür ve CM'in yüklediği TÜM controller
+    #   node'larına sızar; controller yanlış isimle açılıp kendi parametrelerini
+    #   (joints/command_interfaces) bulamaz ve configure olamaz. Namespace sızmaz.
+    #   SONUÇ: action/topic isimleri /kawasaki ile öneklenir, örn.
+    #   /kawasaki/kawasaki_controller/follow_joint_trajectory (her iki modda da AYNI).
+    #   joint_states ise global /joint_states'e remap edilir (tek robot_state_publisher).
+    # UR CM her iki modda da yalnızca UR + lineer ekseni sahiplenir.
+    control_group_value = "ur"
+
+    # Hem fake hem gerçek mod aynı Kawasaki + AGV controller dosyasını kullanır.
+    kawasaki_cm_controllers_yaml = os.path.join(
+        kawasaki_pkg_share, "config", "whole_cell_kawasaki_controllers.yaml"
+    )
+
+    # Ayrı Kawasaki + AGV controller_manager (fake ve gerçek için ortak).
+    # Tek fark: URDF'e geçilen use_fake_hardware değeri (mock vs gerçek donanım).
+    kawasaki_robot_description_content = Command([
+        PathJoinSubstitution([FindExecutable(name="xacro")]),
+        " ",
+        PathJoinSubstitution([
+            FindPackageShare("my_robot_cell_control"),
+            "urdf",
+            "whole_cell_hw.urdf.xacro",
+        ]),
+        " control_group:=kawasaki",
+        " ur_type:=", ur_type,
+        " use_fake_hardware:=", use_fake_hardware,
+    ])
+    kawasaki_robot_description = {
+        "robot_description": ParameterValue(
+            kawasaki_robot_description_content, value_type=str
+        )
+    }
+
+    # NOT: name= YERİNE namespace= kullanılıyor (yukarıdaki açıklamaya bakın).
+    # Broadcaster /kawasaki/joint_states'e yayınlar; tek global
+    # robot_state_publisher /joint_states dinlediği için geri remap ediyoruz.
+    # (Remap, controller'ların CM'in global argümanlarını miras almasıyla
+    # broadcaster node'una da uygulanır.)
+    kawasaki_control_node = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        namespace="kawasaki",
+        parameters=[
+            kawasaki_robot_description,
+            ParameterFile(kawasaki_cm_controllers_yaml, allow_substs=True),
+            {"use_sim_time": False},
+        ],
+        remappings=[("/kawasaki/joint_states", "/joint_states")],
+        output="screen",
+    )
+
+    # Spawner'lar --param-file kullanmıyor: controller parametreleri CM'e verilen
+    # ParameterFile'dan (/** wildcard) global argüman mirası ile okunur.
+    kawasaki_cm_spawners = TimerAction(
+        period=15.0,  # İkinci CM hazır olduktan sonra
+        actions=[
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                namespace="kawasaki",
+                arguments=[
+                    "kawasaki_joint_state_broadcaster",
+                    "--controller-manager", "/kawasaki/controller_manager",
+                ],
+                output="screen",
+            ),
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                namespace="kawasaki",
+                arguments=[
+                    "kawasaki_controller",
+                    "--controller-manager", "/kawasaki/controller_manager",
+                ],
+                output="screen",
+            ),
+        ],
+    )
+
     real_robot_launch_group = GroupAction(
         actions=[
             LogInfo(msg="[1/2] Gerçek robot bileşenleri başlatılıyor (unified URDF)..."),
@@ -169,7 +262,7 @@ def launch_setup(context, *args, **kwargs):
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution([
-                        FindPackageShare("ur_robot_driver"),
+                        FindPackageShare("ur_bringup"),
                         "launch",
                         "ur_control.launch.py",
                     ])
@@ -178,6 +271,9 @@ def launch_setup(context, *args, **kwargs):
                     "ur_type": ur_type,
                     "robot_ip": robot_ip,
                     "tf_prefix": real_tf_prefix,
+                    # Her iki modda da UR CM yalnızca UR10e + lineer ekseni yükler
+                    # (control_group=ur); Kawasaki + AGV ayrı /kawasaki CM'e taşınır.
+                    "control_group": control_group_value,
                     "launch_rviz": "false",
                     "use_fake_hardware": use_fake_hardware,
                     "fake_sensor_commands": fake_sensor_commands,
@@ -228,27 +324,11 @@ def launch_setup(context, *args, **kwargs):
                 condition=UnlessCondition(use_fake_hardware),
             ),
 
-            # Kawasaki RS005L controller (whole_cell_hw.urdf.xacro ile ros2_control aktif)
-            # ur_control.launch.py'nin ur_controllers.yaml'ını kullandığından
-            # kawasaki_controller dinamik olarak --controller-type ile yüklenir.
-            TimerAction(
-                period=15.0,  # UR driver + controller_manager hazır olduktan sonra
-                actions=[
-                    Node(
-                        package="controller_manager",
-                        executable="spawner",
-                        arguments=[
-                            "kawasaki_controller",
-                            "--controller-manager", "/controller_manager",
-                            "--controller-type",
-                            "joint_trajectory_controller/JointTrajectoryController",
-                            "--param-file",
-                            os.path.join(kawasaki_pkg_share, "config", "whole_cell_hw_controllers.yaml"),
-                        ],
-                        output="screen",
-                    ),
-                ],
-            ),
+            # Kawasaki RS005L + AGV: artık UR CM'inde DEĞİL, ayrı bir
+            # controller_manager'da (kawasaki_controller_manager) çalışır.
+            # CM düğümü + controller spawner'ları aşağıda eklenir.
+            kawasaki_control_node,
+            kawasaki_cm_spawners,
 
             # TimerAction (aşağıdaki yorum bloğu kaldırıldı, yukarıdaki ile değiştirildi)
             # TimerAction(

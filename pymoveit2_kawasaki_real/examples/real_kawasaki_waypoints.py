@@ -35,14 +35,14 @@ from pymoveit2_kawasaki_real import MoveIt2
 from pymoveit2_kawasaki_real.robots import ur as kawasaki_cfg
 
 # ── Sabitler ─────────────────────────────────────────────────────────────────
-CONTROLLER    = "/kawasaki_controller/follow_joint_trajectory"
+CONTROLLER    = "/kawasaki/kawasaki_controller/follow_joint_trajectory"
 GROUP_NAME    = kawasaki_cfg.MOVE_GROUP_ARM           # "real_kawasaki"
 
 POLL_INTERVAL  = 0.05
 PLAN_TIMEOUT   = 15.0
 MOTION_TIMEOUT = 60.0
 # ── Controller state topic ───────────────────────────────────────────────────
-CONTROLLER_STATE = "/kawasaki_controller/state"
+CONTROLLER_STATE = "/kawasaki/kawasaki_controller/state"
 # ─────────────────────────────────────────────────────────────────────────────
 
 
