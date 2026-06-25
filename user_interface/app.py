@@ -12,10 +12,12 @@ import subprocess
 import threading
 import time
 import json
+import urllib.request
+import urllib.error
 from collections import deque
 from datetime import datetime
 
-from flask import Flask, Response, render_template, jsonify, send_from_directory
+from flask import Flask, Response, render_template, jsonify, send_from_directory, request
 from flask_socketio import SocketIO, emit
 
 # ==============================================================================
@@ -162,7 +164,7 @@ class ScenarioManager:
         self._emit_log("SYSTEM", f"🚀 Starting: {cmd}")
         
         # Her komuttan önce ROS 2 ortam değişkenlerini (workspace) yüklüyoruz
-        full_cmd = f"source /opt/ros/humble/setup.bash && source /home/cem/colcon_ws/install/setup.bash && {cmd}"
+        full_cmd = f"source /opt/ros/humble/setup.bash && source /home/ifarlab/colcon_ws/install/setup.bash && {cmd}"
         
         # DISPLAY vb. değişkenleri alt prosese aktar (RViz, Gazebo vb. GUI için)
         my_env = os.environ.copy()
@@ -667,6 +669,234 @@ def api_status():
 @app.route("/api/health")
 def api_health():
     return jsonify(check_ros2_health())
+
+
+# ==============================================================================
+# Elasticsearch Proxy (read-only) — powers the Data Analytics tab
+# ==============================================================================
+# These routes ONLY issue read queries (_search) against the local Elasticsearch.
+# Nothing is ever written, updated, deleted, or remapped — the existing
+# ROS2 → Kafka → Elasticsearch → MariaDB → Grafana pipeline is untouched.
+
+ES_BASE_URL = os.environ.get("ES_URL", "http://localhost:9200")
+
+
+def _es_search(index, body, timeout=20):
+    """Issue a read-only _search against Elasticsearch and return parsed JSON."""
+    url = f"{ES_BASE_URL}/{index}/_search"
+    data = json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _parse_time_param(value):
+    """Accept epoch milliseconds, epoch seconds, or an ISO string. Return as-is
+    for ES (which understands ISO + epoch_millis). Numbers are treated as ms."""
+    if value is None or value == "":
+        return None
+    try:
+        # Pure number → epoch millis
+        return int(float(value))
+    except (TypeError, ValueError):
+        return value  # ISO string, let ES parse it
+
+
+@app.route("/api/es/range")
+def es_range():
+    """Return the min/max timestamp available in an index (for 'fit to data')."""
+    index = request.args.get("index", "")
+    time_field = request.args.get("time_field", "@timestamp")
+    if not index:
+        return jsonify({"error": "index required"}), 400
+    body = {
+        "size": 0,
+        "aggs": {
+            "mn": {"min": {"field": time_field}},
+            "mx": {"max": {"field": time_field}},
+        },
+    }
+    try:
+        res = _es_search(index, body)
+        agg = res.get("aggregations", {})
+        return jsonify({
+            "min": agg.get("mn", {}).get("value"),
+            "max": agg.get("mx", {}).get("value"),
+            "min_str": agg.get("mn", {}).get("value_as_string"),
+            "max_str": agg.get("mx", {}).get("value_as_string"),
+        })
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError) as e:
+        return jsonify({"error": str(e)}), 502
+
+
+@app.route("/api/es/timeseries")
+def es_timeseries():
+    """Downsampled time-series via a date_histogram with per-field averages.
+
+    Query params:
+      index       ES index name
+      fields      comma-separated numeric field paths (e.g. ur10e_elbow_joint.position)
+      time_field  date field to bucket on (default @timestamp)
+      from, to    range bounds (epoch ms or ISO); omit for all data
+      points      target number of buckets (default 500)
+    """
+    index = request.args.get("index", "")
+    fields = [f for f in request.args.get("fields", "").split(",") if f]
+    time_field = request.args.get("time_field", "@timestamp")
+    # Upper bound stays under Elasticsearch's default search.max_buckets (65536)
+    # so the date_histogram can't blow the bucket limit and error out.
+    points = max(10, min(60000, int(request.args.get("points", 500))))
+    frm = _parse_time_param(request.args.get("from"))
+    to = _parse_time_param(request.args.get("to"))
+
+    if not index or not fields:
+        return jsonify({"error": "index and fields required"}), 400
+
+    # Build the range filter. We always apply a lower floor (TIME_FLOOR) to drop
+    # implausible pre-2000 timestamps. The sim joint-state stream carries Gazebo
+    # sim-clock stamps that start at 0 on each launch, so those docs land in 1970.
+    # Left unfiltered they stretch the @timestamp span to ~56 years, which forces
+    # the date_histogram into huge buckets and flattens the whole chart into a few
+    # averaged points. Filtering them here (read-only, query-time) restores detail
+    # without touching any stored data.
+    TIME_FLOOR = "2000-01-01"
+    rng = {"gte": frm if frm is not None else TIME_FLOOR}
+    if to is not None:
+        rng["lte"] = to
+    query = {"range": {time_field: rng}}
+
+    # Determine the bucket interval. If we have explicit numeric ms bounds use
+    # them; otherwise ask ES for the actual min/max so buckets fit the data.
+    try:
+        if isinstance(frm, int) and isinstance(to, int):
+            span_ms = max(1, to - frm)
+        else:
+            r = _es_search(index, {
+                "size": 0,
+                "query": query,
+                "aggs": {
+                    "mn": {"min": {"field": time_field}},
+                    "mx": {"max": {"field": time_field}},
+                },
+            })
+            agg = r.get("aggregations", {})
+            mn = agg.get("mn", {}).get("value")
+            mx = agg.get("mx", {}).get("value")
+            if mn is None or mx is None:
+                return jsonify({"time": [], "series": {}})
+            span_ms = max(1, int(mx - mn))
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError) as e:
+        return jsonify({"error": str(e)}), 502
+
+    interval_ms = max(1, span_ms // points)
+
+    body = {
+        "size": 0,
+        "query": query,
+        "aggs": {
+            "ts": {
+                "date_histogram": {
+                    "field": time_field,
+                    "fixed_interval": f"{interval_ms}ms",
+                    "min_doc_count": 1,
+                },
+                "aggs": {
+                    f"f{i}": {"avg": {"field": f}}
+                    for i, f in enumerate(fields)
+                },
+            }
+        },
+    }
+
+    try:
+        res = _es_search(index, body)
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError) as e:
+        return jsonify({"error": str(e)}), 502
+
+    buckets = res.get("aggregations", {}).get("ts", {}).get("buckets", [])
+    out_time = []
+    out_series = {f: [] for f in fields}
+    for b in buckets:
+        out_time.append(b["key"])  # epoch millis
+        for i, f in enumerate(fields):
+            val = b.get(f"f{i}", {}).get("value")
+            out_series[f].append(val)
+
+    return jsonify({"time": out_time, "series": out_series})
+
+
+@app.route("/api/es/scatter3d")
+def es_scatter3d():
+    """Return up to `limit` raw x/y/z points for 3D scatter (e.g. TCP path).
+
+    Query params:
+      index            ES index name (default ros-tcp-pose-topic)
+      x, y, z          field paths (default pose.position.{x,y,z})
+      time_field       field used for range filter + ordering (default header.sec)
+      time_unit        's' or 'ms' — unit of time_field values (default 's')
+      from, to         range bounds in epoch ms; converted to time_unit
+      limit            max points (default 3000)
+    """
+    index = request.args.get("index", "ros-tcp-pose-topic")
+    fx = request.args.get("x", "pose.position.x")
+    fy = request.args.get("y", "pose.position.y")
+    fz = request.args.get("z", "pose.position.z")
+    time_field = request.args.get("time_field", "header.sec")
+    time_unit = request.args.get("time_unit", "s")
+    limit = max(10, min(10000, int(request.args.get("limit", 3000))))
+    frm = _parse_time_param(request.args.get("from"))
+    to = _parse_time_param(request.args.get("to"))
+
+    def to_unit(ms):
+        return ms / 1000.0 if time_unit == "s" else ms
+
+    if isinstance(frm, int) or isinstance(to, int):
+        rng = {}
+        if isinstance(frm, int):
+            rng["gte"] = to_unit(frm)
+        if isinstance(to, int):
+            rng["lte"] = to_unit(to)
+        query = {"range": {time_field: rng}}
+    else:
+        query = {"match_all": {}}
+
+    body = {
+        "size": limit,
+        "_source": [fx, fy, fz, time_field],
+        "query": query,
+        "sort": [{time_field: {"order": "desc"}}],
+    }
+
+    try:
+        res = _es_search(index, body)
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError) as e:
+        return jsonify({"error": str(e)}), 502
+
+    def dig(src, path):
+        cur = src
+        for part in path.split("."):
+            if isinstance(cur, dict) and part in cur:
+                cur = cur[part]
+            else:
+                return None
+        return cur
+
+    xs, ys, zs = [], [], []
+    for hit in res.get("hits", {}).get("hits", []):
+        src = hit.get("_source", {})
+        xv, yv, zv = dig(src, fx), dig(src, fy), dig(src, fz)
+        if xv is None or yv is None or zv is None:
+            continue
+        xs.append(xv)
+        ys.append(yv)
+        zs.append(zv)
+
+    # Returned newest-first; reverse so the path runs chronologically.
+    return jsonify({"x": xs[::-1], "y": ys[::-1], "z": zs[::-1]})
 
 
 # ==============================================================================

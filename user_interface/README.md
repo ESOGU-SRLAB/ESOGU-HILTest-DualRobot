@@ -1,6 +1,8 @@
-# ESOGÜ Robotics Lab — Scenario Control Dashboard
+# ESOGÜ IFARLAB — Scenario Control Dashboard
 
-Bu proje, ESOGÜ Robotics Lab sistemindeki robotik senaryoları (HIL - Hardware-in-the-Loop ve gerçek ortam) başlatmak, durdurmak ve canlı olarak izlemek için geliştirilmiş modern, web tabanlı bir arayüzdür. 
+Bu proje, ESOGÜ IFARLAB sistemindeki robotik senaryoları (HIL - Hardware-in-the-Loop ve gerçek ortam) başlatmak, durdurmak ve canlı olarak izlemek için geliştirilmiş modern, web tabanlı bir arayüzdür. 
+<img width="1181" height="450" alt="image" src="https://github.com/user-attachments/assets/0c569df9-11c5-4900-becf-462e4a8c86b8" />
+
 
 ## 🚀 Özellikler
 
@@ -15,10 +17,9 @@ Bu proje, ESOGÜ Robotics Lab sistemindeki robotik senaryoları (HIL - Hardware-
 - **Use Fake Hardware:** Gerçek robotlara ve donanımlara bağlı olunmayan durumlarda sadece simülasyon üzerinden test yapmak için arayüzden aktif edilebilen anahtar (`use_fake_hardware:=true`, vb. parametreleri otomatik ekler).
 - **Canlı Kamera Akışları (MJPEG Streaming):** 
   - *Simülasyon (Gazebo):* `gz.transport` üzerinden `/web_camera/image` topic'ini okuyarak tarayıcıya yansıtır.
-  - *Gerçek Dünya:* OpenCV kullanarak RTSP stream (`rtsp://192.168.4.51:554/live/0`) üzerinden gelen gerçek laboratuvar kamerasını canlı aktarır.
+  - *Gerçek Dünya:* OpenCV kullanarak RTSP stream (`rtsp://192.168.3.51:554/live/0`) üzerinden gelen gerçek laboratuvar kamerasını canlı aktarır.
 - **Canlı Eklem (Joint) Grafikleri:** `/joint_states` ve `/sim/joint_states` verilerini okuyarak, gerçek robot ve simülasyon verilerini karşılaştırmalı olarak Chart.js üzerinden 20 saniyelik hareketli bir grafikte gösterir.
 - **Sistem Logları:** Terminal çıktılarını anlık olarak arayüze yansıtır ve geçmişe dönük hata ayıklama için `user_interface/log/` dizinindeki `.txt` dosyalarına kaydeder.
-- **Sağlık Kontrolü (Health Monitor):** ROS 2 topic'lerini ve controller_manager'ların çalışıp çalışmadığını periyodik olarak kontrol ederek renkli (Yeşil/Kırmızı) göstergelerle kullanıcıyı bilgilendirir.
 
 ## 📁 Proje Yapısı
 
@@ -45,6 +46,15 @@ Uygulama, Flask, OpenCV ve `gz.transport` gibi kütüphanelere ihtiyaç duyar.
 Çalıştırmadan önce sisteminizde ROS 2 ortamının kurulu ve `cv2`, `flask_socketio` gibi paketlerin yüklü olduğundan emin olun:
 ```bash
 pip install -r requirements.txt
+```
+
+### 2. ROS2 Paketlerinin Güncellenmesi
+Arayüzün en verimli şekilde çalışabilmesi için ROS2 Paketlerinin arayüz çalıştırılmadan önce
+güncellenmesi gerekir.
+```bash
+cd colcon_ws
+colcon build
+source install/setup.bash
 ```
 
 ### 2. Uygulamayı Başlatma
