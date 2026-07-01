@@ -10,7 +10,7 @@
     <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
     <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
     <group name="real_ur10e">
-        <chain base_link="ur10e_table" tip_link="ur10e_tool0"/>
+        <chain base_link="ur10e_table" tip_link="ur10e_suction_cup"/>
     </group>
     <group name="real_kawasaki">
         <chain base_link="ifarlab_ray_link" tip_link="link6"/>
@@ -47,10 +47,10 @@
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -61,8 +61,6 @@
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -96,16 +94,15 @@
     <disable_collisions link1="barrier_closetable_link" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_alumunium_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="barrier_closetable_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
-    <disable_collisions link1="barrier_closetable_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_closetable_link" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="barrier_closetable_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="barrier_closetable_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="barrier_closetable_link" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="barrier_kaw2_link" reason="Adjacent"/>
@@ -134,10 +131,10 @@
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="barrier_kaw1_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -148,8 +145,6 @@
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="barrier_kaw1_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw1_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -180,10 +175,10 @@
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="barrier_kaw2_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="barrier_kaw2_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -194,8 +189,6 @@
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="barrier_kaw2_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="barrier_kaw2_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw2_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -225,10 +218,10 @@
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="barrier_kaw3_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="barrier_kaw3_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -239,8 +232,6 @@
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="barrier_kaw3_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="barrier_kaw3_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="barrier_kaw3_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -272,9 +263,10 @@
     <disable_collisions link1="barrier_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="barrier_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
+    <disable_collisions link1="barrier_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="barrier_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="barrier_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -283,8 +275,7 @@
     <disable_collisions link1="barrier_link" link2="ur10e_table" reason="Adjacent"/>
     <disable_collisions link1="barrier_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="barrier_link" link2="ur10e_windowlessdoor" reason="Never"/>
+    <disable_collisions link1="barrier_link" link2="ur10e_vacuum_gripper" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="barrier_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -312,10 +303,10 @@
     <disable_collisions link1="base_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="base_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -326,8 +317,6 @@
     <disable_collisions link1="base_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="base_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="base_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -347,6 +336,8 @@
     <disable_collisions link1="caster_back_left_link" link2="link1" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="link2" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="link4" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="link5" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="link6" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ota_base_link" reason="Adjacent"/>
@@ -355,10 +346,10 @@
     <disable_collisions link1="caster_back_left_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_back_left_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="caster_back_left_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -369,8 +360,6 @@
     <disable_collisions link1="caster_back_left_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="caster_back_left_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="caster_back_left_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="caster_back_left_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -389,6 +378,7 @@
     <disable_collisions link1="caster_back_right_link" link2="link1" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="link2" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="link6" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ota_base_link" reason="Adjacent"/>
     <disable_collisions link1="caster_back_right_link" link2="ota_ir_link" reason="Never"/>
@@ -396,10 +386,10 @@
     <disable_collisions link1="caster_back_right_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_back_right_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="caster_back_right_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -410,8 +400,6 @@
     <disable_collisions link1="caster_back_right_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="caster_back_right_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="caster_back_right_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="caster_back_right_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -429,7 +417,6 @@
     <disable_collisions link1="caster_front_left_link" link2="link1" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="link2" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="caster_front_left_link" link2="link5" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="link6" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ota_base_link" reason="Adjacent"/>
@@ -438,10 +425,10 @@
     <disable_collisions link1="caster_front_left_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_front_left_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="caster_front_left_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -452,8 +439,6 @@
     <disable_collisions link1="caster_front_left_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="caster_front_left_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="caster_front_left_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="caster_front_left_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -470,6 +455,7 @@
     <disable_collisions link1="caster_front_right_link" link2="link1" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="link2" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="link5" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="link6" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ota_base_link" reason="Adjacent"/>
@@ -478,10 +464,10 @@
     <disable_collisions link1="caster_front_right_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_front_right_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="caster_front_right_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -492,8 +478,6 @@
     <disable_collisions link1="caster_front_right_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="caster_front_right_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="caster_front_right_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="caster_front_right_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -509,6 +493,7 @@
     <disable_collisions link1="caster_wheel_back_left_link" link2="link1" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="link2" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="link4" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="link5" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="link6" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="manipulator_base_link" reason="Never"/>
@@ -518,10 +503,10 @@
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -532,8 +517,6 @@
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_left_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -548,6 +531,7 @@
     <disable_collisions link1="caster_wheel_back_right_link" link2="link1" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="link2" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="link3" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="link6" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ota_base_link" reason="Default"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ota_ir_link" reason="Never"/>
@@ -555,10 +539,10 @@
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -569,8 +553,6 @@
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_back_right_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -584,7 +566,6 @@
     <disable_collisions link1="caster_wheel_front_left_link" link2="link1" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="link2" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="caster_wheel_front_left_link" link2="link5" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="link6" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ota_base_link" reason="Default"/>
@@ -593,10 +574,10 @@
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -607,8 +588,6 @@
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_left_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -621,7 +600,6 @@
     <disable_collisions link1="caster_wheel_front_right_link" link2="link1" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="link2" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="link3" reason="Never"/>
-    <disable_collisions link1="caster_wheel_front_right_link" link2="link6" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="manipulator_base_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ota_base_link" reason="Default"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ota_ir_link" reason="Never"/>
@@ -629,10 +607,10 @@
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -643,8 +621,6 @@
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="caster_wheel_front_right_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -666,10 +642,10 @@
     <disable_collisions link1="human_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="human_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="human_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
     <disable_collisions link1="human_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="human_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="human_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="human_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -680,8 +656,6 @@
     <disable_collisions link1="human_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="human_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="human_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="human_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -699,10 +673,10 @@
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -713,8 +687,6 @@
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ifarlab_ray_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="ifarlab_ray_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -734,10 +706,10 @@
     <disable_collisions link1="kabinet_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="kabinet_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="kabinet_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -748,8 +720,6 @@
     <disable_collisions link1="kabinet_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="kabinet_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="kabinet_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="kabinet_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -768,22 +738,19 @@
     <disable_collisions link1="light_curtain_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="light_curtain_link" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_conveyor_belt" reason="Adjacent"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_sick_camera" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_stackable_bin" reason="Adjacent"/>
-    <disable_collisions link1="light_curtain_link" link2="ur10e_suction_cup" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_table" reason="Adjacent"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="light_curtain_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="light_curtain_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -798,10 +765,10 @@
     <disable_collisions link1="link1" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="link1" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_shoulder_link" reason="Never"/>
@@ -812,8 +779,6 @@
     <disable_collisions link1="link1" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -830,7 +795,6 @@
     <disable_collisions link1="link2" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_shoulder_link" reason="Never"/>
@@ -841,8 +805,6 @@
     <disable_collisions link1="link2" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -860,7 +822,6 @@
     <disable_collisions link1="link3" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_shoulder_link" reason="Never"/>
@@ -871,8 +832,6 @@
     <disable_collisions link1="link3" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -890,18 +849,18 @@
     <disable_collisions link1="link4" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="link4" link2="ur10e_sick_camera" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_stackable_bin" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_suction_cup" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_table" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="link5" link2="link6" reason="Adjacent"/>
+    <disable_collisions link1="link5" link2="ota_ir_link" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_alumunium_table" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_cable_channel" reason="Never"/>
@@ -919,8 +878,6 @@
     <disable_collisions link1="link5" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -942,8 +899,6 @@
     <disable_collisions link1="link6" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -953,10 +908,10 @@
     <disable_collisions link1="manipulator_base_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="manipulator_base_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="manipulator_base_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -967,8 +922,6 @@
     <disable_collisions link1="manipulator_base_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="manipulator_base_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="manipulator_base_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="manipulator_base_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -979,10 +932,10 @@
     <disable_collisions link1="ota_base_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="ota_base_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="ota_base_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -993,8 +946,6 @@
     <disable_collisions link1="ota_base_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="ota_base_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ota_base_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="ota_base_link" link2="ur10e_wrist_3_link" reason="Never"/>
@@ -1004,10 +955,10 @@
     <disable_collisions link1="ota_ir_link" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_cable_channel_flange" reason="Never"/>
+    <disable_collisions link1="ota_ir_link" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="ota_ir_link" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_shoulder_link" reason="Never"/>
@@ -1018,35 +969,29 @@
     <disable_collisions link1="ota_ir_link" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_vacuum_gripper" reason="Never"/>
-    <disable_collisions link1="ota_ir_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ota_ir_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ota_ir_link" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_base_link_inertia" reason="Never"/>
+    <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_chassis" reason="Adjacent"/>
     <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_conveyor_belt" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_platform" reason="Adjacent"/>
     <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_table" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ur10e_alumunium_table" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ur10e_alumunium_table" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_alumunium_table" link2="wheel_right_link" reason="Never"/>
+    <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_conveyor_belt" reason="Never"/>
-    <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_platform" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_robot_mount" reason="Adjacent"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_shoulder_link" reason="Adjacent"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_stackable_bin" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_table" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="wheel_right_link" reason="Never"/>
@@ -1062,7 +1007,6 @@
     <disable_collisions link1="ur10e_cable_channel" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_flange" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_sick_camera" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_suction_cup" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_tool0" reason="Adjacent"/>
@@ -1072,14 +1016,19 @@
     <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel_flange" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel_flange" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="ur10e_conveyor_belt" link2="ur10e_platform" reason="Adjacent"/>
+    <disable_collisions link1="ur10e_chassis" link2="ur10e_conveyor_belt" reason="Adjacent"/>
+    <disable_collisions link1="ur10e_chassis" link2="ur10e_robot_mount" reason="Never"/>
+    <disable_collisions link1="ur10e_chassis" link2="ur10e_screw_feeder" reason="Adjacent"/>
+    <disable_collisions link1="ur10e_chassis" link2="ur10e_shoulder_link" reason="Never"/>
+    <disable_collisions link1="ur10e_chassis" link2="ur10e_stackable_bin" reason="Adjacent"/>
+    <disable_collisions link1="ur10e_chassis" link2="ur10e_table" reason="Adjacent"/>
+    <disable_collisions link1="ur10e_chassis" link2="wheel_left_link" reason="Never"/>
+    <disable_collisions link1="ur10e_chassis" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_conveyor_belt" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ur10e_conveyor_belt" link2="ur10e_screw_feeder" reason="Adjacent"/>
     <disable_collisions link1="ur10e_conveyor_belt" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="ur10e_conveyor_belt" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="ur10e_conveyor_belt" link2="ur10e_table" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_conveyor_belt" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ur10e_conveyor_belt" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ur10e_conveyor_belt" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_conveyor_belt" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_flange" link2="ur10e_sick_camera" reason="Adjacent"/>
@@ -1097,38 +1046,21 @@
     <disable_collisions link1="ur10e_forearm_link" link2="ur10e_wrist_1_link" reason="Adjacent"/>
     <disable_collisions link1="ur10e_forearm_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_forearm_link" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="ur10e_platform" link2="ur10e_robot_mount" reason="Never"/>
-    <disable_collisions link1="ur10e_platform" link2="ur10e_screw_feeder" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_platform" link2="ur10e_shoulder_link" reason="Never"/>
-    <disable_collisions link1="ur10e_platform" link2="ur10e_stackable_bin" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_platform" link2="ur10e_table" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_platform" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="ur10e_platform" link2="ur10e_windowdoor" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_platform" link2="ur10e_windowlessdoor" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_platform" link2="wheel_left_link" reason="Never"/>
-    <disable_collisions link1="ur10e_platform" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_robot_mount" link2="ur10e_screw_feeder" reason="Never"/>
     <disable_collisions link1="ur10e_robot_mount" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="ur10e_robot_mount" link2="ur10e_stackable_bin" reason="Never"/>
     <disable_collisions link1="ur10e_robot_mount" link2="ur10e_table" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_robot_mount" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ur10e_robot_mount" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ur10e_robot_mount" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_robot_mount" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_screw_feeder" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="ur10e_screw_feeder" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="ur10e_screw_feeder" link2="ur10e_table" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_screw_feeder" link2="ur10e_tool0" reason="Never"/>
     <disable_collisions link1="ur10e_screw_feeder" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="ur10e_screw_feeder" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ur10e_screw_feeder" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ur10e_screw_feeder" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_screw_feeder" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_shoulder_link" link2="ur10e_stackable_bin" reason="Never"/>
     <disable_collisions link1="ur10e_shoulder_link" link2="ur10e_table" reason="Never"/>
     <disable_collisions link1="ur10e_shoulder_link" link2="ur10e_upper_arm_link" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_shoulder_link" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ur10e_shoulder_link" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ur10e_shoulder_link" link2="ur10e_wrist_1_link" reason="Never"/>
     <disable_collisions link1="ur10e_shoulder_link" link2="ur10e_wrist_2_link" reason="Never"/>
     <disable_collisions link1="ur10e_shoulder_link" link2="wheel_left_link" reason="Never"/>
@@ -1145,8 +1077,6 @@
     <disable_collisions link1="ur10e_stackable_bin" link2="ur10e_table" reason="Adjacent"/>
     <disable_collisions link1="ur10e_stackable_bin" link2="ur10e_tool0" reason="Default"/>
     <disable_collisions link1="ur10e_stackable_bin" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="ur10e_stackable_bin" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ur10e_stackable_bin" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ur10e_stackable_bin" link2="ur10e_wrist_1_link" reason="Default"/>
     <disable_collisions link1="ur10e_stackable_bin" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_stackable_bin" link2="wheel_right_link" reason="Never"/>
@@ -1157,8 +1087,6 @@
     <disable_collisions link1="ur10e_suction_cup" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="ur10e_suction_cup" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_suction_cup" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="ur10e_table" link2="ur10e_windowdoor" reason="Never"/>
-    <disable_collisions link1="ur10e_table" link2="ur10e_windowlessdoor" reason="Never"/>
     <disable_collisions link1="ur10e_table" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_table" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_tool0" link2="ur10e_vacuum_gripper" reason="Adjacent"/>
@@ -1174,11 +1102,6 @@
     <disable_collisions link1="ur10e_vacuum_gripper" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="ur10e_vacuum_gripper" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_vacuum_gripper" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="ur10e_windowdoor" link2="ur10e_windowlessdoor" reason="Never"/>
-    <disable_collisions link1="ur10e_windowdoor" link2="wheel_left_link" reason="Never"/>
-    <disable_collisions link1="ur10e_windowdoor" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="ur10e_windowlessdoor" link2="wheel_left_link" reason="Never"/>
-    <disable_collisions link1="ur10e_windowlessdoor" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_wrist_1_link" link2="ur10e_wrist_2_link" reason="Adjacent"/>
     <disable_collisions link1="ur10e_wrist_1_link" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="ur10e_wrist_1_link" link2="wheel_left_link" reason="Never"/>

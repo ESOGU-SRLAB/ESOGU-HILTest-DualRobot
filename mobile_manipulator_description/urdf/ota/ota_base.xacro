@@ -100,15 +100,16 @@
       </visual>
     </gazebo> -->
 
-    <!-- cem.sdf: ifarlab_ray model pose = "0 0 0 0 0 0" → world origin -->
+    <!-- ifarlab_ray (şase rayı): kabinete 0.0497m (-Y), şaseye 0.1m (+X) kaydırıldı -->
     <joint name="${prefix}ifarlab_ray_joint" type="fixed">
       <parent link="world"/>
       <child link="${prefix}ifarlab_ray_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0.095 -0.0497 0" rpy="0 0 0"/>
     </joint>
 
-    <!-- AGV başlangıç konumu: cem.sdf spawn pozisyonundan okundu
-         x=-2.301949  y=0.135135131  z=0.17  yaw=1.570796 (90°)
+    <!-- AGV başlangıç konumu (ifarlab_ray_link frame'e göre, orijinal değerler).
+         Ray frame zaten +0.1 X, -0.0787 Y kaydırıldığından AGV net world
+         pozisyonu: x≈-2.202, y≈0.056, z=0.165
          axis 1 0 0 = joint frame local X = yaw 90° nedeniyle world +Y yönü
          Bu eksende AGV ileri/geri hareket eder (ray üzerinde kayar) -->
     <joint name="${prefix}world_to_agv" type="prismatic">

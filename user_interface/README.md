@@ -20,6 +20,13 @@ Bu proje, ESOGÜ IFARLAB sistemindeki robotik senaryoları (HIL - Hardware-in-th
   - *Gerçek Dünya:* OpenCV kullanarak RTSP stream (`rtsp://192.168.3.51:554/live/0`) üzerinden gelen gerçek laboratuvar kamerasını canlı aktarır.
 - **Canlı Eklem (Joint) Grafikleri:** `/joint_states` ve `/sim/joint_states` verilerini okuyarak, gerçek robot ve simülasyon verilerini karşılaştırmalı olarak Chart.js üzerinden 20 saniyelik hareketli bir grafikte gösterir.
 - **Sistem Logları:** Terminal çıktılarını anlık olarak arayüze yansıtır ve geçmişe dönük hata ayıklama için `user_interface/log/` dizinindeki `.txt` dosyalarına kaydeder.
+- **Veri Analitiği (Data Analytics):** Arka planda çalışan `ROS2 → Kafka → Elasticsearch → MariaDB → Grafana` veri hattından beslenen metrikleri, Elasticsearch üzerinden salt-okunur (read-only) proxy ile sorgulayarak arayüzde geçmişe dönük veri analizi ve görselleştirme imkanı sunar.
+  - *Güvenli Veri Erişimi:* Elasticsearch veritabanına sadece okuma (`_search`) istekleri atılarak mevcut üretim veri hattının bozulması tamamen engellenir.
+  - *Dinamik Zaman Serisi İndirgeme (Downsampling):* Tarayıcıyı yormamak adına büyük veri setleri (`/api/es/timeseries`) `date_histogram` kullanılarak kümelenir ve ortalamaları alınarak gösterilir.
+  - *Otomatik Odaklama (Fit to Data):* Kayıtlardaki min/max zaman damgaları (`/api/es/range`) otomatik algılanarak grafiğin sadece verinin olduğu anlamlı bölgeye odaklanması sağlanır.
+  - *Simülasyon Gürültüsü Filtreleme:* Gazebo simülasyon saatinin "0" noktasından başlamasıyla oluşan 1970 yılına ait "hatalı" zaman damgaları (timestamp) sorgu düzeyinde filtrelenerek grafiklerin dışına atılır.
+<img width="1917" height="476" alt="image (1)" src="https://github.com/user-attachments/assets/440d1e75-223d-4ab1-b3eb-7d62543f6e70" />
+<img width="1917" height="450" alt="image" src="https://github.com/user-attachments/assets/c7a40603-0891-4d25-8c8e-7f3f485b7895" />
 
 ## 📁 Proje Yapısı
 

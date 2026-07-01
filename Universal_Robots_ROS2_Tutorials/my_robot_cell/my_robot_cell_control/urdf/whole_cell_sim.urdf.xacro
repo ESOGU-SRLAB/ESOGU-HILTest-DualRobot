@@ -70,7 +70,7 @@
   <xacro:arg name="kawasaki_simulation_controllers" default=""/>
 
   <!-- AGV spawn pozisyonu (world frame'e göre) -->
-  <xacro:arg name="agv_x" default="-2.301949"/>
+  <xacro:arg name="agv_x" default="-2.301959"/>
   <xacro:arg name="agv_y" default="0.135135131"/>
   <xacro:arg name="agv_z" default="0.17"/>
   <xacro:arg name="agv_yaw" default="1.570796"/>
