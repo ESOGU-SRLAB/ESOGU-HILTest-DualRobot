@@ -85,8 +85,24 @@ real_ur10e:
     - PRMkConfigDefault
     - PRMstarkConfigDefault
   longest_valid_segment_fraction: 0.005
+  projection_evaluator: joints(ur10e_shoulder_pan_joint,ur10e_shoulder_lift_joint)
 
 real_kawasaki:
+  planner_configs:
+    - SBLkConfigDefault
+    - ESTkConfigDefault
+    - LBKPIECEkConfigDefault
+    - BKPIECEkConfigDefault
+    - KPIECEkConfigDefault
+    - RRTkConfigDefault
+    - RRTConnectkConfigDefault
+    - RRTstarkConfigDefault
+    - TRRTkConfigDefault
+    - PRMkConfigDefault
+    - PRMstarkConfigDefault
+  longest_valid_segment_fraction: 0.005
+
+real_gripper:
   planner_configs:
     - SBLkConfigDefault
     - ESTkConfigDefault

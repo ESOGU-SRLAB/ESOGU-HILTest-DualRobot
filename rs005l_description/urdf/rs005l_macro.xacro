@@ -260,6 +260,37 @@
       <dynamics friction="0.1"/>
     </joint>
 
+    <joint name="${tf_prefix}joint7" type="fixed">
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 -1.96" />
+      <parent link="${tf_prefix}link6"/>
+      <child link="${tf_prefix}link7"/>
+    </joint>
+
+
+    <link name="${tf_prefix}link7">
+      <inertial>
+        <origin xyz="5.0628E-17 -4.215E-14 0.074772" rpy="0 0 0"/>
+        <mass value="0.0065669"/>
+        <inertia ixx="743E-09" ixy="0E-09" ixz="0E-09" iyy="743E-09" iyz="0E-09" izz="1448E-09"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0.078" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/rs005l_description/meshes/Montaj.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="">
+          <color rgba="0.79216 0.81961 0.93333 1"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0.078" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/rs005l_description/meshes/Montaj.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
     <transmission name="tran1">
       <plugin>transmission_interface/SimpleTransmission</plugin>
       <joint name="${tf_prefix}joint1">

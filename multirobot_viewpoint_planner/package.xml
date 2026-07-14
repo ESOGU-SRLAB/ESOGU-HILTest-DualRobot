@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>multirobot_viewpoint_planner</name>
+  <version>0.0.0</version>
+  <description>Multi-robot (UR10e + Kawasaki) cooperative viewpoint planning and
+    inspection for chassis quality control. Extends the single-arm
+    viewpoint_planner: one shared coverage set is allocated across two
+    camera-carrying arms for higher coverage and faster (parallel) inspection.</description>
+  <maintainer email="cshyilmaz@gmail.com">Cem</maintainer>
+  <license>TODO: License declaration</license>
+
+  <!-- Reuses viewpoint_planner's core (mesh_analyzer, viewpoint_generator,
+       reachability_checker) verbatim so the solo baseline stays untouched. -->
+  <depend>viewpoint_planner</depend>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>moveit_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>action_msgs</depend>
+
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>sensor_msgs_py</exec_depend>
+  <exec_depend>pymoveit2_real</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

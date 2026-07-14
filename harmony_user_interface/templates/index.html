@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Harmony — Sensing-Cleaning Robot Dashboard for real-time monitoring and control">
+    <title>Harmony — Sensing-Cleaning Robot</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+
+<div class="dashboard">
+
+    <!-- ===== HEADER (Logos + Title) ===== -->
+    <header class="header fade-in">
+        <div class="header-left">
+            <img src="/figures/ifarlab.png" alt="IFARLAB" title="IFARLAB" id="logo-ifarlab">
+            <img src="/figures/lider.jpeg" alt="Lider" title="Lider" id="logo-lider">
+        </div>
+        <div class="header-center">
+            <h1>Sensing-Cleaning Robot</h1>
+            <p>Harmony Project — Real-Time Control Dashboard</p>
+        </div>
+        <div class="header-right">
+            <img src="/figures/harmony.jpeg" alt="Harmony" title="Harmony Project" id="logo-harmony">
+        </div>
+    </header>
+
+    <!-- ===== CONTROL BAR (START / STOP / Toggle) ===== -->
+    <nav class="control-bar fade-in" id="control-bar">
+        <button class="action-btn start-btn" id="btn-start-hil" onclick="startHIL()">
+            <span class="btn-icon">🚀</span>
+            START
+        </button>
+
+        <button class="emergency-btn" id="btn-emergency" onclick="emergencyStop()">
+            🛑 STOP
+        </button>
+
+        <div class="control-separator"></div>
+
+        <div class="toggle-container" title="Enable this switch when not connected to real hardware">
+            <label class="toggle-switch">
+                <input type="checkbox" id="fake-hardware-toggle" checked>
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Use Fake Hardware</span>
+        </div>
+    </nav>
+
+    <!-- ===== CONFIRM ROBOT READY BANNER ===== -->
+    <div class="confirm-banner" id="confirm-banner">
+        <span class="banner-icon">⚠️</span>
+        <span class="banner-text">Robots initialized. Please confirm that robots are ready!</span>
+        <button class="confirm-btn" id="btn-confirm-robot" onclick="confirmRobot()">
+            ✅ Robots are Ready — Start Mission
+        </button>
+    </div>
+
+    <!-- ===== INFO BAR (Current Mode + Defect Count) ===== -->
+    <div class="info-bar fade-in" id="info-bar">
+        <div class="info-item mode-item">
+            <span class="info-icon">🤖</span>
+            <span class="info-label">Current Mode:</span>
+            <span class="info-value" id="current-mode">IDLE</span>
+        </div>
+        <div class="info-item defect-item">
+            <span class="info-icon">🔍</span>
+            <span class="info-label">Defects Detected:</span>
+            <span class="info-value defect-value" id="defect-count">0</span>
+        </div>
+    </div>
+
+    <!-- ===== COMMAND BUTTONS (START / CONFIRM / REINSPECT) ===== -->
+    <div class="command-bar fade-in" id="command-bar">
+        <button class="cmd-btn cmd-start" id="btn-cmd-start" onclick="publishCmd('START')">
+            <span class="btn-icon">▶️</span>
+            START
+        </button>
+        <button class="cmd-btn cmd-confirm" id="btn-cmd-confirm" onclick="publishCmd('CONFIRM')">
+            <span class="btn-icon">✅</span>
+            CONFIRM
+        </button>
+        <button class="cmd-btn cmd-reinspect" id="btn-cmd-reinspect" onclick="publishCmd('REINSPECT')">
+            <span class="btn-icon">🔄</span>
+            REINSPECT
+        </button>
+    </div>
+
+    <!-- ===== CAMERA FEED (Full Width) ===== -->
+    <div class="panel camera-panel fade-in">
+        <div class="panel-header">
+            <h3>🎥 Real World Camera</h3>
+            <span class="panel-badge live">● LIVE</span>
+        </div>
+        <div class="camera-container" id="real-camera-wrapper">
+            <img src="/stream/real" alt="Real World Camera" id="real-camera"
+                 onerror="this.style.display='none'; document.getElementById('real-placeholder').style.display='flex';">
+            <div class="camera-placeholder" id="real-placeholder" style="display:none;">
+                <span class="placeholder-icon">📷</span>
+                <span class="placeholder-text">Waiting for camera connection...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CHARTS (3 columns) ===== -->
+    <div class="chart-grid">
+        <!-- Joint Positions Chart -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>📊 Joint Positions</h3>
+                <span class="panel-badge live">● LIVE</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="position-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Joint Velocities Chart -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>📊 Joint Velocities</h3>
+                <span class="panel-badge live">● LIVE</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="velocity-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Cleaning Force Chart -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>📊 Cleaning Force</h3>
+                <span class="panel-badge live">● LIVE</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="force-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== LOG PANEL ===== -->
+    <div class="panel log-section fade-in">
+        <div class="panel-header">
+            <h3>📋 System Logs</h3>
+            <div class="log-controls">
+                <button class="log-control-btn" onclick="toggleAutoScroll()">
+                    ⬇️ Auto-Scroll: <span id="autoscroll-label">ON</span>
+                </button>
+                <button class="log-control-btn" onclick="clearLogs()">
+                    🗑️ Clear
+                </button>
+            </div>
+        </div>
+        <div class="log-container" id="log-container">
+            <div class="log-entry">
+                <span class="log-time">--:--:--</span>
+                <span class="log-source system">SYSTEM</span>
+                <span class="log-msg">Dashboard started. Ready to operate.</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== JavaScript ===== -->
+<script src="/static/js/dashboard.js"></script>
+
+</body>
+</html>

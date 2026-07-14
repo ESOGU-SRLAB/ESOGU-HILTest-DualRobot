@@ -85,6 +85,7 @@ def launch_setup(context, *args, **kwargs):
     gripper_port = LaunchConfiguration("gripper_port")
     use_mock_hardware = LaunchConfiguration("use_mock_hardware")
     use_gripper_value = context.launch_configurations.get("use_gripper", "false")
+    digital_twin_value = context.launch_configurations.get("digital_twin", "false")
 
     # ==================== Gazebo Ortam Değişkenleri ====================
     kawasaki_pkg_share = get_package_share_directory("mobile_manipulator_description")
@@ -463,6 +464,22 @@ def launch_setup(context, *args, **kwargs):
                 parameters=[{"use_sim_time": True}],
             ),
 
+            # TF Static Transform (Kawasaki kamera frame remapping)
+            # Kawasaki SICK bulutu gz-scoped frame_id ile yayınlanıyor
+            # (whole_cell_sim/sim_kawasaki_link6/sim_kawasaki_camera_rgb_optic_frame);
+            # bu bir TF frame'i olmadığı için RViz bulutu yerleştiremiyordu.
+            # UR kamerasındaki ile aynı alias: gerçek TF frame'ine bağla.
+            Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                arguments=[
+                    "0", "0", "0", "0", "0", "0",
+                    "sim_kawasaki_camera_rgb_optic_frame",
+                    "whole_cell_sim/sim_kawasaki_link6/sim_kawasaki_camera_rgb_optic_frame",
+                ],
+                parameters=[{"use_sim_time": True}],
+            ),
+
             # === UR10e Sim Controller'ları ===
             # Joint State Broadcaster (5 sn gecikme - Gazebo hazır olsun)
             TimerAction(
@@ -627,28 +644,41 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
+    # === MoveIt Move Group (sim & real) ===
+    # Gripper/vacuum flag'larını context'ten oku (hem sim hem real MoveIt seçiminde kullanılır)
+    use_vac_str = LaunchConfiguration("use_vacuum_gripper").perform(context)
+    use_grip_str = LaunchConfiguration("use_gripper").perform(context)
+
     # === MoveIt Move Group (sim namespace) ===
+    # Seçilen gripper/vacuum ayarlarına göre doğru sim MoveIt config paketini dinamik olarak yükler.
+    if use_vac_str.lower() == 'true':
+        sim_moveit_pkg = "sim_ifarlab_vacuum_moveit_config"
+    elif use_grip_str.lower() == 'true':
+        sim_moveit_pkg = "sim_ifarlab_gripper_moveit_config"
+    else:
+        sim_moveit_pkg = "sim_ifarlab_moveit_config"
+
     # TimerAction içindeki GroupAction ile namespace'i garanti ediyoruz.
     # (TimerAction, üst GroupAction'daki PushRosNamespace scope'unu kaybeder.)
-    # delayed_sim_moveit = TimerAction(
-    #     period=25.0,  # Sim spawn(10) + controller'lar(7) + buffer
-    #     actions=[
-    #         GroupAction(
-    #             actions=[
-    #                 PushRosNamespace(sim_namespace),
-    #                 IncludeLaunchDescription(
-    #                     PythonLaunchDescriptionSource(
-    #                         PathJoinSubstitution([
-    #                             FindPackageShare("sim_ifarlab_moveit_config"),
-    #                             "launch",
-    #                             "move_group.launch.py",
-    #                         ])
-    #                     ),
-    #                 ),
-    #             ]
-    #         ),
-    #     ],
-    # )
+    delayed_sim_moveit = TimerAction(
+        period=25.0,  # Sim spawn(10) + controller'lar(7) + buffer
+        actions=[
+            GroupAction(
+                actions=[
+                    PushRosNamespace(sim_namespace),
+                    IncludeLaunchDescription(
+                        PythonLaunchDescriptionSource(
+                            PathJoinSubstitution([
+                                FindPackageShare(sim_moveit_pkg),
+                                "launch",
+                                "move_group.launch.py",
+                            ])
+                        ),
+                    ),
+                ]
+            ),
+        ],
+    )
 
     # Real-to-Sim Bridge (gerçek robottan sim'e joint state senkronizasyonu)
     # Tüm controller'lar hazır olduktan sonra başlat (15 sn)
@@ -671,8 +701,7 @@ def launch_setup(context, *args, **kwargs):
 
     # === MoveIt Move Group (Real Robot) ===
     # Seçilen gripper/vacuum ayarlarına göre doğru MoveIt config paketini dinamik olarak yükler.
-    use_vac_str = LaunchConfiguration("use_vacuum_gripper").perform(context)
-    use_grip_str = LaunchConfiguration("use_gripper").perform(context)
+    # NOT: use_vac_str ve use_grip_str yukarıda sim MoveIt seçiminde de kullanılıyor.
 
     if use_vac_str.lower() == 'true':
         real_moveit_pkg = "real_ifarlab_vacuum_moveit_config"
@@ -777,6 +806,41 @@ def launch_setup(context, *args, **kwargs):
     #     }.items(),
     # )
 
+    # ==================== SICK Visionary-T Mini Kameraları ====================
+    # 1. UR10e kamerası (varsayılan ayarlar: 192.168.3.50, data port 2114)
+    sick_visionary_ur = Node(
+        package="sick_visionary_ros",
+        executable="sick_visionary_t_mini_node",
+        name="sick_visionary_t_mini_ur",
+        namespace="sick_ur",
+        output="screen",
+        parameters=[
+            {"remote_device_ip": "192.168.3.50"},
+            {"data_port": 2114},
+            {"control_port": 5000},
+            {"frame_id": "ur10e_depth_optical_frame"},
+            {"use_sim_time": False},
+        ],
+        condition=UnlessCondition(use_fake_hardware),
+    )
+
+    # 2. İkinci kamera (192.168.3.21, data port 2122)
+    sick_visionary_kawasaki = Node(
+        package="sick_visionary_ros",
+        executable="sick_visionary_t_mini_node",
+        name="sick_visionary_t_mini_kawasaki",
+        namespace="sick_kawasaki",
+        output="screen",
+        parameters=[
+            {"remote_device_ip": "192.168.3.21"},
+            {"data_port": 2113},
+            {"control_port": 2122},
+            {"frame_id": "kawasaki_depth_optical_frame"},
+            {"use_sim_time": False},
+        ],
+        condition=UnlessCondition(use_fake_hardware),
+    )
+
     # ==================== Başlatılacak Tüm Düğümler ====================
     nodes_to_start = [
         # Ortam değişkenleri
@@ -805,21 +869,32 @@ def launch_setup(context, *args, **kwargs):
         # 3. Konveyör belt (22 sn sonra - Gazebo + robot spawn tamamlanınca)
         conveyor_spawn,
 
-        # 4. MoveIt (25 sn sonra - kendi GroupAction ile /sim namespace)
-        # delayed_sim_moveit,
+        # 4. Sim MoveIt (25 sn sonra - kendi GroupAction ile /sim namespace)
+        # Sadece digital_twin=true ise eklenecek.
 
         # 5. Real MoveIt (25 sn sonra - namespace yok)
         delayed_real_moveit,
 
-        # 6. Real-to-Sim Bridge (30 sn sonra)
-        real_to_sim_bridge_delayed,
+        # 6. Real-to-Sim Bridge (30 sn sonra) — digital_twin=true ise devre dışı
+        # real_to_sim_bridge_delayed,
 
         # 7. Rosbridge WebSocket Server (port 9090)
         # rosbridge_server,
+
+        # 8. SICK Visionary-T Mini Kameraları (gerçek donanım)
+        sick_visionary_ur,
+        sick_visionary_kawasaki,
     ]
 
     if gripper_controller_spawner:
         nodes_to_start.append(gripper_controller_spawner)
+
+    # digital_twin=false (varsayılan) ise real_to_sim_bridge başlat
+    if digital_twin_value.lower() != 'true':
+        nodes_to_start.append(real_to_sim_bridge_delayed)
+    else:
+        # digital_twin=true ise sim_moveit başlat
+        nodes_to_start.append(delayed_sim_moveit)
 
     return nodes_to_start
 
@@ -998,6 +1073,14 @@ def generate_launch_description():
             "use_vacuum_gripper",
             default_value="false",
             description="Enable vacuum gripper on the robot.",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "digital_twin",
+            default_value="false",
+            description="Digital twin modu. true ise real_to_sim_bridge devre dışı kalır (sim bağımsız çalışır).",
         )
     )
 

@@ -1,7 +1,7 @@
 - ros_topic_name: "pointcloud"
-  gz_topic_name: "/world/cem/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points"
+  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points"
   ros_type_name: "sensor_msgs/msg/PointCloud2"
-  gz_type_name: "ignition.msgs.PointCloudPacked"
+  gz_type_name: "gz.msgs.PointCloudPacked"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
   publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
   lazy: true                # Default "false"
@@ -11,9 +11,9 @@
   qos_profile: SENSOR_DATA  # Default is a default-constructed QoS with appropriate queue size
 
 - ros_topic_name: "depth/image"
-  gz_topic_name: "/world/cem/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
+  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
   ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "ignition.msgs.Image"
+  gz_type_name: "gz.msgs.Image"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
   publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
   lazy: true                # Default "false"
@@ -25,7 +25,7 @@
 - ros_topic_name: "clock"
   gz_topic_name: "/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"
-  gz_type_name: "ignition.msgs.Clock"
+  gz_type_name: "gz.msgs.Clock"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
   publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
   lazy: true                # Default "false"
@@ -36,7 +36,7 @@
 - ros_topic_name: "pose"
   gz_topic_name: "/world/cem/dynamic_pose/info"
   ros_type_name: "geometry_msgs/msg/PoseArray"
-  gz_type_name: "ignition.msgs.Pose_V"
+  gz_type_name: "gz.msgs.Pose_V"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
   publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
   lazy: true                # Default "false"
@@ -47,7 +47,7 @@
 - ros_topic_name: "sim_joint_states"
   gz_topic_name: "/sim_robot_joint_states"
   ros_type_name: "sensor_msgs/msg/JointState"
-  gz_type_name: "ignition.msgs.Model"
+  gz_type_name: "gz.msgs.Model"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
   publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
   lazy: true                # Default "false"
@@ -57,17 +57,57 @@
 
 
 - ros_topic_name: "image"
-  gz_topic_name: "/world/cem/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
+  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
   ros_type_name: "sensor_msgs/msg/Image"
-  gz_type_name: "ignition.msgs.Image"
+  gz_type_name: "gz.msgs.Image"
   direction: GZ_TO_ROS
   qos_profile: SENSOR_DATA
   lazy: true
 
 - ros_topic_name: "camera_info"
-  gz_topic_name: "/world/cem/model/my_robot_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/camera_info"
+  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/camera_info"
   ros_type_name: "sensor_msgs/msg/CameraInfo"
-  gz_type_name: "ignition.msgs.CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
   direction: GZ_TO_ROS
   qos_profile: SENSOR_DATA
   lazy: true
+
+- ros_topic_name: "kawasaki/pointcloud"
+  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  subscriber_queue: 5
+  publisher_queue: 6
+  lazy: true
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+
+- ros_topic_name: "kawasaki/depth_image"
+  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/depth_image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  subscriber_queue: 5
+  publisher_queue: 6
+  lazy: true
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+
+- ros_topic_name: "kawasaki/image"
+  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  subscriber_queue: 5
+  publisher_queue: 6
+  lazy: true
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+
+- ros_topic_name: "kawasaki/camera_info"
+  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  subscriber_queue: 5
+  publisher_queue: 6
+  lazy: true
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA

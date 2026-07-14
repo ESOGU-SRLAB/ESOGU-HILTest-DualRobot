@@ -1,40 +1,48 @@
 #!/usr/bin/env python3
 """
-Red Detection Node - Kamera görüntüsünden kırmızı renk tespiti yapar.
-PointCloud2 kullanarak tespit edilen noktaların 3D world koordinatlarını bulur.
+Red detection / mock perception - v4
+- SR_MODE sırasında kırmızı tespit eder
+- PointCloud2 + TF ile world koordinatı çıkarır
+- /harmony/mock_perception/defect (tekil JSON) yayınlar
+- duplicate filtre uygular (yayını azaltır)
+- /harmony/log üretir
 """
 
-from threading import Thread, Lock
-import time
-import math
-import numpy as np
-import os
-from datetime import datetime
-import csv
-import struct
+from __future__ import annotations
 
+from threading import Lock
+from datetime import datetime
+import time
+import json
+import math
+import struct
+from typing import Optional, Tuple, Dict, Any, List
+
+import numpy as np
 import rclpy
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
 
-from sensor_msgs.msg import Image, PointCloud2, PointField
-from geometry_msgs.msg import PoseArray, Pose, PointStamped
-from std_msgs.msg import String, Int32, Header
+from sensor_msgs.msg import Image, PointCloud2
+from geometry_msgs.msg import PointStamped
+from std_msgs.msg import String
 
 import tf2_ros
 from tf2_geometry_msgs import do_transform_point
 
-# OpenCV
 try:
     import cv2
     CV_AVAILABLE = True
 except ImportError:
     CV_AVAILABLE = False
-    print("UYARI: OpenCV yüklü değil!")
+
+
+def _now_ros(node: Node) -> str:
+    t = node.get_clock().now().to_msg()
+    return f"{t.sec}.{t.nanosec:09d}"
 
 
 def imgmsg_to_cv2_manual(img_msg):
-    """ROS Image mesajını OpenCV formatına dönüştür"""
     dtype = np.uint8
     if img_msg.encoding == 'rgb8':
         img = np.frombuffer(img_msg.data, dtype=dtype).reshape(img_msg.height, img_msg.width, 3)
@@ -49,492 +57,339 @@ def imgmsg_to_cv2_manual(img_msg):
     elif img_msg.encoding == 'bgra8':
         img = np.frombuffer(img_msg.data, dtype=dtype).reshape(img_msg.height, img_msg.width, 4)
         return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-    else:
-        raise ValueError(f"Desteklenmeyen encoding: {img_msg.encoding}")
+    raise ValueError(f"Unsupported encoding: {img_msg.encoding}")
 
 
-class RedDetectionNode(Node):
+class HarmonyRedDetectionV4(Node):
     def __init__(self):
-        super().__init__("red_detection_node")
-        
-        # Parametreler
-        self.declare_parameter('image_topic', '/sim/image')
-        self.declare_parameter('pointcloud_topic', '/sim/pointcloud')
-        self.declare_parameter('camera_frame', 'sim_ur10e_rgb_optical_frame')
-        self.declare_parameter('world_frame', 'world')
-        self.declare_parameter('output_dir', '/home/cem/colcon_ws/src/pymoveit2_sim/examples/detection_results')
-        self.declare_parameter('min_red_area', 500)  # Minimum kırmızı alan (piksel)
-        self.declare_parameter('duplicate_distance', 0.20)  # Aynı nokta kabul mesafesi (metre)
-        
-        self.image_topic = self.get_parameter('image_topic').value
-        self.pointcloud_topic = self.get_parameter('pointcloud_topic').value
-        self.camera_frame = self.get_parameter('camera_frame').value
-        self.world_frame = self.get_parameter('world_frame').value
-        self.output_dir = self.get_parameter('output_dir').value
-        self.min_red_area = self.get_parameter('min_red_area').value
-        self.duplicate_distance = self.get_parameter('duplicate_distance').value
-        
-        # Çıktı dizinini oluştur
-        os.makedirs(self.output_dir, exist_ok=True)
-        
-        # Callback group
-        callback_group = ReentrantCallbackGroup()
-        
-        # TF2 Buffer ve Listener
+        super().__init__("harmony_red_detection")
+
+        self.declare_parameter("image_topic", "/sim/image")
+        self.declare_parameter("pointcloud_topic", "/sim/pointcloud")
+        self.declare_parameter("world_frame", "world")
+        self.declare_parameter("min_red_area", 500)
+        self.declare_parameter("duplicate_distance", 1.0)  # 60cm parça + tolerans için 1.0m
+        self.declare_parameter("publish_rate_limit_hz", 2.0)  # spam engelle
+        self.declare_parameter("duplicate_time_window_sec", 120.0)  # aynı nesneye tekrar yayın penceresi
+        self.declare_parameter("duplicate_pixel_distance", 25)  # piksel bazlı duplicate filtresi
+        self.declare_parameter("detection_ttl_sec", 600.0)  # cache temizliği (SR dışına çıkınca da tut)
+        self.declare_parameter("clear_cache_on_exit_sr_mode", False)
+        self.declare_parameter("merge_pixel_distance", 100)  # yakın contour'ları birleştirme mesafesi
+
+        self.image_topic = str(self.get_parameter("image_topic").value)
+        self.pointcloud_topic = str(self.get_parameter("pointcloud_topic").value)
+        self.world_frame = str(self.get_parameter("world_frame").value)
+        self.min_red_area = int(self.get_parameter("min_red_area").value)
+        self.duplicate_distance = float(self.get_parameter("duplicate_distance").value)
+        self.publish_rate_limit_hz = float(self.get_parameter("publish_rate_limit_hz").value)
+
+        self.duplicate_time_window_sec = float(self.get_parameter("duplicate_time_window_sec").value)
+        self.duplicate_pixel_distance = int(self.get_parameter("duplicate_pixel_distance").value)
+        self.detection_ttl_sec = float(self.get_parameter("detection_ttl_sec").value)
+        self.clear_cache_on_exit_sr_mode = bool(self.get_parameter("clear_cache_on_exit_sr_mode").value)
+        self.merge_pixel_distance = int(self.get_parameter("merge_pixel_distance").value)
+
+        cbg = ReentrantCallbackGroup()
+
+        # TF
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
-        
-        # ==================== PUBLISHERS ====================
-        self.detected_points_publisher = self.create_publisher(
-            PoseArray, '/detected_red_points', 10
-        )
-        self.status_publisher = self.create_publisher(
-            String, '/red_detection/status', 10
-        )
-        
-        # ==================== SUBSCRIBERS ====================
-        # Image subscriber
+
+        # Publishers
+        self.defect_pub = self.create_publisher(String, "/harmony/mock_perception/defect", 10)
+
+        # Subscribers
         if CV_AVAILABLE:
-            self.image_subscription = self.create_subscription(
-                Image, self.image_topic, self.image_callback, 10,
-                callback_group=callback_group
-            )
-        
-        # PointCloud2 subscriber
-        self.pointcloud_subscription = self.create_subscription(
-            PointCloud2, self.pointcloud_topic, self.pointcloud_callback, 10,
-            callback_group=callback_group
-        )
-        
-        # Waypoint indeksi dinle
-        self.waypoint_subscription = self.create_subscription(
-            Int32, '/sensing_robot/current_waypoint', self.waypoint_callback, 10,
-            callback_group=callback_group
-        )
-        
-        # Robot durumu dinle
-        self.robot_status_subscription = self.create_subscription(
-            String, '/sensing_robot/status', self.robot_status_callback, 10,
-            callback_group=callback_group
-        )
-        
-        # Progress status dinle - SENSING COMPLETED gelince kapan
-        self.progress_subscription = self.create_subscription(
-            String, '/progress_status', self.progress_callback, 10,
-            callback_group=callback_group
-        )
-        
-        # Kapanma flag'i
-        self.shutdown_requested = False
-        
-        # State değişkenleri
+            self.image_sub = self.create_subscription(Image, self.image_topic, self._image_cb, 10, callback_group=cbg)
+        else:
+            self._log("WARN", "CV_MISSING", "OpenCV not available; red detection disabled", {})
+
+        self.pc_sub = self.create_subscription(PointCloud2, self.pointcloud_topic, self._pc_cb, 10, callback_group=cbg)
+        self.robot_status_sub = self.create_subscription(String, "/harmony/robot_status", self._robot_status_cb, 10, callback_group=cbg)
+
+        # State
         self.latest_image = None
-        self.latest_pointcloud = None
-        self.pointcloud_width = 0
-        self.pointcloud_height = 0
-        self.current_waypoint = 0
-        self.robot_status = "UNKNOWN"
-        self.is_scanning = False
-        self.image_received = False
-        self.pointcloud_received = False
-        self.total_detections = 0
-        
-        # Tespit edilen noktalar
-        self.detected_points = []  # World frame'deki 3D noktalar
-        self.detected_points_lock = Lock()
-        
-        # CSV dosyası
-        self.csv_filename = os.path.join(
-            self.output_dir, 
-            f"red_points_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        )
-        self._init_csv()
-        
-        # Detection timer
-        self.detection_timer = self.create_timer(0.5, self.detection_loop)
-        
-        # Status timer
-        self.status_timer = self.create_timer(2.0, self.publish_status)
-        
-        self.get_logger().info("=== RED DETECTION STARTED ===")
-    
-    def _init_csv(self):
-        """CSV dosyasını başlat"""
-        with open(self.csv_filename, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow([
-                'timestamp', 'waypoint_index', 
-                'pixel_x', 'pixel_y', 'area',
-                'world_x', 'world_y', 'world_z'
-            ])
-    
-    def pointcloud_callback(self, msg: PointCloud2):
-        """PointCloud2 mesajını al ve sakla"""
-        self.latest_pointcloud = msg
-        self.pointcloud_width = msg.width
-        self.pointcloud_height = msg.height
-        self.pointcloud_received = True
-    
-    def image_callback(self, msg):
-        """Kamera görüntüsünü al"""
+        self.latest_pc: Optional[PointCloud2] = None
+        self.in_sr_mode = False
+
+        self.lock = Lock()
+        self.detected_cache: List[Dict[str, Any]] = []  # {t, px, py, x, y, z}
+        self.last_pub_time = 0.0
+
+        self.timer = self.create_timer(0.2, self._tick)
+
+        self.get_logger().info(f"HarmonyRedDetectionV4 initialized, world_frame={self.world_frame}")
+        self.get_logger().info(f"  duplicate_distance={self.duplicate_distance}m, duplicate_pixel_distance={self.duplicate_pixel_distance}px")
+
+    def _robot_status_cb(self, msg: String):
+        try:
+            data = json.loads(msg.data)
+            new_in_sr = (str(data.get("state")) == "SR_MODE")
+            # SR_MODE dışına çıkınca cache'i otomatik silmek bazen aynı defekti tekrar yayınlatır
+            # (SR_MODE -> WAITING -> SR_MODE gibi geçişlerde). İsteğe bağlı tutuyoruz.
+            if self.in_sr_mode and (not new_in_sr) and self.clear_cache_on_exit_sr_mode:
+                with self.lock:
+                    self.detected_cache.clear()
+            self.in_sr_mode = new_in_sr
+        except Exception:
+            self.in_sr_mode = False
+
+    def _pc_cb(self, msg: PointCloud2):
+        self.latest_pc = msg
+
+    def _image_cb(self, msg: Image):
         if not CV_AVAILABLE:
             return
         try:
             self.latest_image = imgmsg_to_cv2_manual(msg)
-            self.image_received = True
-        except Exception as e:
+        except Exception:
             pass
-    
-    def waypoint_callback(self, msg):
-        """Waypoint indeksini güncelle"""
-        self.current_waypoint = msg.data
-    
-    def robot_status_callback(self, msg: String):
-        """Robot durumunu güncelle"""
-        self.robot_status = msg.data
-        self.is_scanning = "SCANNING" in msg.data or "MOVING" not in msg.data
-    
-    def progress_callback(self, msg: String):
-        """Progress status dinle - SENSING COMPLETED gelince kapan"""
-        if msg.data == "SENSING COMPLETED" and not self.shutdown_requested:
-            self.shutdown_requested = True
-            self.get_logger().info(f"=== RED DETECTION COMPLETED ({len(self.detected_points)} points) ===")
-            
-            # Final raporu kaydet
-            self.save_final_report()
-            
-            # Timer'ları durdur
-            self.detection_timer.cancel()
-            self.status_timer.cancel()
-            
-            # Node'u kapat
-            raise SystemExit(0)
-    
-    def publish_status(self):
-        """Durum yayınla"""
-        msg = String()
-        with self.detected_points_lock:
-            point_count = len(self.detected_points)
-        msg.data = f"DETECTED:{point_count}|IMAGE:{self.image_received}|PC:{self.pointcloud_received}"
-        self.status_publisher.publish(msg)
-    
-    def detection_loop(self):
-        """Periyodik kırmızı renk tespiti - PointCloud2 ile 3D koordinat"""
-        # Hem image hem pointcloud gerekli
-        if self.latest_image is None or self.latest_pointcloud is None:
+
+    def _tick(self):
+        if not self.in_sr_mode:
             return
-        
-        # Kırmızı renk tespiti yap
-        detected = self.detect_red_color()
-        self.total_detections += 1
-        
+        if self.latest_image is None or self.latest_pc is None:
+            return
+
+        # rate limit
+        now = time.time()
+        if self.publish_rate_limit_hz > 0:
+            min_dt = 1.0 / self.publish_rate_limit_hz
+            if now - self.last_pub_time < min_dt:
+                return
+
+        detected = self._detect_red(self.latest_image)
         if not detected:
             return
-        
-        for point in detected:
-            pixel_x, pixel_y = point['pixel']
-            area = point['area']
-            
-            # PointCloud2'den 3D koordinat al (kamera frame'de)
-            point_3d_camera = self.get_point_from_pointcloud(pixel_x, pixel_y)
-            
-            if point_3d_camera is None:
-                continue
-            
-            # Kamera frame'den world frame'e dönüştür
-            world_point = self.transform_to_world(point_3d_camera)
-            
-            if world_point is None:
-                continue
-            
-            # Duplicate kontrolü
-            if self.is_duplicate(world_point):
-                continue
-            
-            # Yeni nokta kaydet
-            point_data = {
-                'timestamp': datetime.now().isoformat(),
-                'waypoint_index': self.current_waypoint,
-                'pixel': (pixel_x, pixel_y),
-                'area': area,
-                'world_position': world_point
-            }
-            
-            with self.detected_points_lock:
-                self.detected_points.append(point_data)
-            
-            # CSV'ye yaz
-            self._write_to_csv(point_data)
-            
-            # Yayınla
-            self._publish_detected_points()
-    
-    def get_point_from_pointcloud(self, pixel_x: int, pixel_y: int):
-        """
-        PointCloud2'den belirli bir pikselin 3D koordinatını al.
-        """
-        if self.latest_pointcloud is None:
-            return None
-        
-        pc = self.latest_pointcloud
-        
-        # Sınır kontrolü
-        if pixel_x < 0 or pixel_x >= pc.width or pixel_y < 0 or pixel_y >= pc.height:
-            return None
-        
-        # Point indeksini hesapla
-        point_index = pixel_y * pc.width + pixel_x
-        
-        # Field offset'lerini bul
-        x_offset = None
-        y_offset = None
-        z_offset = None
-        
-        for field in pc.fields:
-            if field.name == 'x':
-                x_offset = field.offset
-            elif field.name == 'y':
-                y_offset = field.offset
-            elif field.name == 'z':
-                z_offset = field.offset
-        
-        if x_offset is None or y_offset is None or z_offset is None:
-            return None
-        
-        # Point'in başlangıç byte'ı
-        point_start = point_index * pc.point_step
-        
-        # X, Y, Z değerlerini oku (float32)
+
+        detected.sort(key=lambda d: d["area"], reverse=True)
+        best = detected[0]
+        px, py = best["pixel"]
+
+        p_cam = self._pc_point(px, py)
+        if p_cam is None:
+            return
+        p_world = self._to_world(p_cam)
+        if p_world is None:
+            return
+
+        now_wall = time.time()
+        self._purge_cache(now_wall)
+
+        if self._is_duplicate(p_world, (px, py), now_wall):
+            return
+
+        with self.lock:
+            self.detected_cache.append({
+                "t": now_wall,
+                "px": int(px),
+                "py": int(py),
+                "x": float(p_world[0]),
+                "y": float(p_world[1]),
+                "z": float(p_world[2]),
+            })
+
+        defect_payload = {
+            "timestamp": datetime.now().isoformat(),
+            "defect_id": f"defect_{int(time.time())}",
+            "defect_type": "PATCH",
+            "severity_color": "RED",
+            "frame_id": self.world_frame,
+            "position": {"x": float(p_world[0]), "y": float(p_world[1]), "z": float(p_world[2])},
+            "pixel": {"x": int(px), "y": int(py)},
+            "area": float(best["area"]),
+        }
+
+        out = String()
+        out.data = json.dumps(defect_payload)
+        self.defect_pub.publish(out)
+        self.last_pub_time = now
+
+        self.get_logger().info(f"Published defect: {defect_payload['defect_id']}, pos={defect_payload['position']}, area={defect_payload['area']}")
+
+    def _detect_red(self, image_bgr):
         try:
-            x = struct.unpack_from('f', pc.data, point_start + x_offset)[0]
-            y = struct.unpack_from('f', pc.data, point_start + y_offset)[0]
-            z = struct.unpack_from('f', pc.data, point_start + z_offset)[0]
+            hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
+            lower_red1 = np.array([0, 100, 100])
+            upper_red1 = np.array([10, 255, 255])
+            lower_red2 = np.array([160, 100, 100])
+            upper_red2 = np.array([180, 255, 255])
+            mask = cv2.inRange(hsv, lower_red1, upper_red1) + cv2.inRange(hsv, lower_red2, upper_red2)
+
+            kernel = np.ones((7, 7), np.uint8)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            raw_detections = []
+            for c in contours:
+                area = cv2.contourArea(c)
+                if area >= self.min_red_area:
+                    M = cv2.moments(c)
+                    if M["m00"] != 0:
+                        cx = int(M["m10"] / M["m00"])
+                        cy = int(M["m01"] / M["m00"])
+                        raw_detections.append({"pixel": (cx, cy), "area": area})
             
-            # NaN kontrolü
+            # Sadece EN BÜYÜK alana sahip TEK bir tespit döndür
+            if not raw_detections:
+                return []
+            # En büyük alanı seç
+            largest = max(raw_detections, key=lambda d: d["area"])
+            return [largest]
+        except Exception:
+            return []
+
+    def _merge_nearby_detections(self, detections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Yakın contour'ları birleştir. Her gruptan en büyük alanı seç.
+        Sonuç olarak tek parça tespit edilmiş olur.
+        """
+        if not detections:
+            return []
+        
+        merge_dist = self.merge_pixel_distance
+        
+        # Simple clustering: assign each detection to a group
+        groups: List[List[Dict[str, Any]]] = []
+        used = [False] * len(detections)
+        
+        for i, det in enumerate(detections):
+            if used[i]:
+                continue
+            
+            # Start a new group with this detection
+            group = [det]
+            used[i] = True
+            px1, py1 = det["pixel"]
+            
+            # Find all nearby detections
+            for j, other in enumerate(detections):
+                if used[j]:
+                    continue
+                px2, py2 = other["pixel"]
+                dist = math.sqrt((px1 - px2) ** 2 + (py1 - py2) ** 2)
+                if dist < merge_dist:
+                    group.append(other)
+                    used[j] = True
+            
+            groups.append(group)
+        
+        # Her gruptan en büyük alanı seç
+        result = []
+        for group in groups:
+            # Alana göre sırala, en büyüğü al
+            best = max(group, key=lambda d: d["area"])
+            result.append(best)
+        
+        return result
+
+    def _pc_point(self, px: int, py: int) -> Optional[Tuple[float, float, float]]:
+        pc = self.latest_pc
+        if pc is None:
+            return None
+        if px < 0 or px >= pc.width or py < 0 or py >= pc.height:
+            return None
+
+        idx = py * pc.width + px
+
+        x_off = y_off = z_off = None
+        for f in pc.fields:
+            if f.name == "x":
+                x_off = f.offset
+            elif f.name == "y":
+                y_off = f.offset
+            elif f.name == "z":
+                z_off = f.offset
+        if x_off is None or y_off is None or z_off is None:
+            return None
+
+        start = idx * pc.point_step
+        try:
+            x = struct.unpack_from("f", pc.data, start + x_off)[0]
+            y = struct.unpack_from("f", pc.data, start + y_off)[0]
+            z = struct.unpack_from("f", pc.data, start + z_off)[0]
             if math.isnan(x) or math.isnan(y) or math.isnan(z):
-                # Çevredeki piksellere bak
-                return self._get_nearby_valid_point(pixel_x, pixel_y)
-            
+                return None
             return (x, y, z)
-            
-        except Exception as e:
+        except Exception:
             return None
-    
-    def _get_nearby_valid_point(self, pixel_x: int, pixel_y: int, search_radius: int = 5):
-        """NaN olan piksel için çevredeki geçerli noktayı bul"""
-        pc = self.latest_pointcloud
-        
-        for r in range(1, search_radius + 1):
-            for dx in range(-r, r + 1):
-                for dy in range(-r, r + 1):
-                    nx, ny = pixel_x + dx, pixel_y + dy
-                    if 0 <= nx < pc.width and 0 <= ny < pc.height:
-                        point_index = ny * pc.width + nx
-                        point_start = point_index * pc.point_step
-                        
-                        try:
-                            x = struct.unpack_from('f', pc.data, point_start + 0)[0]
-                            y = struct.unpack_from('f', pc.data, point_start + 4)[0]
-                            z = struct.unpack_from('f', pc.data, point_start + 8)[0]
-                            
-                            if not (math.isnan(x) or math.isnan(y) or math.isnan(z)):
-                                return (x, y, z)
-                        except:
-                            continue
-        return None
-    
-    def transform_to_world(self, point_camera):
-        """Kamera frame'deki noktayı world frame'e dönüştür"""
+
+    def _to_world(self, p_cam: Tuple[float, float, float]) -> Optional[Tuple[float, float, float]]:
         try:
-            # PointCloud2'nin frame_id'sini kullan
-            source_frame = self.latest_pointcloud.header.frame_id
-            
-            # TF dönüşümü al
-            transform = self.tf_buffer.lookup_transform(
+            pc = self.latest_pc
+            assert pc is not None
+            source_frame = pc.header.frame_id
+            tr = self.tf_buffer.lookup_transform(
                 self.world_frame,
                 source_frame,
                 rclpy.time.Time(),
                 timeout=rclpy.duration.Duration(seconds=0.5)
             )
-            
-            # PointStamped oluştur
-            point_stamped = PointStamped()
-            point_stamped.header.frame_id = source_frame
-            point_stamped.header.stamp = self.get_clock().now().to_msg()
-            point_stamped.point.x = float(point_camera[0])
-            point_stamped.point.y = float(point_camera[1])
-            point_stamped.point.z = float(point_camera[2])
-            
-            # Dönüştür
-            world_point = do_transform_point(point_stamped, transform)
-            
-            return (
-                world_point.point.x,
-                world_point.point.y,
-                world_point.point.z
-            )
-            
-        except Exception as e:
+            ps = PointStamped()
+            ps.header.frame_id = source_frame
+            ps.header.stamp = self.get_clock().now().to_msg()
+            ps.point.x = float(p_cam[0])
+            ps.point.y = float(p_cam[1])
+            ps.point.z = float(p_cam[2])
+
+            pw = do_transform_point(ps, tr)
+            return (pw.point.x, pw.point.y, pw.point.z)
+        except Exception:
             return None
-    
-    def is_duplicate(self, world_point):
-        """Bu nokta daha önce tespit edilmiş mi kontrol et"""
-        with self.detected_points_lock:
-            for existing in self.detected_points:
-                existing_world = existing.get('world_position')
-                if existing_world is None:
+
+    def _purge_cache(self, now_wall: float):
+    # """TTL dolan kayıtları temizle (SR dışına çıkınca da cache tutulduğu için şart)."""
+        if self.detection_ttl_sec <= 0:
+            return
+        with self.lock:
+            self.detected_cache = [c for c in self.detected_cache if (now_wall - float(c.get("t", now_wall))) <= self.detection_ttl_sec]
+
+    def _is_duplicate(
+        self,
+        p_world: Tuple[float, float, float],
+        pixel: Tuple[int, int],
+        now_wall: float,
+    ) -> bool:
+        """
+        Duplicate filtresi:
+        - Dünya koordinatı yakınsa (duplicate_distance)
+        - VE/VEYA piksel yakınsa (duplicate_pixel_distance)
+        - Üstelik yakın zaman penceresinde (duplicate_time_window_sec)
+        """
+        px, py = int(pixel[0]), int(pixel[1])
+
+        with self.lock:
+            for c in self.detected_cache:
+                t = float(c.get("t", 0.0))
+                if self.duplicate_time_window_sec > 0 and (now_wall - t) > self.duplicate_time_window_sec:
                     continue
-                
-                # Öklid mesafesi
-                dist = math.sqrt(
-                    (world_point[0] - existing_world[0])**2 +
-                    (world_point[1] - existing_world[1])**2 +
-                    (world_point[2] - existing_world[2])**2
-                )
-                
-                if dist < self.duplicate_distance:
+
+                dx = float(p_world[0]) - float(c.get("x", 0.0))
+                dy = float(p_world[1]) - float(c.get("y", 0.0))
+                dz = float(p_world[2]) - float(c.get("z", 0.0))
+                d = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+                dpix = math.sqrt((px - int(c.get("px", 0))) ** 2 + (py - int(c.get("py", 0))) ** 2)
+
+                if d < self.duplicate_distance:
+                    self.get_logger().debug(f"Duplicate found: distance={d:.3f}m < {self.duplicate_distance}m")
+                    return True
+                if self.duplicate_pixel_distance > 0 and dpix < self.duplicate_pixel_distance:
                     return True
         return False
-    
-    def detect_red_color(self):
-        """Kırmızı renk tespiti yap"""
-        if self.latest_image is None:
-            return []
-        
-        try:
-            image = self.latest_image.copy()
-            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-            
-            # Kırmızı renk maskeleri
-            lower_red1 = np.array([0, 100, 100])
-            upper_red1 = np.array([10, 255, 255])
-            lower_red2 = np.array([160, 100, 100])
-            upper_red2 = np.array([180, 255, 255])
-            
-            mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-            mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-            mask = mask1 + mask2
-            
-            # Gürültü azaltma
-            kernel = np.ones((7, 7), np.uint8)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-            
-            # Konturları bul
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            
-            detected = []
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if area > self.min_red_area:
-                    M = cv2.moments(contour)
-                    if M["m00"] != 0:
-                        cx = int(M["m10"] / M["m00"])
-                        cy = int(M["m01"] / M["m00"])
-                        
-                        detected.append({
-                            'pixel': (cx, cy),
-                            'area': area
-                        })
-            
-            return detected
-            
-        except Exception as e:
-            return []
-    
-    def _write_to_csv(self, point_data):
-        """CSV'ye yaz"""
-        try:
-            with open(self.csv_filename, 'a', newline='') as f:
-                writer = csv.writer(f)
-                world = point_data.get('world_position', (0, 0, 0))
-                writer.writerow([
-                    point_data['timestamp'],
-                    point_data['waypoint_index'],
-                    point_data['pixel'][0],
-                    point_data['pixel'][1],
-                    point_data['area'],
-                    world[0],
-                    world[1],
-                    world[2]
-                ])
-        except Exception as e:
-            pass
-    
-    def _publish_detected_points(self):
-        """Tespit edilen noktaları PoseArray olarak yayınla"""
-        pose_array = PoseArray()
-        pose_array.header = Header()
-        pose_array.header.stamp = self.get_clock().now().to_msg()
-        pose_array.header.frame_id = self.world_frame
-        
-        with self.detected_points_lock:
-            for point_data in self.detected_points:
-                world = point_data.get('world_position')
-                if world is None:
-                    continue
-                    
-                pose = Pose()
-                pose.position.x = world[0]
-                pose.position.y = world[1]
-                pose.position.z = world[2]
-                pose.orientation.w = 1.0
-                
-                pose_array.poses.append(pose)
-        
-        self.detected_points_publisher.publish(pose_array)
-    
-    def save_final_report(self):
-        """Final raporu kaydet"""
-        report_file = os.path.join(
-            self.output_dir, 
-            f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-        )
-        
-        with self.detected_points_lock:
-            with open(report_file, 'w') as f:
-                f.write("="*60 + "\n")
-                f.write("KIRMIZI NOKTA TESPİT RAPORU (PointCloud2)\n")
-                f.write(f"Tarih: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write("="*60 + "\n\n")
-                
-                f.write(f"Toplam tespit: {len(self.detected_points)}\n")
-                f.write(f"Toplam tarama: {self.total_detections}\n\n")
-                
-                for i, point in enumerate(self.detected_points, 1):
-                    world = point.get('world_position', (0, 0, 0))
-                    f.write(f"--- Nokta {i} ---\n")
-                    f.write(f"Waypoint: {point['waypoint_index']}\n")
-                    f.write(f"Piksel: {point['pixel']}\n")
-                    f.write(f"Alan: {point['area']}\n")
-                    f.write(f"World: ({world[0]:.4f}, {world[1]:.4f}, {world[2]:.4f})\n\n")
-        
-        return report_file
 
 
 def main():
     rclpy.init()
-    
-    node = RedDetectionNode()
-    
+    node = HarmonyRedDetectionV4()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        if not node.shutdown_requested:
-            node.save_final_report()
-    except SystemExit:
         pass
     finally:
-        with node.detected_points_lock:
-            pass
-        try:
-            node.destroy_node()
-        except:
-            pass
-        try:
-            rclpy.shutdown()
-        except:
-            pass
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":

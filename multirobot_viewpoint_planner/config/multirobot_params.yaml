@@ -1,0 +1,71 @@
+# Multi-robot viewpoint planner parameters.
+#
+# The camera block and coverage knobs mirror the single-arm
+# viewpoint_planner (config/sick_tmini_params.yaml) so the solo-vs-multi
+# comparison uses the SAME sensor model and candidate density -- only the
+# allocation across the two arms differs.
+multirobot_planner_node:
+  ros__parameters:
+    camera:
+      horizontal_fov_deg: 70.0
+      vertical_fov_deg: 60.0
+      fov_safety_margin_deg: 3.0
+      min_range_m: 0.2
+      max_range_m: 1.8
+      frame_rate_hz: 5.0
+      viewpoint_distances: [0.3, 0.6, 1.0, 1.4]
+      tilt_variations_deg: [-15.0, 0.0, 15.0]
+      max_incidence_angle_deg: 80.0
+
+    coverage_threshold: 0.98
+
+    # Candidate density (same as the solo baseline).
+    num_base_points: 400
+    target_sample_points: 5000
+
+    # --- Waypoint-count control (the plan had 100+ tail viewpoints each adding
+    #     only 1-2 points; these two knobs cut that tail). ---
+    # Stop adding viewpoints once the best remaining one would add fewer than this
+    # many NEW target points. This cuts the long diminishing-returns tail: raise it
+    # for far fewer waypoints (small coverage cost), lower it (1) to keep every
+    # useful viewpoint. From the observed curve: ~8 keeps the informative knee.
+    min_new_points: 8
+
+    # Hard per-ARM cap as a safety guard. 0 = no cap (let min_new_points decide).
+    # With the two arms in parallel the wall-clock cost is ~max(per-arm counts).
+    max_viewpoints_per_robot: 30
+
+    # A candidate reachable by both arms goes to the less-loaded arm (balances the
+    # parallel run). Set false for a fixed arm priority order.
+    balance_load: true
+
+    # Reorder each arm's selected viewpoints into a short cartesian visiting path
+    # (nearest-neighbour + 2-opt) so the arm sweeps neighbouring stops instead of
+    # jumping across the chassis in greedy coverage-discovery order. Only the
+    # visiting ORDER changes -- the same viewpoints are kept. false = greedy order.
+    order_by_proximity: true
+
+    # IK rejects poses where the arm collides with the scene/chassis.
+    ik_avoid_collisions: true
+
+    # --- UR10e: camera on ur10e_depth_optical_frame ---
+    ur_group_name: "real_ur10e"
+    ur_base_frame: "world"
+    ur_tool_frame: "ur10e_depth_optical_frame"
+
+    # --- Kawasaki: the viewpoint is where the camera must be, but IK is solved
+    #     for the group TIP (link6) with the fixed camera->tip transform applied,
+    #     so the camera faces the chassis correctly (see node docstring). ---
+    kawasaki_group_name: "real_kawasaki"
+    kawasaki_base_frame: "world"
+    kawasaki_camera_frame: "camera_rgb_optic_frame"
+    kawasaki_group_tip: "link6"
+    kawasaki_ik_via_tip: true
+
+    # THE orientation fix. The generator aims the camera along +Z (correct for the
+    # UR, whose real depth_optical_frame has +Z as its view axis). The Kawasaki's
+    # camera_rgb_optic_frame instead views along +X (confirmed from saved clouds).
+    # This rotation re-aims the target so the Kawasaki camera actually faces the
+    # chassis: R_cam = R_view @ R(rpy). Default rpy(-pi/2,-pi/2,0) maps +Z -> +X.
+    # If it squares up but is rolled/upside down, adjust the third (yaw) value.
+    kawasaki_view_axis_correction_rpy: [-1.5707963, -1.5707963, 0.0]

@@ -802,12 +802,12 @@
     <xacro:if value="${sim_ignition}">
     
       <!-- Sensors system: SADECE 1 KERE -->
-      <gazebo>
-        <plugin filename="ignition-gazebo-sensors-system"
-                name="ignition::gazebo::systems::Sensors">
+     <!-- <gazebo>
+        <plugin filename="gz-sim-sensors-system"
+                name="gz::sim::systems::Sensors">
           <render_engine>ogre2</render_engine>
         </plugin>
-      </gazebo>
+      </gazebo> -->
     
       <!-- RGBD camera (depth_optical_frame linkine bağlı) -->
       <gazebo reference="${tf_prefix}depth_optical_frame">
@@ -830,11 +830,25 @@
               <height>424</height>
               <format>R_FLOAT32</format>
             </depth_image>
-    
+
             <clip>
               <near>0.05</near>
               <far>16.0</far>
             </clip>
+
+            <!-- Depth noise to approximate the real SICK Visionary-T Mini
+                 (V3S145-1AAAAAA) time-of-flight accuracy. Datasheet
+                 repeatability is ~0.8 mm at 1 m working distance (and ~5 mm at
+                 7 m). SDF applies a *constant* Gaussian sigma, so we use the
+                 near-range figure (0.8 mm = 0.0008 m) matching this task's
+                 0.2-1.0 m inspection distances; real noise grows with range.
+                 Without this the simulated point cloud is perfectly noiseless
+                 and does NOT reflect the physical sensor. -->
+            <noise>
+              <type>gaussian</type>
+              <mean>0.0</mean>
+              <stddev>0.0008</stddev>
+            </noise>
           </camera>
         </sensor>
       </gazebo>

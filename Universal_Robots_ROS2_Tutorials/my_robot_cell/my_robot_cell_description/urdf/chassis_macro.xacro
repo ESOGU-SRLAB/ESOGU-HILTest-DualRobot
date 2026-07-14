@@ -17,9 +17,13 @@
       <inertial>
         <origin xyz="-1.124731 1.232845 1.108302" rpy="0 0 0"/>
         <mass value="120.90442642947052"/>
-        <inertia ixx="129.47263" ixy="-0.023527" ixz="-0.011644"
-                iyy="73.136591" iyz="-1.726202"
-                izz="85.878511"/>
+        <inertia
+            ixx="1.363e6"
+            ixy="-903.3"
+            ixz="1.847e4"
+            iyy="8.130e5"
+            iyz="-385.3"
+            izz="1.039e6"/>
       </inertial>
     </link>
 
@@ -36,7 +40,7 @@
         <visual>
           <origin xyz="0 0 0" rpy="0 0 0"/>
           <geometry>
-            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis/PART${part_num}.stl" scale="0.001 0.001 0.001"/>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis_last/PART${part_num}.stl" scale="0.001 0.001 0.001"/>
           </geometry>
           <material name="${color_material}"/>
         </visual>
@@ -44,7 +48,7 @@
         <collision>
           <origin xyz="0 0 0" rpy="0 0 0"/>
           <geometry>
-            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis/PART${part_num}.stl" scale="0.001 0.001 0.001"/>
+            <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis_last/PART${part_num}.stl" scale="0.001 0.001 0.001"/>
           </geometry>
         </collision>
         
@@ -81,7 +85,7 @@
     <xacro:chassis_part part_num="14"/>
     <xacro:chassis_part part_num="15"/>
     <xacro:chassis_part part_num="16"/>
-    <xacro:chassis_part part_num="17" color_material="chassis_red"/>
+    <xacro:chassis_part part_num="17"/>
     <xacro:chassis_part part_num="18"/>
     <xacro:chassis_part part_num="19"/>
     <xacro:chassis_part part_num="20"/>
@@ -92,7 +96,7 @@
     <xacro:chassis_part part_num="25"/>
     <xacro:chassis_part part_num="26"/>
     <xacro:chassis_part part_num="27"/>
-    <xacro:chassis_part part_num="28"/>
+    <xacro:chassis_part part_num="28" color_material="chassis_red"/>
     <xacro:chassis_part part_num="29"/>
     <xacro:chassis_part part_num="30"/>
     <xacro:chassis_part part_num="31"/>
@@ -109,11 +113,24 @@
     <xacro:chassis_part part_num="42"/>
     <xacro:chassis_part part_num="43"/>
     <xacro:chassis_part part_num="44"/>
+    <xacro:chassis_part part_num="45"/>
+    <xacro:chassis_part part_num="46"/>
+    <xacro:chassis_part part_num="47"/>
+    <xacro:chassis_part part_num="48"/>
+    <xacro:chassis_part part_num="49"/>
+    <xacro:chassis_part part_num="50"/>
+    <xacro:chassis_part part_num="51"/>
+    <xacro:chassis_part part_num="52"/>
+    <xacro:chassis_part part_num="53"/>
+    <xacro:chassis_part part_num="54"/>
+    <xacro:chassis_part part_num="55"/>
+    <xacro:chassis_part part_num="56"/>
+    <xacro:chassis_part part_num="57"/>
 
     <!-- Gazebo için renk tanımlamaları -->
-    <gazebo reference="${tf_prefix}chassis_part17">
+    <!-- <gazebo reference="${tf_prefix}chassis_part17">
       <material>Gazebo/Red</material>
-    </gazebo>
+    </gazebo> -->
 
     <!-- <gazebo reference="${tf_prefix}chassis_part23">
       <material>Gazebo/Red</material>

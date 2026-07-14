@@ -11,28 +11,11 @@ ament_python_install_package(pymoveit2_real)
 # Install examples
 set(EXAMPLES_DIR examples)
 install(PROGRAMS
-    ${EXAMPLES_DIR}/ex_allow_collisions.py
-    ${EXAMPLES_DIR}/ex_clear_planning_scene.py
-    ${EXAMPLES_DIR}/ex_collision_mesh.py
-    ${EXAMPLES_DIR}/ex_collision_primitive.py
-    ${EXAMPLES_DIR}/ex_fk.py
-    ${EXAMPLES_DIR}/ex_gripper.py
-    ${EXAMPLES_DIR}/ex_ik.py
-    ${EXAMPLES_DIR}/ex_joint_goal.py
-    ${EXAMPLES_DIR}/ex_orientation_path_constraint.py
-    ${EXAMPLES_DIR}/ex_pose_goal.py
     ${EXAMPLES_DIR}/combined_xyz_goal.py
     ${EXAMPLES_DIR}/combined_joint_goal.py
     ${EXAMPLES_DIR}/real_robot_goal.py
     ${EXAMPLES_DIR}/real_robot_joint_goal.py
-    ${EXAMPLES_DIR}/ex_servo.py
     ${EXAMPLES_DIR}/ur_inspection_scenario.py
-    ${EXAMPLES_DIR}/cup_detection_node.py
-    ${EXAMPLES_DIR}/real_sensing_mirror_node.py
-    ${EXAMPLES_DIR}/real_cleaning_mirror_node.py
-    ${EXAMPLES_DIR}/real_sensing_robot_v3.py
-    ${EXAMPLES_DIR}/real_cleaning_mission_runner_v3.py
-    ${EXAMPLES_DIR}/real_detection_to_3d_node.py
     ${EXAMPLES_DIR}/real_dual_executor.py
     ${EXAMPLES_DIR}/real_robot_gripper_goal.py
     ${EXAMPLES_DIR}/human_robot_collaboration_scenario.py

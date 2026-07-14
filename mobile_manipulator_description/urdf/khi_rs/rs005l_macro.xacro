@@ -217,17 +217,35 @@
         <geometry>
           <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J6.STL"/>
         </geometry>
-        <material name="Black"/>
+        <material name="White"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
       </visual>
       <collision>
         <geometry>
           <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J6.STL"/>
         </geometry>
-        <material name="Black"/>
+        <material name="White"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
       </collision>
       <xacro:default_inertial mass="${j6_mass}"/>
+    </link>
+
+    <link name="${tf_prefix}link7">
+      <visual>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/Montaj.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="-0.035 -0.04 0.2175" rpy="1.570796 3.1415 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/Montaj.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="-0.035 -0.04 0.2175" rpy="1.570796 3.1415 0"/>
+      </collision>
+      <xacro:default_inertial mass="0.1"/>
     </link>
 
     <!-- === Link 1 === -->
@@ -298,7 +316,82 @@
       <dynamics damping="0.0" friction="0.0"/>
     </joint>
 
-    <!-- ÇEVRESEL BİLEŞENLER -->
+    <joint name="${tf_prefix}joint7" type="fixed">
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 -1.96" />
+      <parent link="${tf_prefix}link6"/>
+      <child link="${tf_prefix}link7"/>
+    </joint>
+
+    <link name="${tf_prefix}camera_link">
+      <inertial>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      </inertial>
+    </link>
+
+    <joint name="${tf_prefix}camera_joint" type="fixed">
+       <origin xyz="0.0145 0.0125 0.185" rpy="0 -1.570796 1.570796"/>
+       <parent link="${tf_prefix}link7"/>
+       <child link="${tf_prefix}camera_link"/>
+    </joint>
+    <joint name="${tf_prefix}camera_rgb_joint" type="fixed">
+       <origin xyz="0 0 0" rpy="0 0 0"/>
+       <parent link="${tf_prefix}camera_link"/>
+       <child link="${tf_prefix}camera_rgb_frame"/>
+    </joint>
+    <link name="${tf_prefix}camera_rgb_frame"/>
+
+    <joint name="${tf_prefix}camera_rgb_optic_joint" type="fixed">
+       <origin xyz="0 0 0" rpy="0 0 0"/>
+       <parent link="${tf_prefix}camera_rgb_frame"/>
+       <child link="${tf_prefix}camera_rgb_optic_frame"/>
+    </joint>
+     
+    <link name="${tf_prefix}camera_rgb_optic_frame"/>
+
+    <xacro:if value="${sim_ignition}">
+      <!-- NOT: gz-sim-sensors-system plugin'i world SDF'de (ifarlab.sdf) zaten
+           yükleniyor. Burada tekrar tanımlamak "Scene already exists" hatasına
+           ve ardından WaitForInit() segfault'una yol açar. Sadece sensör
+           tanımı (<gazebo reference=...>) yeterlidir. -->
+
+      <gazebo reference="${tf_prefix}camera_rgb_optic_frame">
+        <sensor name="${tf_prefix}camera_rgb_optic_frame" type="rgbd_camera">
+          <always_on>false</always_on>
+          <update_rate>5.0</update_rate>
+          <visualize>false</visualize>
+
+          <camera name="${tf_prefix}rgbd">
+            <horizontal_fov>1.22</horizontal_fov>
+
+            <image>
+              <width>512</width>
+              <height>424</height>
+              <format>R8G8B8</format>
+            </image>
+
+            <depth_image>
+              <width>512</width>
+              <height>424</height>
+              <format>R_FLOAT32</format>
+            </depth_image>
+
+            <clip>
+              <near>0.05</near>
+              <far>16.0</far>
+            </clip>
+
+            <noise>
+              <type>gaussian</type>
+              <mean>0.0</mean>
+              <stddev>0.0008</stddev>
+            </noise>
+          </camera>
+        </sensor>
+      </gazebo>
+    </xacro:if>
 
   </xacro:macro>
 </robot>

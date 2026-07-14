@@ -1,0 +1,8 @@
+flask>=3.0.0
+flask-socketio>=5.3.0
+eventlet>=0.35.0
+opencv-python>=4.8.0
+rclpy
+sensor_msgs
+std_msgs
+geometry_msgs

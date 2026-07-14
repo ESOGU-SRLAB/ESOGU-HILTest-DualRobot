@@ -197,6 +197,8 @@ int main(int argc, char **argv)
 
   // Declare parameters
   node->declare_parameter<std::string>("remote_device_ip", "192.168.3.50");
+  node->declare_parameter<int>("data_port", 2114);
+  node->declare_parameter<int>("control_port", 5000);
   node->declare_parameter<std::string>("frame_id", "ur10e_depth_optical_frame");
   node->declare_parameter<bool>("enable_depth", true);
   node->declare_parameter<bool>("enable_intensity", true);
@@ -204,7 +206,10 @@ int main(int argc, char **argv)
   node->declare_parameter<bool>("enable_points", true);
 
   std::string remoteDeviceIp;
+  int dataPort, controlPort;
   node->get_parameter("remote_device_ip", remoteDeviceIp);
+  node->get_parameter("data_port", dataPort);
+  node->get_parameter("control_port", controlPort);
   node->get_parameter("frame_id", gFrameId);
   node->get_parameter("enable_depth", gEnableDepth);
   node->get_parameter("enable_intensity", gEnableIntensity);
@@ -225,12 +230,13 @@ int main(int argc, char **argv)
   gControl = std::make_shared<VisionaryControl>();
 
   RCLCPP_INFO(node->get_logger(), "Connecting to device at %s", remoteDeviceIp.c_str());
-  if (!gControl->open(VisionaryControl::ProtocolType::COLA_2, remoteDeviceIp.c_str(), 5000)) {
+  RCLCPP_INFO(node->get_logger(), "Using data port: %d, control port: %d", dataPort, controlPort);
+  if (!gControl->open(VisionaryControl::ProtocolType::COLA_2, remoteDeviceIp.c_str(), controlPort)) {
     RCLCPP_ERROR(node->get_logger(), "Connection with device control channel failed");
     return -1;
   }
   gControl->stopAcquisition();
-  if (!pDataStream->open(remoteDeviceIp.c_str(), 2114u)) {
+  if (!pDataStream->open(remoteDeviceIp.c_str(), static_cast<uint16_t>(dataPort))) {
     RCLCPP_ERROR(node->get_logger(), "Connection with device data channel failed");
     return -1;
   }
