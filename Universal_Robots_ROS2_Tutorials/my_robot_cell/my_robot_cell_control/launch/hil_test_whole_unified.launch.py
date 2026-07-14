@@ -812,7 +812,6 @@ def launch_setup(context, *args, **kwargs):
         package="sick_visionary_ros",
         executable="sick_visionary_t_mini_node",
         name="sick_visionary_t_mini_ur",
-        namespace="sick_ur",
         output="screen",
         parameters=[
             {"remote_device_ip": "192.168.3.50"},
@@ -839,6 +838,24 @@ def launch_setup(context, *args, **kwargs):
             {"use_sim_time": False},
         ],
         condition=UnlessCondition(use_fake_hardware),
+    )
+
+    # ==================== Point Cloud Transformer ====================
+    # SICK nokta bulutunu dünya frame'ine dönüştürür (hil_test.launch.py ile aynı
+    # node). SICK kamera node'ları TCP'ye bağlanıp yayına başlasın diye 15 sn
+    # gecikmeyle başlatılır. Sadece gerçek donanımda çalışır (use_fake_hardware:=false).
+    pointcloud_transformer_delayed = TimerAction(
+        period=15.0,
+        actions=[
+            Node(
+                package="pointcloud_transformer",
+                executable="pointcloud_transformer_node",
+                name="pointcloud_transformer_node",
+                output="screen",
+                parameters=[{"use_sim_time": False}],
+                condition=UnlessCondition(use_fake_hardware),
+            )
+        ]
     )
 
     # ==================== Başlatılacak Tüm Düğümler ====================
@@ -884,6 +901,9 @@ def launch_setup(context, *args, **kwargs):
         # 8. SICK Visionary-T Mini Kameraları (gerçek donanım)
         sick_visionary_ur,
         sick_visionary_kawasaki,
+
+        # 9. Point Cloud Transformer (gerçek donanım, 15 sn gecikme)
+        pointcloud_transformer_delayed,
     ]
 
     if gripper_controller_spawner:
