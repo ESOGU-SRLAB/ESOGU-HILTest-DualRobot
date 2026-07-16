@@ -19,6 +19,13 @@ def generate_launch_description():
     enable_kawasaki_arg = DeclareLaunchArgument(
         'enable_kawasaki', default_value='true',
         description='Move the Kawasaki to its own coverage viewpoints and capture its camera')
+    only_ur_arg = DeclareLaunchArgument(
+        'only_ur', default_value='false',
+        description='Real-world testing: true -> run the UR10e ONLY (Kawasaki idle).')
+    only_kawasaki_arg = DeclareLaunchArgument(
+        'only_kawasaki', default_value='false',
+        description='Real-world testing: true -> run the Kawasaki ONLY (UR10e idle). '
+                    'Both false (default) -> cooperative multi-robot run.')
     allowed_planning_time_arg = DeclareLaunchArgument(
         'allowed_planning_time', default_value='5.0',
         description='Seconds the motion planner may spend per single run')
@@ -49,6 +56,8 @@ def generate_launch_description():
             'only_sim': LaunchConfiguration('only_sim'),
             'output_base_dir': LaunchConfiguration('output_base_dir'),
             'enable_kawasaki': LaunchConfiguration('enable_kawasaki'),
+            'only_ur': LaunchConfiguration('only_ur'),
+            'only_kawasaki': LaunchConfiguration('only_kawasaki'),
             'allowed_planning_time': LaunchConfiguration('allowed_planning_time'),
             'num_planning_attempts': LaunchConfiguration('num_planning_attempts'),
             'plan_attempts': LaunchConfiguration('plan_attempts'),
@@ -60,6 +69,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         plan_file_arg, only_sim_arg, output_base_dir_arg, enable_kawasaki_arg,
+        only_ur_arg, only_kawasaki_arg,
         allowed_planning_time_arg, num_planning_attempts_arg, plan_attempts_arg,
         add_ground_plane_arg, ground_plane_z_arg, collision_padding_arg,
         executor_node,

@@ -2606,28 +2606,6 @@
     <disable_collisions link1="ur10e_base_link_inertia" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel" link2="ur10e_cable_channel_flange" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part11" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part12" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part19" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part20" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part23" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part24" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part25" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part26" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part27" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part29" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part3" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part31" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part32" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part33" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part36" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part48" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part5" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part52" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part54" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part56" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part8" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel" link2="ur10e_chassis_part9" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel" link2="ur10e_sick_camera" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel" link2="ur10e_suction_cup" reason="Never"/>
@@ -2638,31 +2616,6 @@
     <disable_collisions link1="ur10e_cable_channel" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel" link2="wheel_right_link" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part11" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part12" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part19" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part20" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part21" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part23" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part24" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part25" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part26" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part27" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part29" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part3" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part30" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part31" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part32" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part33" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part42" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part43" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part47" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part48" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part5" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part52" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part54" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part56" reason="Never"/>
-    <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_chassis_part8" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_sick_camera" reason="Never"/>
     <disable_collisions link1="ur10e_cable_channel_flange" link2="ur10e_suction_cup" reason="Never"/>

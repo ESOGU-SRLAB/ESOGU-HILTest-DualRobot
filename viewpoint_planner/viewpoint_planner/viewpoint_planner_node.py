@@ -50,7 +50,7 @@ class ViewpointPlannerNode(Node):
         # waypoints emerge from the chassis geometry (the knee of the
         # diminishing-returns curve) instead of the hand-picked max_viewpoints cap.
         # 0.0 disables it. See SetCoverOptimizer.min_marginal_coverage.
-        self.declare_parameter('min_marginal_coverage', 0.01)
+        self.declare_parameter('min_marginal_coverage', 0.005)
         # Sensing-geometry density knobs. Raise these to lift the GEOMETRIC
         # COVERAGE CEILING on a large/complex mesh (more surface targets and more
         # candidate viewing positions), at the cost of runtime.
@@ -114,6 +114,20 @@ class ViewpointPlannerNode(Node):
         # ONLY the visiting order, never which viewpoints are kept. False -> keep
         # the greedy selection order.
         self.declare_parameter('order_by_proximity', True)
+
+        # WORKSPACE KEEP-OUT BOX (world frame). The occlusion ray-trace only knows
+        # the chassis mesh, so it cannot tell that a candidate camera pose sitting
+        # BEHIND the linear rail (or any cell structure) is physically blocked --
+        # the robot then drives there and captures 0 chassis points. This box culls
+        # such candidates up front: a candidate is kept ONLY if its camera position
+        # lies inside [min, max] on every axis. Set the faces that face open space
+        # very wide (e.g. +-100) and clip only the side(s) you want to forbid (e.g.
+        # set y-min just in front of the rail so no viewpoint is generated behind
+        # it). Disabled by default; the planner logs the chassis AABB at plan time
+        # so you can pick sensible numbers. Values are metres in the 'world' frame.
+        self.declare_parameter('workspace_filter_enabled', False)
+        self.declare_parameter('workspace_bounds_min', [-100.0, -100.0, -100.0])
+        self.declare_parameter('workspace_bounds_max', [100.0, 100.0, 100.0])
 
         self.mesh_path = self.get_parameter('mesh_path').value
         self.mesh_scale = self.get_parameter('mesh_scale').value
@@ -260,6 +274,33 @@ class ViewpointPlannerNode(Node):
 
         return _fn
 
+    def _apply_workspace_filter(self, candidates):
+        """Drop candidates whose camera position falls outside the world-frame
+        keep-out box (workspace_bounds_min/max). No-op when disabled. This removes
+        physically-blocked poses (e.g. behind the linear rail) that the mesh-only
+        occlusion check cannot see, before they waste coverage-matrix / IK work."""
+        if not self.get_parameter('workspace_filter_enabled').value:
+            return candidates
+        lo = np.asarray(self.get_parameter('workspace_bounds_min').value, dtype=float)
+        hi = np.asarray(self.get_parameter('workspace_bounds_max').value, dtype=float)
+        if lo.shape != (3,) or hi.shape != (3,):
+            self.get_logger().warning(
+                "workspace_bounds_min/max must each have 3 values [x,y,z]; skipping workspace filter.")
+            return candidates
+        kept = [c for c in candidates
+                if np.all(np.asarray(c['position'], dtype=float) >= lo)
+                and np.all(np.asarray(c['position'], dtype=float) <= hi)]
+        removed = len(candidates) - len(kept)
+        self.get_logger().info(
+            f"Workspace keep-out box: kept {len(kept)}/{len(candidates)} candidates "
+            f"(removed {removed} outside min={lo.tolist()} max={hi.tolist()} in 'world')."
+        )
+        if not kept:
+            self.get_logger().error(
+                "Workspace filter removed ALL candidates -- the box is too tight or misplaced. "
+                "Check workspace_bounds against the logged chassis AABB.")
+        return kept
+
     def plan_callback(self, request, response):
         self.get_logger().info('Planning requested.')
         t_start = time.monotonic()
@@ -292,6 +333,15 @@ class ViewpointPlannerNode(Node):
             candidates = vg.generate_candidates(
                 target_points, target_normals,
                 num_base_points=self.get_parameter('num_base_points').value)
+            # Log the chassis AABB (world frame) so the operator can pick sensible
+            # workspace_bounds to clip poses behind the rail / cell structures.
+            aabb_min, aabb_max = analyzer.mesh.bounds
+            self.get_logger().info(
+                f"Chassis AABB (world, m): min={aabb_min.tolist()} max={aabb_max.tolist()}. "
+                "Use these to set workspace_bounds_min/max for the keep-out box.")
+            # Cull physically-blocked candidates (e.g. behind the linear rail) that
+            # the mesh-only occlusion test cannot detect, before the expensive steps.
+            candidates = self._apply_workspace_filter(candidates)
             coverage_matrix = vg.compute_coverage_matrix(candidates, target_points, target_normals)
             self.get_logger().info(f"Step 2 done in {time.monotonic() - t0:.2f}s.")
 

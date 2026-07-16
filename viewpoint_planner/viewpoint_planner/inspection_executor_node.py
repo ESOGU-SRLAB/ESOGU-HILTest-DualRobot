@@ -132,6 +132,19 @@ class InspectionExecutor(Node):
         # 0.0 disables it. Lower it (e.g. 0.02) to widen inspection corridors at the
         # cost of a smaller safety margin.
         self.declare_parameter("collision_padding", 0.03)
+        # EXTRA padding applied ONLY to the inspected chassis links
+        # (every 'ur10e_...chassis...' collision body: ur10e_chassis +
+        # ur10e_chassis_partN). The real cables / cable channels that run along
+        # the arm are NOT modelled, so they snag on the chassis where the arm
+        # dips into its cavities. Giving the chassis a larger padding than the
+        # rest keeps the arm this far off the chassis (leaving room for the
+        # unmodelled cables) WITHOUT over-constraining the arm against the floor
+        # and furniture (those stay at `collision_padding`). Set to 0.0 to fall
+        # back to a single uniform `collision_padding` for everything.
+        # NOTE: this is a per-link ABSOLUTE padding, not additive with
+        # `collision_padding`; the chassis uses this value, the rest uses
+        # `collision_padding`.
+        self.declare_parameter("chassis_collision_padding", 0.10)
         # Home / rest pose the UR returns to once the whole inspection is done.
         # Seven values in ur_robot.joint_names() order: the FIRST is the linear
         # rail (ur10e_base_to_robot_mount) in METRES; the remaining six are the
@@ -283,6 +296,12 @@ class InspectionExecutor(Node):
     # lower `collision_padding` instead of excluding the chassis here.
     _NO_PAD_TOKENS = ()
 
+    # Substring that identifies the inspected-chassis collision bodies
+    # (ur10e_chassis, ur10e_chassis_partN). These get `chassis_collision_padding`
+    # instead of the base `collision_padding`. No arm or furniture link contains
+    # it, so the match is unambiguous.
+    _CHASSIS_TOKEN = "chassis"
+
     def _padded_link_names(self, scene):
         """Links to inflate by `collision_padding`: every 'ur10e_' collision body
         (moving arm chain + static furniture + the inspected chassis), minus any
@@ -292,10 +311,20 @@ class InspectionExecutor(Node):
                 if n.startswith("ur10e_")
                 and not any(tok in n for tok in self._NO_PAD_TOKENS)]
 
+    def _padding_for_link(self, name, base_pad, chassis_pad):
+        """Absolute padding for one link: the chassis bodies use `chassis_pad`,
+        everything else uses `base_pad`."""
+        return chassis_pad if self._CHASSIS_TOKEN in name else base_pad
+
     def _apply_collision_padding(self):
-        """Inflate the moving arm links by `collision_padding` in the shared scene."""
+        """Inflate the collision bodies in the shared scene: `collision_padding`
+        for the arm + furniture, `chassis_collision_padding` for the chassis."""
         padding = float(self.get_parameter("collision_padding").value)
-        if padding <= 0.0:
+        chassis_padding = float(self.get_parameter("chassis_collision_padding").value)
+        if chassis_padding <= 0.0:
+            # Chassis-specific padding disabled -> uniform base padding.
+            chassis_padding = padding
+        if padding <= 0.0 and chassis_padding <= 0.0:
             return
         if not self._get_scene_cli.wait_for_service(timeout_sec=5.0):
             self.get_logger().warning(
@@ -318,7 +347,12 @@ class InspectionExecutor(Node):
 
         diff = PlanningScene()
         diff.is_diff = True
-        diff.link_padding = [LinkPadding(link_name=n, padding=padding) for n in arm_links]
+        diff.link_padding = [
+            LinkPadding(link_name=n,
+                        padding=self._padding_for_link(n, padding, chassis_padding))
+            for n in arm_links
+            if self._padding_for_link(n, padding, chassis_padding) > 0.0
+        ]
 
         if not self._apply_scene_cli.wait_for_service(timeout_sec=5.0):
             self.get_logger().warning(
@@ -329,9 +363,12 @@ class InspectionExecutor(Node):
             self.get_logger().warning(
                 "apply_planning_scene call failed/timed out; collision padding may be off.")
             return
+        n_chassis = sum(1 for n in arm_links if self._CHASSIS_TOKEN in n)
+        n_other = len(arm_links) - n_chassis
         self.get_logger().info(
-            f"Collision padding {padding * 100:.1f} cm applied to {len(arm_links)} 'ur10e_' links "
-            f"(arm + furniture + chassis). success={af.result().success}."
+            f"Collision padding applied: {padding * 100:.1f} cm to {n_other} arm/furniture "
+            f"links, {chassis_padding * 100:.1f} cm to {n_chassis} chassis links. "
+            f"success={af.result().success}."
         )
 
     # ------------------------------------------------------------------ #

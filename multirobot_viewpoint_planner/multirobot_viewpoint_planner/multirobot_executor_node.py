@@ -72,6 +72,13 @@ class MultiRobotExecutor(Node):
         #   False           -> connected to the real cell: capture BOTH sim AND real
         #                      SICK for each arm at every viewpoint.
         self.declare_parameter("only_sim", True)
+        # Single-arm gating for REAL-WORLD testing. When exactly one of these is
+        # True, ONLY that arm plans, moves, captures and homes -- the other is left
+        # completely idle (its controller/joint-state are not even required). When
+        # BOTH are False (default) the normal cooperative multi-robot run happens.
+        # Both True is contradictory and is treated as "run both" with a warning.
+        self.declare_parameter("only_ur", False)
+        self.declare_parameter("only_kawasaki", False)
         # Root of the capture tree: <base>/<sim|real>_pcds/<ur|kawasaki>_data/{pcds,poses}.
         self.declare_parameter("output_base_dir", os.path.expanduser("~/colcon_ws/src/pcds"))
 
@@ -95,8 +102,8 @@ class MultiRobotExecutor(Node):
         self.declare_parameter("ur_velocity", 0.1)
         self.declare_parameter("ur_acceleration", 0.1)
         self.declare_parameter("enable_kawasaki", True)
-        self.declare_parameter("kawasaki_velocity", 0.015)
-        self.declare_parameter("kawasaki_acceleration", 0.015)
+        self.declare_parameter("kawasaki_velocity", 0.03)
+        self.declare_parameter("kawasaki_acceleration", 0.03)
         # Controllers are driven directly (bypassing the single move_group action
         # server) so the two arms move simultaneously.
         self.declare_parameter(
@@ -119,6 +126,21 @@ class MultiRobotExecutor(Node):
         self.declare_parameter("ground_plane_thickness", 0.2)
         # Safety margin the moving arm links keep from every obstacle (m).
         self.declare_parameter("collision_padding", 0.04)
+
+        # --- Home / rest poses the arms return to once the whole inspection is done.
+        # Planned collision-aware exactly like every viewpoint hop, so a bad pose
+        # just fails to plan and the arm stays put (never a crash).
+        #   UR:  seven values in ur_robot.joint_names() order -- index 0 is the linear
+        #        rail in METRES, indices 1..6 are the arm joints in DEGREES. Enabled by
+        #        default (same behaviour as the solo inspection_executor).
+        #   Kawasaki: seven values in KAWASAKI_JOINT_NAMES order -- index 0 is the AGV
+        #        rail (world_to_agv) in METRES, indices 1..6 the arm joints in DEGREES.
+        #        OPT-IN (default off): homing here also commands the AGV, so it is left
+        #        disabled until you set a rest pose you trust for your cell.
+        self.declare_parameter("return_home_ur", True)
+        self.declare_parameter("ur_home_joint_positions", [1.0, 0.0, -90.0, 0.0, -90.0, 0.0, 0.0])
+        self.declare_parameter("return_home_kawasaki", False)
+        self.declare_parameter("kawasaki_home_joint_positions", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
         self.plan_file = self.get_parameter("plan_file").value
         self.world_frame = self.get_parameter("world_frame").value
@@ -181,6 +203,8 @@ class MultiRobotExecutor(Node):
         # --- Kawasaki MoveIt2 (now a full camera-carrying arm) -- set up in run(). ---
         self.kawa = None
         self._kawa_ctrl = None
+        # Whether the UR actually runs this session (set in run() from only_* gating).
+        self._run_ur = True
 
         # --- Point cloud subscriptions, one per stream. ---
         for s in self.streams:
@@ -478,6 +502,46 @@ class MultiRobotExecutor(Node):
             return None
         return self._plan(moveit2, pos, moveit2.joint_names, f"{label} {vp.get('id')}")
 
+    def _home_arm(self, moveit2, ctrl, home_deg, label):
+        """Plan (collision-aware) + dispatch one arm to its home pose. home_deg is
+        in the group's joint order: index 0 is a linear axis in METRES (kept as-is),
+        indices 1..6 are revolute joints in DEGREES (converted to radians)."""
+        if moveit2 is None or ctrl is None:
+            return
+        if len(home_deg) != len(moveit2.joint_names):
+            self.get_logger().warning(
+                f"[{label} home] expected {len(moveit2.joint_names)} joint values, got "
+                f"{len(home_deg)}; skipping homing.")
+            return
+        home_rad = [float(home_deg[0])] + [float(np.deg2rad(v)) for v in home_deg[1:]]
+        self.get_logger().info(
+            f"[{label}] returning to home pose (axis0={home_deg[0]} m, joints={home_deg[1:]} deg)...")
+        traj = self._plan(moveit2, home_rad, moveit2.joint_names, f"{label} home")
+        if traj is None:
+            self.get_logger().warning(
+                f"[{label} home] could not plan a path to the home pose; leaving the arm where it is.")
+            return
+        send = self._dispatch(ctrl, traj, f"{label} home")
+        if self._await(send, f"{label} home"):
+            self.get_logger().info(f"[{label}] returned to home pose.")
+        else:
+            self.get_logger().warning(f"[{label} home] homing motion did not complete successfully.")
+
+    def _go_home(self):
+        """Send the arms back to their rest/home poses once inspection is finished.
+        UR first, then Kawasaki (sequential -- no inter-arm contention at the end).
+        Each is planned collision-aware, so it never drives an arm through the
+        chassis or the other robot."""
+        if self._run_ur and self.get_parameter("return_home_ur").value:
+            self._home_arm(
+                self.ur, self._ur_ctrl,
+                list(self.get_parameter("ur_home_joint_positions").value), "UR")
+        if (self.get_parameter("return_home_kawasaki").value
+                and self._kawa_ctrl is not None and self.kawa is not None):
+            self._home_arm(
+                self.kawa, self._kawa_ctrl,
+                list(self.get_parameter("kawasaki_home_joint_positions").value), "Kawasaki")
+
     # ------------------------------------------------------------------ #
     def run(self):
         if not os.path.exists(self.plan_file):
@@ -491,30 +555,50 @@ class MultiRobotExecutor(Node):
             self.get_logger().error("Plan has no viewpoints for either arm; nothing to execute.")
             return
 
-        self._setup_kawasaki(plan)
+        # Resolve single-arm gating (real-world testing). Both True is contradictory
+        # -> fall back to running both.
+        only_ur = bool(self.get_parameter("only_ur").value)
+        only_kawa = bool(self.get_parameter("only_kawasaki").value)
+        if only_ur and only_kawa:
+            self.get_logger().warning(
+                "only_ur AND only_kawasaki are both True (contradictory); running BOTH arms.")
+            only_ur = only_kawa = False
+        self._run_ur = not only_kawa
+        run_kawasaki = (not only_ur) and self.get_parameter("enable_kawasaki").value
+        if only_ur:
+            self.get_logger().info("only_ur=True: running the UR10e ONLY (Kawasaki idle).")
+        elif only_kawa:
+            self.get_logger().info("only_kawasaki=True: running the Kawasaki ONLY (UR10e idle).")
 
-        if not self._ur_ctrl.wait_for_server(timeout_sec=15.0):
-            self.get_logger().error(
-                f"UR controller '{self.get_parameter('ur_controller_action').value}' not available; "
-                "aborting.")
-            return
+        if run_kawasaki:
+            self._setup_kawasaki(plan)
+
+        # UR controller / joint-state are only required when the UR actually runs.
+        if self._run_ur:
+            if not self._ur_ctrl.wait_for_server(timeout_sec=15.0):
+                self.get_logger().error(
+                    f"UR controller '{self.get_parameter('ur_controller_action').value}' not available; "
+                    "aborting.")
+                return
         if self._kawa_ctrl is not None and not self._kawa_ctrl.wait_for_server(timeout_sec=15.0):
             self.get_logger().warning(
                 f"Kawasaki controller '{self.get_parameter('kawasaki_controller_action').value}' "
-                "not available; continuing with UR only.")
+                "not available; continuing without the Kawasaki.")
             self._kawa_ctrl = None
 
-        if not self._wait_joint_state(self.ur, "UR"):
+        if self._run_ur and not self._wait_joint_state(self.ur, "UR"):
             self.get_logger().error("No /joint_states for the UR group; aborting.")
             return
         if self._kawa_ctrl is not None and not self._wait_joint_state(self.kawa, "Kawasaki"):
-            self.get_logger().warning("No /joint_states for the Kawasaki group; continuing with UR only.")
+            self.get_logger().warning("No /joint_states for the Kawasaki group; continuing without it.")
             self._kawa_ctrl = None
 
         self._add_ground_plane()
         self._apply_collision_padding()
 
         kawa_active = self._kawa_ctrl is not None
+        if not self._run_ur:
+            ur_vps = []  # UR idle: no steps for it
         n_steps = max(len(ur_vps), len(kawa_vps) if kawa_active else 0)
         self.get_logger().info(
             f"Executing {n_steps} steps (UR: {len(ur_vps)} viewpoints, "
@@ -569,6 +653,9 @@ class MultiRobotExecutor(Node):
 
             if self.capture_and_save(i, active_robots, fallback_by_robot):
                 saved += 1
+
+        # Inspection sweep finished -- park the arm(s) at their home/rest pose.
+        self._go_home()
 
         trees = " + ".join(s["subtree"] for s in self.streams)
         self.get_logger().info(

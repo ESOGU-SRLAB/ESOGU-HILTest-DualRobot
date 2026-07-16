@@ -31,6 +31,14 @@ multirobot_planner_node:
     # useful viewpoint. From the observed curve: ~8 keeps the informative knee.
     min_new_points: 8
 
+    # Fractional tail cutter (mirrors the solo viewpoint_planner "cut at 0.5%").
+    # Stop once the best remaining viewpoint adds fewer than this FRACTION of all
+    # target points as new coverage (0.005 = 0.5% ~= 25 new points on 5000 targets).
+    # The effective floor is max(min_new_points, min_marginal_coverage*targets), so
+    # this 0.5% dominates the min_new_points=8 above and cuts the long tail harder.
+    # 0.0 disables it.
+    min_marginal_coverage: 0.005
+
     # Hard per-ARM cap as a safety guard. 0 = no cap (let min_new_points decide).
     # With the two arms in parallel the wall-clock cost is ~max(per-arm counts).
     max_viewpoints_per_robot: 30
@@ -44,6 +52,12 @@ multirobot_planner_node:
     # jumping across the chassis in greedy coverage-discovery order. Only the
     # visiting ORDER changes -- the same viewpoints are kept. false = greedy order.
     order_by_proximity: true
+    # Per-arm START anchor for the visiting sweep so the two arms approach the
+    # chassis from OPPOSITE ends (one from the front, one from the back) instead of
+    # converging on the same region. 'max_y' = largest Y (front), 'min_y' = smallest
+    # Y (back), 'coverage' = start at the highest-coverage viewpoint.
+    ur_order_anchor: "max_y"
+    kawasaki_order_anchor: "min_y"
 
     # IK rejects poses where the arm collides with the scene/chassis.
     ik_avoid_collisions: true
@@ -52,6 +66,20 @@ multirobot_planner_node:
     ur_group_name: "real_ur10e"
     ur_base_frame: "world"
     ur_tool_frame: "ur10e_depth_optical_frame"
+
+    # WORKSPACE KEEP-OUT BOX for the UR ONLY (world frame, metres). The mesh-only
+    # occlusion cannot see that a camera pose BEHIND the UR's linear rail is blocked,
+    # so the UR would drive there and capture 0 points. This makes the UR treat any
+    # candidate outside [min,max] as unreachable -> the allocator hands it to the
+    # Kawasaki (never gated by this box, so Kawa coverage is preserved) or drops it.
+    # The rail is at world X=-0.158 (cell at origin, travels along Y); -0.20 keeps a
+    # ~4 cm margin. Same box the solo viewpoint_planner uses, applied per-arm here.
+    # X upper = -0.20 (rejects behind-rail poses; rail at world X=-0.158).
+    # Z lower =  0.20 (floor clearance; rejects near-ground poses the UR can't
+    #                  reach without hitting the floor -- raise if it still grazes).
+    ur_workspace_filter_enabled: true
+    ur_workspace_bounds_min: [-100.0, -100.0, 0.20]
+    ur_workspace_bounds_max: [-0.20, 100.0, 100.0]
 
     # --- Kawasaki: the viewpoint is where the camera must be, but IK is solved
     #     for the group TIP (link6) with the fixed camera->tip transform applied,

@@ -735,7 +735,7 @@ def launch_setup(context, *args, **kwargs):
                 package="ros_gz_sim",
                 executable="create",
                 arguments=[
-                    "-world", "cem",
+                    "-world", "ifarlab",
                     "-file", os.path.join(_conveyor_pkg, "sdf", "conveyor.sdf"),
                     "-name", "conveyor",
                     "-allow_renaming", "false",
@@ -749,7 +749,7 @@ def launch_setup(context, *args, **kwargs):
                 package="ros_gz_sim",
                 executable="create",
                 arguments=[
-                    "-world", "cem",
+                    "-world", "ifarlab",
                     "-file", os.path.join(_conveyor_pkg, "sdf", "RedCube.sdf"),
                     "-name", "RedCube",
                     "-allow_renaming", "true",
@@ -824,21 +824,26 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # 2. İkinci kamera (192.168.3.21, data port 2122)
-    sick_visionary_kawasaki = Node(
-        package="sick_visionary_ros",
-        executable="sick_visionary_t_mini_node",
-        name="sick_visionary_t_mini_kawasaki",
-        namespace="sick_kawasaki",
-        output="screen",
-        parameters=[
-            {"remote_device_ip": "192.168.3.21"},
-            {"data_port": 2113},
-            {"control_port": 2122},
-            {"frame_id": "kawasaki_depth_optical_frame"},
-            {"use_sim_time": False},
-        ],
-        condition=UnlessCondition(use_fake_hardware),
-    )
+    # GEÇİCİ DEVRE DIŞI: İkinci SICK kamera, UR robotuyla aynı NIC/subnet
+    # (192.168.3.0/24, enp0s31f6) üzerinde olduğu için UR reverse interface'in
+    # 500 Hz real-time trafiğini boğuyor ve bağlantı sürekli düşüyordu
+    # ("Connection to reverse interface dropped" flapping). Ağ izolasyonu
+    # yapılana kadar bu kamera launch'tan çıkarıldı.
+    # sick_visionary_kawasaki = Node(
+    #     package="sick_visionary_ros",
+    #     executable="sick_visionary_t_mini_node",
+    #     name="sick_visionary_t_mini_kawasaki",
+    #     namespace="sick_kawasaki",
+    #     output="screen",
+    #     parameters=[
+    #         {"remote_device_ip": "192.168.3.21"},
+    #         {"data_port": 2113},
+    #         {"control_port": 2122},
+    #         {"frame_id": "kawasaki_depth_optical_frame"},
+    #         {"use_sim_time": False},
+    #     ],
+    #     condition=UnlessCondition(use_fake_hardware),
+    # )
 
     # ==================== Point Cloud Transformer ====================
     # SICK nokta bulutunu dünya frame'ine dönüştürür (hil_test.launch.py ile aynı
@@ -900,7 +905,7 @@ def launch_setup(context, *args, **kwargs):
 
         # 8. SICK Visionary-T Mini Kameraları (gerçek donanım)
         sick_visionary_ur,
-        sick_visionary_kawasaki,
+        # sick_visionary_kawasaki,  # GEÇİCİ DEVRE DIŞI (ağ çekişmesi — yukarıdaki nota bakın)
 
         # 9. Point Cloud Transformer (gerçek donanım, 15 sn gecikme)
         pointcloud_transformer_delayed,

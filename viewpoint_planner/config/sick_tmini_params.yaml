@@ -71,7 +71,7 @@ viewpoint_planner_node:
     #   higher (e.g. 0.015-0.02) -> fewer, higher-value stops (~10-12)
     #   lower  (e.g. 0.005)      -> more coverage from a longer tail (~25)
     #   0.0                      -> disable (fall back to max_viewpoints/threshold)
-    min_marginal_coverage: 0.01
+    min_marginal_coverage: 0.005
 
     # Candidate density: how many surface points seed viewpoints. Raised from the
     # 250 default to give more interior/edge targets a nearby candidate, lifting
@@ -116,3 +116,25 @@ viewpoint_planner_node:
     # jumping in greedy coverage-discovery order. Only the visiting ORDER changes
     # -- the same viewpoints (and their informativeness rank) are kept.
     order_by_proximity: true
+
+    # WORKSPACE KEEP-OUT BOX (world frame, metres). The occlusion ray-trace only
+    # knows the chassis mesh, so it cannot tell that a candidate camera pose behind
+    # the linear rail (or other cell structure) is physically blocked -- the robot
+    # drives there and captures 0 chassis points. This box culls such candidates up
+    # front: a candidate is kept only if its camera position is inside [min,max] on
+    # every axis. Keep open-space faces wide (+-100) and clip only the forbidden
+    # side(s). The planner logs the chassis AABB at plan time so you can pick values
+    # (e.g. to forbid poses behind a rail at world y=Y_rail, set workspace_bounds_min
+    # y just in front of it). Disabled by default.
+    # Enabled with an X upper bound just on the CHASSIS side of the linear rail.
+    # The cell is at world origin (my_robot_cell.urdf.xacro origin 0,0,0) and the
+    # rail (base_to_robot_mount) sits at world X = -0.158, travelling along Y at
+    # Z=0.586. The chassis is at X <= -0.74. Any camera at X > -0.158 has the rail
+    # BETWEEN it and the chassis -> the view is blocked -> 0 points captured. So the
+    # keep boundary is the rail X; -0.20 keeps a ~4 cm margin for the rail/base width.
+    # This rejects the behind-rail poses (observed at X = -0.07 .. +0.22) while every
+    # legitimate close-inspection pose (reaches only to X ~= -0.42 in a real plan) is
+    # kept. Y/Z left open: wrap-around poses that inspect the chassis end-faces are valid.
+    workspace_filter_enabled: true
+    workspace_bounds_min: [-100.0, -100.0, -100.0]
+    workspace_bounds_max: [-0.20, 100.0, 100.0]

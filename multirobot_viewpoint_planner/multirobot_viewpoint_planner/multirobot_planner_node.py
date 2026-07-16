@@ -49,6 +49,12 @@ class MultiRobotPlannerNode(Node):
         # knee, then a long tail of viewpoints that each add only 1-3 points. Raise
         # this to cut the tail and get far fewer waypoints (small coverage cost).
         self.declare_parameter('min_new_points', 1)
+        # Fractional tail cutter (mirrors the solo viewpoint_planner). Stop once the
+        # best remaining viewpoint adds fewer than this FRACTION of all target points
+        # as new coverage -- scales with mesh density (0.005 = 0.5% ~= 25 new points
+        # on a 5000-target mesh). The effective floor is max(min_new_points, this).
+        # 0 disables it. This is the "cut at 0.5%" knob the solo baseline uses.
+        self.declare_parameter('min_marginal_coverage', 0.005)
 
         # --- Camera model (shared: both arms carry the same SICK) ---
         self.declare_parameter('camera.horizontal_fov_deg', 70.0)
@@ -65,6 +71,23 @@ class MultiRobotPlannerNode(Node):
         self.declare_parameter('ur_group_name', 'real_ur10e')
         self.declare_parameter('ur_base_frame', 'world')
         self.declare_parameter('ur_tool_frame', 'ur10e_depth_optical_frame')
+
+        # WORKSPACE KEEP-OUT BOX for the UR ONLY (world frame, metres). The mesh-only
+        # occlusion ray-trace cannot tell that a candidate camera pose BEHIND the UR's
+        # linear rail is physically blocked, NOR that a pose near the FLOOR is
+        # unreachable (the arm would hit the ground). This box makes the UR treat any
+        # candidate whose camera position is outside [min, max] as UNREACHABLE, so the
+        # allocator gives it to the Kawasaki instead (or drops it) -- the Kawasaki, on
+        # its own base, is never constrained by this box, so Kawa coverage is preserved.
+        #   X upper = -0.20: the rail sits at world X=-0.158 (cell at world origin,
+        #     travels along Y); -0.20 (rail X + ~4 cm margin) rejects behind-rail poses.
+        #   Z lower = 0.20: floor clearance -- rejects near-ground poses the UR can't
+        #     reach without hitting the floor. Raise if the arm still grazes the floor;
+        #     lower toward 0 if it wrongly drops legitimate low chassis viewpoints.
+        # Set enabled False to disable. Same box the solo viewpoint_planner uses.
+        self.declare_parameter('ur_workspace_filter_enabled', True)
+        self.declare_parameter('ur_workspace_bounds_min', [-100.0, -100.0, 0.20])
+        self.declare_parameter('ur_workspace_bounds_max', [-0.20, 100.0, 100.0])
 
         # --- Kawasaki reachability. The viewpoint is where the Kawasaki's SICK
         #     CAMERA must be. But MoveIt's /compute_ik for the real_kawasaki group
@@ -107,6 +130,13 @@ class MultiRobotPlannerNode(Node):
         # order. Changes ONLY the visiting order, never which viewpoints are
         # kept. False -> keep the greedy selection order.
         self.declare_parameter('order_by_proximity', True)
+        # Per-arm START anchor for the visiting sweep. The two arms approach the
+        # chassis from OPPOSITE ends so they don't converge on the same region:
+        #   UR       -> 'max_y' (largest Y, the FRONT of the chassis),
+        #   Kawasaki -> 'min_y' (smallest Y, the BACK of the chassis).
+        # Options: 'max_y' | 'min_y' | 'coverage' (start at the highest-coverage VP).
+        self.declare_parameter('ur_order_anchor', 'max_y')
+        self.declare_parameter('kawasaki_order_anchor', 'min_y')
 
         self.mesh_path = self.get_parameter('mesh_path').value
         self.mesh_scale = self.get_parameter('mesh_scale').value
@@ -221,11 +251,31 @@ class MultiRobotPlannerNode(Node):
 
         return _fn
 
-    def _make_reachability_fn(self, checker, label):
+    def _ur_workspace_gate(self):
+        """Return a callable(position)->bool that is True when the camera position
+        is inside the UR keep-out box, or None when the box is disabled. Used to
+        veto behind-rail candidates for the UR only (the Kawasaki is never gated)."""
+        if not self.get_parameter('ur_workspace_filter_enabled').value:
+            return None
+        lo = np.asarray(self.get_parameter('ur_workspace_bounds_min').value, dtype=float)
+        hi = np.asarray(self.get_parameter('ur_workspace_bounds_max').value, dtype=float)
+        if lo.shape != (3,) or hi.shape != (3,):
+            self.get_logger().warning(
+                "ur_workspace_bounds_min/max must each have 3 values [x,y,z]; UR workspace gate off.")
+            return None
+        self.get_logger().info(
+            f"UR workspace keep-out box active: camera must be within min={lo.tolist()} "
+            f"max={hi.tolist()} (world). Behind-rail candidates are handed to the Kawasaki.")
+        return lambda p: bool(np.all(np.asarray(p, dtype=float) >= lo)
+                              and np.all(np.asarray(p, dtype=float) <= hi))
+
+    def _make_reachability_fn(self, checker, label, workspace_gate=None):
         """candidate -> (reachable, joint_solution) for one arm. Returns None
         (arm treated as able to reach everything, UNVERIFIED) if /compute_ik never
         comes up, logged loudly so an unverified plan is never mistaken for a
-        verified one."""
+        verified one. `workspace_gate` (optional callable(position)->bool) vetoes
+        candidates outside this arm's allowed world-frame region BEFORE the IK
+        query -- an out-of-box candidate is reported unreachable for this arm."""
         if not checker.wait_for_service():
             self.get_logger().warning(
                 f"/compute_ik unavailable for group '{checker.group_name}' ({label}). Its viewpoints "
@@ -234,6 +284,8 @@ class MultiRobotPlannerNode(Node):
             return None
 
         def _fn(candidate):
+            if workspace_gate is not None and not workspace_gate(candidate['position']):
+                return False, None
             quat = Rotation.from_matrix(candidate['rotation']).as_quat()  # [x, y, z, w]
             return checker.check_ik(candidate['position'], quat)
 
@@ -326,8 +378,12 @@ class MultiRobotPlannerNode(Node):
             )
             kawa_reach_fn = self._make_kawasaki_reach_fn(kawa_checker, offset, C)
 
+            # UR-only workspace gate (behind-rail veto). The Kawasaki gets no gate,
+            # so candidates the UR can't legitimately reach still go to the Kawasaki.
+            ur_ws_gate = self._ur_workspace_gate()
             robots = [
-                {'name': 'ur', 'reachability_fn': self._make_reachability_fn(ur_checker, 'UR10e')},
+                {'name': 'ur', 'reachability_fn': self._make_reachability_fn(
+                    ur_checker, 'UR10e', workspace_gate=ur_ws_gate)},
                 {'name': 'kawasaki', 'reachability_fn': kawa_reach_fn},
             ]
 
@@ -340,6 +396,7 @@ class MultiRobotPlannerNode(Node):
                 max_per_robot=max_per,
                 balance=self.get_parameter('balance_load').value,
                 min_new_points=self.get_parameter('min_new_points').value,
+                min_marginal_coverage=self.get_parameter('min_marginal_coverage').value,
                 logger=self.get_logger(),
             )
             assignments, final_coverage = allocator.allocate(candidates, coverage_matrix, robots)
@@ -355,11 +412,14 @@ class MultiRobotPlannerNode(Node):
             # order. Selection is unchanged; only the visiting order (and thus
             # 'rank' + list order the executor consumes) changes.
             if self.get_parameter('order_by_proximity').value:
-                ur_vps = self._order_by_proximity(ur_vps)
-                kawa_vps = self._order_by_proximity(kawa_vps)
+                ur_anchor = self.get_parameter('ur_order_anchor').value
+                kawa_anchor = self.get_parameter('kawasaki_order_anchor').value
+                ur_vps = self._order_by_proximity(ur_vps, anchor=ur_anchor)
+                kawa_vps = self._order_by_proximity(kawa_vps, anchor=kawa_anchor)
                 self.get_logger().info(
-                    "Viewpoints reordered by cartesian proximity "
-                    "(nearest-neighbour + 2-opt) to shorten arm travel.")
+                    "Viewpoints reordered by cartesian proximity (nearest-neighbour "
+                    f"+ 2-opt + Or-opt). UR starts at '{ur_anchor}', Kawasaki at "
+                    f"'{kawa_anchor}' (opposite ends of the chassis).")
 
             for i, vp in enumerate(ur_vps):
                 vp['id'] = f'ur_vp_{i:03d}'
@@ -410,15 +470,20 @@ class MultiRobotPlannerNode(Node):
         return response
 
     @staticmethod
-    def _order_by_proximity(vps):
+    def _order_by_proximity(vps, anchor='coverage'):
         """Reorder viewpoints into a short cartesian visiting path so the arm
         sweeps neighbouring stops instead of criss-crossing the chassis. Only the
         ORDER changes -- the exact same set of viewpoints is returned.
 
-        Nearest-neighbour tour (anchored at the highest-coverage viewpoint, which
-        the greedy put first) followed by 2-opt refinement. Distance = Euclidean
-        distance between viewpoint positions (a proxy for arm travel). With <=30
-        stops per arm this is effectively instant.
+        Nearest-neighbour tour from a chosen ANCHOR viewpoint, then 2-opt + Or-opt
+        refinement (which never move the anchor). Distance = Euclidean distance
+        between viewpoint positions (a proxy for arm travel). With <=30 stops per
+        arm this is effectively instant.
+
+        anchor selects the START viewpoint:
+          'coverage' -> index 0 (the highest-coverage VP the greedy put first),
+          'max_y'    -> the largest-Y viewpoint  (the FRONT of the chassis),
+          'min_y'    -> the smallest-Y viewpoint (the BACK of the chassis).
         """
         n = len(vps)
         if n <= 2:
@@ -426,10 +491,18 @@ class MultiRobotPlannerNode(Node):
         pos = np.array([np.asarray(v['position'], dtype=np.float64) for v in vps])
         dist = np.linalg.norm(pos[:, None, :] - pos[None, :, :], axis=2)
 
-        # Nearest-neighbour seed tour starting from index 0 (highest coverage).
+        # Pick the anchor (start) index per the requested rule.
+        if anchor == 'max_y':
+            start = int(np.argmax(pos[:, 1]))
+        elif anchor == 'min_y':
+            start = int(np.argmin(pos[:, 1]))
+        else:
+            start = 0  # 'coverage': greedy already put the best-coverage VP first
+
+        # Nearest-neighbour seed tour starting from the anchor.
         unvisited = set(range(n))
-        tour = [0]
-        unvisited.discard(0)
+        tour = [start]
+        unvisited.discard(start)
         while unvisited:
             last = tour[-1]
             nxt = min(unvisited, key=lambda j: dist[last, j])
@@ -447,6 +520,34 @@ class MultiRobotPlannerNode(Node):
                     if dist[i, k] + dist[j, l] + 1e-9 < dist[i, j] + dist[k, l]:
                         tour[a + 1:b + 1] = tour[a + 1:b + 1][::-1]
                         improved = True
+
+        # Or-opt: relocate short chains (length 1-3) to a cheaper spot. 2-opt can
+        # only REVERSE a segment, so it leaves the long back-and-forth hops that
+        # happen when one viewpoint sits far off the main sweep; Or-opt moves that
+        # stray viewpoint next to its true neighbour and shortens the path further.
+        # tour[0] (the highest-coverage anchor) is never relocated. n is small so
+        # the full O(n^2) recompute per candidate is negligible.
+        def path_len(t):
+            return sum(dist[t[p], t[p + 1]] for p in range(len(t) - 1))
+
+        for seg_len in (1, 2, 3):
+            if seg_len >= n:
+                break
+            improved = True
+            while improved:
+                improved = False
+                base = path_len(tour)
+                for a in range(1, n - seg_len + 1):     # never lift the anchor
+                    seg = tour[a:a + seg_len]
+                    rest = tour[:a] + tour[a + seg_len:]
+                    for b in range(1, len(rest) + 1):   # never insert before anchor
+                        cand = rest[:b] + seg + rest[b:]
+                        if path_len(cand) + 1e-9 < base:
+                            tour = cand
+                            improved = True
+                            break
+                    if improved:
+                        break
 
         return [vps[t] for t in tour]
 

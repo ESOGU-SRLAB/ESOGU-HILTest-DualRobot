@@ -28,7 +28,7 @@ class RobotAllocator:
     """
 
     def __init__(self, coverage_threshold=0.98, max_per_robot=None,
-                 balance=True, min_new_points=1, logger=None):
+                 balance=True, min_new_points=1, min_marginal_coverage=0.0, logger=None):
         self.coverage_threshold = coverage_threshold
         # None or <=0 -> no per-arm budget (cover until the threshold). Otherwise
         # each arm takes at most this many viewpoints, so a run can be capped at
@@ -38,12 +38,18 @@ class RobotAllocator:
         # fewer current assignments (shorter parallel run). When False, arms keep
         # a fixed priority order and only balance implicitly.
         self.balance = balance
-        # Tail cutter: stop adding viewpoints once the best remaining one would
-        # add FEWER than this many new target points. The coverage curve has a
-        # sharp knee -- the first viewpoints add hundreds of points each, then a
-        # long tail adds only 1-3 each. Raising this trades a little coverage for
-        # a much shorter plan (fewer waypoints). 1 = keep every useful viewpoint.
+        # Tail cutter (ABSOLUTE): stop adding viewpoints once the best remaining one
+        # would add FEWER than this many new target points. The coverage curve has a
+        # sharp knee -- the first viewpoints add hundreds of points each, then a long
+        # tail adds only 1-3 each. Raising this trades a little coverage for a much
+        # shorter plan (fewer waypoints). 1 = keep every useful viewpoint.
         self.min_new_points = max(1, int(min_new_points))
+        # Tail cutter (FRACTIONAL, mirrors the solo SetCoverOptimizer): stop once the
+        # best remaining viewpoint adds fewer than this FRACTION of all target points
+        # as new coverage. Scales with mesh sampling density (0.005 = 0.5% ~= 25 new
+        # points on a 5000-target mesh). The effective floor used is the LARGER of
+        # this and min_new_points, so either knob can tighten the cut. 0 disables it.
+        self.min_marginal_coverage = max(0.0, float(min_marginal_coverage))
         self.logger = logger or logging.getLogger(__name__)
 
     def allocate(self, candidates, coverage_matrix, robots):
@@ -89,6 +95,19 @@ class RobotAllocator:
 
         target_covered = int(num_t * self.coverage_threshold)
 
+        # Effective tail floor = the larger of the absolute (min_new_points) and the
+        # fractional (min_marginal_coverage * num_t) cutters, so either can tighten.
+        frac_floor = int(np.ceil(self.min_marginal_coverage * num_t)) \
+            if self.min_marginal_coverage > 0.0 else 0
+        tail_floor = max(self.min_new_points, frac_floor)
+        if tail_floor > 1:
+            self.logger.info(
+                f"Tail cut floor = {tail_floor} new points "
+                f"(min_new_points={self.min_new_points}, "
+                f"min_marginal_coverage={self.min_marginal_coverage * 100:.2f}% "
+                f"= {frac_floor}); stops once the best next viewpoint adds fewer."
+            )
+
         def reach(idx, robot):
             nonlocal ik_queries
             key = (idx, robot['name'])
@@ -119,10 +138,10 @@ class RobotAllocator:
                     "neither arm can reach it)."
                 )
                 break
-            if gains[best_idx] < self.min_new_points:
+            if gains[best_idx] < tail_floor:
                 self.logger.info(
                     f"Tail cut: best remaining viewpoint adds only {int(gains[best_idx])} new points "
-                    f"(< min_new_points={self.min_new_points}). Stopping to keep the plan short "
+                    f"(< floor {tail_floor}). Stopping to keep the plan short "
                     f"(coverage {np.sum(covered) / num_t * 100:.2f}%)."
                 )
                 break

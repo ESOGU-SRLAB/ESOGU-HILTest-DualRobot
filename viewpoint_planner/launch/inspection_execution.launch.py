@@ -42,6 +42,12 @@ def generate_launch_description():
     collision_padding_arg = DeclareLaunchArgument(
         'collision_padding', default_value='0.03',
         description='Safety margin (m) the arm keeps from every obstacle via MoveIt link padding (0.0 = off)')
+    chassis_collision_padding_arg = DeclareLaunchArgument(
+        'chassis_collision_padding', default_value='0.10',
+        description='EXTRA safety margin (m) for the inspected CHASSIS links only, to leave room for the '
+                    'unmodelled arm cables/cable channels that snag inside the chassis. Absolute per-link '
+                    'padding (not additive with collision_padding); arm+furniture still use collision_padding. '
+                    '0.0 = fall back to uniform collision_padding for everything.')
     order_by_proximity_arg = DeclareLaunchArgument(
         'order_by_proximity', default_value='true',
         description='true -> traverse starting at the largest-Y viewpoint (chassis front), '
@@ -63,6 +69,7 @@ def generate_launch_description():
             'add_ground_plane': LaunchConfiguration('add_ground_plane'),
             'ground_plane_z': LaunchConfiguration('ground_plane_z'),
             'collision_padding': LaunchConfiguration('collision_padding'),
+            'chassis_collision_padding': LaunchConfiguration('chassis_collision_padding'),
             'order_by_proximity': LaunchConfiguration('order_by_proximity'),
         }],
     )
@@ -79,6 +86,7 @@ def generate_launch_description():
         plan_file_arg, only_sim_arg, output_base_dir_arg,
         allowed_planning_time_arg, planner_id_arg, num_planning_attempts_arg, plan_attempts_arg,
         add_ground_plane_arg, ground_plane_z_arg, collision_padding_arg,
+        chassis_collision_padding_arg,
         order_by_proximity_arg,
         executor_node, visualizer_node,
     ])
