@@ -25,7 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'multirobot_planner_node = multirobot_viewpoint_planner.multirobot_planner_node:main',
-            'multirobot_executor_node = multirobot_viewpoint_planner.multirobot_executor_node:main',
+            'ur_inspection_node = multirobot_viewpoint_planner.ur_inspection_node:main',
+            'kawasaki_inspection_node = multirobot_viewpoint_planner.kawasaki_inspection_node:main',
             'multirobot_viewpoint_visualizer = multirobot_viewpoint_planner.visualization:main',
             'multirobot_plan_visualizer = multirobot_viewpoint_planner.plan_visualizer:main',
         ],

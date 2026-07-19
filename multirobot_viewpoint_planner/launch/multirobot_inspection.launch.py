@@ -45,25 +45,62 @@ def generate_launch_description():
         'collision_padding', default_value='0.04',
         description='Safety margin (m) the arms keep from every obstacle (0.0 = off). '
                     'Applied uniformly to both arms: UR (ur10e_*) and Kawasaki (link1..link6).')
+    use_trajectory_cache_arg = DeclareLaunchArgument(
+        'use_trajectory_cache', default_value='true',
+        description='true -> replay each viewpoint\'s saved trajectory from '
+                    '<plans>/trajectories/ if valid (deterministic, pre-validated paths); '
+                    'plan+save on first run / cache miss. false -> always plan fresh with MoveIt.')
+    force_replan_arg = DeclareLaunchArgument(
+        'force_replan', default_value='false',
+        description='true -> ignore and OVERWRITE any cached trajectory (rebuild the cache '
+                    'from scratch, e.g. after changing collision padding or the SRDF).')
 
-    executor_node = Node(
+    # Parameters shared by both single-arm inspection nodes. Each node declares its
+    # own full param set (with defaults); these are the launch-exposed overrides.
+    # only_ur / only_kawasaki / enable_kawasaki are resolved INSIDE each node
+    # (should_run): the "wrong" arm's node self-idles and exits.
+    common_params = {
+        'plan_file': LaunchConfiguration('plan_file'),
+        'only_sim': LaunchConfiguration('only_sim'),
+        'output_base_dir': LaunchConfiguration('output_base_dir'),
+        'enable_kawasaki': LaunchConfiguration('enable_kawasaki'),
+        'only_ur': LaunchConfiguration('only_ur'),
+        'only_kawasaki': LaunchConfiguration('only_kawasaki'),
+        'allowed_planning_time': LaunchConfiguration('allowed_planning_time'),
+        'num_planning_attempts': LaunchConfiguration('num_planning_attempts'),
+        'plan_attempts': LaunchConfiguration('plan_attempts'),
+        'add_ground_plane': LaunchConfiguration('add_ground_plane'),
+        'ground_plane_z': LaunchConfiguration('ground_plane_z'),
+        'collision_padding': LaunchConfiguration('collision_padding'),
+        'use_trajectory_cache': LaunchConfiguration('use_trajectory_cache'),
+        'force_replan': LaunchConfiguration('force_replan'),
+    }
+
+    # Two independent single-arm nodes (separate processes -> parallel by construction).
+    ur_node = Node(
         package='multirobot_viewpoint_planner',
-        executable='multirobot_executor_node',
-        name='multirobot_executor_node',
+        executable='ur_inspection_node',
+        name='ur_inspection_node',
+        output='screen',
+        parameters=[common_params],
+    )
+    kawasaki_node = Node(
+        package='multirobot_viewpoint_planner',
+        executable='kawasaki_inspection_node',
+        name='kawasaki_inspection_node',
+        output='screen',
+        parameters=[common_params],
+    )
+
+    # RViz waypoint visualizer alongside: draws BOTH arms' viewpoint arrows
+    # (UR green->red, Kawasaki dark->light blue) from the same plan JSON.
+    visualizer_node = Node(
+        package='multirobot_viewpoint_planner',
+        executable='multirobot_viewpoint_visualizer',
+        name='multirobot_viewpoint_visualizer',
         output='screen',
         parameters=[{
             'plan_file': LaunchConfiguration('plan_file'),
-            'only_sim': LaunchConfiguration('only_sim'),
-            'output_base_dir': LaunchConfiguration('output_base_dir'),
-            'enable_kawasaki': LaunchConfiguration('enable_kawasaki'),
-            'only_ur': LaunchConfiguration('only_ur'),
-            'only_kawasaki': LaunchConfiguration('only_kawasaki'),
-            'allowed_planning_time': LaunchConfiguration('allowed_planning_time'),
-            'num_planning_attempts': LaunchConfiguration('num_planning_attempts'),
-            'plan_attempts': LaunchConfiguration('plan_attempts'),
-            'add_ground_plane': LaunchConfiguration('add_ground_plane'),
-            'ground_plane_z': LaunchConfiguration('ground_plane_z'),
-            'collision_padding': LaunchConfiguration('collision_padding'),
         }],
     )
 
@@ -72,5 +109,6 @@ def generate_launch_description():
         only_ur_arg, only_kawasaki_arg,
         allowed_planning_time_arg, num_planning_attempts_arg, plan_attempts_arg,
         add_ground_plane_arg, ground_plane_z_arg, collision_padding_arg,
-        executor_node,
+        use_trajectory_cache_arg, force_replan_arg,
+        ur_node, kawasaki_node, visualizer_node,
     ])

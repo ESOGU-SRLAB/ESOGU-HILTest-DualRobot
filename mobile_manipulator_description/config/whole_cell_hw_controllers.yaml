@@ -256,14 +256,23 @@ kawasaki_controller:
     allow_partial_joints_goal: true
     constraints:
       stopped_velocity_tolerance: 0.5
-      goal_time: 0.0
-      world_to_agv: { trajectory: 0.5, goal: 0.3 }
-      joint1: { trajectory: 0.2, goal: 0.1 }
-      joint2: { trajectory: 0.2, goal: 0.1 }
-      joint3: { trajectory: 0.2, goal: 0.1 }
-      joint4: { trajectory: 0.2, goal: 0.1 }
-      joint5: { trajectory: 0.2, goal: 0.1 }
-      joint6: { trajectory: 0.2, goal: 0.1 }
+      # goal_time > 0: hedef noktasına vardıktan sonra eklemlerin goal
+      # toleransına oturması için ek süre. 0 olursa yörünge biter bitmez
+      # tolerans dışıysa GOAL_TOLERANCE_VIOLATED ile abort eder.
+      goal_time: 3.0
+      # trajectory (path) toleransları KAPALI (0.0): gerçek kol TCP bridge +
+      # robotun kendi iç planlayıcısı, AGV ise diff-drive üzerinden komut
+      # aldığı için interpolasyonun gerisinde kalır. trajectory > 0 iken bu
+      # gecikme PATH_TOLERANCE_VIOLATED (-4) tetikleyip hareketi daha viewpoint'e
+      # varmadan iptal ediyordu (sim config'i de bu yüzden 0.0). Uç nokta
+      # hâlâ aşağıdaki goal toleransları ile denetlenir.
+      world_to_agv: { trajectory: 0.0, goal: 0.3 }
+      joint1: { trajectory: 0.0, goal: 0.1 }
+      joint2: { trajectory: 0.0, goal: 0.1 }
+      joint3: { trajectory: 0.0, goal: 0.1 }
+      joint4: { trajectory: 0.0, goal: 0.1 }
+      joint5: { trajectory: 0.0, goal: 0.1 }
+      joint6: { trajectory: 0.0, goal: 0.1 }
 
 # ==============================================================================
 # AGV (OTA) Diff Drive Controller Parametreleri

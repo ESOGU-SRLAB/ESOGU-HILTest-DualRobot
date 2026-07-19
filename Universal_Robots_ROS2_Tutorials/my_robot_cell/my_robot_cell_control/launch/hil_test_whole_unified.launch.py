@@ -817,7 +817,10 @@ def launch_setup(context, *args, **kwargs):
             {"remote_device_ip": "192.168.3.50"},
             {"data_port": 2114},
             {"control_port": 5000},
-            {"frame_id": "ur10e_depth_optical_frame"},
+            # Gerçek SICK'e özel kalibre optik frame (ur_macro.xacro'daki
+            # ur_sick_optical_joint, rpy 0 0 60°). depth_optical_frame'e damgalarsak
+            # bulut ~60° dönük gelir; bu frame düzeltmeyi TF ile uygular.
+            {"frame_id": "ur10e_sick_optical_frame"},
             {"use_sim_time": False},
         ],
         condition=UnlessCondition(use_fake_hardware),
@@ -829,37 +832,74 @@ def launch_setup(context, *args, **kwargs):
     # 500 Hz real-time trafiğini boğuyor ve bağlantı sürekli düşüyordu
     # ("Connection to reverse interface dropped" flapping). Ağ izolasyonu
     # yapılana kadar bu kamera launch'tan çıkarıldı.
-    # sick_visionary_kawasaki = Node(
-    #     package="sick_visionary_ros",
-    #     executable="sick_visionary_t_mini_node",
-    #     name="sick_visionary_t_mini_kawasaki",
-    #     namespace="sick_kawasaki",
-    #     output="screen",
-    #     parameters=[
-    #         {"remote_device_ip": "192.168.3.21"},
-    #         {"data_port": 2113},
-    #         {"control_port": 2122},
-    #         {"frame_id": "kawasaki_depth_optical_frame"},
-    #         {"use_sim_time": False},
-    #     ],
-    #     condition=UnlessCondition(use_fake_hardware),
-    # )
+    sick_visionary_kawasaki = Node(
+        package="sick_visionary_ros",
+        executable="sick_visionary_t_mini_node",
+        name="sick_visionary_t_mini_kawasaki",
+        namespace="sick_kawasaki",
+        output="screen",
+        parameters=[
+            {"remote_device_ip": "192.168.3.21"},
+            {"data_port": 2113},
+            {"control_port": 2122},
+            # GERÇEK SICK'e özel, kalibre edilebilir optik frame. URDF'teki
+            # camera_rgb_optic_frame Gazebo sim kamerası için oryante edilmiştir
+            # (<gazebo reference=camera_rgb_optic_frame>), gerçek SICK için 90°
+            # dönüktür. Bu yüzden gerçek bulutu, camera_rgb_optic_frame'in altına
+            # yerleştirilen ve kaw_opt_{roll,pitch,yaw} argümanlarıyla ayarlanan
+            # ayrı bir frame'e damgalıyoruz (aşağıdaki kawasaki_sick_optical_tf).
+            # Bu, UR'daki ayrı depth_optical_frame kalibrasyon zincirinin karşılığı.
+            {"frame_id": "kawasaki_sick_optical_frame"},
+            {"use_sim_time": False},
+        ],
+        condition=UnlessCondition(use_fake_hardware),
+    )
 
-    # ==================== Point Cloud Transformer ====================
-    # SICK nokta bulutunu dünya frame'ine dönüştürür (hil_test.launch.py ile aynı
-    # node). SICK kamera node'ları TCP'ye bağlanıp yayına başlasın diye 15 sn
-    # gecikmeyle başlatılır. Sadece gerçek donanımda çalışır (use_fake_hardware:=false).
+
+    # ==================== Point Cloud Transformer'lar ====================
+    # Her SICK kamerası için bir transformer: kameranın "points" bulutunu capture
+    # pipeline'ın beklediği topic'e taşır (kaynak frame != target_frame ise
+    # target_frame'e dönüştürür; eşitse olduğu gibi yeniden yayınlar). SICK
+    # node'ları TCP'ye bağlanıp yayına başlasın diye 15 sn gecikmeyle başlatılır.
+    # Sadece gerçek donanımda (use_fake_hardware:=false).
+    #
+    #   UR10e:    /points               -> /sick_points        (ur10e_depth_optical_frame)
+    #   Kawasaki: /sick_kawasaki/points -> /kawasaki/pointcloud (kawasaki_sick_optical_frame)
+    #
+    # Çıktı topic'leri multirobot_executor_node'un beklediği isimlerdir
+    # (real_ur_topic=/sick_points, real_kawasaki_topic=/kawasaki/pointcloud).
     pointcloud_transformer_delayed = TimerAction(
         period=15.0,
         actions=[
             Node(
                 package="pointcloud_transformer",
                 executable="pointcloud_transformer_node",
-                name="pointcloud_transformer_node",
+                name="pointcloud_transformer_ur",
                 output="screen",
-                parameters=[{"use_sim_time": False}],
+                parameters=[{
+                    "input_topic": "/points",
+                    "output_topic": "/sick_points",
+                    # Match the sick node frame_id so the transformer stays a no-op
+                    # relay; the ~60° correction is applied by the URDF TF
+                    # (ur_sick_optical_joint), not by re-expressing coordinates.
+                    "target_frame": "ur10e_sick_optical_frame",
+                    "use_sim_time": False,
+                }],
                 condition=UnlessCondition(use_fake_hardware),
-            )
+            ),
+            Node(
+                package="pointcloud_transformer",
+                executable="pointcloud_transformer_node",
+                name="pointcloud_transformer_kawasaki",
+                output="screen",
+                parameters=[{
+                    "input_topic": "/sick_kawasaki/points",
+                    "output_topic": "/kawasaki/pointcloud",
+                    "target_frame": "kawasaki_sick_optical_frame",
+                    "use_sim_time": False,
+                }],
+                condition=UnlessCondition(use_fake_hardware),
+            ),
         ]
     )
 
@@ -905,7 +945,7 @@ def launch_setup(context, *args, **kwargs):
 
         # 8. SICK Visionary-T Mini Kameraları (gerçek donanım)
         sick_visionary_ur,
-        # sick_visionary_kawasaki,  # GEÇİCİ DEVRE DIŞI (ağ çekişmesi — yukarıdaki nota bakın)
+        sick_visionary_kawasaki,  # GEÇİCİ DEVRE DIŞI (ağ çekişmesi — yukarıdaki nota bakın)
 
         # 9. Point Cloud Transformer (gerçek donanım, 15 sn gecikme)
         pointcloud_transformer_delayed,

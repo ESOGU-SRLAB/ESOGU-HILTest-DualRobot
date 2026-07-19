@@ -1803,63 +1803,6 @@
     <disable_collisions link1="link1" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part1" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part10" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part11" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part12" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part13" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part14" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part15" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part16" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part17" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part18" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part19" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part2" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part20" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part21" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part22" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part23" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part24" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part25" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part26" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part27" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part28" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part29" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part3" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part30" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part31" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part32" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part33" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part34" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part35" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part36" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part37" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part38" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part39" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part4" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part40" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part41" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part42" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part43" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part44" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part45" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part46" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part47" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part48" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part49" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part5" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part50" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part51" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part52" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part53" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part54" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part55" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part56" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part57" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part6" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part7" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part8" reason="Never"/>
-    <disable_collisions link1="link1" link2="ur10e_chassis_part9" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="link1" link2="ur10e_forearm_link" reason="Never"/>
@@ -1884,47 +1827,6 @@
     <disable_collisions link1="link2" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part10" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part13" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part14" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part15" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part16" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part17" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part18" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part19" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part2" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part20" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part21" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part22" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part24" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part25" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part26" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part27" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part30" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part34" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part35" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part36" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part37" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part39" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part4" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part40" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part42" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part43" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part44" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part48" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part49" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part5" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part50" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part51" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part53" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part54" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part55" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part56" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part57" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part6" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part7" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part8" reason="Never"/>
-    <disable_collisions link1="link2" link2="ur10e_chassis_part9" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="link2" link2="ur10e_forearm_link" reason="Never"/>
@@ -1951,33 +1853,6 @@
     <disable_collisions link1="link3" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part10" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part13" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part14" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part15" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part16" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part17" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part18" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part19" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part2" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part20" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part21" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part22" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part24" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part25" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part26" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part27" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part30" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part34" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part35" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part36" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part37" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part4" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part5" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part55" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part57" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part8" reason="Never"/>
-    <disable_collisions link1="link3" link2="ur10e_chassis_part9" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="link3" link2="ur10e_forearm_link" reason="Never"/>
@@ -2000,32 +1875,6 @@
     <disable_collisions link1="link4" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part10" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part13" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part14" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part15" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part16" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part17" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part18" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part19" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part2" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part20" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part21" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part22" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part25" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part26" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part27" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part30" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part34" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part35" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part36" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part37" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part4" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part5" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part55" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part57" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part8" reason="Never"/>
-    <disable_collisions link1="link4" link2="ur10e_chassis_part9" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="link4" link2="ur10e_forearm_link" reason="Never"/>
@@ -2046,32 +1895,6 @@
     <disable_collisions link1="link5" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part10" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part13" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part14" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part15" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part16" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part17" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part18" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part19" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part2" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part20" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part21" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part22" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part25" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part26" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part27" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part30" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part34" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part35" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part36" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part37" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part4" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part5" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part55" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part57" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part8" reason="Never"/>
-    <disable_collisions link1="link5" link2="ur10e_chassis_part9" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="link5" link2="ur10e_forearm_link" reason="Never"/>
@@ -2092,35 +1915,6 @@
     <disable_collisions link1="link6" link2="ur10e_base_link_inertia" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_cable_channel" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_cable_channel_flange" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part10" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part13" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part14" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part15" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part16" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part17" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part18" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part19" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part2" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part20" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part21" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part22" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part25" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part26" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part27" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part30" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part31" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part34" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part35" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part36" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part37" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part4" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part42" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part5" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part50" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part55" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part57" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part8" reason="Never"/>
-    <disable_collisions link1="link6" link2="ur10e_chassis_part9" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_conveyor_belt" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_flange" reason="Never"/>
     <disable_collisions link1="link6" link2="ur10e_forearm_link" reason="Never"/>

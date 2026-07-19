@@ -351,6 +351,19 @@
      
     <link name="${tf_prefix}camera_rgb_optic_frame"/>
 
+    <!-- Gerçek SICK Visionary-T Mini optik frame'i. camera_rgb_optic_frame Gazebo
+         sim kamerası için oryante edilmiştir (<gazebo reference=camera_rgb_optic_frame>);
+         gerçek SICK bulutu optik konvansiyon farkı nedeniyle ona göre dönüktür.
+         RViz'de (Fixed Frame=world) bulut şaseye oturana kadar kalibre edildi:
+         rpy = -pi/2, -pi/2, -pi/2 (konum ofseti gerekmedi). Gerçek bulut bu frame'e
+         damgalanır (sick_kawasaki node frame_id + pointcloud_transformer target). -->
+    <joint name="${tf_prefix}kawasaki_sick_optical_joint" type="fixed">
+       <origin xyz="-0.02 0 0" rpy="-1.5708 -1.5708 -1.5708"/>
+       <parent link="${tf_prefix}camera_rgb_optic_frame"/>
+       <child link="${tf_prefix}kawasaki_sick_optical_frame"/>
+    </joint>
+    <link name="${tf_prefix}kawasaki_sick_optical_frame"/>
+
     <xacro:if value="${sim_ignition}">
       <!-- NOT: gz-sim-sensors-system plugin'i world SDF'de (ifarlab.sdf) zaten
            yükleniyor. Burada tekrar tanımlamak "Scene already exists" hatasına

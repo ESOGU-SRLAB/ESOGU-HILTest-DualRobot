@@ -630,6 +630,21 @@
       <child link="${tf_prefix}rgb_optical_frame"/>
     </joint>
 
+    <!-- Gerçek SICK Visionary-T Mini optik frame'i (Kawasaki'nin
+         kawasaki_sick_optical_frame karşılığı). depth_optical_frame IK/plan için
+         kullanılır; gerçek SICK bulutu ona göre görüş ekseni etrafında ~60° dönük
+         gelir, o yüzden gerçek bulut IK frame'ini bozmadan BU kalibre frame'e
+         damgalanır. RViz'de (Fixed Frame=world) bulut şaseye oturana kadar
+         ur_cloud_calibrator ile ayarlandı: xyz 0 0 -0.01, rpy 0 0 1.04720 (=60° yaw).
+         Gerçek UR SICK node frame_id + pointcloud_transformer_ur target_frame +
+         executor real_ur_sensor_frame hepsi bu frame'e işaret eder. -->
+    <joint name="${tf_prefix}ur_sick_optical_joint" type="fixed">
+      <origin xyz="0 0 -0.01" rpy="0 0 1.04720"/>
+      <parent link="${tf_prefix}depth_optical_frame"/>
+      <child link="${tf_prefix}sick_optical_frame"/>
+    </joint>
+    <link name="${tf_prefix}sick_optical_frame"/>
+
     <xacro:arg name="use_gripper" default="$(optenv ENV_USE_GRIPPER false)"/>
     <xacro:arg name="use_fake_hardware" default="$(optenv ENV_USE_FAKE_HARDWARE false)"/>
     <xacro:arg name="gripper_ip" default="$(optenv ENV_GRIPPER_IP 192.168.3.56)"/>
