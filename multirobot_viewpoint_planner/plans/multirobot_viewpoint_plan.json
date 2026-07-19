@@ -3,7 +3,7 @@
  "coverage_threshold": 0.98,
  "objective": "multi_robot_max_coverage_balanced",
  "total_ur_viewpoints": 17,
- "total_kawasaki_viewpoints": 7,
+ "total_kawasaki_viewpoints": 6,
  "camera_config": {
   "horizontal_fov_deg": 70.0,
   "vertical_fov_deg": 60.0,
@@ -1170,73 +1170,6 @@
    "id": "kawa_vp_000",
    "robot": "kawasaki",
    "position": [
-    -1.4816352353418132,
-    0.15827906631833166,
-    1.0768405890871566
-   ],
-   "rotation": [
-    [
-     -0.7061617745941475,
-     -0.18325672470600554,
-     0.6839243532380402
-    ],
-    [
-     0.7080505265177369,
-     -0.18276788036745045,
-     0.6820999588065849
-    ],
-    [
-     0.0,
-     0.96592591576995,
-     0.25881871115509286
-    ]
-   ],
-   "rank": 0,
-   "global_order": 26,
-   "new_points_covered": 24,
-   "total_points_visible": 220,
-   "cumulative_coverage": 0.6698090973367901,
-   "joint_names": [
-    "world_to_agv",
-    "joint1",
-    "joint2",
-    "joint3",
-    "joint4",
-    "joint5",
-    "joint6",
-    "wheel_left_base",
-    "wheel_right_base",
-    "ur10e_base_to_robot_mount",
-    "ur10e_shoulder_pan_joint",
-    "ur10e_shoulder_lift_joint",
-    "ur10e_elbow_joint",
-    "ur10e_wrist_1_joint",
-    "ur10e_wrist_2_joint",
-    "ur10e_wrist_3_joint"
-   ],
-   "joint_positions": [
-    0.0,
-    0.34980926939360446,
-    1.77152589415297,
-    2.0425768826673654,
-    1.084095591699912,
-    -1.430403087390087,
-    2.207521957004478,
-    0.0,
-    0.0,
-    1.0,
-    0.0,
-    -1.57,
-    0.0,
-    -1.57,
-    0.0,
-    0.0
-   ]
-  },
-  {
-   "id": "kawa_vp_001",
-   "robot": "kawasaki",
-   "position": [
     -2.124274978603502,
     0.7492651220554172,
     1.4160027308199743
@@ -1258,7 +1191,7 @@
      0.3082892954048642
     ]
    ],
-   "rank": 1,
+   "rank": 0,
    "global_order": 7,
    "new_points_covered": 104,
    "total_points_visible": 138,
@@ -1301,7 +1234,7 @@
    ]
   },
   {
-   "id": "kawa_vp_002",
+   "id": "kawa_vp_001",
    "robot": "kawasaki",
    "position": [
     -2.4092637831030808,
@@ -1325,7 +1258,7 @@
      -1.192674760303715e-06
     ]
    ],
-   "rank": 2,
+   "rank": 1,
    "global_order": 1,
    "new_points_covered": 372,
    "total_points_visible": 444,
@@ -1368,7 +1301,7 @@
    ]
   },
   {
-   "id": "kawa_vp_003",
+   "id": "kawa_vp_002",
    "robot": "kawasaki",
    "position": [
     -2.09958056640625,
@@ -1392,7 +1325,7 @@
      0.25881904510252074
     ]
    ],
-   "rank": 3,
+   "rank": 2,
    "global_order": 5,
    "new_points_covered": 128,
    "total_points_visible": 212,
@@ -1435,7 +1368,7 @@
    ]
   },
   {
-   "id": "kawa_vp_004",
+   "id": "kawa_vp_003",
    "robot": "kawasaki",
    "position": [
     -2.1783351111999396,
@@ -1459,7 +1392,7 @@
      -0.0
     ]
    ],
-   "rank": 4,
+   "rank": 3,
    "global_order": 19,
    "new_points_covered": 34,
    "total_points_visible": 165,
@@ -1502,7 +1435,7 @@
    ]
   },
   {
-   "id": "kawa_vp_005",
+   "id": "kawa_vp_004",
    "robot": "kawasaki",
    "position": [
     -1.9057823555098428,
@@ -1526,7 +1459,7 @@
      -0.2588199087597929
     ]
    ],
-   "rank": 5,
+   "rank": 4,
    "global_order": 14,
    "new_points_covered": 52,
    "total_points_visible": 256,
@@ -1569,7 +1502,7 @@
    ]
   },
   {
-   "id": "kawa_vp_006",
+   "id": "kawa_vp_005",
    "robot": "kawasaki",
    "position": [
     -2.0750396728515623,
@@ -1593,7 +1526,7 @@
      0.25881904510252074
     ]
    ],
-   "rank": 6,
+   "rank": 5,
    "global_order": 13,
    "new_points_covered": 59,
    "total_points_visible": 150,

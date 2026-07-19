@@ -36,6 +36,7 @@ from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
+from rcl_interfaces.msg import ParameterDescriptor
 from moveit_msgs.srv import GetPlanningScene, ApplyPlanningScene
 from moveit_msgs.msg import PlanningScene, PlanningSceneComponents, LinkPadding
 from sensor_msgs.msg import PointCloud2, JointState
@@ -154,7 +155,13 @@ class InspectionNodeBase(Node):
 
         # Fixed START pose + per-viewpoint HOME-BEFORE detour.
         self.declare_parameter("go_to_start", True)
-        self.declare_parameter("home_before_viewpoints", [])
+        # Viewpoint ids approached via a HOME detour instead of directly from the previous
+        # viewpoint (the direct hop pinches a physical cable channel the ROS model does not
+        # know about). dynamic_typing is REQUIRED: rclpy infers an empty-list default as
+        # BYTE_ARRAY and that inferred type overrides the descriptor, so a STRING_ARRAY
+        # override from the launch file would be rejected at declaration time.
+        self.declare_parameter(
+            "home_before_viewpoints", [], ParameterDescriptor(dynamic_typing=True))
 
         # Pose-goal planning tolerances (used only when an arm plans to a Cartesian
         # pose goal -- the UR). Kept here because _plan_pose lives in the base.
@@ -831,8 +838,77 @@ class InspectionNodeBase(Node):
         return traj, False
 
     # ------------------------------------------------------------------ #
+    # Named transitions (home detours / align hops) -- cached like viewpoints.
+    # ------------------------------------------------------------------ #
+    def _cached_move(self, name, target_rad, joint_names, label):
+        """Cache-or-plan a NAMED auxiliary joint-space move. Used for the two hops of a
+        home_before viewpoint: the detour to HOME and the approach to the viewpoint's
+        recorded trajectory start. These get the SAME record-once/replay-forever contract
+        as the viewpoint trajectories -- keyed by `name` instead of a viewpoint id -- so on
+        the real robot they replay the exact path recorded in simulation instead of being
+        re-planned live. Returns (JointTrajectory | None, from_cache)."""
+        use_cache = bool(self.get_parameter("use_trajectory_cache").value)
+        force = bool(self.get_parameter("force_replan").value)
+        path = self._traj_cache_path(name)
+
+        if use_cache and not force and os.path.exists(path):
+            try:
+                with open(path) as f:
+                    cached = json.load(f)
+            except Exception as e:
+                cached = None
+                self.get_logger().warning(f"[{label}] could not read cache {path}: {e}")
+            if cached and self._cache_valid(cached, joint_names, target_rad):
+                self.get_logger().info(
+                    f"[{label}] using CACHED transition '{name}' ({len(cached['points'])} pts).")
+                return self._deserialize_traj(cached), True
+            elif cached is not None:
+                self.get_logger().info(
+                    f"[{label}] cached transition '{name}' targets a different pose; replanning.")
+
+        traj = self._plan(target_rad, joint_names, label)
+        if traj is None:
+            return None, False
+        if use_cache:
+            try:
+                os.makedirs(self._traj_dir, exist_ok=True)
+                tmp = path + ".tmp"
+                with open(tmp, "w") as f:
+                    json.dump(self._serialize_traj(traj, name, target_rad), f, indent=1)
+                os.replace(tmp, path)
+                self.get_logger().info(f"[{label}] transition '{name}' saved -> {path}")
+            except Exception as e:
+                self.get_logger().warning(f"[{label}] could not save transition '{name}': {e}")
+        return traj, False
+
+    def _run_cached_move(self, name, target_rad, joint_names, label):
+        """Plan-or-replay a named transition and drive the arm through it. A no-op when
+        the arm is already at the target."""
+        if len(target_rad) != len(joint_names):
+            self.get_logger().warning(
+                f"[{label}] transition '{name}' expects {len(joint_names)} joint values, "
+                f"got {len(target_rad)}; skipping it.")
+            return False
+        targets = dict(zip(joint_names, target_rad))
+        if self._at_pose(targets):
+            self.get_logger().info(f"[{label}] already at the '{name}' target; no move needed.")
+            return True
+        traj, _ = self._cached_move(name, target_rad, joint_names, label)
+        if traj is None:
+            self.get_logger().warning(f"[{label}] could not plan transition '{name}'; skipping it.")
+            return False
+        if self.rebase_to_current:
+            self._rebase_traj_to_current(traj, label)
+        return self._settle(self._dispatch(traj, label), targets, f"[{label}]")
+
+    # ------------------------------------------------------------------ #
     # Moves.
     # ------------------------------------------------------------------ #
+    @staticmethod
+    def _pose_to_rad(pose_deg):
+        """Config poses are [linear axis in METRES, then revolute joints in DEGREES]."""
+        return [float(pose_deg[0])] + [float(np.deg2rad(v)) for v in pose_deg[1:]]
+
     def _home_arm(self, home_deg, label):
         """Plan (collision-aware) + dispatch this arm to its home pose. home_deg index 0
         is a linear axis in METRES; indices 1..6 are revolute joints in DEGREES."""
@@ -844,7 +920,7 @@ class InspectionNodeBase(Node):
                 f"[{label} home] expected {len(moveit2.joint_names)} joint values, got "
                 f"{len(home_deg)}; skipping homing.")
             return
-        home_rad = [float(home_deg[0])] + [float(np.deg2rad(v)) for v in home_deg[1:]]
+        home_rad = self._pose_to_rad(home_deg)
         self.get_logger().info(
             f"[{label}] returning to home pose (axis0={home_deg[0]} m, joints={home_deg[1:]} deg)...")
         traj = self._plan(home_rad, moveit2.joint_names, f"{label} home")
@@ -878,7 +954,7 @@ class InspectionNodeBase(Node):
                 f"[{label}] expected {len(moveit2.joint_names)} joint values, got "
                 f"{len(pose_deg)}; skipping.")
             return
-        target_rad = [float(pose_deg[0])] + [float(np.deg2rad(v)) for v in pose_deg[1:]]
+        target_rad = self._pose_to_rad(pose_deg)
         targets = dict(zip(moveit2.joint_names, target_rad))
         if self._at_pose(targets):
             self.get_logger().info(f"[{label}] already at start pose; no move needed.")
@@ -962,10 +1038,16 @@ class InspectionNodeBase(Node):
             vp_id = vp.get("id")
             home_first = vp_id in home_before
             if home_first:
+                # The DIRECT hop from the previous viewpoint pinches the cable channel, so
+                # detour via HOME. Both hops of the detour (here->home, then home->this
+                # viewpoint's recorded start) are RECORDED transitions, so the real robot
+                # replays them instead of re-planning a fresh path live.
                 self.get_logger().warning(
-                    f"[{label} {idx}/{n}] {vp_id} in home_before_viewpoints -> homing first, "
-                    "approaching FRESH from home.")
-                self._move_to_pose(start_pose, f"{label} home-before")
+                    f"[{label} {idx}/{n}] {vp_id} in home_before_viewpoints -> detouring via HOME "
+                    "first, then approaching its recorded trajectory start.")
+                self._run_cached_move(
+                    f"{vp_id}_home", self._pose_to_rad(start_pose), self.moveit.joint_names,
+                    f"{label} {vp_id} home-before")
 
             has_goal = bool(vp.get("joint_positions")) or (
                 self._use_pose_goal() and vp.get("position") is not None
@@ -974,10 +1056,19 @@ class InspectionNodeBase(Node):
                 self.get_logger().warning(f"[{label} {idx}/{n}] {vp_id} has no goal; skipping.")
                 continue
 
-            traj, from_cache = self._get_trajectory(vp, label, idx, force_fresh=home_first)
+            # NOTE: the home detour deliberately does NOT force a fresh plan -- the
+            # viewpoint keeps its own RECORDED trajectory; we only change how we approach it.
+            traj, from_cache = self._get_trajectory(vp, label, idx)
             if traj is None:
                 self.get_logger().warning(f"[{label} {idx}/{n}] {vp_id} could not be planned; skipping.")
                 continue
+
+            if home_first:
+                # Coming from HOME the arm is nowhere near the recorded start, so walk it
+                # there over a RECORDED transition before replaying the viewpoint path.
+                self._run_cached_move(
+                    f"{vp_id}_align", [float(x) for x in traj.points[0].positions],
+                    list(traj.joint_names), f"{label} {vp_id} align-start")
 
             if self.rebase_to_current:
                 # UR: rebase the trajectory onto the current pose (no separate move).

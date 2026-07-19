@@ -1,6 +1,9 @@
 import os
+from typing import List
+
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 
@@ -54,6 +57,15 @@ def generate_launch_description():
         'force_replan', default_value='false',
         description='true -> ignore and OVERWRITE any cached trajectory (rebuild the cache '
                     'from scratch, e.g. after changing collision padding or the SRDF).')
+    home_before_viewpoints_arg = DeclareLaunchArgument(
+        'home_before_viewpoints', default_value="['ur_vp_009']",
+        description='Viewpoint ids that must NOT be approached directly from the previous '
+                    'viewpoint (the direct hop pinches the physical cable channel, which the '
+                    'ROS model does not know about). The arm detours via its start/home pose, '
+                    'then walks to that viewpoint\'s RECORDED trajectory start; BOTH hops are '
+                    'cached like normal trajectories, and the viewpoint keeps its own recorded '
+                    'path. Default covers the pinch on the hop INTO ur_vp_009 (the 10th UR '
+                    'viewpoint, logged as [UR 10/17]) coming from ur_vp_008.')
 
     # Parameters shared by both single-arm inspection nodes. Each node declares its
     # own full param set (with defaults); these are the launch-exposed overrides.
@@ -74,6 +86,8 @@ def generate_launch_description():
         'collision_padding': LaunchConfiguration('collision_padding'),
         'use_trajectory_cache': LaunchConfiguration('use_trajectory_cache'),
         'force_replan': LaunchConfiguration('force_replan'),
+        'home_before_viewpoints': ParameterValue(
+            LaunchConfiguration('home_before_viewpoints'), value_type=List[str]),
     }
 
     # Two independent single-arm nodes (separate processes -> parallel by construction).
@@ -109,6 +123,6 @@ def generate_launch_description():
         only_ur_arg, only_kawasaki_arg,
         allowed_planning_time_arg, num_planning_attempts_arg, plan_attempts_arg,
         add_ground_plane_arg, ground_plane_z_arg, collision_padding_arg,
-        use_trajectory_cache_arg, force_replan_arg,
+        use_trajectory_cache_arg, force_replan_arg, home_before_viewpoints_arg,
         ur_node, kawasaki_node, visualizer_node,
     ])
