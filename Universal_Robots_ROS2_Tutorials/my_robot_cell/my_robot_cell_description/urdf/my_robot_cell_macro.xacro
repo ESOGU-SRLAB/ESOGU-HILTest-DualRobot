@@ -381,7 +381,16 @@
         <hardware>
           <plugin>topic_based_ros2_control/TopicBasedSystem</plugin>
           <param name="joint_commands_topic">/linear_axis/target_position_cmd</param>
-          <param name="joint_states_topic">/joint_states</param>
+          <!-- MUST NOT be /joint_states. The joint_state_broadcaster publishes this
+               joint's state interface back onto /joint_states at ~400 Hz, so reading
+               state from there makes TopicBasedSystem consume its OWN output: the
+               echo outnumbers the adapter's real measurement 5:1 and the state stays
+               latched at initial_value (1.0 m), which is exactly the 0.500001 m
+               position error the trajectory controller aborted on. The adapter
+               publishes the measured rail position here instead, and the broadcaster
+               still forwards the (now correct) state to /joint_states for everyone
+               else. -->
+          <param name="joint_states_topic">/linear_axis/joint_states</param>
           <param name="sum_wrapped_joint_states">true</param>
         </hardware>
       </xacro:unless>

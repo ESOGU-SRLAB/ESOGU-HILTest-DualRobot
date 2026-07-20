@@ -711,7 +711,7 @@ def launch_setup(context, *args, **kwargs):
         real_moveit_pkg = "real_ifarlab_moveit_config"
 
     delayed_real_moveit = TimerAction(
-        period=25.0,  # Controller'lar ve ortam hazır olduktan sonra
+        period=15.0,  # Controller'lar ve ortam hazır olduktan sonra
         actions=[
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(

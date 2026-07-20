@@ -163,6 +163,18 @@ class InspectionNodeBase(Node):
         self.declare_parameter(
             "home_before_viewpoints", [], ParameterDescriptor(dynamic_typing=True))
 
+        # Per-viewpoint SAFE-WAYPOINT hop -- a lighter alternative to the HOME detour.
+        # Before each listed viewpoint the arm makes ONE cached move to `safe_waypoint_pose`
+        # (a short retract, nowhere near as far as home) purely to clear the cable channel;
+        # nothing is captured there, it is not a viewpoint. The following viewpoint is then
+        # planned/replayed exactly as usual. Same dynamic_typing reason as above.
+        self.declare_parameter(
+            "safe_before_viewpoints", [], ParameterDescriptor(dynamic_typing=True))
+        # [linear axis in METRES, then revolute joints in DEGREES] -- the _pose_to_rad
+        # convention shared by start/home poses.
+        self.declare_parameter(
+            "safe_waypoint_pose", [], ParameterDescriptor(dynamic_typing=True))
+
         # Pose-goal planning tolerances (used only when an arm plans to a Cartesian
         # pose goal -- the UR). Kept here because _plan_pose lives in the base.
         self.declare_parameter("pose_goal_pos_tol", 0.005)   # m
@@ -1030,7 +1042,14 @@ class InspectionNodeBase(Node):
         """Plan/align/dispatch/settle/capture each of THIS arm's viewpoints in order.
         Returns the number of viewpoints whose cloud was captured."""
         label = self.arm_label
-        home_before = list(self.get_parameter("home_before_viewpoints").value)
+        # `or []`: an EMPTY list arrives as None, not []. The launch file hands this
+        # parameter over in a params-file, and rclpy cannot infer a type for a bare
+        # `[]` in YAML, so with dynamic_typing it lands as PARAMETER_NOT_SET -> None.
+        # (A []-valued Parameter passed through the Python API does come back as [],
+        # which is why this only shows up when launched.)
+        home_before = list(self.get_parameter("home_before_viewpoints").value or [])
+        safe_before = list(self.get_parameter("safe_before_viewpoints").value or [])
+        safe_pose = list(self.get_parameter("safe_waypoint_pose").value or [])
         start_pose = list(self.get_parameter(self.start_pose_param).value)
         n = len(vps)
         saved = 0
@@ -1048,6 +1067,24 @@ class InspectionNodeBase(Node):
                 self._run_cached_move(
                     f"{vp_id}_home", self._pose_to_rad(start_pose), self.moveit.joint_names,
                     f"{label} {vp_id} home-before")
+
+            if vp_id in safe_before:
+                # Short retract to clear the cable channel before this viewpoint. One
+                # RECORDED transition (cached like a viewpoint path), no capture: the
+                # safe waypoint is a transit pose, not an inspection pose. The viewpoint
+                # itself keeps its own trajectory -- we only change how we arrive.
+                if len(safe_pose) != len(self.moveit.joint_names):
+                    self.get_logger().warning(
+                        f"[{label} {idx}/{n}] {vp_id} is in safe_before_viewpoints but "
+                        f"safe_waypoint_pose has {len(safe_pose)} values (expected "
+                        f"{len(self.moveit.joint_names)}); skipping the safe hop.")
+                else:
+                    self.get_logger().info(
+                        f"[{label} {idx}/{n}] {vp_id} in safe_before_viewpoints -> via the "
+                        f"safe waypoint (axis0={safe_pose[0]} m, joints={safe_pose[1:]} deg).")
+                    self._run_cached_move(
+                        f"{vp_id}_safe", self._pose_to_rad(safe_pose), self.moveit.joint_names,
+                        f"{label} {vp_id} safe-before")
 
             has_goal = bool(vp.get("joint_positions")) or (
                 self._use_pose_goal() and vp.get("position") is not None
