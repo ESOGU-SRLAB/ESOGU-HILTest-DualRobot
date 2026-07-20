@@ -73,6 +73,9 @@ class InspectionNodeBase(Node):
         # "align to recorded start" move -- this is what stops the rail lurching back
         # and forth. Kawasaki keeps _align_to_traj_start (its constraint: unchanged).
         self.rebase_to_current = False
+        # Memoised viewpoint_joint_overrides; built lazily because parsing needs
+        # self.moveit.joint_names, which the subclass sets after this constructor.
+        self._overrides_cache = None
 
         self._declare_shared_params()
 
@@ -163,17 +166,16 @@ class InspectionNodeBase(Node):
         self.declare_parameter(
             "home_before_viewpoints", [], ParameterDescriptor(dynamic_typing=True))
 
-        # Per-viewpoint SAFE-WAYPOINT hop -- a lighter alternative to the HOME detour.
-        # Before each listed viewpoint the arm makes ONE cached move to `safe_waypoint_pose`
-        # (a short retract, nowhere near as far as home) purely to clear the cable channel;
-        # nothing is captured there, it is not a viewpoint. The following viewpoint is then
-        # planned/replayed exactly as usual. Same dynamic_typing reason as above.
+        # Hand-tuned JOINT targets that REPLACE a viewpoint's planned goal. Used where the
+        # planner's pose is reachable on paper but pinches a physical cable channel the
+        # collision model does not know about (ur_vp_009/010). Format: one
+        # "<vp_id>:<axis0_m>,<j1_deg>,...,<j6_deg>" string per viewpoint -- the same
+        # [metres, then degrees] convention as the start/home poses. An overridden
+        # viewpoint is planned in JOINT space (its Cartesian pose goal is bypassed), is
+        # still captured, and its trajectory is still cached under its own id.
+        # Same dynamic_typing reason as above.
         self.declare_parameter(
-            "safe_before_viewpoints", [], ParameterDescriptor(dynamic_typing=True))
-        # [linear axis in METRES, then revolute joints in DEGREES] -- the _pose_to_rad
-        # convention shared by start/home poses.
-        self.declare_parameter(
-            "safe_waypoint_pose", [], ParameterDescriptor(dynamic_typing=True))
+            "viewpoint_joint_overrides", [], ParameterDescriptor(dynamic_typing=True))
 
         # Pose-goal planning tolerances (used only when an arm plans to a Cartesian
         # pose goal -- the UR). Kept here because _plan_pose lives in the base.
@@ -764,6 +766,38 @@ class InspectionNodeBase(Node):
             jt.points.append(p)
         return jt
 
+    def _joint_overrides(self):
+        """Parse `viewpoint_joint_overrides` into {vp_id: [rad/m, in moveit joint order]}.
+        Parsed once and memoised. A malformed or wrong-length entry is WARNED about and
+        dropped -- never silently reinterpreted, since a bad joint vector is a crash into
+        the cell."""
+        if self._overrides_cache is not None:
+            return self._overrides_cache
+        out = {}
+        n_joints = len(self.moveit.joint_names)
+        for entry in list(self.get_parameter("viewpoint_joint_overrides").value or []):
+            vp_id, sep, vals = str(entry).partition(":")
+            if not sep:
+                self.get_logger().warning(
+                    f"[{self.arm_label}] viewpoint_joint_overrides entry {entry!r} has no "
+                    "'<vp_id>:<values>' separator; ignoring it.")
+                continue
+            try:
+                pose = [float(v) for v in vals.split(",")]
+            except ValueError:
+                self.get_logger().warning(
+                    f"[{self.arm_label}] override for {vp_id} has non-numeric values "
+                    f"({vals!r}); ignoring it.")
+                continue
+            if len(pose) != n_joints:
+                self.get_logger().warning(
+                    f"[{self.arm_label}] override for {vp_id} has {len(pose)} values, "
+                    f"expected {n_joints}; ignoring it.")
+                continue
+            out[vp_id.strip()] = self._pose_to_rad(pose)
+        self._overrides_cache = out
+        return out
+
     def _get_trajectory(self, vp, label, idx, force_fresh=False):
         """Cache-or-plan. Returns (JointTrajectory | None, from_cache: bool).
         from_cache lets the caller skip aligning a FRESH plan to its start (it already
@@ -775,7 +809,19 @@ class InspectionNodeBase(Node):
         # Pose mode (UR): plan to the camera optical-frame POSE the planner solved IK for,
         # so MoveIt re-derives a valid, correctly-oriented joint solution. Joint-space
         # arms (Kawasaki) fall through unchanged.
-        use_pose = (self._use_pose_goal()
+        # A hand-tuned override REPLACES the planner's goal for this viewpoint and forces
+        # joint-space planning: the whole point is to command an exact arm configuration,
+        # so re-deriving one from a Cartesian pose would throw the tuning away.
+        override = self._joint_overrides().get(vp_id)
+        if override is not None:
+            goal = override
+            self.get_logger().info(
+                f"[{label}] {vp_id}: using the JOINT OVERRIDE "
+                f"(axis0={override[0]:.3f} m, joints="
+                f"{[round(float(np.rad2deg(v)), 1) for v in override[1:]]} deg) "
+                "instead of the planned pose goal.")
+
+        use_pose = (override is None and self._use_pose_goal()
                     and vp.get("position") is not None and vp.get("rotation") is not None)
         pose_goal = position = quat = None
         target_link = self._pose_target_link()
@@ -1048,8 +1094,6 @@ class InspectionNodeBase(Node):
         # (A []-valued Parameter passed through the Python API does come back as [],
         # which is why this only shows up when launched.)
         home_before = list(self.get_parameter("home_before_viewpoints").value or [])
-        safe_before = list(self.get_parameter("safe_before_viewpoints").value or [])
-        safe_pose = list(self.get_parameter("safe_waypoint_pose").value or [])
         start_pose = list(self.get_parameter(self.start_pose_param).value)
         n = len(vps)
         saved = 0
@@ -1067,24 +1111,6 @@ class InspectionNodeBase(Node):
                 self._run_cached_move(
                     f"{vp_id}_home", self._pose_to_rad(start_pose), self.moveit.joint_names,
                     f"{label} {vp_id} home-before")
-
-            if vp_id in safe_before:
-                # Short retract to clear the cable channel before this viewpoint. One
-                # RECORDED transition (cached like a viewpoint path), no capture: the
-                # safe waypoint is a transit pose, not an inspection pose. The viewpoint
-                # itself keeps its own trajectory -- we only change how we arrive.
-                if len(safe_pose) != len(self.moveit.joint_names):
-                    self.get_logger().warning(
-                        f"[{label} {idx}/{n}] {vp_id} is in safe_before_viewpoints but "
-                        f"safe_waypoint_pose has {len(safe_pose)} values (expected "
-                        f"{len(self.moveit.joint_names)}); skipping the safe hop.")
-                else:
-                    self.get_logger().info(
-                        f"[{label} {idx}/{n}] {vp_id} in safe_before_viewpoints -> via the "
-                        f"safe waypoint (axis0={safe_pose[0]} m, joints={safe_pose[1:]} deg).")
-                    self._run_cached_move(
-                        f"{vp_id}_safe", self._pose_to_rad(safe_pose), self.moveit.joint_names,
-                        f"{label} {vp_id} safe-before")
 
             has_goal = bool(vp.get("joint_positions")) or (
                 self._use_pose_goal() and vp.get("position") is not None

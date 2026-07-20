@@ -66,18 +66,17 @@ def generate_launch_description():
                     'default: the detour existed to dodge a cable-channel pinch on the hop '
                     'into ur_vp_009, which is no longer needed now that the linear axis '
                     'tracks the trajectory properly. Set e.g. "[\'ur_vp_009\']" to re-enable.')
-    safe_before_viewpoints_arg = DeclareLaunchArgument(
-        'safe_before_viewpoints', default_value="['ur_vp_009']",
-        description='Viewpoint ids reached via a short SAFE-WAYPOINT retract instead of '
-                    'directly from the previous viewpoint. Much lighter than the home '
-                    'detour: ONE cached hop to safe_waypoint_pose, nothing captured there, '
-                    'then the viewpoint runs normally. Exists purely to clear the physical '
-                    'cable channel on the ur_vp_008 -> ur_vp_009 hop.')
-    safe_waypoint_pose_arg = DeclareLaunchArgument(
-        'safe_waypoint_pose',
-        default_value="[0.113, -280.0, -147.0, -15.0, -220.0, -324.0, 207.0]",
-        description='The safe waypoint itself: [linear axis in METRES, then the six '
-                    'revolute joints in DEGREES] -- same convention as the start/home poses.')
+    viewpoint_joint_overrides_arg = DeclareLaunchArgument(
+        'viewpoint_joint_overrides',
+        default_value="['ur_vp_009:0.088,-308,-185,-15,-256,-277,210',"
+                      "'ur_vp_010:0.279,-308,-160,-23,-302,-320,233']",
+        description='Hand-tuned joint targets that REPLACE a viewpoint\'s planned goal, as '
+                    '"<vp_id>:<axis0_m>,<j1_deg>,...,<j6_deg>" (the start/home pose '
+                    'convention: index 0 in METRES, the rest in DEGREES). ur_vp_009 and '
+                    'ur_vp_010 are overridden because the planner\'s poses pinch a physical '
+                    'cable channel that is absent from the collision model. An overridden '
+                    'viewpoint is planned in JOINT space, is still captured, and still '
+                    'caches its trajectory. Set "[]" to use the planned poses everywhere.')
 
     # Parameters shared by both single-arm inspection nodes. Each node declares its
     # own full param set (with defaults); these are the launch-exposed overrides.
@@ -100,10 +99,8 @@ def generate_launch_description():
         'force_replan': LaunchConfiguration('force_replan'),
         'home_before_viewpoints': ParameterValue(
             LaunchConfiguration('home_before_viewpoints'), value_type=List[str]),
-        'safe_before_viewpoints': ParameterValue(
-            LaunchConfiguration('safe_before_viewpoints'), value_type=List[str]),
-        'safe_waypoint_pose': ParameterValue(
-            LaunchConfiguration('safe_waypoint_pose'), value_type=List[float]),
+        'viewpoint_joint_overrides': ParameterValue(
+            LaunchConfiguration('viewpoint_joint_overrides'), value_type=List[str]),
     }
 
     # Two independent single-arm nodes (separate processes -> parallel by construction).
@@ -140,6 +137,6 @@ def generate_launch_description():
         allowed_planning_time_arg, num_planning_attempts_arg, plan_attempts_arg,
         add_ground_plane_arg, ground_plane_z_arg, collision_padding_arg,
         use_trajectory_cache_arg, force_replan_arg, home_before_viewpoints_arg,
-        safe_before_viewpoints_arg, safe_waypoint_pose_arg,
+        viewpoint_joint_overrides_arg,
         ur_node, kawasaki_node, visualizer_node,
     ])
