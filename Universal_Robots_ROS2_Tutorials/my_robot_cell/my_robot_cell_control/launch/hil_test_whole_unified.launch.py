@@ -945,7 +945,7 @@ def launch_setup(context, *args, **kwargs):
 
         # 8. SICK Visionary-T Mini Kameraları (gerçek donanım)
         sick_visionary_ur,
-        sick_visionary_kawasaki,  # GEÇİCİ DEVRE DIŞI (ağ çekişmesi — yukarıdaki nota bakın)
+        # sick_visionary_kawasaki,  # GEÇİCİ DEVRE DIŞI (ağ çekişmesi — yukarıdaki nota bakın)
 
         # 9. Point Cloud Transformer (gerçek donanım, 15 sn gecikme)
         pointcloud_transformer_delayed,

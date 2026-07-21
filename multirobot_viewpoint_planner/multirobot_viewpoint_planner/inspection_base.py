@@ -73,9 +73,6 @@ class InspectionNodeBase(Node):
         # "align to recorded start" move -- this is what stops the rail lurching back
         # and forth. Kawasaki keeps _align_to_traj_start (its constraint: unchanged).
         self.rebase_to_current = False
-        # Memoised viewpoint_joint_overrides; built lazily because parsing needs
-        # self.moveit.joint_names, which the subclass sets after this constructor.
-        self._overrides_cache = None
 
         self._declare_shared_params()
 
@@ -100,6 +97,7 @@ class InspectionNodeBase(Node):
         # publisher (the arm broadcaster and the AGV bridge publish in SEPARATE
         # messages). Used by _wait_until_reached to gate advancement on real arrival.
         self._joint_pos = {}
+        self._joint_stamp = None  # header stamp (s) of the newest /joint_states we saw
         self._last_plan_error = None  # MoveItErrorCodes.val of the most recent failed plan
         self.create_subscription(
             JointState, "/joint_states", self._joint_states_cb, 10, callback_group=self._cb)
@@ -166,17 +164,6 @@ class InspectionNodeBase(Node):
         self.declare_parameter(
             "home_before_viewpoints", [], ParameterDescriptor(dynamic_typing=True))
 
-        # Hand-tuned JOINT targets that REPLACE a viewpoint's planned goal. Used where the
-        # planner's pose is reachable on paper but pinches a physical cable channel the
-        # collision model does not know about (ur_vp_009/010). Format: one
-        # "<vp_id>:<axis0_m>,<j1_deg>,...,<j6_deg>" string per viewpoint -- the same
-        # [metres, then degrees] convention as the start/home poses. An overridden
-        # viewpoint is planned in JOINT space (its Cartesian pose goal is bypassed), is
-        # still captured, and its trajectory is still cached under its own id.
-        # Same dynamic_typing reason as above.
-        self.declare_parameter(
-            "viewpoint_joint_overrides", [], ParameterDescriptor(dynamic_typing=True))
-
         # Pose-goal planning tolerances (used only when an arm plans to a Cartesian
         # pose goal -- the UR). Kept here because _plan_pose lives in the base.
         self.declare_parameter("pose_goal_pos_tol", 0.005)   # m
@@ -192,6 +179,11 @@ class InspectionNodeBase(Node):
         """True if THIS arm should run given only_ur/only_kawasaki (+ enable). Both
         only_* True is contradictory -> run both (warned once)."""
         raise NotImplementedError
+
+    def _setup_planning_scene_extras(self):
+        """Arm-specific planning-scene additions, applied once before the sequence and
+        after the ground plane / padding. Default: nothing (Kawasaki)."""
+        return
 
     def _use_pose_goal(self):
         """True -> plan to a Cartesian pose goal (UR). False -> joint-space."""
@@ -419,6 +411,31 @@ class InspectionNodeBase(Node):
     def _joint_states_cb(self, msg: JointState):
         for n, p in zip(msg.name, msg.position):
             self._joint_pos[n] = p
+        st = msg.header.stamp
+        self._joint_stamp = st.sec + st.nanosec * 1e-9
+
+    def _wait_fresh_joint_state(self, label, max_age=0.5, timeout=5.0):
+        """Block until the newest /joint_states is younger than max_age.
+
+        move_group validates an execute_trajectory goal against its current-state monitor
+        and refuses ("couldn't receive full current joint state within 1s") when the
+        newest state is older than 1 s -- the goal is then ABORTED before the controller
+        ever sees it, so the arm does not move at all while the sequence marches on. We
+        see the same messages it does, so waiting here for a fresh one is a direct check.
+        Returns True if a fresh state is in hand (False -> dispatch anyway and let the
+        controller decide; we never gate on tolerances)."""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            stamp = self._joint_stamp
+            if stamp is not None:
+                age = self.get_clock().now().nanoseconds * 1e-9 - stamp
+                if age < max_age:
+                    return True
+            time.sleep(0.05)
+        self.get_logger().warning(
+            f"[{label}] /joint_states is stale (>{max_age:.1f}s old after {timeout:.0f}s of "
+            "waiting); move_group may abort this goal before execution.")
+        return False
 
     # ------------------------------------------------------------------ #
     # Planning.
@@ -604,8 +621,15 @@ class InspectionNodeBase(Node):
             return False
         return True
 
-    @staticmethod
-    def _ftj_err_name(code):
+    @classmethod
+    def _ftj_err_name(cls, code):
+        """Name a failed action's error code. _await serves BOTH result types: the
+        Kawasaki's raw FollowJointTrajectory (error_code is a plain int) and the UR's
+        move_group ExecuteTrajectory (error_code is a MoveItErrorCodes MESSAGE, which is
+        unhashable -- indexing a dict with it raises TypeError and used to kill the node
+        on the very line meant to REPORT the failure). Dispatch on which one we got."""
+        if hasattr(code, "val"):
+            return cls._moveit_err_name(code.val)
         return {
             0: "SUCCESSFUL", -1: "INVALID_GOAL", -2: "INVALID_JOINTS",
             -3: "OLD_HEADER_TIMESTAMP", -4: "PATH_TOLERANCE_VIOLATED",
@@ -766,38 +790,6 @@ class InspectionNodeBase(Node):
             jt.points.append(p)
         return jt
 
-    def _joint_overrides(self):
-        """Parse `viewpoint_joint_overrides` into {vp_id: [rad/m, in moveit joint order]}.
-        Parsed once and memoised. A malformed or wrong-length entry is WARNED about and
-        dropped -- never silently reinterpreted, since a bad joint vector is a crash into
-        the cell."""
-        if self._overrides_cache is not None:
-            return self._overrides_cache
-        out = {}
-        n_joints = len(self.moveit.joint_names)
-        for entry in list(self.get_parameter("viewpoint_joint_overrides").value or []):
-            vp_id, sep, vals = str(entry).partition(":")
-            if not sep:
-                self.get_logger().warning(
-                    f"[{self.arm_label}] viewpoint_joint_overrides entry {entry!r} has no "
-                    "'<vp_id>:<values>' separator; ignoring it.")
-                continue
-            try:
-                pose = [float(v) for v in vals.split(",")]
-            except ValueError:
-                self.get_logger().warning(
-                    f"[{self.arm_label}] override for {vp_id} has non-numeric values "
-                    f"({vals!r}); ignoring it.")
-                continue
-            if len(pose) != n_joints:
-                self.get_logger().warning(
-                    f"[{self.arm_label}] override for {vp_id} has {len(pose)} values, "
-                    f"expected {n_joints}; ignoring it.")
-                continue
-            out[vp_id.strip()] = self._pose_to_rad(pose)
-        self._overrides_cache = out
-        return out
-
     def _get_trajectory(self, vp, label, idx, force_fresh=False):
         """Cache-or-plan. Returns (JointTrajectory | None, from_cache: bool).
         from_cache lets the caller skip aligning a FRESH plan to its start (it already
@@ -809,19 +801,7 @@ class InspectionNodeBase(Node):
         # Pose mode (UR): plan to the camera optical-frame POSE the planner solved IK for,
         # so MoveIt re-derives a valid, correctly-oriented joint solution. Joint-space
         # arms (Kawasaki) fall through unchanged.
-        # A hand-tuned override REPLACES the planner's goal for this viewpoint and forces
-        # joint-space planning: the whole point is to command an exact arm configuration,
-        # so re-deriving one from a Cartesian pose would throw the tuning away.
-        override = self._joint_overrides().get(vp_id)
-        if override is not None:
-            goal = override
-            self.get_logger().info(
-                f"[{label}] {vp_id}: using the JOINT OVERRIDE "
-                f"(axis0={override[0]:.3f} m, joints="
-                f"{[round(float(np.rad2deg(v)), 1) for v in override[1:]]} deg) "
-                "instead of the planned pose goal.")
-
-        use_pose = (override is None and self._use_pose_goal()
+        use_pose = (self._use_pose_goal()
                     and vp.get("position") is not None and vp.get("rotation") is not None)
         pose_goal = position = quat = None
         target_link = self._pose_target_link()
@@ -955,8 +935,7 @@ class InspectionNodeBase(Node):
         if traj is None:
             self.get_logger().warning(f"[{label}] could not plan transition '{name}'; skipping it.")
             return False
-        if self.rebase_to_current:
-            self._rebase_traj_to_current(traj, label)
+        self._prepare_start(traj, True, label)
         return self._settle(self._dispatch(traj, label), targets, f"[{label}]")
 
     # ------------------------------------------------------------------ #
@@ -1034,21 +1013,56 @@ class InspectionNodeBase(Node):
         the proven ur_inspection_scenario playback trick and it REPLACES the separate
         'align to recorded start' move (_align_to_traj_start) that made the rail lurch
         back and forth. If any joint's measured value is missing we leave the recorded
-        start as-is (never fabricate a start point)."""
+        start as-is (never fabricate a start point).
+
+        ONLY VALID AS A SMALL CORRECTION. Rebasing rewrites point[0] but leaves point[1]
+        at its recorded value ~0.1 s later, so a LARGE gap between the current pose and
+        the recorded start becomes a step the controller must cover in one cycle: the arm
+        visibly teleports and scaled_joint_trajectory_controller aborts on
+        'State tolerances failed ... Aborted due to state tolerance violation' (which
+        surfaces here as CONTROL_FAILED). So we rebase only when every joint is already
+        within its start tolerance; otherwise we refuse and return False, and the caller
+        walks the arm to the recorded start properly instead."""
         if traj is None or not traj.points:
-            return
+            return False
         pos = dict(self._joint_pos)
         names = list(traj.joint_names)
         if not all(n in pos for n in names):
             self.get_logger().warning(
                 f"[{label}] cannot rebase trajectory start (missing joint feedback); "
                 "running recorded start as-is.")
-            return
+            return False
+        recorded = [float(x) for x in traj.points[0].positions]
+        far = [(n, pos[n] - r) for n, r in zip(names, recorded)
+               if abs(pos[n] - r) > self._start_tol_for(n)]
+        if far:
+            worst = max(far, key=lambda kv: abs(kv[1]))
+            self.get_logger().warning(
+                f"[{label}] NOT rebasing: the arm is {abs(worst[1]):.3f} away from this "
+                f"trajectory's recorded start on '{worst[0]}' ({len(far)} joint(s) out of "
+                "tolerance). Rebasing that gap would command a one-cycle jump; walking to "
+                "the recorded start first instead.")
+            return False
         p0 = traj.points[0]
         p0.positions = [float(pos[n]) for n in names]
         p0.velocities = [0.0] * len(names)
         p0.accelerations = [0.0] * len(names)
         p0.time_from_start = Duration(sec=0, nanosec=0)
+        return True
+
+    def _prepare_start(self, traj, from_cache, label):
+        """Make the arm's actual pose agree with traj's first point before dispatch."""
+        if self.rebase_to_current:
+            # UR: rebase onto the current pose (no separate move) when the gap is small
+            # enough for that to be a correction rather than a jump; otherwise fall back
+            # to the same explicit walk-to-start the Kawasaki always does.
+            if self._rebase_traj_to_current(traj, label):
+                return
+            self._align_to_traj_start(traj, True, label)
+            self._rebase_traj_to_current(traj, label)  # mop up the residual after the walk
+            return
+        # Kawasaki: unchanged -- separate align to the recorded start.
+        self._align_to_traj_start(traj, from_cache, label)
 
     def _align_to_traj_start(self, traj, from_cache, label):
         """Ensure the arm is at `traj`'s FIRST point before it is dispatched. A CACHED
@@ -1133,12 +1147,7 @@ class InspectionNodeBase(Node):
                     f"{vp_id}_align", [float(x) for x in traj.points[0].positions],
                     list(traj.joint_names), f"{label} {vp_id} align-start")
 
-            if self.rebase_to_current:
-                # UR: rebase the trajectory onto the current pose (no separate move).
-                self._rebase_traj_to_current(traj, label)
-            else:
-                # Kawasaki: unchanged -- separate align to the recorded start.
-                self._align_to_traj_start(traj, from_cache, label)
+            self._prepare_start(traj, from_cache, label)
             self.get_logger().info(f"[{label} {idx}/{n}] Moving {label}->{vp_id}.")
             send = self._dispatch(traj, label)
             targets = self._viewpoint_targets(traj, vp)
@@ -1177,6 +1186,7 @@ class InspectionNodeBase(Node):
 
         self._add_ground_plane()
         self._apply_collision_padding()
+        self._setup_planning_scene_extras()
 
         self.get_logger().info(
             f"{self.arm_label} executing {len(vps)} viewpoints (independent single-arm node).")

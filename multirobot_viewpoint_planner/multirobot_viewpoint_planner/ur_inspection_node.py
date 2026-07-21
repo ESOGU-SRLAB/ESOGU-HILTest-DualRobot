@@ -20,6 +20,7 @@ lurch. Kawasaki keeps the raw-controller dispatch (its constraint: unchanged).
 
 See inspection_base.InspectionNodeBase for the shared machinery.
 """
+import math
 import os
 import time
 from threading import Thread
@@ -58,6 +59,36 @@ class URInspectionNode(InspectionNodeBase):
         self.declare_parameter("start_pose_ur", [1.0, 0.0, -90.0, 0.0, -90.0, 0.0, 0.0])
         self.declare_parameter("return_home_ur", True)
         self.declare_parameter("ur_home_joint_positions", [1.0, 0.0, -90.0, 0.0, -90.0, 0.0, 0.0])
+        # SICK collision top-up (see _setup_planning_scene_extras). The sick_camera mesh
+        # stops ~1.9 cm short of the real housing on the optics side, so MoveIt happily
+        # planned the camera into the UR's own joints (ur_vp_011). Rather than editing the
+        # URDF we attach one box to the camera link in the planning scene.
+        self.declare_parameter("ur_camera_box_link", "ur10e_sick_camera")
+        # x, y, z in the sick_camera frame. +Z IS THE VIEWING DIRECTION: the planner's
+        # viewpoint `rotation` aims its column 2 (+Z) at the surface (that is the arrow
+        # plan_visualizer draws), and depth_optical_frame -- which this node commands to
+        # exactly that rotation and which is unrotated w.r.t. sick_camera -- therefore
+        # looks along sick_camera +Z. (depth_frame/rgb_frame differ only in Y because that
+        # is the RGB<->depth baseline, NOT the lens direction.)
+        # The mesh's front face ends at z=+0.0342, so a 0.019-thick box sitting OUTSIDE it
+        # is centred at 0.0342 + 0.019/2 = 0.0437, over the face's centre (-0.0301,
+        # 0.0174). size/position are x,y,z in the BOX's own frame, which the yaw below
+        # rotates onto the housing -- so 0.067 and 0.070 run along the housing's edges,
+        # not along the link axes.
+        self.declare_parameter("ur_camera_box_size", [0.067, 0.070, 0.019])
+        self.declare_parameter("ur_camera_box_position", [-0.0301, 0.0174, 0.0437])
+        # The HOUSING IS ROTATED about the viewing axis inside this link: a min-area-rect
+        # fit to the mesh's front face lands on 60.00 deg -- the very angle already in the
+        # URDF as ur_sick_optical_joint's rpy="0 0 1.04720". In that rotated (camera-
+        # aligned) frame the face measures 7.98 x 6.97 cm, which is why the asked-for
+        # 7.0 cm side fits it exactly. An axis-aligned box can only ever sit askew here.
+        self.declare_parameter("ur_camera_box_yaw_deg", 60.0)
+        # Links the box is ALLOWED to touch: only the rigid mount it is bolted to. Every
+        # other link (wrists, forearm, cable channel) stays checked -- those are exactly
+        # the collisions this box exists to catch.
+        self.declare_parameter(
+            "ur_camera_box_touch_links",
+            ["ur10e_sick_camera", "ur10e_flange", "ur10e_tool0"])
 
         self.arm_label = "UR"
         self.start_pose_param = "start_pose_ur"
@@ -113,6 +144,35 @@ class URInspectionNode(InspectionNodeBase):
         # UR runs unless only_kawasaki (with only_ur False). Both-True already reset.
         return (not only_kawa) or only_ur
 
+    def _setup_planning_scene_extras(self):
+        """Top up the SICK camera's collision geometry with one box on its optics face.
+
+        The sick_camera collision MESH under-reports the real housing on the viewing side,
+        so MoveIt planned paths that swing the camera into the UR's own joints. The box is
+        ATTACHED to the camera link (not added as a world object) so it travels with the
+        arm and is checked against the rest of the robot on every plan."""
+        link = self.get_parameter("ur_camera_box_link").value
+        if not link:
+            return
+        size = tuple(float(v) for v in self.get_parameter("ur_camera_box_size").value)
+        pos = tuple(float(v) for v in self.get_parameter("ur_camera_box_position").value)
+        touch = list(self.get_parameter("ur_camera_box_touch_links").value)
+        yaw = math.radians(float(self.get_parameter("ur_camera_box_yaw_deg").value))
+        quat = (0.0, 0.0, math.sin(yaw / 2.0), math.cos(yaw / 2.0))  # yaw about +Z
+        box_id = "ur_sick_camera_front"
+
+        # Define it IN the camera frame, then attach it to that same link: the pose is then
+        # the box's fixed offset on the camera, independent of where the arm happens to be.
+        self.moveit.add_collision_box(
+            id=box_id, size=size, position=pos, quat_xyzw=quat, frame_id=link)
+        time.sleep(0.3)
+        self.moveit.attach_collision_object(id=box_id, link_name=link, touch_links=touch)
+        time.sleep(0.3)
+        self.get_logger().info(
+            f"SICK camera collision top-up: {size[0]*100:.1f}x{size[1]*100:.1f}x"
+            f"{size[2]*100:.1f} cm box attached to '{link}' at xyz={pos}, "
+            f"yaw={math.degrees(yaw):.1f} deg (touch_links={touch}).")
+
     def _use_pose_goal(self):
         return bool(self.get_parameter("ur_use_pose_goal").value)
 
@@ -128,6 +188,12 @@ class URInspectionNode(InspectionNodeBase):
         # trajectory (the robot.execute() equivalent), then await it with the base's
         # future-based _await over the shared MultiThreadedExecutor -- no spin_once, so the
         # executor's wait set stays intact and the capture subscriptions keep flowing.
+        # move_group validates the goal's start state first and ABORTS it outright if its
+        # newest /joint_states is over 1 s old ("couldn't receive full current joint state
+        # within 1s") -- the controller never sees the goal and the arm silently does not
+        # move. Every UR dispatch (viewpoints, align-to-start, start pose, homing) goes
+        # through here, so one freshness wait in front of the send covers them all.
+        self._wait_fresh_joint_state(label)
         goal = ExecuteTrajectory.Goal()
         goal.trajectory.joint_trajectory = traj
         return self.ctrl.send_goal_async(goal)
