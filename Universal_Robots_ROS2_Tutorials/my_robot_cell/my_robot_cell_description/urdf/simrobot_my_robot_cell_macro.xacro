@@ -42,9 +42,9 @@
       </collision>
     </link>
 
-    <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
+    <!-- <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </xacro:chassis_assembly>
+    </xacro:chassis_assembly> -->
     
 
     <!-- <link name="${tf_prefix}chassis">
@@ -81,7 +81,7 @@
     </link> -->
 
     <!-- Platform - Bodies(1): mass=205.0 kg, inertia CAD'dan alındı -->
-    <!-- <link name="${tf_prefix}platform">
+    <link name="${tf_prefix}platform">
       <inertial>
         <origin xyz="-1.101122 1.387607 0.574201" rpy="0 0 0"/>
         <mass value="205.0"/>
@@ -92,20 +92,20 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/platform.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/platform.stl" scale="1 1 1"/>
         </geometry>
         <material name="silver"/>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/platform.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/platform.stl" scale="1 1 1"/>
         </geometry>
       </collision>
-    </link> -->
+    </link>
 
     <!-- Door - araba kapısı (~18 kg, 1.1m x 0.9m x 0.05m çelik) -->
-    <!-- <link name="${tf_prefix}windowlessdoor"> 
+    <link name="${tf_prefix}windowlessdoor"> 
       <inertial>
         <origin xyz="-0.864306 0.816343 0.934094" rpy="0 0 0"/>
         <mass value="18.0"/>
@@ -116,20 +116,20 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowlessdoor.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowlessdoor.stl" scale="1 1 1"/>
         </geometry>
         <material name="silver"/>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowlessdoor.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowlessdoor.stl" scale="1 1 1"/>
         </geometry>
       </collision>
-    </link> -->
+    </link>
 
     <!-- Door1 - araba kapısı (~18 kg, 1.1m x 0.9m x 0.05m çelik) -->
-    <!-- <link name="${tf_prefix}windowdoor">
+    <link name="${tf_prefix}windowdoor">
       <inertial>
         <origin xyz="-0.844038 1.994389 0.74421" rpy="0 0 0"/>
         <mass value="18.0"/>
@@ -140,17 +140,17 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowdoor.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowdoor.stl" scale="1 1 1"/>
         </geometry>
         <material name="silver"/>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowdoor.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowdoor.stl" scale="1 1 1"/>
         </geometry>
       </collision>
-    </link> -->
+    </link>
 
     <link name="${tf_prefix}robot_mount">
       <inertial>
@@ -272,7 +272,7 @@
     </joint> -->
     
 
-    <!-- <joint name="${tf_prefix}base_to_platform" type="fixed">
+    <joint name="${tf_prefix}base_to_platform" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}platform"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -288,7 +288,7 @@
       <parent link="${tf_prefix}platform"/>
       <child link="${tf_prefix}windowdoor"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint> -->
+    </joint>
 
     <!-- Linear axis joint - bu joint'in tam tanımı burada olmalı -->
     <joint name="${tf_prefix}base_to_robot_mount" type="prismatic">

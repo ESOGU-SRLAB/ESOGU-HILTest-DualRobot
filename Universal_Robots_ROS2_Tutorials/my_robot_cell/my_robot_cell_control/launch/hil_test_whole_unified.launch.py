@@ -86,6 +86,7 @@ def launch_setup(context, *args, **kwargs):
     use_mock_hardware = LaunchConfiguration("use_mock_hardware")
     use_gripper_value = context.launch_configurations.get("use_gripper", "false")
     digital_twin_value = context.launch_configurations.get("digital_twin", "false")
+    harmony = LaunchConfiguration("harmony")
 
     # ==================== Gazebo Ortam Değişkenleri ====================
     kawasaki_pkg_share = get_package_share_directory("mobile_manipulator_description")
@@ -700,10 +701,12 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # === MoveIt Move Group (Real Robot) ===
-    # Seçilen gripper/vacuum ayarlarına göre doğru MoveIt config paketini dinamik olarak yükler.
+    # Seçilen gripper/vacuum/harmony ayarlarına göre doğru MoveIt config paketini dinamik olarak yükler.
     # NOT: use_vac_str ve use_grip_str yukarıda sim MoveIt seçiminde de kullanılıyor.
 
-    if use_vac_str.lower() == 'true':
+    if harmony.perform(context).lower() == 'true':
+        real_moveit_pkg = "harmony_moveit_config"
+    elif use_vac_str.lower() == 'true':
         real_moveit_pkg = "real_ifarlab_vacuum_moveit_config"
     elif use_grip_str.lower() == 'true':
         real_moveit_pkg = "real_ifarlab_gripper_moveit_config"
@@ -945,7 +948,7 @@ def launch_setup(context, *args, **kwargs):
 
         # 8. SICK Visionary-T Mini Kameraları (gerçek donanım)
         sick_visionary_ur,
-        # sick_visionary_kawasaki,  # GEÇİCİ DEVRE DIŞI (ağ çekişmesi — yukarıdaki nota bakın)
+        sick_visionary_kawasaki,  # GEÇİCİ DEVRE DIŞI (ağ çekişmesi — yukarıdaki nota bakın)
 
         # 9. Point Cloud Transformer (gerçek donanım, 15 sn gecikme)
         pointcloud_transformer_delayed,
@@ -1138,6 +1141,14 @@ def generate_launch_description():
             "use_vacuum_gripper",
             default_value="false",
             description="Enable vacuum gripper on the robot.",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "harmony",
+            default_value="false",
+            description="Harmony modu. true ise harmony_moveit_config paketiyle MoveIt başlatılır.",
         )
     )
 

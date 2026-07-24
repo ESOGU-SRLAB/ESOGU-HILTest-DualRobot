@@ -1,0 +1,6 @@
+[16:00:29] [FAULT] ⚠️ [T0] E-3110 — UR10e bilek 2 eklem torku beklenen aralığın üzerinde. (senaryo hatası, süreç durmadı)
+[16:00:30] [FAULT] ✅ [T2] E-3110 — operatör uyarıyı kapattı.
+[16:00:31] [SYSTEM] 📡 Published command: START
+[16:00:32] [SYSTEM] 📡 Published command: CONFIRM
+[16:00:33] [SYSTEM] 📡 Published command: REINSPECT
+[16:00:35] [SYSTEM] 📡 Published command: STOP

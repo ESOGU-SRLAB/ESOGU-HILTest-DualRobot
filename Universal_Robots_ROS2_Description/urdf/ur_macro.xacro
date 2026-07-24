@@ -533,6 +533,42 @@
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/sick_camera_mo.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
+      <!-- SICK camera collision shell. The mesh above under-reports the real
+           housing (its front face stops ~1.9 cm short of the physical optics
+           cover), so MoveIt used to plan the camera into the UR's own joints
+           and the cable channel. These six boxes wrap the housing on all
+           sides: front (optics face), back, and the four sides. They are
+           yawed 60 deg about the viewing axis to match the housing (same angle
+           as ur_sick_optical_joint's rpy). All four neighbour links
+           (flange, tool0, cable_channel, cable_channel_flange) are already
+           disabled against sick_camera in every SRDF, so these boxes add no
+           permanent self-collision. Front/back = 8.7 x 9.0 x 3.9 cm skirts;
+           sides span the 7.75 cm housing depth. Formerly attached at runtime
+           in ur_inspection_node._setup_planning_scene_extras. -->
+      <collision>
+        <origin xyz="-0.0301 0.0174 0.0537" rpy="0 0 1.047198"/>
+        <geometry><box size="0.087 0.090 0.039"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="-0.0301 0.0174 -0.0628" rpy="0 0 1.047198"/>
+        <geometry><box size="0.087 0.090 0.039"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="0.0014 0.071959 -0.00455" rpy="0 0 1.047198"/>
+        <geometry><box size="0.039 0.090 0.0775"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="-0.0616 -0.037159 -0.00455" rpy="0 0 1.047198"/>
+        <geometry><box size="0.039 0.090 0.0775"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="-0.085959 0.04965 -0.00455" rpy="0 0 1.047198"/>
+        <geometry><box size="0.087 0.039 0.0775"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="0.025759 -0.01485 -0.00455" rpy="0 0 1.047198"/>
+        <geometry><box size="0.087 0.039 0.0775"/></geometry>
+      </collision>
     </link>
 
     <link name="${tf_prefix}cable_channel_flange">

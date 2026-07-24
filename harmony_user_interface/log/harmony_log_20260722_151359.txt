@@ -1,0 +1,1 @@
+[15:14:11] [FAULT] ⚠️ [T0] E-1042 — Lineer eksen pozisyon geri beslemesi geçici olarak kayboldu. (senaryo hatası, süreç durmadı)

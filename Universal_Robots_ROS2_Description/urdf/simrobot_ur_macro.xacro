@@ -533,6 +533,38 @@
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/sick_camera_mo.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
+      <!-- SICK camera collision shell (identical to the real ur_macro.xacro).
+           The mesh above under-reports the real housing, so these six boxes
+           wrap it on all sides: front (optics face), back, and four sides,
+           yawed 60 deg about the viewing axis to match the housing. All four
+           neighbour links (flange, tool0, cable_channel, cable_channel_flange)
+           are already disabled against sick_camera in every SRDF, so these add
+           no permanent self-collision. Formerly attached at runtime in
+           ur_inspection_node._setup_planning_scene_extras. -->
+      <collision>
+        <origin xyz="-0.0301 0.0174 0.0537" rpy="0 0 1.047198"/>
+        <geometry><box size="0.087 0.090 0.039"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="-0.0301 0.0174 -0.0628" rpy="0 0 1.047198"/>
+        <geometry><box size="0.087 0.090 0.039"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="0.0014 0.071959 -0.00455" rpy="0 0 1.047198"/>
+        <geometry><box size="0.039 0.090 0.0775"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="-0.0616 -0.037159 -0.00455" rpy="0 0 1.047198"/>
+        <geometry><box size="0.039 0.090 0.0775"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="-0.085959 0.04965 -0.00455" rpy="0 0 1.047198"/>
+        <geometry><box size="0.087 0.039 0.0775"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="0.025759 -0.01485 -0.00455" rpy="0 0 1.047198"/>
+        <geometry><box size="0.087 0.039 0.0775"/></geometry>
+      </collision>
     </link>
 
     <joint name="${tf_prefix}flange-tool0" type="fixed">

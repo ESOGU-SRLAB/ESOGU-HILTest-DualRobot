@@ -20,6 +20,9 @@ install(PROGRAMS
     ${EXAMPLES_DIR}/real_robot_gripper_goal.py
     ${EXAMPLES_DIR}/human_robot_collaboration_scenario.py
     ${EXAMPLES_DIR}/pick_and_place_scenario.py
+    ${EXAMPLES_DIR}/sensing_robot.py
+    ${EXAMPLES_DIR}/cleaning_mission_runner.py
+    ${EXAMPLES_DIR}/red_detection_node.py
     DESTINATION lib/${PROJECT_NAME}
 )
 

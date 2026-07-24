@@ -12,6 +12,7 @@ import subprocess
 import threading
 import time
 import json
+import random
 from collections import deque
 from datetime import datetime
 
@@ -28,13 +29,33 @@ app.config["SECRET_KEY"] = "harmony-sensing-cleaning-2026"
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # ==============================================================================
+# HARMONY validasyon senaryosu sabitleri
+# ==============================================================================
+
+# Defect topic'leri (pymoveit2_real.harmony_defects ile aynı isimler)
+TOPIC_DEFECT = "/harmony/mock_perception/defect"
+TOPIC_DEFECT_LIST = "/harmony/mock_perception/defect_list"
+TOPIC_DEFECT_STATUS = "/harmony/defect_status"
+
+# Senaryo hatası: KPI3 ölçümü için operatöre gösterilen yapay sistem uyarısı.
+# Hiçbir süreci durdurmaz; operatör "OK" ile kapatır.
+SCENARIO_FAULT_MIN_SEC = 45.0
+SCENARIO_FAULT_MAX_SEC = 120.0
+SCENARIO_FAULTS = [
+    ("E-1042", "Lineer eksen pozisyon geri beslemesi geçici olarak kayboldu."),
+    ("E-2071", "SICK Visionary-T Mini veri akışında paket kaybı algılandı."),
+    ("E-3110", "UR10e bilek 2 eklem torku beklenen aralığın üzerinde."),
+    ("E-4005", "Kapı yüzeyi referans kalibrasyonu tolerans sınırında."),
+]
+
+# ==============================================================================
 # Global State
 # ==============================================================================
 
 class ProcessManager:
     """Manages the ROS2 launch process lifecycle for Harmony."""
 
-    HIL_CMD = "ros2 launch my_robot_cell_control hil_test_whole_unified.launch.py digital_twin:=true"
+    HIL_CMD = "ros2 launch my_robot_cell_control hil_test_whole_unified.launch.py harmony:=true"
     MISSION_CMD = "ros2 launch my_robot_cell_control sensing_and_cleaning_mission.launch.py"
 
     def __init__(self, socketio_instance):
@@ -271,12 +292,87 @@ class ROS2DataCollector:
         self.current_mode = "IDLE"
         self.current_note = ""
 
-        # Defect count
-        self.defect_count = 0
+        # Defect tablosu: defect_id -> {id, type, x, y, z, status, frame_id}
+        # Sıralama sensing'in yayın sırasına göre korunur (DEF-01 ... DEF-04).
+        self.defects = {}
+        self.defect_order = []
+        # Sensing tamamlandı pop-up'ı tur başına bir kez gösterilir.
+        self._sensing_complete_notified = False
+
+        # Kalıcı komut yayıncısı. `ros2 topic pub -1` her çağrıda yeni bir node
+        # kurup discovery tamamlanmadan çıktığı için ilk tıklamalar kaybolabiliyordu;
+        # burada uzun ömürlü node üzerinden yayınlıyoruz.
+        self._cmd_pub = None
 
         self._rclpy_thread = None
         self._running = False
         self._data_lock = threading.Lock()
+
+    def publish_cmd(self, cmd_name):
+        """Komutu kalıcı ROS node'u üzerinden yayınlar.
+
+        Returns True if published; False if ROS is unavailable (caller falls
+        back to the subprocess publisher).
+        """
+        pub = self._cmd_pub
+        if pub is None:
+            return False
+        try:
+            from std_msgs.msg import String
+            msg = String()
+            msg.data = json.dumps({"cmd": cmd_name})
+            pub.publish(msg)
+            return True
+        except Exception as e:
+            print(f"[ROS2DataCollector] publish_cmd error: {e}")
+            return False
+
+    # ------------------------------------------------------------------
+    def _upsert_defect(self, payload):
+        """Gelen defect JSON'unu tabloya ekler/gunceller."""
+        defect_id = str(payload.get("defect_id", "")).strip()
+        if not defect_id:
+            return
+        pos = payload.get("position", {}) or {}
+        entry = {
+            "id": defect_id,
+            "type": payload.get("defect_type", ""),
+            "x": float(pos.get("x", 0.0)),
+            "y": float(pos.get("y", 0.0)),
+            "z": float(pos.get("z", 0.0)),
+            "frame_id": payload.get("frame_id", "world"),
+            "status": payload.get("status", "DETECTED"),
+        }
+        with self._data_lock:
+            if defect_id not in self.defects:
+                self.defect_order.append(defect_id)
+            else:
+                # Durum bilgisi ayri topic'ten gelmis olabilir, ezme.
+                entry["status"] = self.defects[defect_id].get("status", entry["status"])
+            self.defects[defect_id] = entry
+
+    def _defect_snapshot(self):
+        with self._data_lock:
+            return [self.defects[d] for d in self.defect_order if d in self.defects]
+
+    def clear_defects(self):
+        """Yeni bir sensing turu baslarken eski defect'leri temizler."""
+        with self._data_lock:
+            self.defects = {}
+            self.defect_order = []
+            self._sensing_complete_notified = False
+        self.socketio.emit("defect_list", {"defects": []})
+
+    def _notify_sensing_complete(self, count):
+        """Sensing tamamlandiginda operatore pop-up gonderir (tur basina bir kez)."""
+        with self._data_lock:
+            if self._sensing_complete_notified:
+                return
+            self._sensing_complete_notified = True
+        self.socketio.emit("sensing_complete", {
+            "count": count,
+            "timestamp": datetime.now().strftime("%H:%M:%S"),
+        })
 
     def start(self):
         """Start the ROS2 subscriber thread."""
@@ -292,12 +388,22 @@ class ROS2DataCollector:
         try:
             import rclpy
             from rclpy.node import Node as RosNode
+            from rclpy.qos import (QoSDurabilityPolicy, QoSHistoryPolicy,
+                                   QoSProfile, QoSReliabilityPolicy)
             from sensor_msgs.msg import JointState
             from std_msgs.msg import String
             from geometry_msgs.msg import WrenchStamped
 
             rclpy.init()
             node = RosNode("harmony_dashboard_listener")
+
+            # defect_list latched yayinlanir; gec baglanan arayuz de listeyi alir.
+            latched = QoSProfile(
+                depth=1,
+                history=QoSHistoryPolicy.KEEP_LAST,
+                reliability=QoSReliabilityPolicy.RELIABLE,
+                durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            )
 
             # UR and linear axis joint names to track (without ur10e_ prefix)
             self.target_joints = [
@@ -340,8 +446,45 @@ class ROS2DataCollector:
                     pass
 
             def defect_cb(msg):
+                """Birincil topic: defect basina tekil JSON."""
+                try:
+                    self._upsert_defect(json.loads(msg.data))
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    return
+                self.socketio.emit("defect_list", {"defects": self._defect_snapshot()})
+
+            def defect_list_cb(msg):
+                """Yedek topic: tum defect'ler tek JSON array icinde."""
+                try:
+                    payloads = json.loads(msg.data)
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    return
+                if not isinstance(payloads, list):
+                    return
+                for payload in payloads:
+                    if isinstance(payload, dict):
+                        self._upsert_defect(payload)
+                snapshot = self._defect_snapshot()
+                self.socketio.emit("defect_list", {"defects": snapshot})
+                # Bu topic sensing turu bittiginde bir kez yayinlanir; sensing'in
+                # tamamlandiginin en guvenilir isareti budur.
+                if snapshot:
+                    self._notify_sensing_complete(len(snapshot))
+
+            def defect_status_cb(msg):
+                """Cleaning node'undan gelen DETECTED/CLEANING/CLEANED guncellemeleri."""
+                try:
+                    data = json.loads(msg.data)
+                    defect_id = str(data.get("defect_id", "")).strip()
+                    status = str(data.get("status", "")).strip()
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    return
+                if not defect_id or not status:
+                    return
                 with self._data_lock:
-                    self.defect_count += 1
+                    if defect_id in self.defects:
+                        self.defects[defect_id]["status"] = status
+                self.socketio.emit("defect_list", {"defects": self._defect_snapshot()})
 
             def force_cb(msg):
                 t = time.time()
@@ -349,9 +492,14 @@ class ROS2DataCollector:
                 with self._data_lock:
                     self.force_data.append({"t": t, "force_z": force_z})
 
+            # Kalıcı komut yayıncısı (buton tıklamaları buradan gider).
+            self._cmd_pub = node.create_publisher(String, "/harmony/cmd_input", 10)
+
             node.create_subscription(JointState, "/joint_states", joint_state_cb, 10)
             node.create_subscription(String, "/harmony/robot_status", robot_status_cb, 10)
-            node.create_subscription(String, "/harmony/mock_perception/defect", defect_cb, 10)
+            node.create_subscription(String, TOPIC_DEFECT, defect_cb, 10)
+            node.create_subscription(String, TOPIC_DEFECT_LIST, defect_list_cb, latched)
+            node.create_subscription(String, TOPIC_DEFECT_STATUS, defect_status_cb, 10)
             node.create_subscription(WrenchStamped, "/harmony/cleaning/force", force_cb, 10)
 
             node.get_logger().info("Harmony dashboard listener started.")
@@ -359,10 +507,12 @@ class ROS2DataCollector:
             while self._running and rclpy.ok():
                 rclpy.spin_once(node, timeout_sec=0.1)
 
+            self._cmd_pub = None
             node.destroy_node()
             rclpy.shutdown()
 
         except Exception as e:
+            self._cmd_pub = None
             print(f"[ROS2DataCollector] ROS2 error: {e}")
             print("[ROS2DataCollector] ROS2 data monitoring disabled.")
 
@@ -389,7 +539,7 @@ class ROS2DataCollector:
                     }
                     mode_display = mode_map.get(self.current_mode, self.current_mode)
                     note = self.current_note
-                    defect = self.defect_count
+                    defect = len(self.defect_order)
 
                 pos_sampled = self._downsample(pos_filtered, 100)
                 vel_sampled = self._downsample(vel_filtered, 100)
@@ -431,11 +581,24 @@ data_collector = ROS2DataCollector(socketio)
 # ==============================================================================
 
 class CommandPublisher:
-    """Publishes commands to /harmony/cmd_input via ros2 topic pub."""
+    """Publishes commands to /harmony/cmd_input.
+
+    Birincil yol, ROS2DataCollector'un kalıcı node'u üzerinden doğrudan
+    yayınlamaktır: `ros2 topic pub -1` her seferinde yeni bir node kurar ve
+    discovery tamamlanmadan çıkabildiği için mesaj sessizce düşerdi (butona
+    birkaç kez basmak gerekiyordu). Subprocess yolu yalnızca ROS başlatılamamışsa
+    yedek olarak kullanılır.
+    """
 
     @staticmethod
     def publish(cmd_name):
-        """Publish a command (START, CONFIRM, REINSPECT) to /harmony/cmd_input."""
+        if data_collector.publish_cmd(cmd_name):
+            return
+        print(f"[CommandPublisher] ROS unavailable, falling back to subprocess for {cmd_name}")
+        CommandPublisher._publish_via_subprocess(cmd_name)
+
+    @staticmethod
+    def _publish_via_subprocess(cmd_name):
         cmd = (
             f'ros2 topic pub /harmony/cmd_input std_msgs/msg/String '
             f'"{{data: \'{{\\\"cmd\\\":\\\"{cmd_name}\\\"}}\'}}" -1'
@@ -468,6 +631,78 @@ class CommandPublisher:
 
 
 cmd_publisher = CommandPublisher()
+
+
+# ==============================================================================
+# Senaryo Hatası Üreteci (KPI3)
+# ==============================================================================
+
+class ScenarioFaultGenerator:
+    """Rastgele aralıklarla yapay sistem hatası üretir.
+
+    Doküman (HARMONY_Validasyon_Senaryo_Guncel) KPI3 için operatöre bir hata
+    bildirimi gösterilmesini ister. Bu hata SÜRECİ DURDURMAZ; sadece arayüzde
+    bir uyarı satırı belirir ve operatör "OK" ile kapatır. T0 (hatanın
+    üretildiği an) log'a yazılır; T1/T2 kronometre ve video ile tutulur.
+    """
+
+    def __init__(self, socketio_instance, process_manager):
+        self.socketio = socketio_instance
+        self.process_mgr = process_manager
+        self._running = False
+        self._thread = None
+        self._enabled = True
+        self._counter = 0
+
+    def start(self):
+        self._running = True
+        self._thread = threading.Thread(target=self._worker, daemon=True)
+        self._thread.start()
+
+    def set_enabled(self, enabled):
+        self._enabled = bool(enabled)
+        state = "enabled" if self._enabled else "disabled"
+        self.process_mgr._emit_log("SYSTEM", f"⚙️ Scenario fault generator {state}.")
+
+    def trigger_now(self):
+        """Manuel tetikleme (senaryo provası için)."""
+        self._emit_fault()
+
+    def _emit_fault(self):
+        code, message = random.choice(SCENARIO_FAULTS)
+        self._counter += 1
+        t0 = datetime.now()
+        payload = {
+            "code": code,
+            "message": message,
+            "severity": "WARNING",
+            "timestamp": t0.strftime("%H:%M:%S"),
+            "seq": self._counter,
+        }
+        self.socketio.emit("scenario_fault", payload)
+        # T0: hatanın üretildiği an — KPI3 için log'a düşer.
+        self.process_mgr._emit_log(
+            "FAULT", f"⚠️ [T0] {code} — {message} (senaryo hatası, süreç durmadı)"
+        )
+
+    def _worker(self):
+        while self._running:
+            delay = random.uniform(SCENARIO_FAULT_MIN_SEC, SCENARIO_FAULT_MAX_SEC)
+            slept = 0.0
+            while self._running and slept < delay:
+                time.sleep(0.5)
+                slept += 0.5
+            if not self._running:
+                return
+            # Yalnızca görev çalışırken üret; boştayken operatörü meşgul etme.
+            if self._enabled and self.process_mgr.mission_status == "running":
+                self._emit_fault()
+
+    def stop(self):
+        self._running = False
+
+
+fault_generator = ScenarioFaultGenerator(socketio, process_mgr)
 
 
 # ==============================================================================
@@ -630,6 +865,8 @@ def api_status():
 @socketio.on("connect")
 def handle_connect():
     emit("status_update", process_mgr.get_status())
+    # Geç bağlanan istemci mevcut defect tablosunu hemen görsün.
+    emit("defect_list", {"defects": data_collector._defect_snapshot()})
 
 @socketio.on("start_hil")
 def handle_start_hil(data):
@@ -645,14 +882,38 @@ def handle_stop_all():
     thread = threading.Thread(target=process_mgr.stop_all, daemon=True)
     thread.start()
 
+#: /harmony/cmd_input üzerinden yayınlanabilen komutlar
+VALID_CMDS = ("START", "CONFIRM", "REINSPECT", "STOP")
+
+
 @socketio.on("publish_cmd")
 def handle_publish_cmd(data):
     cmd = data.get("cmd", "")
-    if cmd in ("START", "CONFIRM", "REINSPECT"):
+    if cmd in VALID_CMDS:
+        # Yeni bir tarama başlıyorsa eski defect tablosunu temizle.
+        if cmd == "START":
+            data_collector.clear_defects()
         cmd_publisher.publish(cmd)
         process_mgr._emit_log("SYSTEM", f"📡 Published command: {cmd}")
     else:
         process_mgr._emit_log("SYSTEM", f"❌ Unknown command: {cmd}")
+
+
+@socketio.on("ack_fault")
+def handle_ack_fault(data=None):
+    """Operatör senaryo hatasını 'OK' ile kapattı (KPI3 için T2 referansı)."""
+    code = (data or {}).get("code", "?")
+    process_mgr._emit_log("FAULT", f"✅ [T2] {code} — operatör uyarıyı kapattı.")
+
+
+@socketio.on("set_fault_generator")
+def handle_set_fault_generator(data):
+    fault_generator.set_enabled(bool((data or {}).get("enabled", True)))
+
+
+@socketio.on("trigger_fault")
+def handle_trigger_fault():
+    fault_generator.trigger_now()
 
 
 # ==============================================================================
@@ -671,6 +932,9 @@ def main():
     # Start ROS2 data collector
     data_collector.start()
 
+    # Start scenario fault generator (KPI3)
+    fault_generator.start()
+
     try:
         socketio.run(app, host="0.0.0.0", port=8081, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
@@ -678,6 +942,7 @@ def main():
     finally:
         camera_streamer.stop()
         data_collector.stop()
+        fault_generator.stop()
         process_mgr.stop_all()
 
 

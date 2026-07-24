@@ -42,6 +42,122 @@ socket.on("robot_info", (data) => {
 });
 
 // ==============================================================================
+// Defect Table
+// ==============================================================================
+
+const DEFECT_STATUS_CLASS = {
+    DETECTED: "status-detected",
+    CLEANING: "status-cleaning",
+    CLEANED: "status-cleaned",
+    FAILED: "status-failed",
+};
+
+socket.on("defect_list", (data) => {
+    const tbody = document.getElementById("defect-tbody");
+    if (!tbody) return;
+
+    const defects = (data && data.defects) || [];
+    tbody.innerHTML = "";
+
+    if (defects.length === 0) {
+        const row = document.createElement("tr");
+        row.className = "defect-empty-row";
+        row.innerHTML =
+            '<td colspan="6">No defects reported yet. Run Sensing Start.</td>';
+        tbody.appendChild(row);
+        return;
+    }
+
+    defects.forEach((d) => {
+        const status = d.status || "DETECTED";
+        const statusClass = DEFECT_STATUS_CLASS[status] || "status-detected";
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td class="defect-id">${escapeHtml(d.id || "")}</td>
+            <td>${escapeHtml(d.type || "")}</td>
+            <td class="defect-num">${Number(d.x).toFixed(3)}</td>
+            <td class="defect-num">${Number(d.y).toFixed(3)}</td>
+            <td class="defect-num">${Number(d.z).toFixed(3)}</td>
+            <td><span class="defect-status ${statusClass}">${escapeHtml(status)}</span></td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    const badge = document.getElementById("defect-frame-badge");
+    if (badge && defects[0]) {
+        badge.textContent = `frame: ${defects[0].frame_id || "world"} · metre`;
+    }
+});
+
+// ==============================================================================
+// Scenario Fault Banner (KPI3)
+// ==============================================================================
+
+let currentFaultCode = null;
+
+socket.on("scenario_fault", (data) => {
+    currentFaultCode = data.code || "?";
+
+    const codeEl = document.getElementById("fault-code");
+    const detail = document.getElementById("fault-detail");
+    const timeEl = document.getElementById("fault-time");
+    if (codeEl) codeEl.textContent = data.code || "";
+    if (detail) detail.textContent = data.message || "";
+    if (timeEl) timeEl.textContent = data.timestamp ? `${data.timestamp}` : "";
+
+    const overlay = document.getElementById("fault-overlay");
+    if (overlay) {
+        overlay.classList.add("visible");
+        const btn = document.getElementById("btn-fault-ok");
+        if (btn) btn.focus();
+    }
+});
+
+function ackFault() {
+    const overlay = document.getElementById("fault-overlay");
+    if (overlay) overlay.classList.remove("visible");
+    socket.emit("ack_fault", { code: currentFaultCode });
+    currentFaultCode = null;
+}
+
+function isFaultModalOpen() {
+    const overlay = document.getElementById("fault-overlay");
+    return !!(overlay && overlay.classList.contains("visible"));
+}
+
+// ==============================================================================
+// Sensing Complete Modal
+// ==============================================================================
+
+socket.on("sensing_complete", (data) => {
+    const detail = document.getElementById("notice-detail");
+    const timeEl = document.getElementById("notice-time");
+    const n = data.count || 0;
+    if (detail) {
+        detail.textContent =
+            `Sensing tamamlandı. ${n} defect raporlandı ve listelendi.`;
+    }
+    if (timeEl) timeEl.textContent = data.timestamp || "";
+
+    const overlay = document.getElementById("notice-overlay");
+    if (overlay) {
+        overlay.classList.add("visible");
+        const btn = document.getElementById("btn-notice-ok");
+        if (btn) btn.focus();
+    }
+});
+
+function ackNotice() {
+    const overlay = document.getElementById("notice-overlay");
+    if (overlay) overlay.classList.remove("visible");
+}
+
+function isNoticeModalOpen() {
+    const overlay = document.getElementById("notice-overlay");
+    return !!(overlay && overlay.classList.contains("visible"));
+}
+
+// ==============================================================================
 // Log Handling
 // ==============================================================================
 
@@ -56,6 +172,7 @@ socket.on("log_message", (data) => {
     const src = data.source.toLowerCase();
     if (src.includes("hil")) sourceClass = "hil";
     else if (src.includes("mission")) sourceClass = "mission";
+    else if (src.includes("fault")) sourceClass = "fault";
 
     entry.innerHTML = `
         <span class="log-time">${data.timestamp}</span>
@@ -111,6 +228,15 @@ function emergencyStop() {
 
 function publishCmd(cmdName) {
     socket.emit("publish_cmd", { cmd: cmdName });
+
+    // Tıklamanın algılandığını operatöre göster (kısa flaş).
+    const btn = document.getElementById(`btn-cmd-${cmdName.toLowerCase()}`);
+    if (btn) {
+        btn.classList.remove("cmd-sent");
+        void btn.offsetWidth; // animasyonu yeniden tetiklemek için reflow
+        btn.classList.add("cmd-sent");
+        setTimeout(() => btn.classList.remove("cmd-sent"), 500);
+    }
 }
 
 function confirmRobot() {
@@ -366,6 +492,22 @@ socket.on("disconnect", () => {
 // ==============================================================================
 
 document.addEventListener("keydown", (e) => {
+    // Pop-up açıkken Escape/Enter pop-up'ı kapatır, acil durdurmayı tetiklemez.
+    if (isFaultModalOpen()) {
+        if (e.key === "Escape" || e.key === "Enter") {
+            e.preventDefault();
+            ackFault();
+        }
+        return;
+    }
+    if (isNoticeModalOpen()) {
+        if (e.key === "Escape" || e.key === "Enter") {
+            e.preventDefault();
+            ackNotice();
+        }
+        return;
+    }
+
     if (e.key === "Escape") {
         emergencyStop();
     }

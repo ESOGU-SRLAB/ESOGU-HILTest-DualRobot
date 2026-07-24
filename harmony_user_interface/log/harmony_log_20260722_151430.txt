@@ -1,0 +1,7 @@
+[15:14:39] [FAULT] ⚠️ [T0] E-3110 — UR10e bilek 2 eklem torku beklenen aralığın üzerinde. (senaryo hatası, süreç durmadı)
+[15:14:40] [FAULT] ✅ [T2] E-TEST — operatör uyarıyı kapattı.
+[15:14:41] [SYSTEM] 📡 Sensing Start → /harmony/cmd_input: START
+[15:14:42] [SYSTEM] 📡 Cleaning Start → /harmony/cmd_input: CONFIRM
+[15:14:43] [SYSTEM] 📡 Stop → /harmony/cmd_input: STOP
+[15:14:44] [SYSTEM] 📡 Reinspect → /harmony/cmd_input: REINSPECT
+[15:14:46] [SYSTEM] ❌ Unknown command: BOGUS
