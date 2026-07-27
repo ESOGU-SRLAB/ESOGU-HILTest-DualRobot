@@ -16,6 +16,7 @@ CR (Cleaning) Node - v5 (yalnızca gerçek robot, HARMONY validasyon)
 from __future__ import annotations
 
 from threading import Thread, Event, Lock
+import os
 import time
 import json
 import random
@@ -33,6 +34,7 @@ from geometry_msgs.msg import WrenchStamped
 from pymoveit2_real import MoveIt2 as MoveIt2_Real
 from pymoveit2_real.robots import ur as realrobot
 from pymoveit2_real import harmony_defects as hd
+from pymoveit2_real.trajectory_store import TrajectoryStore
 
 
 def _now_ros(node: Node) -> str:
@@ -79,6 +81,14 @@ class HarmonyCleaningMissionRunnerV5(Node):
         self.declare_parameter("real_robot_velocity", 0.1)
         self.declare_parameter("real_robot_acceleration", 0.1)
 
+        # Trajectory kayıt/oynatma: rastgeleliği önlemek için trajectory'ler bir
+        # kez hesaplanıp JSON'a kaydedilir, sonra hep aynıları oynatılır.
+        self.declare_parameter(
+            "trajectory_dir",
+            os.path.expanduser("~/colcon_ws/src/harmony_user_interface/trajectories"),
+        )
+        self.declare_parameter("trajectory_enable", True)
+
         self.fixed_frame = str(self.get_parameter("fixed_frame").value)
         self.tool_frame = str(self.get_parameter("tool_frame").value)
         self.approach_offset = float(self.get_parameter("approach_height_offset").value)
@@ -97,6 +107,17 @@ class HarmonyCleaningMissionRunnerV5(Node):
         planner_id = str(self.get_parameter("planner_id").value)
         real_velocity = float(self.get_parameter("real_robot_velocity").value)
         real_accel = float(self.get_parameter("real_robot_acceleration").value)
+
+        trajectory_dir = str(self.get_parameter("trajectory_dir").value)
+        trajectory_enable = bool(self.get_parameter("trajectory_enable").value)
+
+        # ---------------- Trajectory deposu ----------------
+        # 'cleaning' moduna özel tek JSON dosyası. Dosya varsa planlama atlanır.
+        self.traj_store: Optional[TrajectoryStore] = None
+        if trajectory_enable:
+            self.traj_store = TrajectoryStore(
+                trajectory_dir, "cleaning", logger=self.get_logger()
+            )
 
         cbg = ReentrantCallbackGroup()
 
@@ -297,9 +318,24 @@ class HarmonyCleaningMissionRunnerV5(Node):
 
         return self._execute(trajectory)
 
-    def move_to_joint_config(self, joints: List[float]) -> bool:
-        """Gerçek robotta planla ve çalıştır."""
+    def move_to_joint_config(self, joints: List[float], step_key: Optional[str] = None) -> bool:
+        """Gerçek robotta planla ve çalıştır.
+
+        step_key verilirse trajectory kayıt/oynatma devreye girer: kayıtlı bir
+        trajectory varsa planlama yapılmadan doğrudan oynatılır; yoksa planlanıp
+        (kayıt modunda) saklanır.
+        """
         joints_f = [float(x) for x in joints]
+
+        # Oynatma: kayıtlı trajectory varsa planlamadan doğrudan çalıştır.
+        if step_key is not None and self.traj_store is not None:
+            recorded = self.traj_store.get(step_key)
+            if recorded is not None:
+                if self._execute(recorded):
+                    return True
+                self.get_logger().warning(
+                    f"[CR] Kayıtlı '{step_key}' çalıştırılamadı → yeniden planlanıyor."
+                )
 
         trajectory = None
         try:
@@ -315,6 +351,14 @@ class HarmonyCleaningMissionRunnerV5(Node):
             except Exception as e:
                 self.get_logger().warning(f"[CR] move_to_configuration hatası: {e}")
                 return False
+
+        # Kayıt modu: yeni hesaplanan trajectory'i sakla (save() ile dosyaya yazılır).
+        if (
+            step_key is not None
+            and self.traj_store is not None
+            and not self.traj_store.replay
+        ):
+            self.traj_store.record(step_key, trajectory)
 
         return self._execute(trajectory)
 
@@ -388,7 +432,7 @@ class HarmonyCleaningMissionRunnerV5(Node):
         )
         self._set_defect_status(defect_id, hd.STATUS_CLEANING)
 
-        ok = self.move_to_joint_config(joints)
+        ok = self.move_to_joint_config(joints, step_key=defect_id)
         if not ok:
             # DETECTED'a geri dönmüyoruz: marker kırmızı/turuncuya döner ve hata
             # "hiçbir şey olmamış" gibi görünür. FAILED ayrı renkte (mor) kalır.
@@ -467,7 +511,10 @@ class HarmonyCleaningMissionRunnerV5(Node):
 
             # Görev sonunda HOME'a dön.
             self._publish_robot_status("CR_MODE", "CR", "All defects done. Returning HOME")
-            self.move_to_joint_config(self.home_joints)
+            self.move_to_joint_config(self.home_joints, step_key="home_end")
+            # Kayıt modundaysak bu turda hesaplanan trajectory'leri dosyaya yaz.
+            if self.traj_store is not None and not self.traj_store.replay:
+                self.traj_store.save()
 
             self._publish_robot_status(
                 "COMPLETE", "CR", f"Cleaning completed ({cleaned}/{len(ordered)} defects)"

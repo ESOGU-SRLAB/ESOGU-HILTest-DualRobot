@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from threading import Thread, Event, Lock
+import os
 import time
 import json
 import math
@@ -38,6 +39,7 @@ from rclpy.time import Time
 from pymoveit2_real import MoveIt2 as MoveIt2_Real
 from pymoveit2_real.robots import ur as realrobot
 from pymoveit2_real import harmony_defects as hd
+from pymoveit2_real.trajectory_store import TrajectoryStore
 
 
 def _now_ros(node: Node) -> str:
@@ -83,6 +85,14 @@ class HarmonySensingRobotV5(Node):
         self.declare_parameter("real_robot_velocity", 0.1)
         self.declare_parameter("real_robot_acceleration", 0.1)
 
+        # Trajectory kayıt/oynatma: rastgeleliği önlemek için trajectory'ler bir
+        # kez hesaplanıp JSON'a kaydedilir, sonra hep aynıları oynatılır.
+        self.declare_parameter(
+            "trajectory_dir",
+            os.path.expanduser("~/colcon_ws/src/harmony_user_interface/trajectories"),
+        )
+        self.declare_parameter("trajectory_enable", True)
+
         self.fixed_frame = str(self.get_parameter("fixed_frame").value)
         _tcp_param = str(self.get_parameter("tcp_frame").value)
         self.tcp_frame = _tcp_param if _tcp_param else realrobot.end_effector_name()
@@ -99,6 +109,17 @@ class HarmonySensingRobotV5(Node):
         planner_id = str(self.get_parameter("planner_id").value)
         real_velocity = float(self.get_parameter("real_robot_velocity").value)
         real_accel = float(self.get_parameter("real_robot_acceleration").value)
+
+        trajectory_dir = str(self.get_parameter("trajectory_dir").value)
+        trajectory_enable = bool(self.get_parameter("trajectory_enable").value)
+
+        # ---------------- Trajectory deposu ----------------
+        # 'sensing' moduna özel tek JSON dosyası. Dosya varsa planlama atlanır.
+        self.traj_store: Optional[TrajectoryStore] = None
+        if trajectory_enable:
+            self.traj_store = TrajectoryStore(
+                trajectory_dir, "sensing", logger=self.get_logger()
+            )
 
         # ---------------- MoveIt2 (Real) ----------------
         # MoveIt2'ye AYRI bir node veriyoruz. pymoveit2'nin plan() /
@@ -136,6 +157,9 @@ class HarmonySensingRobotV5(Node):
         self.robot_status_pub = self.create_publisher(String, "/harmony/robot_status", 10)
         self.tcp_pose_pub = self.create_publisher(PoseStamped, "/harmony/tcp_pose", 10)
         self.path_plan_pub = self.create_publisher(Path, "/harmony/path_plan", 10)
+        # Senaryo olayları (arayüzdeki hata pop-up'ını tetikler). Sensing robot
+        # son viewpoint'e varıp HOME'a dönmeden hemen önce burada olay yayınlar.
+        self.scenario_event_pub = self.create_publisher(String, "/harmony/scenario_event", 10)
 
         # Defect yayını: tekil topic birincil, liste + marker'lar latched.
         self.defect_pub = self.create_publisher(String, hd.TOPIC_DEFECT, 10)
@@ -323,6 +347,18 @@ class HarmonySensingRobotV5(Node):
             "SR_MODE", "SR", f"Sensing complete. {len(payloads)} defects reported"
         )
 
+    def _publish_scenario_event(self, event: str, note: str = ""):
+        """Senaryo olayı yayınlar (arayüz hata pop-up'ı bunu dinler)."""
+        payload = {
+            "event": event,
+            "note": note,
+            "timestamp": _now_ros(self),
+        }
+        msg = String()
+        msg.data = json.dumps(payload)
+        self.scenario_event_pub.publish(msg)
+        self.get_logger().info(f"Scenario event published: {event}")
+
     # ---------------- TCP pose ----------------
     def _warn_throttled(self, event: str, detail: str, ctx: Optional[dict] = None):
         now_sec = time.time()
@@ -398,9 +434,37 @@ class HarmonySensingRobotV5(Node):
         self.path_plan_pub.publish(path)
 
     # ---------------- Motion helpers ----------------
-    def move_to_joint_angles(self, joint_positions: List[float], synchronous: bool = True) -> bool:
-        """Gerçek robotta planla ve çalıştır."""
+    def _execute_traj(self, trajectory) -> bool:
+        try:
+            self.moveit2.execute(trajectory)
+            return bool(self.moveit2.wait_until_executed())
+        except Exception as e:
+            self.get_logger().warning(f"[SR] execute hatası: {e}")
+            return False
+
+    def move_to_joint_angles(
+        self,
+        joint_positions: List[float],
+        synchronous: bool = True,
+        step_key: Optional[str] = None,
+    ) -> bool:
+        """Gerçek robotta planla ve çalıştır.
+
+        step_key verilirse trajectory kayıt/oynatma devreye girer: kayıtlı bir
+        trajectory varsa planlama yapılmadan doğrudan oynatılır; yoksa planlanıp
+        (kayıt modunda) saklanır.
+        """
         joints_f = [float(j) for j in joint_positions]
+
+        # Oynatma: kayıtlı trajectory varsa planlamadan doğrudan çalıştır.
+        if step_key is not None and self.traj_store is not None:
+            recorded = self.traj_store.get(step_key)
+            if recorded is not None:
+                if self._execute_traj(recorded):
+                    return True
+                self.get_logger().warning(
+                    f"[SR] Kayıtlı '{step_key}' çalıştırılamadı → yeniden planlanıyor."
+                )
 
         trajectory = None
         try:
@@ -419,12 +483,15 @@ class HarmonySensingRobotV5(Node):
                 self.get_logger().warning(f"[SR] move_to_configuration hatası: {e}")
                 return False
 
-        try:
-            self.moveit2.execute(trajectory)
-            return bool(self.moveit2.wait_until_executed())
-        except Exception as e:
-            self.get_logger().warning(f"[SR] execute hatası: {e}")
-            return False
+        # Kayıt modu: yeni hesaplanan trajectory'i sakla (save() ile dosyaya yazılır).
+        if (
+            step_key is not None
+            and self.traj_store is not None
+            and not self.traj_store.replay
+        ):
+            self.traj_store.record(step_key, trajectory)
+
+        return self._execute_traj(trajectory)
 
     def safe_joint_sequence(
         self,
@@ -445,7 +512,9 @@ class HarmonySensingRobotV5(Node):
             for attempt in range(max_retries):
                 if self.stop_requested.is_set():
                     return False
-                ok = self.move_to_joint_angles(joint_angles, synchronous=True)
+                ok = self.move_to_joint_angles(
+                    joint_angles, synchronous=True, step_key=f"wp_{i}"
+                )
                 if ok:
                     break
                 time.sleep(0.5)
@@ -506,7 +575,7 @@ class HarmonySensingRobotV5(Node):
                 continue
 
             self._publish_robot_status("SR_MODE", "SR", "Going HOME")
-            self.move_to_joint_angles(home_joints, synchronous=True)
+            self.move_to_joint_angles(home_joints, synchronous=True, step_key="home_start")
             time.sleep(1.0)
 
             for cycle in range(self.max_scan_cycles):
@@ -518,8 +587,16 @@ class HarmonySensingRobotV5(Node):
 
             # Tarama bitti: önce HOME'a dön, sonra defect'leri bildir.
             if not self.stop_requested.is_set():
+                # Son viewpoint'e varıldı; HOME'a gitmeden TAM ÖNCE senaryo
+                # hatasını tetikle (arayüzde pop-up bu anda çıkar).
+                self._publish_scenario_event(
+                    "LAST_VIEWPOINT_REACHED", "Son viewpoint'e ulaşıldı, HOME'a dönülüyor"
+                )
                 self._publish_robot_status("SR_MODE", "SR", "Scan finished. Returning HOME")
-                self.move_to_joint_angles(home_joints, synchronous=True)
+                self.move_to_joint_angles(home_joints, synchronous=True, step_key="home_end")
+                # Kayıt modundaysak bu turda hesaplanan trajectory'leri dosyaya yaz.
+                if self.traj_store is not None and not self.traj_store.replay:
+                    self.traj_store.save()
                 self._publish_defects()
 
             self._set_state("WAITING", "SR", "Waiting for CONFIRM (or REINSPECT/STOP)")

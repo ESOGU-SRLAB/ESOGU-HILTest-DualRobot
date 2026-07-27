@@ -39,14 +39,8 @@ TOPIC_DEFECT_STATUS = "/harmony/defect_status"
 
 # Senaryo hatası: KPI3 ölçümü için operatöre gösterilen yapay sistem uyarısı.
 # Hiçbir süreci durdurmaz; operatör "OK" ile kapatır.
-SCENARIO_FAULT_MIN_SEC = 45.0
-SCENARIO_FAULT_MAX_SEC = 120.0
-SCENARIO_FAULTS = [
-    ("E-1042", "Lineer eksen pozisyon geri beslemesi geçici olarak kayboldu."),
-    ("E-2071", "SICK Visionary-T Mini veri akışında paket kaybı algılandı."),
-    ("E-3110", "UR10e bilek 2 eklem torku beklenen aralığın üzerinde."),
-    ("E-4005", "Kapı yüzeyi referans kalibrasyonu tolerans sınırında."),
-]
+# Senaryonun tek sabit hata mesajı (sensing son viewpoint'e varınca gösterilir).
+SCENARIO_FAULT = ("E-1042", "Lineer eksen haberleşmesi sağlanamıyor!")
 
 # ==============================================================================
 # Global State
@@ -361,6 +355,8 @@ class ROS2DataCollector:
             self.defects = {}
             self.defect_order = []
             self._sensing_complete_notified = False
+        # Yeni tarama başlıyor: senaryo hatasını tur için sıfırla.
+        fault_generator.reset_round()
         self.socketio.emit("defect_list", {"defects": []})
 
     def _notify_sensing_complete(self, count):
@@ -492,6 +488,20 @@ class ROS2DataCollector:
                 with self._data_lock:
                     self.force_data.append({"t": t, "force_z": force_z})
 
+            def scenario_event_cb(msg):
+                """Sensing node'undan gelen senaryo olayları.
+
+                Sensing robot son viewpoint'e varıp HOME'a dönmeden hemen önce
+                'LAST_VIEWPOINT_REACHED' yayınlar; hata pop-up'ı tam bu anda çıkar.
+                """
+                try:
+                    data = json.loads(msg.data)
+                    event = str(data.get("event", "")).strip().upper()
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    return
+                if event == "LAST_VIEWPOINT_REACHED":
+                    fault_generator.on_last_viewpoint()
+
             # Kalıcı komut yayıncısı (buton tıklamaları buradan gider).
             self._cmd_pub = node.create_publisher(String, "/harmony/cmd_input", 10)
 
@@ -501,6 +511,7 @@ class ROS2DataCollector:
             node.create_subscription(String, TOPIC_DEFECT_LIST, defect_list_cb, latched)
             node.create_subscription(String, TOPIC_DEFECT_STATUS, defect_status_cb, 10)
             node.create_subscription(WrenchStamped, "/harmony/cleaning/force", force_cb, 10)
+            node.create_subscription(String, "/harmony/scenario_event", scenario_event_cb, 10)
 
             node.get_logger().info("Harmony dashboard listener started.")
 
@@ -649,15 +660,24 @@ class ScenarioFaultGenerator:
     def __init__(self, socketio_instance, process_manager):
         self.socketio = socketio_instance
         self.process_mgr = process_manager
-        self._running = False
-        self._thread = None
         self._enabled = True
         self._counter = 0
+        self._lock = threading.Lock()
+        # Hata tur başına bir kez, sensing son viewpoint'e vardığında üretilir.
+        self._fired_this_round = False
 
     def start(self):
-        self._running = True
-        self._thread = threading.Thread(target=self._worker, daemon=True)
-        self._thread.start()
+        # Artık rastgele zamanlayıcı yok; hata olay-güdümlü tetikleniyor
+        # (sensing node'undan /harmony/scenario_event). Uyumluluk için no-op.
+        pass
+
+    def stop(self):
+        pass
+
+    def reset_round(self):
+        """Yeni tarama başladı — bu turda hata henüz üretilmedi."""
+        with self._lock:
+            self._fired_this_round = False
 
     def set_enabled(self, enabled):
         self._enabled = bool(enabled)
@@ -665,11 +685,19 @@ class ScenarioFaultGenerator:
         self.process_mgr._emit_log("SYSTEM", f"⚙️ Scenario fault generator {state}.")
 
     def trigger_now(self):
-        """Manuel tetikleme (senaryo provası için)."""
+        """Manuel tetikleme (senaryo provası için) — dedup yok."""
+        self._emit_fault()
+
+    def on_last_viewpoint(self):
+        """Sensing son viewpoint'e vardı: tur başına yalnızca bir kez üret."""
+        with self._lock:
+            if self._fired_this_round or not self._enabled:
+                return
+            self._fired_this_round = True
         self._emit_fault()
 
     def _emit_fault(self):
-        code, message = random.choice(SCENARIO_FAULTS)
+        code, message = SCENARIO_FAULT
         self._counter += 1
         t0 = datetime.now()
         payload = {
@@ -684,22 +712,6 @@ class ScenarioFaultGenerator:
         self.process_mgr._emit_log(
             "FAULT", f"⚠️ [T0] {code} — {message} (senaryo hatası, süreç durmadı)"
         )
-
-    def _worker(self):
-        while self._running:
-            delay = random.uniform(SCENARIO_FAULT_MIN_SEC, SCENARIO_FAULT_MAX_SEC)
-            slept = 0.0
-            while self._running and slept < delay:
-                time.sleep(0.5)
-                slept += 0.5
-            if not self._running:
-                return
-            # Yalnızca görev çalışırken üret; boştayken operatörü meşgul etme.
-            if self._enabled and self.process_mgr.mission_status == "running":
-                self._emit_fault()
-
-    def stop(self):
-        self._running = False
 
 
 fault_generator = ScenarioFaultGenerator(socketio, process_mgr)

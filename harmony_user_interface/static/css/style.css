@@ -73,7 +73,8 @@
 }
 
 html {
-    font-size: 15px;
+    /* Taban punto: rem tabanlı ölçekler bundan türer, artırınca tüm yazılar büyür. */
+    font-size: 16.5px;
     scroll-behavior: smooth;
 }
 
@@ -122,38 +123,14 @@ body::before {
 
 /* ========== HEADER ========== */
 .header {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
+    justify-content: center;
     align-items: center;
     background: var(--gradient-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
-    padding: 16px 28px;
+    padding: 22px 28px;
     box-shadow: var(--shadow-md);
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    justify-content: flex-start;
-}
-
-.header-right {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-}
-
-.header-left img, .header-right img {
-    height: 68px;
-    object-fit: contain;
-    filter: brightness(1.05);
-    transition: transform var(--transition-normal);
-}
-
-.header-left img:hover, .header-right img:hover {
-    transform: scale(1.08);
 }
 
 .header-center {
@@ -161,7 +138,7 @@ body::before {
 }
 
 .header-center h1 {
-    font-size: 1.75rem;
+    font-size: 2.4rem;
     font-weight: 800;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
@@ -171,7 +148,7 @@ body::before {
 }
 
 .header-center p {
-    font-size: 0.9rem;
+    font-size: 1.15rem;
     color: var(--text-muted);
     font-weight: 500;
 }
@@ -1074,9 +1051,6 @@ body::before {
     }
     .header-center {
         text-align: center;
-    }
-    .header-left, .header-right {
-        justify-content: center;
     }
     .control-bar {
         flex-direction: column;
