@@ -31,18 +31,18 @@
     <nav class="control-bar fade-in" id="control-bar">
         <button class="action-btn start-btn" id="btn-start-hil" onclick="startHIL()">
             <span class="btn-icon">🚀</span>
-            START
+            START SYSTEM
         </button>
 
         <button class="emergency-btn" id="btn-emergency" onclick="emergencyStop()">
-            🛑 STOP
+            🛑 STOP SYSTEM
         </button>
 
         <div class="control-separator"></div>
 
         <div class="toggle-container" title="Enable this switch when not connected to real hardware">
             <label class="toggle-switch">
-                <input type="checkbox" id="fake-hardware-toggle" checked>
+                <input type="checkbox" id="fake-hardware-toggle">
                 <span class="slider"></span>
             </label>
             <span class="toggle-label">Use Fake Hardware</span>
@@ -76,11 +76,11 @@
     <div class="command-bar fade-in" id="command-bar">
         <button class="cmd-btn cmd-start" id="btn-cmd-start" onclick="publishCmd('START')">
             <span class="btn-icon">▶️</span>
-            START
+            START SENSING ROBOT
         </button>
         <button class="cmd-btn cmd-confirm" id="btn-cmd-confirm" onclick="publishCmd('CONFIRM')">
             <span class="btn-icon">✅</span>
-            CONFIRM
+            CONFIRM DEFECTS AND START CLEANING ROBOT
         </button>
         <button class="cmd-btn cmd-reinspect" id="btn-cmd-reinspect" onclick="publishCmd('REINSPECT')">
             <span class="btn-icon">🔄</span>
@@ -217,6 +217,18 @@
         <div class="notice-modal-detail" id="notice-detail">—</div>
         <div class="notice-modal-time" id="notice-time"></div>
         <button class="notice-modal-btn" id="btn-notice-ok" onclick="ackNotice()">OK</button>
+    </div>
+</div>
+
+<!-- ===== CLEANING COMPLETE MODAL ===== -->
+<div class="notice-overlay" id="cleaning-overlay" role="dialog" aria-modal="true"
+     aria-labelledby="cleaning-title" aria-describedby="cleaning-detail">
+    <div class="notice-modal">
+        <div class="notice-modal-icon">🧹</div>
+        <div class="notice-modal-title" id="cleaning-title">CLEANING COMPLETE</div>
+        <div class="notice-modal-detail" id="cleaning-detail">—</div>
+        <div class="notice-modal-time" id="cleaning-time"></div>
+        <button class="notice-modal-btn" id="btn-cleaning-ok" onclick="ackCleaning()">OK</button>
     </div>
 </div>
 

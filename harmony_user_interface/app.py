@@ -292,6 +292,8 @@ class ROS2DataCollector:
         self.defect_order = []
         # Sensing tamamlandı pop-up'ı tur başına bir kez gösterilir.
         self._sensing_complete_notified = False
+        # Cleaning tamamlandı pop-up'ı tur başına bir kez gösterilir.
+        self._cleaning_complete_notified = False
 
         # Kalıcı komut yayıncısı. `ros2 topic pub -1` her çağrıda yeni bir node
         # kurup discovery tamamlanmadan çıktığı için ilk tıklamalar kaybolabiliyordu;
@@ -355,9 +357,26 @@ class ROS2DataCollector:
             self.defects = {}
             self.defect_order = []
             self._sensing_complete_notified = False
+            self._cleaning_complete_notified = False
         # Yeni tarama başlıyor: senaryo hatasını tur için sıfırla.
         fault_generator.reset_round()
         self.socketio.emit("defect_list", {"defects": []})
+
+    def reset_ui(self):
+        """Arayüzü ilk mission başlangıcı gibi sıfırlar.
+
+        Defect tablosu, sayaçlar, mod göstergesi ve pop-up flag'leri temizlenir;
+        arayüz grafik/log tarafını da sıfırlasın diye 'mission_reset' yayınlanır.
+        Robot süreçlerine (HIL/mission) dokunmaz — yalnızca gösterim durumu.
+        """
+        self.clear_defects()  # defects + flags + fault round + boş defect_list
+        with self._data_lock:
+            self.current_mode = "IDLE"
+            self.current_note = ""
+        self.socketio.emit("robot_info", {"mode": "IDLE", "note": "", "defect_count": 0})
+        self.socketio.emit("mission_reset", {
+            "timestamp": datetime.now().strftime("%H:%M:%S"),
+        })
 
     def _notify_sensing_complete(self, count):
         """Sensing tamamlandiginda operatore pop-up gonderir (tur basina bir kez)."""
@@ -367,6 +386,26 @@ class ROS2DataCollector:
             self._sensing_complete_notified = True
         self.socketio.emit("sensing_complete", {
             "count": count,
+            "timestamp": datetime.now().strftime("%H:%M:%S"),
+        })
+
+    def _notify_cleaning_complete(self, data):
+        """Cleaning tamamlandiginda operatore pop-up gonderir (tur basina bir kez)."""
+        with self._data_lock:
+            if self._cleaning_complete_notified:
+                return
+            self._cleaning_complete_notified = True
+        try:
+            cleaned = int(data.get("cleaned", 0))
+        except (TypeError, ValueError):
+            cleaned = 0
+        try:
+            total = int(data.get("total", 0))
+        except (TypeError, ValueError):
+            total = 0
+        self.socketio.emit("cleaning_complete", {
+            "cleaned": cleaned,
+            "total": total,
             "timestamp": datetime.now().strftime("%H:%M:%S"),
         })
 
@@ -501,6 +540,8 @@ class ROS2DataCollector:
                     return
                 if event == "LAST_VIEWPOINT_REACHED":
                     fault_generator.on_last_viewpoint()
+                elif event == "CLEANING_COMPLETE":
+                    self._notify_cleaning_complete(data)
 
             # Kalıcı komut yayıncısı (buton tıklamaları buradan gider).
             self._cmd_pub = node.create_publisher(String, "/harmony/cmd_input", 10)
@@ -893,6 +934,12 @@ def handle_confirm_robot():
 def handle_stop_all():
     thread = threading.Thread(target=process_mgr.stop_all, daemon=True)
     thread.start()
+
+@socketio.on("reset_mission")
+def handle_reset_mission():
+    """Arayüzü sıfırlar (defect'ler, sayaçlar, mod, grafik/log gösterimi)."""
+    data_collector.reset_ui()
+    process_mgr._emit_log("SYSTEM", "🔄 Arayüz sıfırlandı — yeni mission'a hazır.")
 
 #: /harmony/cmd_input üzerinden yayınlanabilen komutlar
 VALID_CMDS = ("START", "CONFIRM", "REINSPECT", "STOP")

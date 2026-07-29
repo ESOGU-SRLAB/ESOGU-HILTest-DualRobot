@@ -144,6 +144,9 @@ class HarmonyCleaningMissionRunnerV5(Node):
         # ---------------- Publishers ----------------
         self.force_pub = self.create_publisher(WrenchStamped, "/harmony/cleaning/force", 10)
         self.robot_status_pub = self.create_publisher(String, "/harmony/robot_status", 10)
+        # Senaryo olayları (arayüz pop-up'ları bunu dinler); cleaning bitince
+        # 'CLEANING_COMPLETE' yayınlanır.
+        self.scenario_event_pub = self.create_publisher(String, "/harmony/scenario_event", 10)
         # RViz marker'larını sensing node'u yayınlar (tek yayıncı); burada
         # yalnızca durum güncellemesi yayınlanır, sensing marker renklerini
         # buna göre günceller.
@@ -191,6 +194,20 @@ class HarmonyCleaningMissionRunnerV5(Node):
         out = String()
         out.data = json.dumps(payload)
         self.robot_status_pub.publish(out)
+
+    def _publish_scenario_event(self, event: str, note: str = "", extra: Optional[dict] = None):
+        """Senaryo olayı yayınlar (arayüz pop-up'ları bunu dinler)."""
+        payload = {
+            "event": event,
+            "note": note,
+            "timestamp": _now_ros(self),
+        }
+        if extra:
+            payload.update(extra)
+        msg = String()
+        msg.data = json.dumps(payload)
+        self.scenario_event_pub.publish(msg)
+        self.get_logger().info(f"Scenario event published: {event}")
 
     # ---------------- Input parsing ----------------
     def _extract_xyz(self, d: Dict[str, Any]) -> Optional[List[float]]:
@@ -477,12 +494,14 @@ class HarmonyCleaningMissionRunnerV5(Node):
                     self._publish_robot_status("IDLE", "IDLE", "Back to IDLE")
                 continue
 
-            scan_key = str(scan_id) if scan_id is not None else "no_scan_id"
-            if self.last_cleaned_scan_id == scan_key:
-                self._publish_robot_status("IDLE", "IDLE", "Duplicate CONFIRM/scan ignored")
-                continue
-            self.last_cleaned_scan_id = scan_key
-
+            # NOT: Eskiden burada scan_id tabanlı bir "duplicate scan" guard'ı
+            # vardı, ancak self.scan_id hiçbir zaman gerçek bir değere atanmadığı
+            # için scan_key her turda sabit "no_scan_id" oluyordu; bu da ilk
+            # turdan sonra TÜM turları blokluyordu (2. tur cleaning çalışmıyordu).
+            # Çift-CONFIRM koruması zaten (a) temizlik sırasında gelen CONFIRM'in
+            # cleaning_active ile yok sayılması ve (b) defect'ler tüketildikten
+            # sonra self.defects boş olduğu için yukarıdaki len==0 -> skip dalı
+            # ile sağlanıyor. Bu yüzden guard kaldırıldı.
             ordered = self._ordered_defects(defects_copy)
             self._publish_robot_status(
                 "CR_MODE", "CR",
@@ -518,6 +537,12 @@ class HarmonyCleaningMissionRunnerV5(Node):
 
             self._publish_robot_status(
                 "COMPLETE", "CR", f"Cleaning completed ({cleaned}/{len(ordered)} defects)"
+            )
+            # Arayüz pop-up'ı: temizlenen nokta sayısıyla cleaning tamamlandı.
+            self._publish_scenario_event(
+                "CLEANING_COMPLETE",
+                f"Temizlik tamamlandı ({cleaned}/{len(ordered)} defect)",
+                extra={"cleaned": cleaned, "total": len(ordered)},
             )
             time.sleep(2.0)
             self._publish_robot_status("IDLE", "IDLE", "Back to IDLE, waiting defect + CONFIRM")

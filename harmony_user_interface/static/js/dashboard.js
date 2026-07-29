@@ -158,6 +158,44 @@ function isNoticeModalOpen() {
 }
 
 // ==============================================================================
+// Cleaning Complete Modal
+// ==============================================================================
+
+socket.on("cleaning_complete", (data) => {
+    const detail = document.getElementById("cleaning-detail");
+    const timeEl = document.getElementById("cleaning-time");
+    const cleaned = data.cleaned || 0;
+    const total = (data.total !== undefined && data.total !== null) ? data.total : cleaned;
+    if (detail) {
+        detail.textContent =
+            `Cleaning tamamlandı. ${cleaned}/${total} nokta temizlendi.`;
+    }
+    if (timeEl) timeEl.textContent = data.timestamp || "";
+
+    const overlay = document.getElementById("cleaning-overlay");
+    if (overlay) {
+        overlay.classList.add("visible");
+        const btn = document.getElementById("btn-cleaning-ok");
+        if (btn) btn.focus();
+    }
+});
+
+function ackCleaning() {
+    const overlay = document.getElementById("cleaning-overlay");
+    const wasOpen = !!(overlay && overlay.classList.contains("visible"));
+    if (overlay) overlay.classList.remove("visible");
+    // Cleaning bitişini onaylayınca arayüz ilk mission gibi sıfırlanır.
+    if (wasOpen) {
+        socket.emit("reset_mission");
+    }
+}
+
+function isCleaningModalOpen() {
+    const overlay = document.getElementById("cleaning-overlay");
+    return !!(overlay && overlay.classList.contains("visible"));
+}
+
+// ==============================================================================
 // Log Handling
 // ==============================================================================
 
@@ -242,6 +280,16 @@ function publishCmd(cmdName) {
 function confirmRobot() {
     socket.emit("confirm_robot");
 }
+
+// Sunucudan gelen sıfırlama sinyali: grafikleri ve göstergeleri temizle.
+// (defect tablosu, sunucunun yayınladığı boş defect_list ile temizlenir)
+socket.on("mission_reset", () => {
+    clearCharts();
+    const modeEl = document.getElementById("current-mode");
+    const defectEl = document.getElementById("defect-count");
+    if (modeEl) modeEl.textContent = "IDLE";
+    if (defectEl) defectEl.textContent = "0";
+});
 
 // ==============================================================================
 // Chart.js — Live Charts
@@ -380,6 +428,18 @@ const forceChart = createChart("force-chart", "Force (N)", "N");
 let knownPositionJoints = [];
 let knownVelocityJoints = [];
 
+// Grafikleri boşaltır (reset sırasında çağrılır).
+function clearCharts() {
+    [positionChart, velocityChart, forceChart].forEach((chart) => {
+        if (chart) {
+            chart.data.datasets = [];
+            chart.update("none");
+        }
+    });
+    knownPositionJoints = [];
+    knownVelocityJoints = [];
+}
+
 function updateJointChart(chart, data, knownJoints, colorPalette) {
     if (!data || data.length === 0) return knownJoints;
 
@@ -504,6 +564,13 @@ document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" || e.key === "Enter") {
             e.preventDefault();
             ackNotice();
+        }
+        return;
+    }
+    if (isCleaningModalOpen()) {
+        if (e.key === "Escape" || e.key === "Enter") {
+            e.preventDefault();
+            ackCleaning();
         }
         return;
     }
