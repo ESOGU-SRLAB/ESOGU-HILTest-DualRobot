@@ -82,12 +82,12 @@ def generate_launch_description():
             'config_file', default_value=default_config,
             description='Camera / reachability / allocation parameters.'),
         DeclareLaunchArgument(
-            'coverage_threshold', default_value='0.992',
-            description='Stop once 99.2% of the reachable targets are covered. Real '
-                        'doors runs reach 99.50-99.64%, so unlike the previous 1.0 this '
-                        'threshold is attainable and is what ends the run, rather than '
-                        'the tail cutter min_new_points. Passed AFTER the config file '
-                        'and therefore overrides it.'),
+            'coverage_threshold', default_value='0.98',
+            description='Stop once 98% of the reachable targets are covered. Lowered '
+                        'from 0.992 after the first real run: with the Kawasaki capped '
+                        'at 3 viewpoints the last tour only reached 96.84%, so 0.992 '
+                        'never fired and the tail cutter ended the run instead. Passed '
+                        'AFTER the config file and therefore overrides it.'),
         DeclareLaunchArgument(
             'output_plan_file',
             default_value=os.path.join(PLANS_DIR, 'doors_viewpoint_plan.json'),

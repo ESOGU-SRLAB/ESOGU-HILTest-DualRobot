@@ -1,0 +1,77 @@
+[0.256s] Invoking command in '/home/ifarlab/colcon_ws/src/ros2_kafka_bridge': PYTHONPATH=/home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/ros2_kafka_bridge build --build-base /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build install --record /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/install.log --install-scripts $base/lib/ros2_kafka_bridge --single-version-externally-managed install_data
+[0.355s] running egg_info
+[0.355s] creating build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info
+[0.356s] writing build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info/PKG-INFO
+[0.356s] writing dependency_links to build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info/dependency_links.txt
+[0.356s] writing entry points to build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info/entry_points.txt
+[0.356s] writing requirements to build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info/requires.txt
+[0.356s] writing top-level names to build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info/top_level.txt
+[0.356s] writing manifest file 'build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info/SOURCES.txt'
+[0.356s] reading manifest file 'build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info/SOURCES.txt'
+[0.357s] writing manifest file 'build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info/SOURCES.txt'
+[0.357s] running build
+[0.357s] running build_py
+[0.357s] creating /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build
+[0.357s] creating /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib
+[0.357s] creating /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/__init__.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/single_ros2_pub_sub_1.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/single_ros2_pub_sub_2.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/single_kafka_pro_1.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/single_kafka_pro_2.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/single_kafka_con_1.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/single_kafka_con_2.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/single_ros2_kafka_bridge_topic_1.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/single_ros2_kafka_bridge_topic_2.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/double_ros2_pub_sub.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/double_kafka_pro_con.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] copying src/double_ros2_kafka_bridge.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src
+[0.357s] running install
+[0.357s] running install_lib
+[0.357s] creating /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/single_kafka_con_2.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/double_ros2_pub_sub.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/single_ros2_kafka_bridge_topic_1.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/single_kafka_pro_2.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/single_ros2_pub_sub_2.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/__init__.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/double_kafka_pro_con.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/single_kafka_con_1.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/single_ros2_pub_sub_1.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/single_ros2_kafka_bridge_topic_2.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/single_kafka_pro_1.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] copying /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build/lib/src/double_ros2_kafka_bridge.py -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src
+[0.358s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/single_kafka_con_2.py to single_kafka_con_2.cpython-310.pyc
+[0.358s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/double_ros2_pub_sub.py to double_ros2_pub_sub.cpython-310.pyc
+[0.358s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/single_ros2_kafka_bridge_topic_1.py to single_ros2_kafka_bridge_topic_1.cpython-310.pyc
+[0.359s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/single_kafka_pro_2.py to single_kafka_pro_2.cpython-310.pyc
+[0.359s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/single_ros2_pub_sub_2.py to single_ros2_pub_sub_2.cpython-310.pyc
+[0.359s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/__init__.py to __init__.cpython-310.pyc
+[0.359s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/double_kafka_pro_con.py to double_kafka_pro_con.cpython-310.pyc
+[0.359s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/single_kafka_con_1.py to single_kafka_con_1.cpython-310.pyc
+[0.360s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/single_ros2_pub_sub_1.py to single_ros2_pub_sub_1.cpython-310.pyc
+[0.360s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/single_ros2_kafka_bridge_topic_2.py to single_ros2_kafka_bridge_topic_2.cpython-310.pyc
+[0.360s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/single_kafka_pro_1.py to single_kafka_pro_1.cpython-310.pyc
+[0.360s] byte-compiling /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/src/double_ros2_kafka_bridge.py to double_ros2_kafka_bridge.cpython-310.pyc
+[0.361s] running install_data
+[0.361s] creating /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/share/ament_index
+[0.361s] creating /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/share/ament_index/resource_index
+[0.361s] creating /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/share/ament_index/resource_index/packages
+[0.361s] copying resource/ros2_kafka_bridge -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/share/ament_index/resource_index/packages
+[0.361s] copying package.xml -> /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/share/ros2_kafka_bridge
+[0.361s] running install_egg_info
+[0.361s] Copying build/ros2_kafka_bridge/ros2_kafka_bridge.egg-info to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages/ros2_kafka_bridge-0.0.1-py3.10.egg-info
+[0.362s] running install_scripts
+[0.371s] Installing double_kafka_pro_con script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing double_ros2_kafka_bridge script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing double_ros2_pub_sub script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing single_kafka_con_1 script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing single_kafka_con_2 script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing single_kafka_pro_1 script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing single_kafka_pro_2 script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing single_ros2_kafka_bridge_topic_1 script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing single_ros2_kafka_bridge_topic_2 script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing single_ros2_pub_sub_1 script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] Installing single_ros2_pub_sub_2 script to /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/ros2_kafka_bridge
+[0.371s] writing list of installed files to '/home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/install.log'
+[0.380s] Invoked command in '/home/ifarlab/colcon_ws/src/ros2_kafka_bridge' returned '0': PYTHONPATH=/home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/ifarlab/colcon_ws/src/ros2_kafka_bridge/install/ros2_kafka_bridge/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base build/ros2_kafka_bridge build --build-base /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/build install --record /home/ifarlab/colcon_ws/src/ros2_kafka_bridge/build/ros2_kafka_bridge/install.log --install-scripts $base/lib/ros2_kafka_bridge --single-version-externally-managed install_data

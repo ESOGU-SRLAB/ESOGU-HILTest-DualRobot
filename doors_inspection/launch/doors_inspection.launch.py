@@ -60,15 +60,12 @@ FORWARDED = [
     ('return_home_kawasaki', 'true',
      'Send the Kawasaki home after the last viewpoint. Home is its start pose, so the '
      'AGV rail drives back too.'),
-    # DOORS-SPECIFIC: the Kawasaki goes HOME between its 2nd and 3rd stop instead of
-    # driving kawa_vp_001 -> kawa_vp_002 directly. Requested for the real cell; the
-    # direct hop swings joint1 through 232 deg while the AGV sits at the far end of its
-    # rail. Both halves of the detour (viewpoint -> home, home -> kawa_vp_002's recorded
-    # start) are cached like any other transition, so this costs planning once.
-    # Home here is start_pose_kawasaki = [1.0 m rail, all joints 0], so the AGV rail
-    # drives back to 1.0 m mid-run and then out to 2.0 m again for the last viewpoint.
-    # Set to "[]" to go back to the direct hop.
-    ('home_before_viewpoints', "['kawa_vp_002']",
+    # Empty again: the kawa_vp_002 home detour was dropped after the real run showed the
+    # direct hop is fine on hardware. It had cost ~1.5 min (2 m of extra rail travel plus
+    # 13 rad of extra joint travel) for no measured benefit. Set to "['kawa_vp_002']" to
+    # bring it back, or name any other viewpoint that must be approached via home rather
+    # than straight from its predecessor.
+    ('home_before_viewpoints', "[]",
      'Viewpoint ids approached via the home pose instead of directly from the previous '
      'viewpoint.'),
 ]
