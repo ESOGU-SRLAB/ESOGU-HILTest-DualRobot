@@ -49,6 +49,14 @@
     # viewpoints worth 5 targets each; 0.992 stops a viewpoint or two earlier for a few
     # tenths of a percent of coverage. Raise it back towards 1.0 to trade run time for
     # those last targets.
+    #
+    # CAVEAT since the Kawasaki was capped at 3 (see max_viewpoints_kawasaki below):
+    # those 99.50-99.64% figures were measured with the Kawasaki free to take 6 stops.
+    # The cap drops any candidate only a capped-out arm could reach, so the ceiling can
+    # fall back BELOW 99.2% -- in which case this threshold is unreachable again and the
+    # tail cutter ends the run, as it did before. The allocator logs how many candidates
+    # the cap cost ("dropped ONLY because the arm ... had already spent its budget");
+    # check that line after the first re-plan before trusting this number.
     coverage_threshold: 0.992
 
     # Candidate density: same knobs as the chassis run. The doors are only
@@ -75,7 +83,31 @@
     min_marginal_coverage: 0.0
     # Still the hard guard against a runaway tail; the run should stop well below it.
     max_viewpoints_per_robot: 30
-    balance_load: true
+
+    # KAWASAKI CAPPED AT 3 VIEWPOINTS -- doors only; the chassis job has no per-arm
+    # override and keeps the shared cap above.
+    #
+    # The arms run in parallel, so the run costs ~max(time_ur, time_kawasaki), NOT the
+    # total. They are nowhere near equally fast: on the real cell the UR finished all 8
+    # of its stops while the Kawasaki had managed about 1.5 of its 6. So the previous
+    # 8/6 split was not a balanced plan at all -- it was a Kawasaki-paced run with the
+    # UR standing idle for most of it. Capping the slow arm is what shortens the run;
+    # lowering max_viewpoints_per_robot could not express this, since it throttles both.
+    #
+    # 0 on the UR = no override, so the work the Kawasaki sheds lands on the UR and its
+    # count grows past 8. That is the intended trade: more stops on the fast arm.
+    max_viewpoints_ur: 0
+    max_viewpoints_kawasaki: 3
+
+    # false -> fixed arm priority, UR first (the chassis job keeps true).
+    #
+    # This is what makes the cap of 3 pay off. With balancing on, the least-loaded arm
+    # wins, so the Kawasaki would spend its 3 stops on the earliest, highest-gain
+    # candidates -- exactly the ones the UR could have taken anyway -- and then be
+    # capped out when a face only IT can reach comes up, which drops that face.
+    # With UR-first priority the Kawasaki receives only candidates the UR cannot reach,
+    # so its 3 stops go where they are irreplaceable and the coverage cost is minimal.
+    balance_load: false
 
     # Visiting order. The two doors are laid out along Y (windowlessdoor
     # y 0.088..1.319, windowdoor y 1.301..2.478), so the max_y / min_y anchors still

@@ -46,8 +46,16 @@ class MultiRobotPlannerNode(Node):
         # running in parallel the wall-clock cost is ~max(per-arm counts), so this
         # caps "each arm makes at most N stops".
         self.declare_parameter('max_viewpoints_per_robot', 0)
+        # PER-ARM overrides of the budget above (0 = no override, use the shared one).
+        # They exist because the arms are not equally fast: the wall-clock cost of a
+        # run is set by the slower arm, so capping only that arm is what shortens it.
+        # Both default to 0, so a config that does not mention them behaves exactly as
+        # before -- the chassis job is deliberately left on the shared cap.
+        self.declare_parameter('max_viewpoints_ur', 0)
+        self.declare_parameter('max_viewpoints_kawasaki', 0)
         # True -> a candidate reachable by both arms goes to the less-loaded arm
-        # (shorter parallel run). False -> fixed arm priority order.
+        # (shorter parallel run). False -> fixed arm priority order, UR first, so the
+        # Kawasaki only receives candidates the UR cannot reach.
         self.declare_parameter('balance_load', True)
         # Tail cutter: stop adding viewpoints once the best remaining one would add
         # fewer than this many NEW target points. The coverage curve has a sharp
@@ -436,9 +444,15 @@ class MultiRobotPlannerNode(Node):
             self.get_logger().info('Step 3: Multi-robot allocation')
             t0 = time.monotonic()
             max_per = self.get_parameter('max_viewpoints_per_robot').value
+            # Keys must match the 'name' fields in `robots` above.
+            per_arm_caps = {
+                'ur': self.get_parameter('max_viewpoints_ur').value,
+                'kawasaki': self.get_parameter('max_viewpoints_kawasaki').value,
+            }
             allocator = RobotAllocator(
                 coverage_threshold=self.coverage_threshold,
                 max_per_robot=max_per,
+                max_per_robot_by_name=per_arm_caps,
                 balance=self.get_parameter('balance_load').value,
                 min_new_points=self.get_parameter('min_new_points').value,
                 min_marginal_coverage=self.get_parameter('min_marginal_coverage').value,

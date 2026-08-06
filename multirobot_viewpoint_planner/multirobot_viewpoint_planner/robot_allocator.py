@@ -17,23 +17,40 @@ class RobotAllocator:
         both arms, so the coverage ceiling rises above the single-arm one.
 
       * FASTER inspection. The two arms move simultaneously, so the wall-clock
-        time is ~max(count_ur, count_kawasaki) capture stops. Balancing the
-        assigned count between the arms therefore shortens the parallel run.
+        time is ~max(time_ur, time_kawasaki). Balancing the assigned COUNT
+        (balance=True) shortens that only while the arms are about equally fast.
+        They are not: measured on the doors job, the UR finished all 8 of its
+        stops while the Kawasaki was still on its second, so an equal split
+        leaves the UR idle and the run is entirely paced by the Kawasaki. The
+        two knobs for that case are a per-arm cap (max_per_robot_by_name) and
+        balance=False, which together push shared work onto the fast arm and
+        spend the slow arm's few stops only where it is irreplaceable.
 
     The greedy is the same max-coverage core as the single-arm SetCoverOptimizer
     (pick the candidate covering the most still-uncovered surface next), extended
     with an arm-assignment step: among the arms that can actually reach the
     chosen candidate, give it to the one that currently has FEWER viewpoints
-    (load balancing). A candidate no arm can reach is dropped.
+    (load balancing), or to the FIRST listed arm when balance=False. A candidate
+    no arm can reach -- or that only a capped-out arm could reach -- is dropped.
     """
 
     def __init__(self, coverage_threshold=0.98, max_per_robot=None,
-                 balance=True, min_new_points=1, min_marginal_coverage=0.0, logger=None):
+                 balance=True, min_new_points=1, min_marginal_coverage=0.0,
+                 max_per_robot_by_name=None, logger=None):
         self.coverage_threshold = coverage_threshold
         # None or <=0 -> no per-arm budget (cover until the threshold). Otherwise
         # each arm takes at most this many viewpoints, so a run can be capped at
         # "each arm makes at most N stops".
         self.max_per_robot = max_per_robot if (max_per_robot and max_per_robot > 0) else None
+        # PER-ARM OVERRIDE of the budget above, {robot_name: cap}. The two arms are
+        # not interchangeable: they run in parallel but at very different speeds, so
+        # the wall-clock cost of a run is set by the SLOWER arm's count, not by the
+        # total. Capping only that arm is what shortens the run -- a shared
+        # max_per_robot cannot express it, because lowering it throttles both.
+        # Entries with a cap <= 0 are ignored (that arm falls back to max_per_robot).
+        self.max_per_robot_by_name = {
+            str(n): int(v) for n, v in (max_per_robot_by_name or {}).items() if int(v) > 0
+        }
         # When True, a candidate reachable by both arms goes to the arm with the
         # fewer current assignments (shorter parallel run). When False, arms keep
         # a fixed priority order and only balance implicitly.
@@ -73,11 +90,20 @@ class RobotAllocator:
         """
         num_c, num_t = coverage_matrix.shape
         names = [r['name'] for r in robots]
+        budgets = ", ".join(f"{n}={self._budget(n)}" for n in names)
         self.logger.info(
             f"Multi-robot allocation: {num_c} candidates, {num_t} targets, arms={names}, "
             f"coverage_threshold={self.coverage_threshold * 100:.1f}%, "
-            f"max_per_robot={self.max_per_robot}, balance={self.balance}."
+            f"budgets [{budgets}] (shared max_per_robot={self.max_per_robot}), "
+            f"balance={self.balance}."
         )
+        if not self.balance:
+            self.logger.info(
+                f"balance=False: a candidate both arms can reach always goes to '{names[0]}'. "
+                f"The other arms only receive candidates '{names[0]}' cannot reach, which is "
+                "what makes a small per-arm cap on a slow arm spend its budget where it is "
+                "actually needed instead of on shared, high-gain viewpoints."
+            )
 
         assignments = {r['name']: [] for r in robots}
         if num_c == 0 or num_t == 0:
@@ -91,6 +117,7 @@ class RobotAllocator:
         ik_cache = {}
         ik_queries = 0
         excluded_unreachable = 0
+        excluded_at_budget = 0
         order = 0  # global selection order (for cumulative coverage)
 
         target_covered = int(num_t * self.coverage_threshold)
@@ -122,7 +149,7 @@ class RobotAllocator:
             return ik_cache[key]
 
         while np.sum(covered) < target_covered:
-            if all(self._at_budget(assignments[n]) for n in assignments):
+            if all(self._at_budget(n, assignments[n]) for n in assignments):
                 self.logger.info("Every arm reached its per-robot budget; stopping allocation.")
                 break
 
@@ -150,7 +177,7 @@ class RobotAllocator:
             # them so the least-loaded eligible arm wins (load balancing).
             eligible = []
             for r in robots:
-                if self._at_budget(assignments[r['name']]):
+                if self._at_budget(r['name'], assignments[r['name']]):
                     continue
                 ok, sol = reach(best_idx, r)
                 if ok:
@@ -164,6 +191,11 @@ class RobotAllocator:
                 # truly failed IK on all arms (not merely budget-blocked).
                 if all(reach(best_idx, r)[0] is False for r in robots):
                     excluded_unreachable += 1
+                else:
+                    # An arm COULD have reached it but is capped out. This is the
+                    # direct coverage cost of a per-arm budget, so it is counted
+                    # separately -- otherwise a cap looks like an unreachable mesh.
+                    excluded_at_budget += 1
                 continue
 
             if self.balance:
@@ -206,6 +238,13 @@ class RobotAllocator:
             f"(threshold {self.coverage_threshold * 100:.1f}%), assigned [{totals}], "
             f"{ik_queries} IK queries, {excluded_unreachable} candidates unreachable by any arm."
         )
+        if excluded_at_budget:
+            capped = [n for n in assignments if self._budget(n) is not None]
+            self.logger.warning(
+                f"{excluded_at_budget} candidate(s) were dropped ONLY because the arm that "
+                f"could reach them had already spent its budget (capped arms: {capped}). "
+                "That is the coverage price of the cap; raise the cap to buy it back."
+            )
         if final_coverage + 1e-9 < self.coverage_threshold:
             self.logger.warning(
                 f"Coverage target NOT met: {final_coverage * 100:.2f}% < "
@@ -214,5 +253,10 @@ class RobotAllocator:
             )
         return assignments, final_coverage
 
-    def _at_budget(self, selected_list):
-        return self.max_per_robot is not None and len(selected_list) >= self.max_per_robot
+    def _budget(self, name):
+        """Viewpoint cap for one arm: its own override, else the shared cap, else None."""
+        return self.max_per_robot_by_name.get(name, self.max_per_robot)
+
+    def _at_budget(self, name, selected_list):
+        cap = self._budget(name)
+        return cap is not None and len(selected_list) >= cap

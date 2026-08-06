@@ -230,6 +230,72 @@
       <xacro:default_inertial mass="${j6_mass}"/>
     </link>
 
+    <!-- ===== Wrist underside block =====================================================
+         A part that is bolted under link7 on the real robot but was missing from the
+         model entirely, so MoveIt planned as if that volume were free.
+
+         It is added as extra geometry ON link7 rather than as its own link, on purpose.
+         The part is rigidly bolted, so a separate link would add a fixed joint whose
+         pose never changes AND would need its own disable_collisions rows against link6,
+         link5, link3 and camera_link in every whole_cell SRDF (six of them). Folding it
+         into link7 inherits all of those rows as they stand, so no SRDF edit is needed.
+         Self-collision inside a single link is never checked, which is correct here:
+         the block genuinely overlaps link7's own Montaj mesh.
+
+         PLACEMENT: the user gave the part's centre in WORLD coordinates,
+         (-1.93, 1.11, 1.6), read off the live cell at the HOME pose: every Kawasaki
+         joint at 0 with the rail (world_to_agv) at 1.0 m, the same convention the cable
+         channel cradle below was measured in. At that pose link7's origin resolves to
+         world (-1.921959, 1.086435, 1.591), so the offsets here are simply
+         R_link7^T * (target - link7_origin). If the AGV is ever parked elsewhere for a
+         re-measurement, only the rail value changes, not these numbers.
+
+         The (-1.93, 1.11, 1.6) reading put the block deep inside link7's own Montaj
+         mesh, buried rather than mounted, so the final X and Y were set by dragging it
+         in RViz with scripts/wrist_block_tuner.py until it sat on the outer surface.
+         That moved the centre 25.4 mm along world +Y, to (-1.9311, 1.1354, 1.6000);
+         Z was left exactly as measured. Straight DOWN was tried first and rejected:
+         link6 is a thin flange sharing link7's origin, occupying x -1.9420..-1.9020,
+         y 1.0664..1.1064, z 1.5850..1.5910, and a downward shift drives the block
+         into it. At the offsets below link6 clears by 3.9 mm.
+
+         The tuner still reports the block as intersecting link7's own mesh, which is
+         expected and harmless: it is flush against a thin shell, so it necessarily
+         crosses those triangles, and geometry belonging to the SAME link is never
+         collision-checked against itself. Only link6 (disabled anyway) and link4
+         (enabled, see below) are worth watching.
+
+         ORIENTATION: link7 is yawed 157.700273 deg about world Z at that pose (its Z
+         axis IS world Z, so there is no roll or pitch to undo). The -2.752389 rad yaw
+         below cancels exactly that, so the block's own edges land on the world axes,
+         verified to 1e-9; which edge is which is then set by wrist_block_size.
+         That alignment holds AT THE HOME POSE; the block is bolted on, so it rotates
+         with the wrist as joint1/4/6 move, which is the physically correct behaviour.
+
+         WATCH THE COST AGAINST link4 whenever this block moves: that pair is NOT
+         disabled in any SRDF, so geometry reaching past link7's own mesh can block wrist
+         poses that used to plan. Measured by sweeping the only two joints that move the
+         pair (joint5 x joint6, 61 x 73 poses): at the offsets below the block enters
+         link4 in 254 of them, and in 94 (2.1%) link7's own mesh was still clear, so
+         those are newly blocked. All sit at |joint5| >= 116 deg against a 145 deg limit,
+         and the home pose is clear, so there is no permanent self-collision. The number
+         is sensitive to a couple of centimetres: before the outward tune it was 22
+         poses, and a trial position hanging 24 mm lower gave 249 (5.6%).
+         scripts/wrist_block_tuner.py reports it for any candidate offset. If a needed
+         band is ever lost, shrink or raise the block rather than adding an SRDF row:
+         disabling link4-link7 would also blind the check for link7's own mesh.
+
+         The visual is here only so the placement can be eyeballed in RViz; drop it and
+         keep the collision if the extra body is in the way. -->
+    <xacro:property name="wrist_block_x" value="0.027059"/>   <!-- in link7's frame -->
+    <xacro:property name="wrist_block_y" value="-0.041800"/>
+    <xacro:property name="wrist_block_z" value="0.009"/>
+    <xacro:property name="wrist_block_yaw" value="-2.752389"/>
+    <!-- world X x world Y x world Z at the home pose, i.e. the 5 cm edge runs along
+         world Y and the 2.5 cm edge along world X. The first version had those two
+         swapped; the block is not square in plan, so the difference is a real 90 deg. -->
+    <xacro:property name="wrist_block_size" value="0.025 0.05 0.02"/>
+
     <link name="${tf_prefix}link7">
       <visual>
         <geometry>
@@ -244,6 +310,17 @@
         </geometry>
         <material name="White"/>
         <origin xyz="-0.035 -0.04 0.2175" rpy="1.570796 3.1415 0"/>
+      </collision>
+      <visual>
+        <origin xyz="${wrist_block_x} ${wrist_block_y} ${wrist_block_z}"
+                rpy="0 0 ${wrist_block_yaw}"/>
+        <geometry><box size="${wrist_block_size}"/></geometry>
+        <material name="White"/>
+      </visual>
+      <collision>
+        <origin xyz="${wrist_block_x} ${wrist_block_y} ${wrist_block_z}"
+                rpy="0 0 ${wrist_block_yaw}"/>
+        <geometry><box size="${wrist_block_size}"/></geometry>
       </collision>
       <xacro:default_inertial mass="0.1"/>
     </link>
