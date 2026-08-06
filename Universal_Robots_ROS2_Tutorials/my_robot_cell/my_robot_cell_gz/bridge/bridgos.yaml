@@ -22,13 +22,21 @@
                             # "ROS_TO_GZ" - Bridge ROS topic to Gz
   qos_profile: SENSOR_DATA  # Default is a default-constructed QoS with appropriate queue size
 
-- ros_topic_name: "clock"
+# ABSOLUTE "/clock", and NOT lazy. This bridge node runs inside the /sim namespace
+# (PushRosNamespace), so the relative name "clock" used to resolve to /sim/clock --
+# while every node with use_sim_time:=true subscribes to the ABSOLUTE /clock, which
+# rclcpp's TimeSource never namespaces. Measured on the running cell: /clock had 0
+# publishers and 10 subscribers, /sim/clock had 1 publisher and 0 subscribers, so the
+# sim controller_manager (use_sim_time:=true) sat on a clock that never advanced.
+# `lazy: true` made it worse: with nobody subscribed to /sim/clock the bridge did not
+# even publish.
+- ros_topic_name: "/clock"
   gz_topic_name: "/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"
   gz_type_name: "gz.msgs.Clock"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
   publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
-  lazy: true                # Default "false"
+  lazy: false               # clock must flow whether or not anything is listening yet
   direction: BIDIRECTIONAL  # Default "BIDIRECTIONAL" - Bridge both directions
                             # "GZ_TO_ROS" - Bridge Gz topic to ROS
                             # "ROS_TO_GZ" - Bridge ROS topic to Gz

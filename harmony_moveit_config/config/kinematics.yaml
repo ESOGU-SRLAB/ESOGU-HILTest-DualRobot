@@ -1,8 +1,39 @@
 real_kawasaki:
   kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
   kinematics_solver_search_resolution: 0.0050000000000000001
-  kinematics_solver_timeout: 0.0050000000000000001
+  # Raised from 0.005 on 2026-08-04. KDL is an iterative Newton solver that re-seeds
+  # randomly on failure; 5 ms rarely leaves room for a single restart, and the coverage
+  # planner reads every miss as an unreachable viewpoint. The planner's own diagnostic
+  # says as much when a group returns nothing but NO_IK_SOLUTION: "kinematics_solver_
+  # timeout is not too small (KDL often needs >=0.05s)".
+  kinematics_solver_timeout: 0.05
 real_ur10e:
-  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
-  kinematics_solver_search_resolution: 0.0050000000000000001
-  kinematics_solver_timeout: 0.0050000000000000001
+  # Was KDL at a 5 ms timeout. Switched to pick_ik on 2026-08-04 to match the
+  # real_ifarlab_moveit_config stack, which is the one the travel-optimisation work was
+  # measured on. It matters beyond raw success rate: pick_ik in `mode: global` restarts
+  # RANDOMLY, so repeating a query samples different IK branches, and that is exactly
+  # what the planner's rechain_ik and the executor's nearest-branch IK exploit. On the
+  # chassis job that produced "re-seeded 17 viewpoint(s), removing 3731 deg" and
+  # "4 distinct branch(es)" per hop. A local solver like KDL returns the same answer for
+  # the same seed, which collapses both features to a single branch.
+  kinematics_solver: pick_ik/PickIkPlugin
+  kinematics_solver_timeout: 0.05
+  kinematics_solver_attempts: 5
+  mode: global
+  position_scale: 1.0
+  rotation_scale: 0.5
+  position_threshold: 0.001
+  orientation_threshold: 0.05
+  cost_threshold: 0.001
+  # KEEP AT 0.0 unless cost_threshold above is raised with it. Per pick_ik's own
+  # docs, ">0.0 enables cost function", and cost_threshold then means "IK is solved
+  # only when ALL enabled cost functions return less than this". Tried 0.005 on
+  # 2026-08-03 to make pick_ik prefer the IK branch nearest the seed (it runs in
+  # mode: global, i.e. random restarts, so neighbouring viewpoints otherwise come
+  # back on totally different shoulder/wrist configurations). It BACKFIRED: with
+  # cost_threshold at 0.001 every solution not already sitting on the seed was
+  # rejected -- UR NO_IK_SOLUTION went 538 -> 1780, its viewpoints 18 -> 1 and
+  # coverage 65.7% -> 50.7%. Branch continuity is handled in code instead
+  # (multirobot_viewpoint_planner: planner _rechain_ik + executor nearest-branch IK).
+  minimal_displacement_weight: 0.0
+  gd_step_size: 0.0001

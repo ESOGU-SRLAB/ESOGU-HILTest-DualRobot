@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>doors_inspection</name>
+  <version>0.0.0</version>
+  <description>Cooperative UR10e + Kawasaki coverage inspection of the two car doors
+    (windowdoor / windowlessdoor), as opposed to the chassis. Reuses the validated
+    multirobot_viewpoint_planner pipeline unchanged: the new steps are merging the two
+    door meshes into a single planning target, and building the belief/occupancy
+    octomap of the captured clouds.</description>
+  <maintainer email="cshyilmaz@gmail.com">Cem</maintainer>
+  <license>TODO: License declaration</license>
+
+  <!-- Hybrid package: ament_cmake so the octomap builder can link the real octomap
+       library, plus ament_cmake_python so the Python module and launch files install
+       exactly as they did when this was a pure ament_python package. -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+  <!-- The planner and both executor nodes are run from here as-is; nothing is
+       forked, so fixes made for the chassis job apply to the doors job too. -->
+  <depend>multirobot_viewpoint_planner</depend>
+  <depend>viewpoint_planner</depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclpy</depend>
+  <depend>std_srvs</depend>
+
+  <!-- Octomap stage (system packages, resolved via rosdep). -->
+  <depend>libpcl-all-dev</depend>
+  <depend>liboctomap-dev</depend>
+  <depend>eigen</depend>
+
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

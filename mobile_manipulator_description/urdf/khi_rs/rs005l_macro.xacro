@@ -280,7 +280,89 @@
       <dynamics damping="0.0" friction="0.0"/>
     </joint>
 
-    
+    <!-- ===== Cable channel cradle on the forearm =====================================
+         The physical cable channel holder bolted to link3, near the elbow. It was not
+         modelled at all, so MoveIt planned straight through it.
+
+         MESH: kawa_cable_channel.stl is a byte identical copy of the UR's
+         cable_channel.stl (Universal_Robots_ROS2_Description), i.e. it still carries the
+         UR assembly's CAD coordinates: the raw mm bounds are x 1043.13..1115.62,
+         y 473.79..499.79, z 608.11..669.75. That CAD frame IS the ROS world frame at the
+         home pose, which is verifiable: ur10e_cable_channel resolves to world
+         (1.0781, 0.4868, 0.6698) with identity rotation, exactly the mesh's own anchor.
+         So the mesh has to be translated off the UR wrist and onto the Kawasaki forearm.
+
+         The visual/collision origin below subtracts the mesh's bounding box CENTRE
+         (1.079374, 0.486789, 0.638931 m), so the link frame sits in the MIDDLE of the
+         part. Handy in RViz: the TF axis marker lands in the centre of the channel, and
+         the joint origin below is read directly as "where the centre of the part is".
+
+         PLACEMENT: xyz and rpy below are taken VERBATIM from the final RViz drag (see
+         ORIENTATION), not rounded, so nothing is lost in interpretation. The part centre
+         lands at world (-2.0072, 1.0875, 1.2387) with all Kawasaki joints at 0 AND THE
+         RAIL (world_to_agv) AT 1.0 m, which is where the user's live stack has it: the
+         tuner's TF readout confirmed the rail value. The rail is the only degree of
+         freedom that can explain a y near 1.09 at all: at rail 0 link3 sits at y = 0.086,
+         and joint1 can shift link3 by at most 0.105 m because link3's origin is only that
+         far off the joint1 axis. link3's rotation at that pose maps local x to world z,
+         local y to world x and local z to world y, which is why the xyz reads permuted
+         against the world numbers. If the AGV is ever parked elsewhere for the
+         measurement, only cable_cradle_z changes.
+
+         ORIENTATION: rpy = (1.244738, -1.527940, -2.767659), copied straight out of the
+         final RViz drag. It is 3.7 deg off the axis aligned attitude
+         [[0,1,0],[0,0,1],[1,0,0]] = rpy (0, -pi/2, -pi/2), and 87.3 deg off the next
+         nearest one, so if a clean right angled mount is ever wanted, that is the value
+         to snap to and it is not a close call. It was left unsnapped because the user
+         placed it by eye and asked for exactly this.
+         The part is a flat plate, 72.5 x 61.6 mm outline and 26 mm thick, and its two
+         dominant mesh faces (0.0034 m^2 each) carry the plate normal; here that normal
+         ends up roughly along world Z, so the plate lies close to horizontal with the
+         72.5 mm side along world Y.
+
+         Do NOT try to reason this one out from a verbal description: five guesses in a
+         row were wrong. It was settled by dragging the part in RViz with
+         scripts/cable_channel_tuner.py, which prints the pasteable origin line.
+
+         Two traps that produced the wrong guesses, worth knowing:
+         - The tuner prints the pose ALREADY IN THE PARENT FRAME (link3). It is the joint
+           origin as is. Do not compose link3's inverse onto it a second time, which is
+           how (0, 0, 0) was arrived at once and was wrong by exactly link3's rotation.
+         - Turning the plate about its OWN normal, e.g. rpy (pi/2, 0, pi) here, is a legal
+           90 deg turn that only swaps the 72.5 and 61.6 mm outline sides while the plate
+           stays on the same face. An 11 mm change reads as "it did not rotate at all".
+         Also note that several of the candidate attitudes share an AABB, so comparing
+         bounding boxes is no way to tell them apart; only the mesh orientation differs.
+
+         SRDF: this link is new, so every whole_cell SRDF needs it disabled against the
+         links it is bolted to or permanently touches (link3 and link4). Everything else
+         stays ENABLED on purpose, that is the point of modelling it. -->
+    <xacro:property name="cable_cradle_x" value="0.13573"/>   <!-- link3 local x = world z  1.2387 -->
+    <xacro:property name="cable_cradle_y" value="-0.16326"/>  <!-- link3 local y = world x -2.0050 -->
+    <xacro:property name="cable_cradle_z" value="0.00110"/>   <!-- link3 local z = world y  1.0875 -->
+
+    <link name="${tf_prefix}kawa_cable_channel">
+      <visual>
+        <origin xyz="-1.079374 -0.486789 -0.638931" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/kawa_cable_channel.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="White"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.079374 -0.486789 -0.638931" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/kawa_cable_channel.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <xacro:default_inertial mass="0.1"/>
+    </link>
+
+    <joint name="${tf_prefix}link3-kawa_cable_channel" type="fixed">
+      <origin xyz="${cable_cradle_x} ${cable_cradle_y} ${cable_cradle_z}" rpy="1.244738 -1.527940 -2.767659"/>
+      <parent link="${tf_prefix}link3"/>
+      <child link="${tf_prefix}kawa_cable_channel"/>
+    </joint>
 
     <!-- === Link 4 === -->
     <joint name="${tf_prefix}joint4" type="revolute">
@@ -323,12 +405,74 @@
       <child link="${tf_prefix}link7"/>
     </joint>
 
+    <!-- SICK camera collision shell (Kawasaki side), the counterpart of the six boxes
+         on the UR's ur10e_sick_camera link in ur_macro.xacro. Until this was added
+         camera_link carried NO collision geometry at all, so MoveIt planned as if the
+         Kawasaki's camera did not exist and happily drove the housing into the cell.
+
+         Frame: camera_link IS the optical frame (camera_rgb_joint and
+         camera_rgb_optic_joint are both identity), and the Gazebo sensor hangs off
+         camera_rgb_optic_frame, so the VIEW AXIS IS +X here, not +Z as on the UR, whose
+         boxes therefore cannot be copied verbatim. The housing hangs BACKWARD from the
+         optics, along -X.
+
+         Geometry: a body box spanning x = [-depth, 0], plus a skirt on each of its six
+         faces, exactly the UR's "wrap the housing on all sides" arrangement. The UR gets
+         its body volume from a mesh and so needs only the six skirts; camera_link has no
+         mesh, hence the extra body box here. The UR's 60 deg yaw about the view axis is
+         deliberately NOT reproduced: it matched that housing's mounting angle, which is
+         not known for this bracket, so the cross-section is kept square (0.090, the
+         larger of the UR's 0.087 x 0.090) and is therefore correct at any roll.
+
+         SRDF: camera_link is rigidly fixed to link7/link6, so those two pairs are
+         disabled in every whole_cell SRDF. link5 and inboard links are deliberately LEFT
+         ENABLED, because the shell reaches well past link7 and folding it into the
+         forearm is a genuine collision worth catching.
+
+         Shrink cam_shell_skirt if this costs too much Kawasaki reachability. -->
+    <xacro:property name="cam_body_depth" value="0.0775"/>  <!-- along the view axis -->
+    <xacro:property name="cam_body_cross" value="0.090"/>   <!-- square cross-section -->
+    <xacro:property name="cam_shell_skirt" value="0.039"/>  <!-- clearance per face -->
+    <xacro:property name="cam_body_x" value="${-cam_body_depth / 2.0}"/>
+    <xacro:property name="cam_side_off" value="${(cam_body_cross + cam_shell_skirt) / 2.0}"/>
+
     <link name="${tf_prefix}camera_link">
       <inertial>
         <mass value="0.01"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
       </inertial>
+      <!-- housing body -->
+      <collision>
+        <origin xyz="${cam_body_x} 0 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_body_cross} ${cam_body_cross}"/></geometry>
+      </collision>
+      <!-- optics face (+X, the viewing direction) and back face -->
+      <collision>
+        <origin xyz="${cam_shell_skirt / 2.0} 0 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_shell_skirt} ${cam_body_cross} ${cam_body_cross}"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="${-cam_body_depth - cam_shell_skirt / 2.0} 0 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_shell_skirt} ${cam_body_cross} ${cam_body_cross}"/></geometry>
+      </collision>
+      <!-- the four sides -->
+      <collision>
+        <origin xyz="${cam_body_x} ${cam_side_off} 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_shell_skirt} ${cam_body_cross}"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="${cam_body_x} ${-cam_side_off} 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_shell_skirt} ${cam_body_cross}"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="${cam_body_x} 0 ${cam_side_off}" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_body_cross} ${cam_shell_skirt}"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="${cam_body_x} 0 ${-cam_side_off}" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_body_cross} ${cam_shell_skirt}"/></geometry>
+      </collision>
     </link>
 
     <joint name="${tf_prefix}camera_joint" type="fixed">

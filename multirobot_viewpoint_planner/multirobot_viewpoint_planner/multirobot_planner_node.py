@@ -6,8 +6,11 @@ import traceback
 import numpy as np
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile
+from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from scipy.spatial.transform import Rotation
+from sensor_msgs.msg import JointState
 
 # Reuse the single-arm viewpoint_planner core verbatim (this package depends on
 # it). Only the ALLOCATION across the two arms is new -- everything up to and
@@ -16,6 +19,8 @@ from scipy.spatial.transform import Rotation
 from viewpoint_planner.mesh_analyzer import MeshAnalyzer
 from viewpoint_planner.viewpoint_generator import ViewpointGenerator
 from viewpoint_planner.reachability_checker import ReachabilityChecker
+from viewpoint_planner.joint_wrap import (describe_changes, parse_joint_limits,
+                                          wrap_to_reference)
 
 from multirobot_viewpoint_planner.robot_allocator import RobotAllocator
 
@@ -138,6 +143,43 @@ class MultiRobotPlannerNode(Node):
         self.declare_parameter('ur_order_anchor', 'max_y')
         self.declare_parameter('kawasaki_order_anchor', 'min_y')
 
+        # 2*pi UNWINDING of the stored IK solutions. IK returns one arbitrary branch of
+        # a solution family, so the tour can store e.g. +100 deg at one stop and -260 deg
+        # at the next: the same physical joint angle, but a whole extra turn to drive.
+        # Once the visiting order is fixed we walk the tour and re-express each angle as
+        # the equivalent nearest the PREVIOUS stop, whenever the joint's URDF limits
+        # allow it. Physically identical poses, so coverage and reachability are
+        # untouched -- only the numbers the executor drives between.
+        # Re-solve each viewpoint's IK seeded with the previous viewpoint's solution and
+        # keep it only when it is closer, so the tour stays on ONE IK branch instead of
+        # flipping between shoulder/elbow/wrist configurations that reach the same pose
+        # from opposite arm postures. Unlike unwinding, this changes WHICH solution is
+        # stored -- but never the viewpoint pose, so coverage is unaffected.
+        self.declare_parameter('rechain_ik', True)
+        # pick_ik runs with random restarts, so repeating the seeded query samples
+        # different branches; we keep the closest that solves.
+        self.declare_parameter('rechain_ik_attempts', 4)
+        # Seed variants for the re-solve (see _seed_variants). Repetition alone only
+        # samples branches when the solver restarts randomly, which the Kawasaki's KDL
+        # does not do -- these give it something to converge away from.
+        self.declare_parameter('rechain_rail_joint', 'world_to_agv')
+        self.declare_parameter('rechain_rail_probe', 0.25)   # m, +/- rail seed offset; 0 disables
+        self.declare_parameter('rechain_rail_weight', 2.0)   # rad per m of rail travel
+        self.declare_parameter('rechain_yaw_probe', True)    # try joint1 flipped +/- pi
+        self.declare_parameter('rechain_yaw_joint', 'joint1')
+
+        self.declare_parameter('unwind_joint_goals', True)
+        self.declare_parameter('wrap_limit_margin', 0.05)  # rad clear of each limit
+        self.declare_parameter('wrap_min_gain', 0.35)      # rad (~20 deg) minimum saving
+
+        # Latched URDF -> joint limits for the unwinding above.
+        self._urdf_xml = None
+        self._joint_limits = None
+        self.create_subscription(
+            String, '/robot_description', self._robot_description_cb,
+            QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                       history=HistoryPolicy.KEEP_LAST))
+
         self.mesh_path = self.get_parameter('mesh_path').value
         self.mesh_scale = self.get_parameter('mesh_scale').value
         self.coverage_threshold = self.get_parameter('coverage_threshold').value
@@ -240,14 +282,15 @@ class MultiRobotPlannerNode(Node):
         R_off, p_off = offset
         C = np.asarray(correction, dtype=np.float64)
 
-        def _fn(candidate):
+        def _fn(candidate, seed=None, count_errors=True):
             R_view = np.asarray(candidate['rotation'], dtype=np.float64)
             pos = np.asarray(candidate['position'], dtype=np.float64)
             R_cam = R_view @ C                    # orientation the camera must reach
             R_tip = R_cam @ R_off                 # -> the group tip's orientation
             p_tip = pos + R_cam @ p_off           # -> the group tip's position
             quat = Rotation.from_matrix(R_tip).as_quat()  # [x, y, z, w]
-            return checker.check_ik(p_tip, quat)
+            return checker.check_ik(p_tip, quat, seed_joint_state=seed,
+                                    count_errors=count_errors)
 
         return _fn
 
@@ -283,11 +326,12 @@ class MultiRobotPlannerNode(Node):
             )
             return None
 
-        def _fn(candidate):
+        def _fn(candidate, seed=None, count_errors=True):
             if workspace_gate is not None and not workspace_gate(candidate['position']):
                 return False, None
             quat = Rotation.from_matrix(candidate['rotation']).as_quat()  # [x, y, z, w]
-            return checker.check_ik(candidate['position'], quat)
+            return checker.check_ik(candidate['position'], quat, seed_joint_state=seed,
+                                    count_errors=count_errors)
 
         return _fn
 
@@ -381,9 +425,10 @@ class MultiRobotPlannerNode(Node):
             # UR-only workspace gate (behind-rail veto). The Kawasaki gets no gate,
             # so candidates the UR can't legitimately reach still go to the Kawasaki.
             ur_ws_gate = self._ur_workspace_gate()
+            ur_reach_fn = self._make_reachability_fn(
+                ur_checker, 'UR10e', workspace_gate=ur_ws_gate)
             robots = [
-                {'name': 'ur', 'reachability_fn': self._make_reachability_fn(
-                    ur_checker, 'UR10e', workspace_gate=ur_ws_gate)},
+                {'name': 'ur', 'reachability_fn': ur_reach_fn},
                 {'name': 'kawasaki', 'reachability_fn': kawa_reach_fn},
             ]
 
@@ -428,6 +473,15 @@ class MultiRobotPlannerNode(Node):
                 vp['id'] = f'kawa_vp_{i:03d}'
                 vp['rank'] = i
 
+            # Ids exist and the visiting order is final, so the two continuity passes can
+            # run. Order matters: first move each viewpoint onto an IK branch near its
+            # predecessor (a genuinely different arm configuration reaching the same
+            # pose), THEN unwind whatever whole-turn offsets remain within that branch.
+            self._rechain_ik(ur_vps, ur_reach_fn, 'UR tour')
+            self._rechain_ik(kawa_vps, kawa_reach_fn, 'Kawasaki tour')
+            self._unwind_tour(ur_vps, 'UR tour')
+            self._unwind_tour(kawa_vps, 'Kawasaki tour')
+
             # 5. Save plan.
             plan = {
                 "coverage_achieved": float(final_coverage),
@@ -468,6 +522,252 @@ class MultiRobotPlannerNode(Node):
                         self.get_logger().warning(f"Failed to destroy reachability checker node: {e}")
 
         return response
+
+    # ------------------------------------------------------------------ #
+    # 2*pi unwinding of the stored IK solutions.
+    # ------------------------------------------------------------------ #
+    def _robot_description_cb(self, msg: String):
+        if self._urdf_xml is None:
+            self._urdf_xml = msg.data
+
+    def _get_joint_limits(self, timeout=5.0):
+        """Parse the latched URDF once. An empty table means 'do not unwind anything',
+        which is the safe degradation: goals stay exactly as IK produced them."""
+        if self._joint_limits is not None:
+            return self._joint_limits
+        deadline = time.monotonic() + timeout
+        while self._urdf_xml is None and time.monotonic() < deadline:
+            time.sleep(0.1)
+        if self._urdf_xml is None:
+            self.get_logger().warning(
+                'No /robot_description available -- joint limits unknown, so the stored '
+                'IK solutions are left un-unwound.')
+            self._joint_limits = {}
+            return self._joint_limits
+        try:
+            self._joint_limits = parse_joint_limits(self._urdf_xml)
+            wrappable = sorted(n for n, v in self._joint_limits.items() if v.wrappable)
+            self.get_logger().info(
+                f'Joint limits parsed for {len(self._joint_limits)} joints; '
+                f'{len(wrappable)} can be unwound: {wrappable}')
+        except Exception as e:
+            self.get_logger().warning(f'Could not parse /robot_description ({e}); '
+                                      'IK solutions left un-unwound.')
+            self._joint_limits = {}
+        return self._joint_limits
+
+    def _joint_distance(self, sol_a, sol_b):
+        """Cost of moving between two IK solutions, in radians.
+
+        Revolute joints count by their SHORTEST equivalent, so a pure 2*pi difference --
+        which the unwinding pass removes anyway -- does not masquerade as a branch change.
+
+        PRISMATIC joints (the Kawasaki's `world_to_agv` rail) count too, converted with
+        `rechain_rail_weight` rad/m. They used to be skipped entirely, which is wrong for
+        the Kawasaki: its group is REDUNDANT (rail + 6 joints), so the rail is a free
+        parameter of every IK solve and a candidate that drives the AGV a metre used to
+        score as free. Measured on the 2026-08-03 plan the Kawasaki tour drove the rail
+        3.33 m over 8 viewpoints."""
+        if sol_a is None or sol_b is None:
+            return float('inf')
+        limits = self._joint_limits or {}
+        rail_w = float(self.get_parameter('rechain_rail_weight').value)
+        b = dict(zip(sol_b.name, sol_b.position))
+        total = 0.0
+        for n, pa in zip(sol_a.name, sol_a.position):
+            if n not in b:
+                continue
+            lim = limits.get(n)
+            d = abs(float(b[n]) - float(pa))
+            if lim is not None and not lim.is_revolute:
+                total += d * rail_w
+                continue
+            total += min(d, abs(d - 2.0 * np.pi))
+        return total
+
+    def _seed_variants(self, prev, current, vp_id):
+        """Seeds to try for one viewpoint's IK re-solve, best-guess first.
+
+        Repeating the SAME seeded query only samples new branches when the solver
+        restarts randomly, which is true of pick_ik in `mode: global` (the UR) but NOT of
+        KDL (the Kawasaki group): KDL is a local solver and returns the same answer every
+        time, so `rechain_ik_attempts` alone buys the Kawasaki exactly one candidate.
+        These variants push it into genuinely different parts of the solution space:
+
+          - `prev`, the plain chained seed, and `current`, so the existing solution can
+            always be re-converged to.
+          - RAIL PROBES: prev with the rail shifted +/- `rechain_rail_probe`. This is the
+            redundancy resolution knob -- the same camera pose is reachable from a range
+            of AGV positions, and the nearest one is usually not the one an unseeded solve
+            picked.
+          - BASE-YAW PROBES: prev with joint1 turned +/- pi. The 2026-08-03 plan had a
+            248 deg joint1 swing in one hop, and joint1 spans exactly +/-180 so unwinding
+            can never touch it; only a different branch can.
+
+        Every variant is clamped to the URDF limits, so a probe can never propose an
+        out-of-range seed."""
+        limits = self._joint_limits or {}
+
+        def clamp(name, value):
+            lim = limits.get(name)
+            if lim is None:
+                return value
+            return float(np.clip(value, lim.lower + 1e-6, lim.upper - 1e-6))
+
+        def shifted(base, changes):
+            if base is None:
+                return None
+            out = JointState()
+            out.name = list(base.name)
+            pos = [float(v) for v in base.position]
+            touched = False
+            for jname, delta in changes.items():
+                if jname not in out.name:
+                    continue
+                i = out.name.index(jname)
+                new = clamp(jname, pos[i] + delta)
+                if abs(new - pos[i]) > 1e-4:
+                    pos[i] = new
+                    touched = True
+            if not touched:
+                return None
+            out.position = pos
+            return out
+
+        rail = str(self.get_parameter('rechain_rail_joint').value)
+        probe = float(self.get_parameter('rechain_rail_probe').value)
+        seeds = [prev, current]
+        if probe > 0.0:
+            seeds += [shifted(prev, {rail: probe}), shifted(prev, {rail: -probe})]
+        if bool(self.get_parameter('rechain_yaw_probe').value):
+            yaw = str(self.get_parameter('rechain_yaw_joint').value)
+            seeds += [shifted(prev, {yaw: np.pi}), shifted(prev, {yaw: -np.pi})]
+        return [s for s in seeds if s is not None]
+
+    def _rechain_ik(self, vps, reach_fn, label):
+        """Re-solve each viewpoint's IK SEEDED with the previous viewpoint's solution,
+        and keep the result only when it is closer in joint space than what we already
+        had.
+
+        Why this exists: every pose has several IK branches (shoulder/elbow/wrist flips)
+        that reach it from completely different arm configurations. Allocation solves each
+        viewpoint independently -- and pick_ik runs in `mode: global`, i.e. random restarts
+        -- so neighbouring viewpoints routinely land on different branches. The arm then
+        swings through hundreds of degrees to move a few centimetres, which is NOT
+        something 2*pi unwinding can fix: the configurations are genuinely different.
+
+        The viewpoint POSE is never changed here, only which solution reaches it, so
+        coverage is untouched. A viewpoint keeps its original solution whenever the
+        re-solve fails or is no better, so this can only reduce travel."""
+        if not vps or reach_fn is None or not self.get_parameter('rechain_ik').value:
+            return
+        attempts = max(1, int(self.get_parameter('rechain_ik_attempts').value))
+        self._get_joint_limits()
+        rail_before = self._tour_rail_travel(vps)
+
+        improved = 0
+        saved = 0.0
+        prev = vps[0].get('joint_solution')
+        for vp in vps[1:]:
+            current = vp.get('joint_solution')
+            if prev is None:
+                prev = current
+                continue
+            best, best_d = current, self._joint_distance(prev, current)
+            # Two ways to reach a different branch: repeat the query (only samples
+            # anything when the solver restarts randomly, i.e. pick_ik/global on the UR)
+            # and vary the SEED (the only thing that moves KDL on the Kawasaki). Both are
+            # tried, and a result is kept solely when it is strictly closer, so this can
+            # never make a tour worse.
+            for seed in self._seed_variants(prev, current, vp.get('id', '?')):
+                for _ in range(attempts):
+                    ok, sol = reach_fn(vp, seed=seed, count_errors=False)
+                    if not ok or sol is None:
+                        continue
+                    d = self._joint_distance(prev, sol)
+                    if d < best_d:
+                        best, best_d = sol, d
+            if best is not current and best is not None:
+                before = self._joint_distance(prev, current)
+                self.get_logger().info(
+                    f"  {vp.get('id', '?')}: closer IK branch found -- "
+                    f"{np.rad2deg(before):.0f} -> {np.rad2deg(best_d):.0f} deg from the "
+                    "previous viewpoint.")
+                vp['joint_solution'] = best
+                improved += 1
+                saved += before - best_d
+            prev = vp.get('joint_solution')
+
+        rail_after = self._tour_rail_travel(vps)
+        if improved:
+            self.get_logger().info(
+                f'{label}: re-seeded {improved} viewpoint(s) onto a nearer IK branch, '
+                f'removing {np.rad2deg(saved):.0f} deg of travel.')
+        else:
+            self.get_logger().info(f'{label}: no viewpoint had a nearer IK branch.')
+        if rail_before is not None and rail_after is not None:
+            self.get_logger().info(
+                f'{label}: rail travel {rail_before:.3f} -> {rail_after:.3f} m.')
+
+    def _tour_rail_travel(self, vps):
+        """Total prismatic (AGV rail) travel along an ordered tour, in metres. None when
+        the tour has no prismatic joint, i.e. for the UR."""
+        limits = self._joint_limits or {}
+        rail = str(self.get_parameter('rechain_rail_joint').value)
+        vals = []
+        for vp in vps:
+            sol = vp.get('joint_solution')
+            if sol is None or rail not in sol.name:
+                return None
+            vals.append(float(sol.position[list(sol.name).index(rail)]))
+        lim = limits.get(rail)
+        if lim is not None and lim.is_revolute:
+            return None
+        return float(np.abs(np.diff(vals)).sum()) if len(vals) > 1 else 0.0
+
+    def _unwind_tour(self, vps, label):
+        """Walk an ORDERED tour and re-express each viewpoint's joint angles as the
+        2*pi-equivalents nearest the PREVIOUS viewpoint, within the URDF limits.
+
+        The first viewpoint is left exactly as IK produced it: there is no meaningful
+        reference for it here, and the executor unwinds it against the arm's real
+        measured pose at run time anyway. Poses are unchanged throughout -- theta and
+        theta +/- 2*pi place every link identically -- so this cannot alter coverage,
+        reachability or collisions, only how far the arm drives between stops."""
+        if not vps or not self.get_parameter('unwind_joint_goals').value:
+            return
+        limits = self._get_joint_limits()
+        if not limits:
+            return
+        margin = float(self.get_parameter('wrap_limit_margin').value)
+        min_gain = float(self.get_parameter('wrap_min_gain').value)
+
+        reference = None
+        total_saved = 0.0
+        rewritten = 0
+        for vp in vps:
+            sol = vp.get('joint_solution')
+            if sol is None:
+                continue
+            names = list(sol.name)
+            positions = [float(x) for x in sol.position]
+            if reference is not None:
+                positions, changes = wrap_to_reference(
+                    positions, names, reference, limits, margin=margin, min_gain=min_gain)
+                if changes:
+                    rewritten += len(changes)
+                    total_saved += sum(c[3] for c in changes)
+                    self.get_logger().info(
+                        f"  {vp.get('id', '?')}: {describe_changes(changes)}")
+                    sol.position = positions
+            reference = dict(zip(names, positions))
+
+        if rewritten:
+            self.get_logger().info(
+                f'{label}: unwound {rewritten} joint goal(s) across the tour, removing '
+                f'{np.rad2deg(total_saved):.0f} deg of needless rotation.')
+        else:
+            self.get_logger().info(f'{label}: no joint goals needed unwinding.')
 
     @staticmethod
     def _order_by_proximity(vps, anchor='coverage'):

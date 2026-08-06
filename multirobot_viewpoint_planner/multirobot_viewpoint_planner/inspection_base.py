@@ -30,19 +30,25 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import (DurabilityPolicy, HistoryPolicy, QoSProfile,
+                       qos_profile_sensor_data)
 
 from action_msgs.msg import GoalStatus
 from control_msgs.action import FollowJointTrajectory
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
 from rcl_interfaces.msg import ParameterDescriptor
-from moveit_msgs.srv import GetPlanningScene, ApplyPlanningScene
+from geometry_msgs.msg import PoseStamped
+from moveit_msgs.srv import GetPlanningScene, ApplyPlanningScene, GetPositionIK
 from moveit_msgs.msg import PlanningScene, PlanningSceneComponents, LinkPadding
 from sensor_msgs.msg import PointCloud2, JointState
 from sensor_msgs_py import point_cloud2 as pc2
+from std_msgs.msg import String
 from tf2_ros import Buffer, TransformListener
 from scipy.spatial.transform import Rotation
+
+from viewpoint_planner.joint_wrap import (describe_changes, parse_joint_limits,
+                                          wrap_to_reference)
 
 import open3d as o3d
 
@@ -68,10 +74,13 @@ class InspectionNodeBase(Node):
         # pose) -- avoids a spurious rail back-and-forth. Kawasaki keeps the old
         # always-align (its _at_pose guard makes it a no-op when already at start).
         self.align_on_fresh = True
-        # UR REBASES each trajectory's first point onto the current measured pose (like
-        # the proven ur_inspection_scenario playback) instead of doing a separate
-        # "align to recorded start" move -- this is what stops the rail lurching back
-        # and forth. Kawasaki keeps _align_to_traj_start (its constraint: unchanged).
+        # REBASE each trajectory's first point onto the current measured pose (like the
+        # proven ur_inspection_scenario playback) instead of doing a separate "align to
+        # recorded start" move -- this is what stops the rail lurching back and forth.
+        # Both arms now do it: the Kawasaki was left on the old separate-align path long
+        # after the UR was fixed, which is why it kept travelling far more per viewpoint.
+        # It degrades safely -- _rebase_traj_to_current refuses whenever the gap is
+        # bigger than the start tolerance, and then the explicit walk still happens.
         self.rebase_to_current = False
 
         self._declare_shared_params()
@@ -83,6 +92,15 @@ class InspectionNodeBase(Node):
         self._cb = ReentrantCallbackGroup()
         self._plan_timeout = self.get_parameter("plan_timeout_sec").value
         self._motion_timeout = self.get_parameter("motion_timeout_sec").value
+
+        # Our OWN /compute_ik client rather than pymoveit2's: that one hard-codes the
+        # group's default tip (it never sets ik_link_name, so it would solve for
+        # ur10e_tool0 instead of the camera optical frame) and its blocking wrapper
+        # spins the node internally, which corrupts this node's executor wait set.
+        # Set self.ik_group_name in a subclass to enable nearest-branch IK.
+        self.ik_group_name = None
+        self._ik_cli = self.create_client(
+            GetPositionIK, "compute_ik", callback_group=self._cb)
 
         # Planning-scene service clients (collision padding).
         self._get_scene_cli = self.create_client(
@@ -101,6 +119,18 @@ class InspectionNodeBase(Node):
         self._last_plan_error = None  # MoveItErrorCodes.val of the most recent failed plan
         self.create_subscription(
             JointState, "/joint_states", self._joint_states_cb, 10, callback_group=self._cb)
+
+        # URDF joint limits, used to decide whether a goal angle may be re-expressed as
+        # a different 2*pi-equivalent (see _wrap_goal_to_current). robot_state_publisher
+        # latches /robot_description, so a TRANSIENT_LOCAL subscription picks it up even
+        # though it was published long before this node started.
+        self._urdf_xml = None
+        self._joint_limits = None
+        self.create_subscription(
+            String, "/robot_description", self._robot_description_cb,
+            QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                       history=HistoryPolicy.KEEP_LAST),
+            callback_group=self._cb)
 
         # Where cached trajectories live: <plans>/trajectories/ (next to the plan JSON)
         # unless trajectory_cache_dir overrides it.
@@ -172,6 +202,53 @@ class InspectionNodeBase(Node):
         # wrapped into (-pi, pi] before planning (OMPL goal-region rescue).
         self.declare_parameter("normalize_edge_margin", 0.2)  # rad
 
+        # 2*pi GOAL UNWINDING. IK hands back one arbitrary branch of a solution family,
+        # so consecutive viewpoints can be stored as e.g. +100 deg and -260 deg -- the
+        # same physical joint angle, but a full extra turn to travel. When enabled, each
+        # revolute goal is re-expressed as the 2*pi-equivalent nearest the arm's CURRENT
+        # measured angle, but ONLY if that equivalent stays inside the joint's URDF
+        # limits (wrap_limit_margin clear of each edge). Joints whose range is <= 2*pi
+        # -- Kawasaki joint1/2/3/5 and the UR elbow -- therefore never move, which is
+        # what makes this safe where the old limit-blind version was not.
+        self.declare_parameter("wrap_goals_to_current", True)
+        self.declare_parameter("wrap_limit_margin", 0.05)  # rad clear of each limit
+        # Ignore rewrites that save less than this, so goals are not churned for nothing.
+        self.declare_parameter("wrap_min_gain", 0.35)      # rad (~20 deg)
+
+        # NEAREST-BRANCH IK (pose-goal arms only, i.e. the UR). A pose has several IK
+        # branches -- shoulder/elbow/wrist flips that reach it from completely different
+        # arm postures -- and unwinding cannot help between them because they are
+        # genuinely different configurations. Planning to a bare Cartesian pose goal lets
+        # MoveIt's goal sampler pick any of them, which is how the arm ends up swinging
+        # hundreds of degrees to move a few centimetres. Instead we solve IK ourselves,
+        # seeded at the arm's CURRENT measured pose, and plan to the closest branch that
+        # actually yields a path. Falls back to the plain pose goal if none does.
+        self.declare_parameter("nearest_branch_ik", True)
+        self.declare_parameter("ik_seed_attempts", 4)      # global-mode restarts to sample
+        self.declare_parameter("ik_timeout", 0.1)          # s per /compute_ik call
+        self.declare_parameter("ik_avoid_collisions", True)
+        # Kawasaki side of the same idea. Its group is REDUNDANT (AGV rail + 6 joints),
+        # so the rail is a free parameter of every solve: probe it as a seed to find a
+        # nearer arm posture, but never let a candidate actually drive the AGV away from
+        # the position the planner chose (that choice was made for coverage).
+        # branch_max_rail_shift <= 0 locks the rail to the planned value exactly.
+        self.declare_parameter("branch_rail_probe", 0.25)      # m, seed probe; 0 disables
+        self.declare_parameter("branch_max_rail_shift", 0.0)   # m a candidate may move it
+        # Branch candidates are RANKED by goal-space distance (sum of |goal - current|),
+        # which is only a proxy: the path OMPL actually returns can wander far past that
+        # straight line. Measured on the doors run, the Kawasaki's recorded paths travel
+        # 1.54x their direct joint distance (worst case 3.5x) while the UR's travel 1.05x,
+        # so taking the first candidate that merely PLANS can lock in a much longer path
+        # than the runner-up. Plan up to this many of them and keep the one whose ACTUAL
+        # trajectory is shortest. 1 restores the old first-that-plans behaviour exactly.
+        # Costs extra planning only while RECORDING; replays come from the cache.
+        # DELIBERATELY NOT part of _goal_policy: this changes which path gets recorded,
+        # not which goal is valid, so an existing cache stays valid and keeps replaying
+        # the path it already holds. Re-record with force_replan:=true to pick it up --
+        # that way the hardware-validated chassis trajectories are not silently thrown
+        # away by a tuning change here.
+        self.declare_parameter("branch_plan_candidates", 3)
+
     # ------------------------------------------------------------------ #
     # Hooks the subclass overrides.
     # ------------------------------------------------------------------ #
@@ -192,6 +269,23 @@ class InspectionNodeBase(Node):
     def _pose_target_link(self):
         """target_link for the pose goal (the camera optical frame). UR only."""
         return None
+
+    def _ik_target(self, vp):
+        """(position, quat_xyzw, ik_link) for a seeded /compute_ik on this viewpoint, or
+        None when the arm cannot express one.
+
+        The default is the UR's: the stored pose IS the pose of `_pose_target_link()`, so
+        it is handed over untouched. The Kawasaki overrides this because its stored pose
+        is the GENERATOR's view frame, which needs the view-axis correction and the fixed
+        camera->tip transform applied before it means anything to IK -- exactly the same
+        chain the planner uses in `_make_kawasaki_reach_fn`."""
+        if vp.get("position") is None or vp.get("rotation") is None:
+            return None
+        link = self._pose_target_link()
+        if link is None:
+            return None
+        quat = Rotation.from_matrix(np.array(vp["rotation"], dtype=float)).as_quat()
+        return [float(x) for x in vp["position"]], quat, link
 
     def _settle(self, send, targets, label):
         """Wait for a dispatched move to finish -- arm-specific. UR: controller result
@@ -555,6 +649,330 @@ class InspectionNodeBase(Node):
                 changed = True
         return out, changed
 
+    # ------------------------------------------------------------------ #
+    # 2*pi goal unwinding (limit-aware).
+    # ------------------------------------------------------------------ #
+    def _robot_description_cb(self, msg: String):
+        if self._urdf_xml is None:
+            self._urdf_xml = msg.data
+
+    def _wrap_enabled(self):
+        return bool(self.get_parameter("wrap_goals_to_current").value)
+
+    def _goal_policy(self):
+        """Identifies how goals are chosen. Cached paths carry this so that changing the
+        policy invalidates them once instead of silently replaying older choices."""
+        # `jbranch` covers the joint-space arms (Kawasaki): it turned on with the branch
+        # search in the joint path, and a cached Kawasaki entry is keyed on the stored
+        # joint goal, which that search deliberately replaces -- without this tag the old
+        # single-branch paths would replay for ever.
+        jbranch = int(bool(self.get_parameter("nearest_branch_ik").value)
+                      and self.ik_group_name is not None
+                      and not self._use_pose_goal())
+        return (f"unwind={int(self._wrap_enabled())},"
+                f"branch={int(bool(self.get_parameter('nearest_branch_ik').value))},"
+                f"jbranch={jbranch}")
+
+    def _ensure_joint_limits(self, timeout=5.0):
+        """Parse the URDF's joint limits once. Returns {} if /robot_description never
+        arrives or cannot be parsed -- and an empty table makes every wrap a no-op, so
+        a missing model degrades into today's behaviour rather than into a bad wrap."""
+        if self._joint_limits is not None:
+            return self._joint_limits
+        deadline = time.monotonic() + timeout
+        while self._urdf_xml is None and time.monotonic() < deadline:
+            time.sleep(0.1)
+        if self._urdf_xml is None:
+            self.get_logger().warning(
+                "No /robot_description received -- joint limits unknown, so 2*pi goal "
+                "unwinding is DISABLED for this run (goals used exactly as planned).")
+            self._joint_limits = {}
+            return self._joint_limits
+        try:
+            self._joint_limits = parse_joint_limits(self._urdf_xml)
+        except Exception as e:
+            self.get_logger().warning(
+                f"Could not parse /robot_description ({e}); 2*pi goal unwinding DISABLED.")
+            self._joint_limits = {}
+            return self._joint_limits
+        group = [n for n in (self.moveit.joint_names if self.moveit else [])]
+        wrappable = [n for n in group
+                     if n in self._joint_limits and self._joint_limits[n].wrappable]
+        self.get_logger().info(
+            f"Joint limits parsed for {len(self._joint_limits)} joints; "
+            f"{len(wrappable)}/{len(group)} of this arm's joints can be unwound: {wrappable}")
+        return self._joint_limits
+
+    def _wrap_goal_to_current(self, goal, names, label=""):
+        """Re-express each revolute goal as the 2*pi-equivalent NEAREST the arm's current
+        measured angle, subject to that joint's URDF limits. theta and theta +/- 2*pi are
+        the same physical configuration, so the arm ends up in an identical pose (same
+        collisions, same camera orientation) having travelled the short way round.
+
+        Returns (new_goal, changes); changes is empty when nothing was (or could be)
+        rewritten, in which case the caller should just use the original goal."""
+        if goal is None or not self._wrap_enabled():
+            return (list(goal) if goal is not None else None), []
+        limits = self._ensure_joint_limits()
+        if not limits:
+            return list(goal), []
+        reference = dict(self._joint_pos)
+        if not reference:
+            return list(goal), []
+        new_goal, changes = wrap_to_reference(
+            goal, list(names), reference, limits,
+            margin=float(self.get_parameter("wrap_limit_margin").value),
+            min_gain=float(self.get_parameter("wrap_min_gain").value))
+        if changes:
+            self.get_logger().info(f"[{label}] unwinding goal: {describe_changes(changes)}")
+        return new_goal, changes
+
+    # ------------------------------------------------------------------ #
+    # Nearest-branch IK.
+    # ------------------------------------------------------------------ #
+    def _current_joint_state(self):
+        """The arm's measured pose as a JointState, for use as an IK seed."""
+        pos = dict(self._joint_pos)
+        js = JointState()
+        js.name = list(pos.keys())
+        js.position = [float(v) for v in pos.values()]
+        return js if js.name else None
+
+    def _solve_ik(self, position, quat_xyzw, seed, timeout, ik_link=None):
+        """One seeded /compute_ik call. Returns the solution JointState, or None.
+        Solving for the caller's `ik_link` (not the group's default tip) is what makes
+        the camera -- rather than the wrist flange -- land on the target pose."""
+        if self.ik_group_name is None or not self._ik_cli.service_is_ready():
+            return None
+        link = ik_link or self._pose_target_link()
+        if link is None:
+            return None
+        req = GetPositionIK.Request()
+        req.ik_request.group_name = self.ik_group_name
+        req.ik_request.ik_link_name = link
+        req.ik_request.avoid_collisions = bool(
+            self.get_parameter("ik_avoid_collisions").value)
+        req.ik_request.timeout.sec = int(timeout)
+        req.ik_request.timeout.nanosec = int((timeout - int(timeout)) * 1e9)
+        if seed is not None:
+            req.ik_request.robot_state.joint_state = seed
+        ps = PoseStamped()
+        ps.header.frame_id = self.world_frame
+        ps.pose.position.x, ps.pose.position.y, ps.pose.position.z = (
+            float(position[0]), float(position[1]), float(position[2]))
+        (ps.pose.orientation.x, ps.pose.orientation.y,
+         ps.pose.orientation.z, ps.pose.orientation.w) = (
+            float(quat_xyzw[0]), float(quat_xyzw[1]),
+            float(quat_xyzw[2]), float(quat_xyzw[3]))
+        req.ik_request.pose_stamped = ps
+
+        future = self._ik_cli.call_async(req)
+        if not self._wait_future(future, max(2.0, timeout * 4.0)):
+            return None
+        res = future.result()
+        if res is None or res.error_code.val != res.error_code.SUCCESS:
+            return None
+        return res.solution.joint_state
+
+    def _branch_candidates(self, position, quat_xyzw, label, ik_link=None,
+                           planned_goal=None):
+        """Joint goals that reach this pose, ordered by how little the arm must move to
+        get there from where it is now.
+
+        Two ways to land on a different branch. Repeating the query only samples anything
+        when the solver restarts randomly -- true of pick_ik in `mode: global` (the UR),
+        NOT of KDL (the Kawasaki group), which returns the same answer every time. So the
+        SEED is varied as well: the measured pose, the planned goal, and the planned goal
+        with the rail nudged either way, which is the redundancy knob on the Kawasaki's
+        7-DOF (rail + 6) group.
+
+        Each result is unwound first, so a branch is never judged by an accidental
+        whole-turn offset, then scored by travel from the current pose.
+        Returns [(goal, travel_rad), ...] closest first."""
+        if not self.get_parameter("nearest_branch_ik").value or self.ik_group_name is None:
+            return []
+        seed = self._current_joint_state()
+        if seed is None:
+            return []
+        names = list(self.moveit.joint_names)
+        timeout = float(self.get_parameter("ik_timeout").value)
+        attempts = max(1, int(self.get_parameter("ik_seed_attempts").value))
+
+        out = []
+        seen = set()
+        for s in self._ik_seeds(seed, planned_goal, names):
+            for _ in range(attempts):
+                sol = self._solve_ik(position, quat_xyzw, s, timeout, ik_link=ik_link)
+                if sol is None:
+                    continue
+                goal = self._subset(list(sol.name), list(sol.position), names)
+                if goal is None:
+                    continue
+                goal, _ = self._wrap_goal_to_current(goal, names)
+                if not self._rail_shift_ok(goal, planned_goal, names, label):
+                    continue
+                key = tuple(round(v, 3) for v in goal)
+                if key in seen:
+                    continue
+                seen.add(key)
+                out.append((goal, self._goal_travel(goal, names)))
+        out.sort(key=lambda t: t[1])
+        if out:
+            self.get_logger().info(
+                f"[{label}] nearest-branch IK: {len(out)} distinct branch(es), "
+                f"travel from current pose "
+                f"{', '.join(f'{np.rad2deg(t):.0f}' for _, t in out)} deg.")
+        return out
+
+    def _ik_seeds(self, measured, planned_goal, names):
+        """Seeds for the branch search, most-likely first: where the arm actually is, the
+        planned goal, then the planned goal with the rail probed either way."""
+        seeds = [measured]
+        if planned_goal is None:
+            return seeds
+
+        def as_state(values):
+            js = JointState()
+            js.name = list(names)
+            js.position = [float(v) for v in values]
+            return js
+
+        seeds.append(as_state(planned_goal))
+        probe = float(self.get_parameter("branch_rail_probe").value)
+        if probe <= 0.0:
+            return seeds
+        limits = self._joint_limits or {}
+        for i, n in enumerate(names):
+            lim = limits.get(n)
+            if lim is None or lim.is_revolute:
+                continue
+            for d in (probe, -probe):
+                v = float(np.clip(planned_goal[i] + d,
+                                  lim.lower + 1e-6, lim.upper - 1e-6))
+                if abs(v - planned_goal[i]) < 1e-4:
+                    continue
+                vals = list(planned_goal)
+                vals[i] = v
+                seeds.append(as_state(vals))
+        return seeds
+
+    def _rail_shift_ok(self, goal, planned_goal, names, label):
+        """Reject a branch that would send the AGV somewhere the plan never intended.
+
+        The rail is prismatic, so `_goal_travel` does not charge for it; without this
+        guard a candidate could quietly propose driving the AGV metres. `branch_max_rail_
+        shift` <= 0 locks the rail to the planned value exactly, which is the default:
+        the planner chose that AGV position for coverage reasons."""
+        if planned_goal is None:
+            return True
+        tol = float(self.get_parameter("branch_max_rail_shift").value)
+        limits = self._joint_limits or {}
+        for i, n in enumerate(names):
+            lim = limits.get(n)
+            is_pris = (not lim.is_revolute) if lim is not None else self._is_prismatic(n)
+            if not is_pris:
+                continue
+            d = abs(float(goal[i]) - float(planned_goal[i]))
+            if d > max(tol, 1e-3):
+                self.get_logger().debug(
+                    f"[{label}] branch rejected: {n} would move {d:.3f} m "
+                    f"(limit {tol:.3f}).")
+                return False
+        return True
+
+    def _goal_travel(self, goal, names):
+        """Revolute joint travel (radians) from the arm's current pose to `goal`."""
+        pos = dict(self._joint_pos)
+        limits = self._joint_limits or {}
+        total = 0.0
+        for i, n in enumerate(names):
+            if n not in pos:
+                continue
+            if (limits[n].is_revolute if n in limits else not self._is_prismatic(n)):
+                total += abs(float(goal[i]) - float(pos[n]))
+        return total
+
+    def _traj_travel(self, traj):
+        """Total revolute joint travel along a trajectory (radians). Used to decide
+        whether an unwound re-plan is actually shorter than the original path."""
+        if traj is None or len(traj.points) < 2:
+            return 0.0
+        limits = self._joint_limits or {}
+        keep = [i for i, n in enumerate(traj.joint_names)
+                if (limits[n].is_revolute if n in limits else not self._is_prismatic(n))]
+        total = 0.0
+        prev = traj.points[0].positions
+        for p in traj.points[1:]:
+            total += sum(abs(float(p.positions[i]) - float(prev[i])) for i in keep)
+            prev = p.positions
+        return total
+
+    def _shorten_wound_up(self, traj, goal, joint_names, label):
+        """Given a planned trajectory and the configuration it ends at, check whether that
+        end configuration is a wound-up branch. If so, plan a second path to the nearest
+        2*pi-equivalent (the SAME pose) and keep whichever trajectory actually travels
+        less. This is what brings the unwinding to the UR, whose viewpoints are planned
+        from a Cartesian pose goal: MoveIt re-solves IK there and can hand back any
+        branch, so the fix cannot live in the stored joint values alone.
+
+        Returns (trajectory, end_configuration) -- the original pair if nothing helps."""
+        wrapped, changes = self._wrap_goal_to_current(goal, joint_names, label)
+        if not changes:
+            return traj, goal
+        alt = self._plan(wrapped, joint_names, f"{label} [unwound]")
+        if alt is None:
+            self.get_logger().info(
+                f"[{label}] unwound goal did not plan; keeping the original path.")
+            return traj, goal
+        orig_travel, alt_travel = self._traj_travel(traj), self._traj_travel(alt)
+        if alt_travel >= orig_travel:
+            self.get_logger().info(
+                f"[{label}] unwound path is not shorter "
+                f"({np.rad2deg(alt_travel):.0f} vs {np.rad2deg(orig_travel):.0f} deg); "
+                "keeping the original.")
+            return traj, goal
+        self.get_logger().info(
+            f"[{label}] using UNWOUND path: {np.rad2deg(orig_travel):.0f} -> "
+            f"{np.rad2deg(alt_travel):.0f} deg of joint travel "
+            f"({100.0 * (1.0 - alt_travel / max(orig_travel, 1e-9)):.0f}% less).")
+        return alt, wrapped
+
+    def _plan_best_branch(self, candidates, joint_names, label):
+        """Plan the ranked branch candidates and keep the one that actually travels least.
+
+        `candidates` arrives sorted by GOAL-space distance, but that is a straight-line
+        proxy for a path OMPL may route around obstacles: measured on the doors run, the
+        Kawasaki's recorded paths cover 1.54x their direct joint distance (one covers
+        3.5x), so the nearest goal is not reliably the shortest trip. This plans up to
+        `branch_plan_candidates` of the ones that succeed and picks by _traj_travel.
+
+        Candidates that fail to plan do NOT consume the budget, so an arm whose first
+        choices are unreachable still works through the list exactly as before.
+        `branch_plan_candidates: 1` is the old take-the-first-that-plans behaviour.
+
+        Returns (traj, goal) or (None, None)."""
+        budget = max(1, int(self.get_parameter("branch_plan_candidates").value))
+        best_traj = best_goal = None
+        best_travel = np.inf
+        planned = 0
+        for cand_goal, goal_travel in candidates:
+            traj = self._plan(
+                cand_goal, joint_names,
+                f"{label} [branch {np.rad2deg(goal_travel):.0f} deg]")
+            if traj is None:
+                continue
+            planned += 1
+            travel = self._traj_travel(traj)
+            if travel < best_travel:
+                best_traj, best_goal, best_travel = traj, cand_goal, travel
+            if planned >= budget:
+                break
+        if best_traj is not None and planned > 1:
+            self.get_logger().info(
+                f"[{label}] compared {planned} planned branches; kept the one travelling "
+                f"{np.rad2deg(best_travel):.0f} deg.")
+        return best_traj, best_goal
+
     @staticmethod
     def _moveit_err_name(code):
         return {
@@ -741,20 +1159,54 @@ class InspectionNodeBase(Node):
     def _traj_cache_path(self, vp_id):
         return os.path.join(self._traj_dir, f"{self.robot_tag}_{vp_id}.json")
 
+    def _goal_close(self, joint_names, a, b):
+        """Two joint goals describe the same arm pose. Revolute joints are compared
+        MODULO 2*pi: theta and theta +/- 2*pi are the identical physical configuration,
+        and the executor routinely stores the unwound/branch-picked value (joint6 = -0.43)
+        for a goal the plan stores at the far end of its turn (joint6 = +5.85). Comparing
+        those raw numbers would declare every Kawasaki cache stale on every run -- the arm
+        would re-plan all 8 viewpoints instead of replaying the recorded paths.
+        Prismatic axes (the AGV rail) are compared literally: a metre is a metre."""
+        if a is None or b is None or len(a) != len(b) or len(a) != len(joint_names):
+            return False
+        two_pi = 2.0 * np.pi
+        for n, x, y in zip(joint_names, a, b):
+            d = abs(float(x) - float(y))
+            if not self._is_prismatic(n):
+                d = min(d % two_pi, two_pi - (d % two_pi))
+            if d > self._start_tol_for(n):
+                return False
+        return True
+
     def _cache_valid(self, cached, joint_names, goal, pose_goal=None):
         """A cached path is valid only if it targets the SAME joints and the SAME goal
         as the current plan. In pose mode the cache must carry a matching pose_goal."""
         if list(cached.get("joint_names", [])) != list(joint_names):
             return False
+        # Nothing else in this check can notice that the way we CHOOSE a goal has
+        # changed: a UR cache is keyed on its pose_goal, and neither unwinding nor
+        # nearest-branch IK changes the pose -- only which configuration reaches it. So a
+        # path recorded under an older policy would replay its long way round forever.
+        # Stamping the policy makes such paths re-plan exactly once.
+        if cached.get("goal_policy") != self._goal_policy():
+            self.get_logger().info(
+                f"[{self.arm_label}] cached path for '{cached.get('vp_id')}' was recorded "
+                "under a different goal-selection policy; replanning it once.")
+            return False
         if pose_goal is not None:
             return self._pose_goal_match(cached.get("pose_goal"), pose_goal)
-        gp = cached.get("goal_positions")
-        if gp is None or goal is None or len(gp) != len(goal):
-            return False
-        return all(abs(a - b) <= self._start_tol_for(n)
-                   for n, a, b in zip(joint_names, gp, goal))
+        # The RIGHT cache key is the goal the PLAN asks for, not the one the executor
+        # ended up commanding: the branch search and the unwinder deliberately replace
+        # the stored goal with a cheaper configuration of the same camera pose, so keying
+        # on what was executed makes a path invalidate itself the moment it is recorded.
+        # `planned_goal` is stamped at record time; older caches without it fall back to
+        # the executed goal, which the 2*pi-tolerant compare still accepts.
+        planned = cached.get("planned_goal")
+        if planned:
+            return self._goal_close(joint_names, planned, goal)
+        return self._goal_close(joint_names, cached.get("goal_positions"), goal)
 
-    def _serialize_traj(self, jt, vp_id, goal, pose_goal=None):
+    def _serialize_traj(self, jt, vp_id, goal, pose_goal=None, planned_goal=None):
         pts = []
         for p in jt.points:
             t = p.time_from_start
@@ -771,9 +1223,14 @@ class InspectionNodeBase(Node):
             "goal_positions": [float(x) for x in goal] if goal is not None else [],
             "start_positions": [float(x) for x in jt.points[0].positions] if jt.points else [],
             "points": pts,
+            # How this path's goal was chosen (see _cache_valid).
+            "goal_policy": self._goal_policy(),
         }
         if pose_goal is not None:
             out["pose_goal"] = [float(x) for x in pose_goal]
+        if planned_goal is not None:
+            # What the PLAN asked for, i.e. what this cache entry is keyed on.
+            out["planned_goal"] = [float(x) for x in planned_goal]
         return out
 
     @staticmethod
@@ -839,18 +1296,61 @@ class InspectionNodeBase(Node):
         saved_pose_goal = None
         used_goal = goal
         if use_pose:
-            # PRIMARY for the UR: Cartesian pose goal -> correct camera orientation.
-            traj = self._plan_pose(position, quat, target_link, f"{label} {vp_id} [pose]")
+            # PRIMARY for the UR. Both routes below target the camera optical frame the
+            # planner solved IK for, so the camera orientation is correct either way;
+            # they differ only in WHICH of the pose's IK branches the arm is sent to.
+            #
+            # 1) Nearest-branch: solve IK ourselves, seeded at the current pose, and take
+            #    the closest branch that yields a path. This is what stops the arm
+            #    swinging through a different shoulder/wrist configuration to reach a
+            #    viewpoint centimetres away.
+            traj, cand_goal = self._plan_best_branch(
+                self._branch_candidates(position, quat, f"{label} {vp_id}"),
+                moveit2.joint_names, f"{label} {vp_id}")
             if traj is not None:
                 saved_pose_goal = pose_goal
-                used_goal = [float(x) for x in traj.points[-1].positions]
+                used_goal = cand_goal
+
+            # 2) Fallback: hand the Cartesian pose goal to MoveIt and let its goal
+            #    sampler choose a branch, then at least unwind whatever it returns.
+            if traj is None:
+                traj = self._plan_pose(position, quat, target_link,
+                                       f"{label} {vp_id} [pose]")
+                if traj is not None:
+                    saved_pose_goal = pose_goal
+                    used_goal = [float(x) for x in traj.points[-1].positions]
+                    traj, used_goal = self._shorten_wound_up(
+                        traj, used_goal, list(moveit2.joint_names), f"{label} {vp_id}")
 
         if traj is None and goal is not None:
-            # Joint-space (Kawasaki always; UR only if the pose goal failed). If any
-            # revolute joint sits at a wound-up/limit-edge value, try the angle-normalized
-            # equivalent FIRST (same pose, better-conditioned goal).
+            # Joint-space (Kawasaki always; UR only if the pose goal failed).
+            #
+            # 0) Nearest-branch first, when this arm can express an IK target. The stored
+            #    goal is ONE branch, fixed at plan time against the PLANNED predecessor.
+            #    Whenever the arm is not actually there -- first viewpoint out of home, a
+            #    home detour, a skipped viewpoint, a cached path realigned -- a different
+            #    branch of the very same camera pose can be far closer. The pose is
+            #    identical in every candidate, so the scan data cannot change.
+            ik_target = self._ik_target(vp)
+            if ik_target is not None:
+                pos_t, quat_t, link_t = ik_target
+                traj, cand_goal = self._plan_best_branch(
+                    self._branch_candidates(pos_t, quat_t, f"{label} {vp_id}",
+                                            ik_link=link_t, planned_goal=goal),
+                    moveit2.joint_names, f"{label} {vp_id}")
+                if traj is not None:
+                    used_goal = cand_goal
+
+        if traj is None and goal is not None:
+            # 1) The UNWOUND goal (nearest 2*pi-equivalent to where the arm is now -- same
+            #    pose, far less travel), then the angle-normalized rescue for a goal parked
+            #    on the +/-2*pi limit edge, then the raw planned goal.
+            wgoal, wchanges = self._wrap_goal_to_current(
+                goal, moveit2.joint_names, f"{label} {vp_id}")
             ngoal, changed = self._normalize_goal(goal, moveit2.joint_names)
             attempts_order = []
+            if wchanges:
+                attempts_order.append((wgoal, " [unwound]"))
             if changed:
                 attempts_order.append((ngoal, " [normalized]"))
             attempts_order.append((goal, ""))
@@ -868,7 +1368,8 @@ class InspectionNodeBase(Node):
                 tmp = path + ".tmp"
                 with open(tmp, "w") as f:
                     json.dump(self._serialize_traj(traj, vp_id, used_goal,
-                                                   pose_goal=saved_pose_goal), f, indent=1)
+                                                   pose_goal=saved_pose_goal,
+                                                   planned_goal=goal), f, indent=1)
                 os.replace(tmp, path)
                 self.get_logger().info(f"[{label}] {vp_id}: trajectory saved -> {path}")
             except Exception as e:
@@ -927,6 +1428,10 @@ class InspectionNodeBase(Node):
                 f"[{label}] transition '{name}' expects {len(joint_names)} joint values, "
                 f"got {len(target_rad)}; skipping it.")
             return False
+        # Unwind first: a home/align target written as 0 deg is a 350 deg trip from a
+        # wound-up arm, while its +360 deg equivalent is 10 deg away. Doing this BEFORE
+        # _at_pose also stops the arm untwisting a joint it is already effectively at.
+        target_rad, _ = self._wrap_goal_to_current(target_rad, joint_names, f"{label} {name}")
         targets = dict(zip(joint_names, target_rad))
         if self._at_pose(targets):
             self.get_logger().info(f"[{label}] already at the '{name}' target; no move needed.")
@@ -958,6 +1463,7 @@ class InspectionNodeBase(Node):
                 f"{len(home_deg)}; skipping homing.")
             return
         home_rad = self._pose_to_rad(home_deg)
+        home_rad, _ = self._wrap_goal_to_current(home_rad, moveit2.joint_names, f"{label} home")
         self.get_logger().info(
             f"[{label}] returning to home pose (axis0={home_deg[0]} m, joints={home_deg[1:]} deg)...")
         traj = self._plan(home_rad, moveit2.joint_names, f"{label} home")
@@ -992,6 +1498,7 @@ class InspectionNodeBase(Node):
                 f"{len(pose_deg)}; skipping.")
             return
         target_rad = self._pose_to_rad(pose_deg)
+        target_rad, _ = self._wrap_goal_to_current(target_rad, moveit2.joint_names, label)
         targets = dict(zip(moveit2.joint_names, target_rad))
         if self._at_pose(targets):
             self.get_logger().info(f"[{label}] already at start pose; no move needed.")
@@ -1005,6 +1512,92 @@ class InspectionNodeBase(Node):
             return
         send = self._dispatch(traj, label)
         self._settle(send, targets, f"[{label}]")
+
+    def _unwind_traj_to_current(self, traj, label):
+        """Shift WHOLE TURNS out of a recorded trajectory so it starts where the arm is.
+
+        This is the trajectory-level counterpart of _wrap_goal_to_current, and it exists
+        because a cached path is replayed as stored: if the arm sits at a 2*pi-equivalent
+        of the recorded start (same physical pose, 360 deg different number), every check
+        downstream compares raw angles, decides the arm is "not at the start", and walks
+        it a full turn to a pose it is already in.
+
+        The fix is applied to the PATH, not to the comparison. Making _at_pose compare
+        modulo 2*pi would report "already there" while the trajectory still held the far
+        numbers, and dispatching that is a 360 deg step in one controller cycle. Shifting
+        every point of the joint by the same k*2*pi keeps the path identical in shape and
+        in physical poses -- velocities and accelerations are unchanged by a constant
+        offset -- and simply re-expresses it where the arm actually is.
+
+        LIMITS DECIDE, and they differ per arm, which is the whole point here:
+          * the shift is considered only for joints whose span EXCEEDS 2*pi, so on the
+            Kawasaki only joint4 and joint6 (+/-360 deg) are ever touched, while joint1
+            (+/-180, span exactly 2*pi), joint2 (-80..135), joint3 (-172..118) and joint5
+            (+/-145) can have no second in-limits equivalent and are left alone;
+          * the shifted joint must stay in limits over the WHOLE path, not just at its
+            start -- a joint4 sweep of 270..334 deg shifts to -90..-26 safely, but one
+            that already spans 300..400 deg has nowhere to go;
+          * an unparseable model yields no limits, and then this is a no-op.
+        On the UR (5 of 6 joints at +/-360) the same rule simply has more room.
+
+        Mutates `traj` in place. Returns the list of changes, empty when nothing moved."""
+        if traj is None or not traj.points:
+            return []
+        if not self._wrap_enabled():
+            return []
+        limits = self._ensure_joint_limits()
+        if not limits:
+            return []
+        pos = dict(self._joint_pos)
+        if not pos:
+            return []
+
+        margin = float(self.get_parameter("wrap_limit_margin").value)
+        min_gain = float(self.get_parameter("wrap_min_gain").value)
+        two_pi = 2.0 * np.pi
+        names = list(traj.joint_names)
+        cols = np.array([[float(v) for v in p.positions] for p in traj.points])
+
+        changes = []
+        for i, n in enumerate(names):
+            lim = limits.get(n)
+            # No limit info, prismatic, or a span that cannot hold a second equivalent:
+            # nothing admissible exists, so never guess.
+            if lim is None or not lim.wrappable or self._is_prismatic(n):
+                continue
+            cur = pos.get(n)
+            if cur is None:
+                continue
+            lo, hi = lim.lower + margin, lim.upper - margin
+            col_min, col_max = float(cols[:, i].min()), float(cols[:, i].max())
+            start = float(cols[0, i])
+            best_k, best_dist = 0, abs(start - cur)
+            for k in range(-3, 4):
+                if k == 0:
+                    continue
+                off = k * two_pi
+                if col_min + off < lo or col_max + off > hi:
+                    continue          # the PATH would leave the limits, not just the goal
+                d = abs(start + off - cur)
+                if d < best_dist:
+                    best_k, best_dist = k, d
+            if best_k == 0:
+                continue
+            gain = abs(start - cur) - best_dist
+            if gain < min_gain:
+                continue              # not worth churning the recorded path
+            cols[:, i] += best_k * two_pi
+            changes.append(f"{n} {np.degrees(start):.0f}->{np.degrees(cols[0, i]):.0f} deg "
+                           f"(saves {np.degrees(gain):.0f} deg)")
+
+        if not changes:
+            return []
+        for j, p in enumerate(traj.points):
+            p.positions = [float(v) for v in cols[j]]
+        self.get_logger().info(
+            f"[{label}] recorded path unwound onto the arm's current pose: "
+            + "; ".join(changes))
+        return changes
 
     def _rebase_traj_to_current(self, traj, label):
         """Overwrite the trajectory's FIRST point with the arm's CURRENT measured joint
@@ -1052,23 +1645,34 @@ class InspectionNodeBase(Node):
 
     def _prepare_start(self, traj, from_cache, label):
         """Make the arm's actual pose agree with traj's first point before dispatch."""
+        # ALWAYS FIRST, both arms: take the whole turns out of the recorded path so its
+        # start is expressed where the arm actually is. Everything below compares raw
+        # angles, so a path left 2*pi away would be "aligned" by spinning a full turn to
+        # a pose the arm is already in.
+        self._unwind_traj_to_current(traj, label)
         if self.rebase_to_current:
-            # UR: rebase onto the current pose (no separate move) when the gap is small
+            # Rebase onto the current pose (no separate move) when the gap is small
             # enough for that to be a correction rather than a jump; otherwise fall back
-            # to the same explicit walk-to-start the Kawasaki always does.
+            # to an explicit walk-to-start.
             if self._rebase_traj_to_current(traj, label):
                 return
             self._align_to_traj_start(traj, True, label)
             self._rebase_traj_to_current(traj, label)  # mop up the residual after the walk
             return
-        # Kawasaki: unchanged -- separate align to the recorded start.
         self._align_to_traj_start(traj, from_cache, label)
 
     def _align_to_traj_start(self, traj, from_cache, label):
         """Ensure the arm is at `traj`'s FIRST point before it is dispatched. A CACHED
         trajectory may start a little off, so we do ONE short collision-aware move to
         its start. A FRESH plan already starts at the current pose, so it is skipped
-        (self.align_on_fresh False for the UR -- avoids a spurious rail back-and-forth)."""
+        (self.align_on_fresh False for the UR -- avoids a spurious rail back-and-forth).
+
+        Deliberately NOT wrapped here, unlike _run_cached_move and _move_to_pose which
+        unwind their target before checking _at_pose: this one's target is the recorded
+        path's own first point, and rewriting it without rewriting the path would leave
+        the arm walking to one number and then replaying from another. _prepare_start has
+        already unwound the whole path instead, which fixes the start and the path
+        together and leaves the raw comparison below correct."""
         moveit2, ctrl = self.moveit, self.ctrl
         if moveit2 is None or ctrl is None or traj is None or not traj.points:
             return

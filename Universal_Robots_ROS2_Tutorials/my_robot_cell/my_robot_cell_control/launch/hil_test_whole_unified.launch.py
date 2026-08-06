@@ -693,8 +693,22 @@ def launch_setup(context, *args, **kwargs):
                 output="screen",
                 parameters=[
                     {"use_sim_time": False},
-                    {"update_rate": 10.0},
-                    {"trajectory_time": 0.1},
+                    # 10 Hz / 0.1 s made the mirrored robots move in visible steps: the
+                    # horizon equalled the update period, so each command finished and
+                    # the arm STOPPED until the next one arrived.
+                    # 125 Hz clears the slower real source (Kawasaki broadcaster 100 Hz;
+                    # UR 500 Hz) and the 0.016 s horizon is 2x the period, so commands
+                    # overlap. The bridge caches joints across messages and publishes on
+                    # a timer, so this rate is what each arm actually gets -- before that
+                    # the mixed /joint_states stream left the Kawasaki updating ~8 Hz.
+                    {"update_rate": ParameterValue(
+                        LaunchConfiguration("bridge_update_rate"), value_type=float)},
+                    {"trajectory_time": ParameterValue(
+                        LaunchConfiguration("bridge_trajectory_time"), value_type=float)},
+                    # Forward the measured joint velocities so the controller blends
+                    # through each waypoint instead of arriving at rest on every one.
+                    {"pass_through_velocities": ParameterValue(
+                        LaunchConfiguration("bridge_pass_velocities"), value_type=bool)},
                 ],
             ),
         ],
@@ -1157,6 +1171,38 @@ def generate_launch_description():
             "digital_twin",
             default_value="false",
             description="Digital twin modu. true ise real_to_sim_bridge devre dışı kalır (sim bağımsız çalışır).",
+        )
+    )
+
+    # real_to_sim_bridge ayarları — komut satırından denenebilsin diye argüman yapıldı.
+    # Eski (titreyen ama çalışan) davranış:
+    #   bridge_update_rate:=10.0 bridge_trajectory_time:=0.1 bridge_pass_velocities:=false
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "bridge_update_rate",
+            default_value="25.0",
+            description="real_to_sim_bridge'in sim'e komut yayınlama hızı (Hz). ÜST SINIR "
+                        "sim controller'ının adım hızıdır (Gazebo max_step_size = 10 ms), "
+                        "veri hızı değil: daha hızlı yayınlarsan her komut controller "
+                        "onu ilerletemeden yenisiyle değişir ve sim robot hiç hareket "
+                        "etmez. Akıcılık komut hızından değil controller'ın ara "
+                        "değerlemesinden gelir.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "bridge_trajectory_time",
+            default_value="0.1",
+            description="Her komutun ufku (s). Güncelleme periyodunun ~2 katı olmalı; "
+                        "eşit olursa sim robot komutlar arasında durur.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "bridge_pass_velocities",
+            default_value="true",
+            description="Ölçülen eklem hızlarını komuta ekle. false ise her waypoint "
+                        "duruşta komut edilir (eski davranış).",
         )
     )
 

@@ -100,6 +100,9 @@ class URInspectionNode(InspectionNodeBase):
             group_name=ur_robot.MOVE_GROUP_ARM,
             callback_group=self._cb,
         )
+        # Enables the base's nearest-branch IK (it solves /compute_ik for ur_tool_frame
+        # against this group instead of letting the pose goal pick an arbitrary branch).
+        self.ik_group_name = ur_robot.MOVE_GROUP_ARM
         self.moveit.max_velocity = self.get_parameter("ur_velocity").value
         self.moveit.max_acceleration = self.get_parameter("ur_acceleration").value
         self.moveit.allowed_planning_time = self.get_parameter("allowed_planning_time").value

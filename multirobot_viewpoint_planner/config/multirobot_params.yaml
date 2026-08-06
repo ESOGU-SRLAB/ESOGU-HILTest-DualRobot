@@ -59,6 +59,31 @@ multirobot_planner_node:
     ur_order_anchor: "max_y"
     kawasaki_order_anchor: "min_y"
 
+    # Once the visiting order is fixed, re-express each viewpoint's stored IK angles as
+    # the 2*pi-equivalents nearest the PREVIOUS viewpoint, where the joint's URDF limits
+    # allow it. IK hands back one arbitrary branch per viewpoint, so the tour otherwise
+    # stores pairs like +100 deg then -260 deg -- the same physical angle, a full extra
+    # turn to drive. Poses are identical, so coverage/reachability cannot change.
+    # Joints whose range is 2*pi or less (Kawasaki joint1/2/3/5, UR elbow) are untouched.
+    unwind_joint_goals: true
+    wrap_limit_margin: 0.05   # rad kept clear of each joint limit
+    wrap_min_gain: 0.35       # rad (~20 deg): ignore rewrites that save less
+
+    # Branch re-chaining. Unwinding only removes whole turns; a viewpoint reached from a
+    # genuinely different arm posture (shoulder/elbow/wrist flip, or a different AGV
+    # position) is a separate problem, and on the 2026-08-03 plan it was the Kawasaki's
+    # dominant cost: 346 deg per hop against the UR's 225, with one 248 deg joint1 swing
+    # that unwinding can never touch because joint1 spans exactly +/-180.
+    rechain_ik: true
+    rechain_ik_attempts: 4
+    # Repeating a seeded query only samples new branches when the solver restarts
+    # randomly -- pick_ik/global does (UR), KDL does not (Kawasaki). So vary the SEED.
+    rechain_rail_probe: 0.25   # m, +/- rail seed offset (redundancy probe); 0 disables
+    rechain_rail_weight: 2.0   # rad per m: what a metre of AGV travel is "worth"
+    rechain_yaw_probe: true    # also seed with joint1 turned +/- pi
+    rechain_yaw_joint: "joint1"
+    rechain_rail_joint: "world_to_agv"
+
     # IK rejects poses where the arm collides with the scene/chassis.
     ik_avoid_collisions: true
 

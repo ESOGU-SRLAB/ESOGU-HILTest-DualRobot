@@ -92,8 +92,13 @@ def generate_launch_description():
         name="real_to_sim_bridge",
         output="screen",
         parameters=[{
-            "update_rate": 10.0,
+            # The ceiling is the SIM CONTROLLER's step (Gazebo max_step_size = 10 ms),
+            # not the data rate: publishing faster replaces every command before the
+            # controller can advance it and the twin freezes outright. 25 Hz gives it
+            # 4 updates per command; the 0.1 s horizon keeps commands overlapping.
+            "update_rate": 25.0,
             "trajectory_time": 0.1,
+            "pass_through_velocities": True,
         }],
     )
 

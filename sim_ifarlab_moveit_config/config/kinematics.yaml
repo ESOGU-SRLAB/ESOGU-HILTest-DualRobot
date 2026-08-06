@@ -12,5 +12,15 @@ sim_ur10e:
   position_threshold: 0.001
   orientation_threshold: 0.01
   cost_threshold: 0.001
+  # KEEP AT 0.0 unless cost_threshold above is raised with it. Per pick_ik's own
+  # docs, ">0.0 enables cost function", and cost_threshold then means "IK is solved
+  # only when ALL enabled cost functions return less than this". Tried 0.005 on
+  # 2026-08-03 to make pick_ik prefer the IK branch nearest the seed (it runs in
+  # mode: global, i.e. random restarts, so neighbouring viewpoints otherwise come
+  # back on totally different shoulder/wrist configurations). It BACKFIRED: with
+  # cost_threshold at 0.001 every solution not already sitting on the seed was
+  # rejected -- UR NO_IK_SOLUTION went 538 -> 1780, its viewpoints 18 -> 1 and
+  # coverage 65.7% -> 50.7%. Branch continuity is handled in code instead
+  # (multirobot_viewpoint_planner: planner _rechain_ik + executor nearest-branch IK).
   minimal_displacement_weight: 0.0
   gd_step_size: 0.0001

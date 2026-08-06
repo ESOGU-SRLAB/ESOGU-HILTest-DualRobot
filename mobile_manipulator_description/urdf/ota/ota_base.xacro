@@ -45,6 +45,32 @@
         </geometry>
       </collision>
 
+      <!-- AGV DECK KEEP-OUT. The deck carries cables and loose hardware that no CAD
+           model covers, and the Kawasaki was planning paths down into them. This box
+           fills the whole gap between the top of the AGV body and the underside of the
+           Kawasaki base, so the arm treats the deck as solid.
+
+           Heights are in ota_base_link: the body box above ends at 0.015 + 0.3/2 =
+           0.165, and base_link (the Kawasaki's lowest point) sits at 0.212
+           (base2manipulatorbase) + 0.051 (base_mount, in rs005l_macro.xacro) = 0.263.
+           That gap is 9.8 cm. Footprint deliberately matches the AGV body exactly, so
+           the keep-out never overhangs the platform.
+
+           SRDF: no new entries needed. The links this box swallows or touches
+           (manipulator_base_link, base_link, link1, link2) are ALREADY disabled against
+           ota_base_link, while link3..link7 and camera_link stay checked, which is
+           exactly the set that can reach down into the deck. All 57 chassis parts are
+           likewise already disabled, so raising the AGV cannot cause spurious
+           chassis collisions. -->
+      <xacro:property name="agv_body_top" value="0.165"/>
+      <xacro:property name="agv_deck_top" value="0.263"/>
+      <collision>
+        <origin xyz="0 0 ${(agv_body_top + agv_deck_top) / 2.0}" rpy="0 0 0"/>
+        <geometry>
+          <box size="1.02605 0.728 ${agv_deck_top - agv_body_top}"/>
+        </geometry>
+      </collision>
+
 
       <!-- basit inertial (istersen box_inertial ile değiştirirsin) -->
       <!-- <inertial>

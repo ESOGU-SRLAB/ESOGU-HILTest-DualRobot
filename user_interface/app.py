@@ -33,6 +33,11 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 # Global State
 # ==============================================================================
 
+# Bu dosya <workspace>/src/user_interface/app.py konumunda olduğu için workspace
+# kökünü dosya yolundan türetiyoruz (makineye özel mutlak yol yazmamak için).
+WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+WORKSPACE_SETUP = os.path.join(WORKSPACE_ROOT, "install", "setup.bash")
+
 class ScenarioManager:
     """Manages ROS2 launch process lifecycle."""
 
@@ -41,12 +46,15 @@ class ScenarioManager:
         "multi_robot_inspection": {
             "label": "Multi-Robot Inspection Scenario",
             "hil_params": "",
-            "scenario_cmd": "ros2 launch pymoveit2_real multirobot_inspection_scenario.launch.py",
+            "scenario_cmd": "ros2 launch multirobot_viewpoint_planner multirobot_inspection.launch.py",
+            # use_fake_hardware açıkken only_sim:=true, gerçek robot bağlıyken only_sim:=false
+            "sim_flag": "only_sim",
         },
         "ur10e_inspection": {
             "label": "UR10e Inspection Scenario",
             "hil_params": "",
-            "scenario_cmd": "ros2 launch pymoveit2_real ur_inspection_scenario.launch.py",
+            "scenario_cmd": "ros2 launch viewpoint_planner inspection_execution.launch.py",
+            "sim_flag": "only_sim",
         },
         "pick_and_place": {
             "label": "Pick & Place Scenario",
@@ -67,6 +75,7 @@ class ScenarioManager:
         self.hil_process = None
         self.scenario_process = None
         self.current_scenario = None
+        self.use_fake_hardware = False       # Son başlatılan senaryonun sim/gerçek modu
         self.hil_status = "stopped"          # stopped, starting, running, stopping
         self.scenario_status = "stopped"     # stopped, starting, running, stopping
         self.robot_confirmed = False
@@ -164,7 +173,7 @@ class ScenarioManager:
         self._emit_log("SYSTEM", f"🚀 Starting: {cmd}")
         
         # Her komuttan önce ROS 2 ortam değişkenlerini (workspace) yüklüyoruz
-        full_cmd = f"source /opt/ros/humble/setup.bash && source /home/ifarlab/colcon_ws/install/setup.bash && {cmd}"
+        full_cmd = f"source /opt/ros/humble/setup.bash && source {WORKSPACE_SETUP} && {cmd}"
         
         # DISPLAY vb. değişkenleri alt prosese aktar (RViz, Gazebo vb. GUI için)
         my_env = os.environ.copy()
@@ -217,6 +226,7 @@ class ScenarioManager:
             self.hil_status = "stopped"
 
             self.current_scenario = None
+            self.use_fake_hardware = False
             self.robot_confirmed = False
 
             self._emit_status()
@@ -252,6 +262,7 @@ class ScenarioManager:
 
                 # 2. Start HIL
                 self.current_scenario = scenario_key
+                self.use_fake_hardware = use_fake_hardware
                 self.robot_confirmed = False
                 self.hil_status = "starting"
                 self._emit_status()
@@ -288,9 +299,12 @@ class ScenarioManager:
 
                 self._emit_log("SYSTEM", "✅ Robot confirmation received. Starting scenario...")
 
-                self.scenario_process = self._start_process(
-                    scenario["scenario_cmd"], "SENARYO"
-                )
+                scenario_cmd = scenario["scenario_cmd"]
+                if scenario.get("sim_flag"):
+                    sim_value = "true" if self.use_fake_hardware else "false"
+                    scenario_cmd += f" {scenario['sim_flag']}:={sim_value}"
+
+                self.scenario_process = self._start_process(scenario_cmd, "SENARYO")
                 self.scenario_status = "running"
                 self._emit_status()
 

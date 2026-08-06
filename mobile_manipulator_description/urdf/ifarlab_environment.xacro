@@ -52,7 +52,7 @@
     <joint name="${prefix}barrier_joint" type="fixed">
       <parent link="world"/>
       <child link="${prefix}barrier_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0.05 0" rpy="0 0 0"/>
     </joint>
 
     <!-- ========== barrier_closekabinet - yakın kabinet bariyeri ========== -->
@@ -78,7 +78,7 @@
     <joint name="${prefix}barrier_closekabinet_joint" type="fixed">
       <parent link="world"/>
       <child link="${prefix}barrier_closekabinet_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0.05 0" rpy="0 0 0"/>
     </joint>
 
     <!-- ========== barrier_closetable - yakın masa bariyeri ========== -->
@@ -104,7 +104,7 @@
     <joint name="${prefix}barrier_closetable_joint" type="fixed">
       <parent link="world"/>
       <child link="${prefix}barrier_closetable_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 -0.05 0" rpy="0 0 0"/>
     </joint>
 
     <!-- ========== barrier_kaw1 - Kawasaki bariyeri 1 ========== -->
@@ -130,7 +130,7 @@
     <joint name="${prefix}barrier_kaw1_joint" type="fixed">
       <parent link="world"/>
       <child link="${prefix}barrier_kaw1_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0.03 0 0" rpy="0 0 0"/>
     </joint>
 
     <!-- ========== barrier_kaw2 - Kawasaki bariyeri 2 ========== -->
@@ -156,7 +156,7 @@
     <joint name="${prefix}barrier_kaw2_joint" type="fixed">
       <parent link="world"/>
       <child link="${prefix}barrier_kaw2_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0.03 0 0" rpy="0 0 0"/>
     </joint>
 
     <!-- ========== barrier_kaw3 - Kawasaki bariyeri 3 ========== -->
@@ -182,7 +182,7 @@
     <joint name="${prefix}barrier_kaw3_joint" type="fixed">
       <parent link="world"/>
       <child link="${prefix}barrier_kaw3_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0.03 0 0" rpy="0 0 0"/>
     </joint>
 
     <!-- ========== kabinet - kontrol kabini ========== -->
@@ -208,7 +208,7 @@
     <joint name="${prefix}kabinet_joint" type="fixed">
       <parent link="world"/>
       <child link="${prefix}kabinet_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0.05 0" rpy="0 0 0"/>
     </joint>
 
     <!-- ========== light_curtain - ışık perdesi ========== -->
@@ -234,7 +234,7 @@
     <joint name="${prefix}light_curtain_joint" type="fixed">
       <parent link="world"/>
       <child link="${prefix}light_curtain_link"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 -0.05 0" rpy="0 0 0"/>
     </joint>
 
     <!-- ========== human - duran insan modeli ========== -->

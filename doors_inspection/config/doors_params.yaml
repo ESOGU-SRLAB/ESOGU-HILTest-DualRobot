@@ -1,0 +1,126 @@
+# Coverage / allocation parameters for the CAR DOOR inspection job.
+#
+# Deliberately the same sensor model and candidate density as the chassis run
+# (multirobot_viewpoint_planner/config/multirobot_params.yaml) so the two jobs stay
+# comparable: only the target geometry changes. Every value that DOES differ is
+# called out below with the reason.
+#
+# Matched with /** so the file applies whatever the launch file names the node.
+/**:
+  ros__parameters:
+    # --- Camera: identical to the chassis job (same SICK on both arms). ---
+    camera:
+      horizontal_fov_deg: 70.0
+      vertical_fov_deg: 60.0
+      fov_safety_margin_deg: 3.0
+      min_range_m: 0.2
+      max_range_m: 1.8
+      frame_rate_hz: 5.0
+      # MINIMUM STAND-OFF 0.6 m (was 0.3). Candidates are placed at
+      # `surface_point + normal * d`, so this list is literally the set of stand-off
+      # rings, and it is shared by both arms -- one candidate set is generated and then
+      # allocated, so there is no per-robot version of this to keep in sync.
+      #
+      # 0.6 m is where the sensor is actually good. Measured on the real captures
+      # (20-neighbour plane residual / neighbour spacing per range band):
+      #   0.6-0.8 m  0.98 mm / 1.90 mm      1.4-1.8 m  0.98 mm / 4.42 mm
+      #   0.8-1.0 m  0.90 mm / 2.62 mm      1.8-2.5 m  1.94 mm / 5.94 mm
+      # Noise is flat out to ~1.8 m and only lateral resolution degrades, so every ring
+      # here sits inside the good band while 0.3 m bought detail the doors do not need.
+      #
+      # 0.8 REPLACES 0.3 rather than the list simply shrinking: dropping a ring would
+      # cost 25% of the candidates and with them some of the geometric coverage ceiling.
+      # This keeps four rings per base point and puts two of them at the noise floor.
+      #
+      # NOTE the chassis job keeps 0.3 (multirobot_params.yaml): there the near ring
+      # exists so the camera can sit INSIDE the chassis openings to reach interior
+      # faces. The doors are open panels with nothing to reach into.
+      viewpoint_distances: [0.6, 0.8, 1.0, 1.4]
+      tilt_variations_deg: [-15.0, 0.0, 15.0]
+      max_incidence_angle_deg: 80.0
+
+    # 99.2%, and this number CAN now stop the run. The doors are flat panels that barely
+    # occlude each other, so the geometric ceiling measured 4959/4960 targets (100.0%)
+    # and real runs have reached 99.50-99.64% -- i.e. the threshold sits just under what
+    # the tour actually achieves, so the greedy loop stops as soon as it crosses it.
+    #
+    # That is a change of role from the previous 1.0. An unattainable threshold handed
+    # the stop decision to the tail cutter below (min_new_points), which kept adding
+    # viewpoints worth 5 targets each; 0.992 stops a viewpoint or two earlier for a few
+    # tenths of a percent of coverage. Raise it back towards 1.0 to trade run time for
+    # those last targets.
+    coverage_threshold: 0.992
+
+    # Candidate density: same knobs as the chassis run. The doors are only
+    # 6.82 m^2 against the chassis's 31.97 m^2, so at the SAME 5000 targets the
+    # sampling is ~5x denser here. That is deliberate: a door defect is small, and
+    # the extra targets cost only coverage-matrix time, which embree absorbs.
+    num_base_points: 400
+    target_sample_points: 5000
+
+    # Tail cutters: LOOSENED for the doors (the chassis job runs 8 / 0.005).
+    # The effective floor is max(min_new_points, min_marginal_coverage * targets), and
+    # with the chassis values that was max(8, 0.5% of 4960 = 25) = 25 new points per
+    # viewpoint. On a 6.8 m^2 target that cut the tour at 5 viewpoints per arm.
+    #
+    # The fractional cutter is switched OFF and the absolute one dropped to 5, i.e. a
+    # viewpoint earns its place if it adds 5 of 4960 targets (0.1%).
+    #
+    # These are now the BACKSTOP, not the primary stop: with coverage_threshold at 0.992
+    # (attainable) the run normally ends on the threshold instead. They still decide the
+    # outcome if reachability keeps the tour below 99.2%, which is exactly when a
+    # runaway tail of near-worthless viewpoints would otherwise appear.
+    # Raise min_new_points to shorten the tour, lower it to lengthen it.
+    min_new_points: 5
+    min_marginal_coverage: 0.0
+    # Still the hard guard against a runaway tail; the run should stop well below it.
+    max_viewpoints_per_robot: 30
+    balance_load: true
+
+    # Visiting order. The two doors are laid out along Y (windowlessdoor
+    # y 0.088..1.319, windowdoor y 1.301..2.478), so the max_y / min_y anchors still
+    # send the two arms to opposite ends of the pair instead of crowding one door.
+    order_by_proximity: true
+    ur_order_anchor: "max_y"
+    kawasaki_order_anchor: "min_y"
+
+    # Travel optimisation: same settings that were validated on the chassis job.
+    unwind_joint_goals: true
+    wrap_limit_margin: 0.05
+    wrap_min_gain: 0.35
+    rechain_ik: true
+    rechain_ik_attempts: 4
+    rechain_rail_probe: 0.25
+    rechain_rail_weight: 2.0
+    rechain_yaw_probe: true
+    rechain_yaw_joint: "joint1"
+    rechain_rail_joint: "world_to_agv"
+
+    ik_avoid_collisions: true
+
+    # --- UR10e ---
+    ur_group_name: "real_ur10e"
+    ur_base_frame: "world"
+    ur_tool_frame: "ur10e_depth_optical_frame"
+
+    # Keep-out box for the UR only, unchanged from the chassis job: it rejects camera
+    # poses BEHIND the UR's own linear rail (rail at world X=-0.158; the -0.20 upper
+    # bound leaves ~4 cm), which the mesh-only occlusion model cannot see.
+    #
+    # It does NOT need a door-specific tweak. The doors stand at x -1.21..-0.79,
+    # between the two arms: the +X faces look at the UR and the -X faces look at the
+    # Kawasaki (AGV rail at x ~ -2.2). The allocator hands each face to whichever arm
+    # can actually reach it, so the two sides split across the two arms by geometry
+    # rather than by a hand-written rule.
+    ur_workspace_filter_enabled: true
+    ur_workspace_bounds_min: [-100.0, -100.0, 0.20]
+    ur_workspace_bounds_max: [-0.20, 100.0, 100.0]
+
+    # --- Kawasaki: IK is solved for the group tip (link6) with the fixed
+    #     camera->tip transform applied. Same as the chassis job. ---
+    kawasaki_group_name: "real_kawasaki"
+    kawasaki_base_frame: "world"
+    kawasaki_camera_frame: "camera_rgb_optic_frame"
+    kawasaki_group_tip: "link6"
+    kawasaki_ik_via_tip: true
+    kawasaki_view_axis_correction_rpy: [-1.5707963, -1.5707963, 0.0]

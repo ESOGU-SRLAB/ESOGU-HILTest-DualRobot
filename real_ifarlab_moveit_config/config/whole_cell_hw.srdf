@@ -16,6 +16,17 @@
         <chain base_link="ifarlab_ray_link" tip_link="link7"/>
     </group>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
+    <!-- CHASSIS FEET (chassis_part54..57), 2026-08-04. The four legs carrying the linear
+         axis are 60 x 40 mm in the STL, which does not match the real feet, so their
+         COLLISION geometry is a box with the cross-section scaled 3x (180 x 120 mm,
+         height 404 mm unchanged); see foot_collision_scale in chassis_macro.xacro.
+         The SRDF generator had sampled those feet at their old size and written
+         reason="Never" against every moving link of BOTH arms. A disabled pair is never
+         checked at all and no amount of padding brings it back, so enlarging the boxes
+         while leaving those entries in place would have changed nothing. All foot vs arm
+         "Never" pairs (UR chain + tools, Kawasaki link1..7, camera_link,
+         kawa_cable_channel) were therefore REMOVED. Still disabled on purpose: the static
+         cell furniture and the AGV body/casters/wheels, which cannot reach the feet. -->
     <disable_collisions link1="barrier_closekabinet_link" link2="barrier_closetable_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="barrier_kaw1_link" reason="Adjacent"/>
     <disable_collisions link1="barrier_closekabinet_link" link2="barrier_kaw2_link" reason="Adjacent"/>
@@ -1955,8 +1966,6 @@
     <disable_collisions link1="link7" link2="ur10e_chassis_part37" reason="Never"/>
     <disable_collisions link1="link7" link2="ur10e_chassis_part4" reason="Never"/>
     <disable_collisions link1="link7" link2="ur10e_chassis_part5" reason="Never"/>
-    <disable_collisions link1="link7" link2="ur10e_chassis_part55" reason="Never"/>
-    <disable_collisions link1="link7" link2="ur10e_chassis_part57" reason="Never"/>
     <disable_collisions link1="link7" link2="ur10e_chassis_part8" reason="Never"/>
     <disable_collisions link1="link7" link2="ur10e_chassis_part9" reason="Never"/>
     <disable_collisions link1="link7" link2="ur10e_conveyor_belt" reason="Never"/>
@@ -2322,10 +2331,6 @@
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part51" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part52" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part53" reason="Never"/>
-    <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part54" reason="Never"/>
-    <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part55" reason="Never"/>
-    <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part56" reason="Never"/>
-    <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part57" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part6" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part7" reason="Never"/>
     <disable_collisions link1="ur10e_base_link_inertia" link2="ur10e_chassis_part8" reason="Never"/>
@@ -4462,16 +4467,9 @@
     <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_chassis_part8" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_chassis_part9" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_conveyor_belt" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_screw_feeder" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_table" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_wrist_2_link" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part54" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part54" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part54" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_chassis_part56" reason="Adjacent"/>
@@ -4481,12 +4479,9 @@
     <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_chassis_part8" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_chassis_part9" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_conveyor_belt" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_screw_feeder" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_table" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part55" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part55" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part55" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_chassis_part57" reason="Adjacent"/>
@@ -4495,19 +4490,9 @@
     <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_chassis_part8" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_chassis_part9" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_conveyor_belt" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_flange" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_forearm_link" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_screw_feeder" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_shoulder_link" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_sick_camera" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_table" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_tool0" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_upper_arm_link" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_wrist_1_link" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_wrist_2_link" reason="Never"/>
-    <disable_collisions link1="ur10e_chassis_part56" link2="ur10e_wrist_3_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part56" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part56" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_chassis_part6" reason="Adjacent"/>
@@ -4515,12 +4500,9 @@
     <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_chassis_part8" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_chassis_part9" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_conveyor_belt" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_robot_mount" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_screw_feeder" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_shoulder_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_stackable_bin" reason="Adjacent"/>
     <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_table" reason="Adjacent"/>
-    <disable_collisions link1="ur10e_chassis_part57" link2="ur10e_upper_arm_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part57" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part57" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="ur10e_chassis_part6" link2="ur10e_chassis_part7" reason="Adjacent"/>
@@ -4646,4 +4628,22 @@
     <disable_collisions link1="ur10e_wrist_3_link" link2="wheel_left_link" reason="Never"/>
     <disable_collisions link1="ur10e_wrist_3_link" link2="wheel_right_link" reason="Never"/>
     <disable_collisions link1="wheel_left_link" link2="wheel_right_link" reason="Never"/>
+    <!-- The Kawasaki SICK camera's collision shell (rs005l_macro.xacro). It is
+         rigidly fixed to link7, which is rigidly fixed to link6, so their relative
+         pose never changes and checking those pairs only ever produces a permanent
+         self-collision. link5 and inboard links are deliberately NOT listed: the
+         shell reaches past link7 and folding it into the arm is a real collision. -->
+    <disable_collisions link1="camera_link" link2="link7" reason="Adjacent"/>
+    <disable_collisions link1="camera_link" link2="link6" reason="Adjacent"/>
+    <!-- Cable channel cradle bolted to the Kawasaki forearm (rs005l_macro.xacro).
+         Only the two links it is physically mounted between are disabled: link3, its
+         parent, whose mesh it overlaps outright, and link4, which it clears by 5.0 mm,
+         inside every collision tolerance and link padding on offer. The bracket is bolted
+         across that elbow in reality. Everything else is left ENABLED on purpose.
+         Nearest approaches over the full joint ranges: link2 2.3 cm (swept joint3),
+         link5 18.6 cm, link6 18.5 cm, link7 2.2 cm and camera_link 1.0 cm at extreme
+         wrist poses. Those last two are exactly the collisions this link was added to
+         catch. -->
+    <disable_collisions link1="kawa_cable_channel" link2="link3" reason="Adjacent"/>
+    <disable_collisions link1="kawa_cable_channel" link2="link4" reason="Always"/>
 </robot>

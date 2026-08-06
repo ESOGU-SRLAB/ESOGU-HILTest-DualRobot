@@ -62,16 +62,29 @@ class ReachabilityChecker(Node):
             )
         return available
 
-    def check_ik(self, position, orientation, timeout=0.1):
+    def check_ik(self, position, orientation, timeout=0.1, seed_joint_state=None,
+                 count_errors=True):
         """
         Checks if the given pose (position, orientation) is reachable.
         orientation should be a quaternion [x, y, z, w].
+
+        `seed_joint_state` (a JointState) is the configuration the solver starts its
+        search from. A pose has several valid IK branches (shoulder/elbow/wrist flips)
+        that reach it from completely different arm configurations, and without a seed
+        the solver returns an arbitrary one -- which is how two viewpoints centimetres
+        apart end up hundreds of degrees apart in joint space. Seeding with the previous
+        viewpoint's solution asks for a branch near that one instead.
+
+        `count_errors` False keeps a failed probe out of the ik_error_counts breakdown,
+        so continuity re-solves do not pollute the reachability statistics.
         """
         req = GetPositionIK.Request()
         req.ik_request.group_name = self.group_name
         req.ik_request.timeout.sec = int(timeout)
         req.ik_request.timeout.nanosec = int((timeout - int(timeout)) * 1e9)
         req.ik_request.avoid_collisions = self.avoid_collisions
+        if seed_joint_state is not None:
+            req.ik_request.robot_state.joint_state = seed_joint_state
         # Solve for the actual sensor/tool frame rather than the group's default
         # tip link -- without this the request silently ignores tool_frame and
         # may solve IK for the wrong link on multi-tip groups.
@@ -108,7 +121,8 @@ class ReachabilityChecker(Node):
             return True, response.solution.joint_state
         else:
             err = response.error_code.val
-            self.ik_error_counts[err] = self.ik_error_counts.get(err, 0) + 1
+            if count_errors:
+                self.ik_error_counts[err] = self.ik_error_counts.get(err, 0) + 1
             self.get_logger().debug(
                 f"IK failed for group '{self.group_name}' at position={list(position)}: "
                 f"error_code={err} ({IK_ERROR_NAMES.get(err, 'UNKNOWN')})."

@@ -80,7 +80,6 @@
       </collision>
     </link> -->
 
-    <!-- Platform - Bodies(1): mass=205.0 kg, inertia CAD'dan alındı -->
     <link name="${tf_prefix}platform">
       <inertial>
         <origin xyz="-1.101122 1.387607 0.574201" rpy="0 0 0"/>
@@ -104,7 +103,6 @@
       </collision>
     </link>
 
-    <!-- Door - araba kapısı (~18 kg, 1.1m x 0.9m x 0.05m çelik) -->
     <link name="${tf_prefix}windowlessdoor"> 
       <inertial>
         <origin xyz="-0.864306 0.816343 0.934094" rpy="0 0 0"/>
@@ -128,7 +126,6 @@
       </collision>
     </link>
 
-    <!-- Door1 - araba kapısı (~18 kg, 1.1m x 0.9m x 0.05m çelik) -->
     <link name="${tf_prefix}windowdoor">
       <inertial>
         <origin xyz="-0.844038 1.994389 0.74421" rpy="0 0 0"/>
