@@ -36,7 +36,19 @@
  *     [--mode sim|real] [--data_dir <pcds/doors/sim_pcds>] \
  *     [--parts_dir <~/.cache/doors_inspection/door_parts>] [--parts_scale 1.0] \
  *     [--belief_out ...] [--occ_out ...] \
- *     [--res 0.02] [--z_min -10.0] [--use_ur 1] [--use_kawasaki 1] [--snap 0]
+ *     [--res 0.02] [--z_min -10.0] [--use_ur 1] [--use_kawasaki 1] \
+ *     [--snap 0] [--snap_radius 1]
+ *
+ * GERCEK VERI ICIN NOT (6 Agu 2026 kosusundan sonra eklendi):
+ *   Bu builder bir noktayi ancak TAM olarak bir belief voxeline dustugunde sayar.
+ *   Sim'de yakalanan bulutun modele uzakligi medyan 3 mm oldugu icin bu bedava
+ *   gecer; gercekte 38 mm oldugu icin nokta 2 cm'lik hucreyi iskaliyor ve "hic
+ *   taranmamis" gibi gorunuyor. Kapi ALTINDA hata ~8 cm'e cikiyor, ustte ~1-2 cm
+ *   kaliyor -- yani kapi modeldekinden yatik duruyor. Iki kol bunu birbirinden
+ *   BAGIMSIZ olarak ayni isaret ve buyuklukte olcuyor (UR -81.4 mm, Kawasaki
+ *   -81.5 mm), bu yuzden kaynak robot kalibrasyonu degil kapinin kendisi.
+ *   --snap_radius bunu RAPORDA telafi eder, gercekte duzeltmez.
+ * ─────────────────────────────────────────────────────────────────────────────
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -134,10 +146,51 @@ struct Config {
     bool        use_ur       = true;
     bool        use_kawasaki = true;
     // 0 = şase davranışının birebir aynısı (nokta tam olarak bir belief voxeline
-    // düşmeliidr). 1 = düşmezse 26 komşuya bakılır; gerçek veride kalibrasyon
-    // kayması yüzünden yüzeyin bir voxel yanına düşen noktaları kurtarır, ama
-    // kaplamayı iyimser gösterir — bu yüzden varsayılan kapalı.
+    // düşmeliidr). 1 = düşmezse komşulara bakılır; gerçek veride kalibrasyon
+    // kayması yüzünden yüzeyin yanına düşen noktaları kurtarır, ama kaplamayı
+    // iyimser gösterir — bu yüzden varsayılan kapalı.
     bool        snap = false;
+    // Snap arama yarıçapı VOXEL cinsinden; metre karşılığı snap_radius * res.
+    // 1 = eski 26-komşu davranışı (res 0.02'de ±2 cm).
+    //
+    // 6 Agu 2026 gercek kosusunda olculen kapi hizalama hatasi kapinin altinda
+    // ~8 cm, ortasinda ~1-2 cm idi, yani +-2 cm alt tarafi kurtarmiyordu.
+    // Ayni veri uzerinde olculen kaplama (res 0.02):
+    //     yaricap 0 -> real %38.1   sim %86.2
+    //     yaricap 1 -> real %48.1   sim %87.4
+    //     yaricap 2 -> real %55.0   sim %87.4     <- kazanc burada doyuyor
+    //     yaricap 4 -> real %58.9   sim %87.5
+    // SIM'in neredeyse hic degismemesi onemli: sim'in hatasi zaten 3 mm oldugu
+    // icin snap ona bir sey katmiyor, sadece real'deki kaymayi telafi ediyor.
+    // Yani bu ayar iki modu birbirine yaklastirirken karsilastirilabilirligi
+    // bozmuyor. Yine de bu bir RAPORLAMA telafisi: hizalama hatasinin kendisi
+    // duruyor, sadece artik voxel iskasi olarak sayilmiyor.
+    int         snap_radius = 1;
+
+    // ── Bulut hizalama duzeltmesi (--cloud_fix "roll,pitch,yaw,x,y,z") ─────────
+    // Yakalanan buluta voxel anahtari hesaplanmadan ONCE uygulanan kati donusum:
+    //     X' = Rz(yaw) * Ry(pitch) * Rx(roll) * X + t
+    // rpy DERECE, xyz METRE. URDF ile ayni ZYX sirasi, boylece buradaki sayilar
+    // ileride kapinin URDF pozuna dogrudan tasinabilir.
+    //
+    // NEDEN BULUTA, MODELE DEGIL: yanlis olan model, ama belief map hem voxel
+    // izgarasini hem de kaplama paydasini tanimliyor. Modeli oynatmak paydayi ve
+    // yama sinirlarini her kosuda degistirirdi; buluta uygulamak matematiksel
+    // olarak tersi ve payda sabit kaldigi icin kosular karsilastirilabilir kalir.
+    //
+    // 7 Agu 2026'da point-to-plane ICP ile olculdu (%80 trim, 183 740 nokta):
+    //     rpy = -0.740, -5.128, +0.347 derece    xyz = +0.109, +0.002, +0.061 m
+    // Baskin terim Y ekseni etrafinda -5.1 derece: kapi one yatik duruyor. Iki
+    // kapi AYRI AYRI uydurulunca da ayni aciyi veriyor (-5.04 ve -4.80), ve ayri
+    // uydurma medyan hatayi global uydurmadan iyilestirmiyor (18.5/17.9 vs 18.6
+    // mm), bu yuzden tek global donusum kullaniliyor.
+    // Medyan model mesafesi: 41.5 mm -> 18.6 mm.
+    //
+    // SADECE GERCEK VERI ICIN. Sim zaten hizali; ayni duzeltmeyi sim'e uygulamak
+    // kaplamayi %86.2'den %28.1'e dusuruyor (olculdu). Varsayilan kapali.
+    bool        cloud_fix = false;
+    double      fix_rpy[3] = {0.0, 0.0, 0.0};   // derece
+    double      fix_xyz[3] = {0.0, 0.0, 0.0};   // metre
 };
 
 static std::string expand_tilde(const std::string& path) {
@@ -150,6 +203,24 @@ static std::string expand_tilde(const std::string& path) {
 
 static bool parse_bool(const std::string& v) {
     return !(v == "0" || v == "false" || v == "False" || v == "no");
+}
+
+// "r,p,y,x,y,z" → 6 sayı. Boşlukla ayırmak tek argümana sığmadığı için virgül.
+static bool parse_six(const std::string& v, double* rpy, double* xyz) {
+    std::vector<double> vals;
+    std::string tok;
+    for (size_t i = 0; i <= v.size(); ++i) {
+        if (i == v.size() || v[i] == ',') {
+            if (tok.empty()) return false;
+            try { vals.push_back(std::stod(tok)); } catch (...) { return false; }
+            tok.clear();
+        } else if (!std::isspace(static_cast<unsigned char>(v[i]))) {
+            tok += v[i];
+        }
+    }
+    if (vals.size() != 6) return false;
+    for (int i = 0; i < 3; ++i) { rpy[i] = vals[i]; xyz[i] = vals[i + 3]; }
+    return true;
 }
 
 static Config parse_args(int argc, char** argv) {
@@ -167,6 +238,25 @@ static Config parse_args(int argc, char** argv) {
         else if (k == "--use_ur")       cfg.use_ur       = parse_bool(v);
         else if (k == "--use_kawasaki") cfg.use_kawasaki = parse_bool(v);
         else if (k == "--snap")         cfg.snap         = parse_bool(v);
+        else if (k == "--snap_radius")  cfg.snap_radius  = std::stoi(v);
+        else if (k == "--cloud_fix") {
+            if (!parse_six(v, cfg.fix_rpy, cfg.fix_xyz)) {
+                std::cerr << "❌ --cloud_fix formati: \"roll,pitch,yaw,x,y,z\" "
+                             "(rpy derece, xyz metre). Verilen: " << v << "\n";
+                std::exit(1);
+            }
+            // Tam sifir verilmesi "kapali" demek; kimse ozdes donusum icin
+            // hesaplama yaptirmak istemez.
+            cfg.cloud_fix = !(cfg.fix_rpy[0] == 0 && cfg.fix_rpy[1] == 0 &&
+                              cfg.fix_rpy[2] == 0 && cfg.fix_xyz[0] == 0 &&
+                              cfg.fix_xyz[1] == 0 && cfg.fix_xyz[2] == 0);
+        }
+    }
+
+    if (cfg.snap_radius < 1) {
+        std::cerr << "❌ --snap_radius en az 1 olmali (verilen: " << cfg.snap_radius
+                  << "). Snap'i kapatmak icin --snap 0 kullan.\n";
+        std::exit(1);
     }
 
     if (cfg.mode != "sim" && cfg.mode != "real") {
@@ -188,6 +278,16 @@ static Config parse_args(int argc, char** argv) {
     if (!cfg.use_ur && !cfg.use_kawasaki) {
         std::cerr << "❌ Hem --use_ur hem --use_kawasaki kapali; islenecek veri yok.\n";
         std::exit(1);
+    }
+
+    // Sim bulutu modelden zaten medyan 3 mm sapiyor; ona gercek-veri duzeltmesi
+    // uygulamak hizalamayi BOZAR. Olculdu: kaplama %86.2 -> %28.1. Durdurmuyoruz
+    // (birinin bilerek denemesi mesru), ama gorulmemesi imkansiz hale getiriyoruz.
+    if (cfg.cloud_fix && cfg.mode == "sim") {
+        std::cerr << "\n⚠️  ⚠️  --cloud_fix SIM modunda aciik!\n"
+                  << "    Duzeltme gercek verideki kapi kaymasi icin olculdu. Sim\n"
+                  << "    zaten hizali oldugu icin bu onu BOZAR (olculdu: %86.2 ->\n"
+                  << "    %28.1). Sim'i duzeltmesiz calistir.\n\n";
     }
     return cfg;
 }
@@ -358,11 +458,56 @@ static void build_occupancy_map(octomap::ColorOcTree* tree,
                                 const std::vector<ScanPair>& scans,
                                 const VoxelPartMap& voxel_part_map,
                                 std::vector<int>& occ_counts,
-                                float z_min, bool snap) {
+                                float z_min, bool snap, int snap_radius,
+                                bool cloud_fix, const double* fix_rpy,
+                                const double* fix_xyz) {
     std::cout << "\n━━━  AŞAMA 2: Occupancy Map  ━━━━━━━━━━━━━━━━━━━━━━\n";
 
     const double res = tree->getResolution();
+
+    // Hizalama düzeltmesi. URDF ile aynı ZYX sırası: Rz(yaw)*Ry(pitch)*Rx(roll).
+    Eigen::Matrix3d fixR = Eigen::Matrix3d::Identity();
+    Eigen::Vector3d fixT = Eigen::Vector3d::Zero();
+    if (cloud_fix) {
+        const double d2r = M_PI / 180.0;
+        fixR = (Eigen::AngleAxisd(fix_rpy[2] * d2r, Eigen::Vector3d::UnitZ()) *
+                Eigen::AngleAxisd(fix_rpy[1] * d2r, Eigen::Vector3d::UnitY()) *
+                Eigen::AngleAxisd(fix_rpy[0] * d2r, Eigen::Vector3d::UnitX()))
+                   .toRotationMatrix();
+        fixT = Eigen::Vector3d(fix_xyz[0], fix_xyz[1], fix_xyz[2]);
+        std::cout << "  Bulut duzeltmesi UYGULANIYOR: rpy(deg) " << fix_rpy[0] << " "
+                  << fix_rpy[1] << " " << fix_rpy[2] << "  xyz(m) " << fix_xyz[0]
+                  << " " << fix_xyz[1] << " " << fix_xyz[2] << "\n"
+                  << "    (yakalanan buluta uygulanir; belief map'e DOKUNULMAZ, "
+                     "boylece payda sabit kalir)\n";
+    }
+
+    // Snap ofsetleri BİR KEZ, mesafeye göre sıralı üretilir. Sıra kritik: eski kod
+    // dx,dy,dz'yi -1..1 tarayıp İLK bulduğu komşuya çekiyordu, bu da noktaları
+    // sistematik olarak -x,-y,-z yönüne yanlı kaydırıyordu. Yarıçap 1'de etkisi
+    // küçüktü; 2 ve üstünde nokta gerçekten en yakın olmayan bir yamaya
+    // yazılabilirdi ve yama bazlı rapor yanlış çıkardı. Mesafeye göre sıralayıp
+    // ilk eşleşmede durmak EN YAKIN belief voxelini garanti eder.
+    std::vector<VoxelKey> snap_offsets;
+    if (snap) {
+        for (int dx = -snap_radius; dx <= snap_radius; ++dx)
+        for (int dy = -snap_radius; dy <= snap_radius; ++dy)
+        for (int dz = -snap_radius; dz <= snap_radius; ++dz) {
+            if (!dx && !dy && !dz) continue;      // merkez zaten denendi
+            snap_offsets.push_back({dx, dy, dz});
+        }
+        std::sort(snap_offsets.begin(), snap_offsets.end(),
+                  [](const VoxelKey& a, const VoxelKey& b) {
+                      return (a.x*a.x + a.y*a.y + a.z*a.z) <
+                             (b.x*b.x + b.y*b.y + b.z*b.z);
+                  });
+        std::cout << "  Snap: yaricap " << snap_radius << " voxel = "
+                  << (snap_radius * res * 100.0) << " cm, "
+                  << snap_offsets.size() << " komsu, en yakin once\n";
+    }
+
     long total_ins = 0, total_skip = 0, total_snap = 0;
+    double total_snap_dist = 0.0;   // kaplamanin ne kadar "odunc" alindigini gosterir
     std::vector<std::unordered_set<size_t>> occ_voxel_sets(occ_counts.size());
     VoxelKeyHash vk_hasher;
 
@@ -385,28 +530,40 @@ static void build_occupancy_map(octomap::ColorOcTree* tree,
         }
 
         long ins = 0, skip = 0, snapped = 0;
+        double snap_dist = 0.0;
         for (const auto& p : cs->points) {
             if (!std::isfinite(p.x) || !std::isfinite(p.y) || !std::isfinite(p.z))
                 { ++skip; continue; }
-            if (p.z < z_min) { ++skip; continue; }
 
-            octomap::point3d pt(p.x, p.y, p.z);
+            double px = p.x, py = p.y, pz = p.z;
+            if (cloud_fix) {
+                Eigen::Vector3d q = fixR * Eigen::Vector3d(px, py, pz) + fixT;
+                px = q.x(); py = q.y(); pz = q.z();
+            }
+            // z_min duzeltmeden SONRA uygulanir: esik dunya zemininde tanimli, ve
+            // duzeltme bir noktayi esigin altina/ustune tasiyabilir.
+            if (pz < z_min) { ++skip; continue; }
+
+            octomap::point3d pt(static_cast<float>(px), static_cast<float>(py),
+                                static_cast<float>(pz));
             VoxelKey vk = to_voxel_key(pt, res);
 
             auto vit = voxel_part_map.find(vk);
             if (vit == voxel_part_map.end() && snap) {
-                // 26 komşu: gerçek veride el-göz kalibrasyonu yüzeyin bir voxel
-                // yanına düşürebilir. Bulunursa nokta o belief voxeline çekilir.
-                for (int dx = -1; dx <= 1 && vit == voxel_part_map.end(); ++dx)
-                for (int dy = -1; dy <= 1 && vit == voxel_part_map.end(); ++dy)
-                for (int dz = -1; dz <= 1 && vit == voxel_part_map.end(); ++dz) {
-                    if (!dx && !dy && !dz) continue;
-                    auto nit = voxel_part_map.find({vk.x + dx, vk.y + dy, vk.z + dz});
+                // Gerçek veride hem el-göz kalibrasyonu hem de kapının modeldekinden
+                // farklı duruşu noktayı yüzeyin yanına düşürür. En yakın belief
+                // voxeli arama yarıçapı içindeyse nokta oraya çekilir.
+                for (const VoxelKey& off : snap_offsets) {
+                    VoxelKey cand = {vk.x + off.x, vk.y + off.y, vk.z + off.z};
+                    auto nit = voxel_part_map.find(cand);
                     if (nit != voxel_part_map.end()) {
                         vit = nit;
-                        vk  = {vk.x + dx, vk.y + dy, vk.z + dz};
+                        vk  = cand;
                         pt  = voxel_center(vk, res);
                         ++snapped;
+                        snap_dist += std::sqrt(static_cast<double>(
+                            off.x*off.x + off.y*off.y + off.z*off.z)) * res;
+                        break;      // ofsetler sıralı, ilk eşleşme en yakını
                     }
                 }
             }
@@ -434,17 +591,35 @@ static void build_occupancy_map(octomap::ColorOcTree* tree,
 
         std::cout << "    " << cs->size() << " nokta  |  " << ins << " kapi ici eklendi  |  "
                   << skip << " kapi disi/NaN atlandi";
-        if (snap) std::cout << "  |  " << snapped << " komsu voxele cekildi";
+        if (snap) {
+            std::cout << "  |  " << snapped << " komsu voxele cekildi";
+            if (snapped) std::cout << " (ort. " << (snap_dist / snapped * 1000.0) << " mm)";
+        }
         std::cout << "\n";
         total_ins  += ins;
         total_skip += skip;
         total_snap += snapped;
+        total_snap_dist += snap_dist;
     }
 
     std::cout << "  ─────────────────────────────────────────────────\n";
     std::cout << "  Toplam eklenen : " << total_ins  << "\n";
     std::cout << "  Toplam atlanan : " << total_skip << "\n";
-    if (snap) std::cout << "  Toplam cekilen : " << total_snap << "\n";
+    if (snap) {
+        std::cout << "  Toplam cekilen : " << total_snap;
+        if (total_ins > 0)
+            std::cout << "  (eklenenlerin %" << (100.0 * total_snap / total_ins) << "'i)";
+        std::cout << "\n";
+        if (total_snap > 0) {
+            std::cout << "  Ort. cekme mesafesi : "
+                      << (total_snap_dist / total_snap * 1000.0) << " mm\n";
+            // Bu iki satir raporun ne kadarinin telafiyle kazanildigini gosterir.
+            // Buyuk bir cekme orani + buyuk bir mesafe = hizalama sorunu duruyor,
+            // sadece voxel iskasi olarak gorunmuyor demektir.
+            std::cout << "  ⚠️  Bu noktalar modeldeki yuzeye TAM oturmadi; kaplama\n"
+                      << "      sayisi bu kadar telafiyle elde edildi.\n";
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -510,7 +685,17 @@ int main(int argc, char** argv) {
     std::cout << "  Belief out  : " << cfg.belief_out  << "\n";
     std::cout << "  Occ out     : " << cfg.occ_out     << "\n";
     std::cout << "  Resolution  : " << cfg.res         << " m\n";
-    std::cout << "  Snap        : " << (cfg.snap ? "acik (26 komsu)" : "kapali") << "\n";
+    std::cout << "  Snap        : ";
+    if (cfg.snap) std::cout << "acik, yaricap " << cfg.snap_radius << " voxel = "
+                            << (cfg.snap_radius * cfg.res * 100.0) << " cm\n";
+    else          std::cout << "kapali\n";
+    std::cout << "  Cloud fix   : ";
+    if (cfg.cloud_fix)
+        std::cout << "rpy(deg) " << cfg.fix_rpy[0] << "," << cfg.fix_rpy[1] << ","
+                  << cfg.fix_rpy[2] << "  xyz(m) " << cfg.fix_xyz[0] << ","
+                  << cfg.fix_xyz[1] << "," << cfg.fix_xyz[2] << "\n";
+    else
+        std::cout << "kapali\n";
     std::cout << "══════════════════════════════════════════════════════\n";
 
     auto parts = collect_parts(cfg.parts_dir);
@@ -542,7 +727,8 @@ int main(int argc, char** argv) {
     std::cout << "OK\n";
 
     std::vector<int> occ_counts(parts.size(), 0);
-    build_occupancy_map(tree, scans, voxel_part_map, occ_counts, cfg.z_min, cfg.snap);
+    build_occupancy_map(tree, scans, voxel_part_map, occ_counts, cfg.z_min, cfg.snap,
+                        cfg.snap_radius, cfg.cloud_fix, cfg.fix_rpy, cfg.fix_xyz);
 
     std::cout << "\n💾 Occupancy map: " << cfg.occ_out << " ... ";
     if (!tree->write(cfg.occ_out)) {

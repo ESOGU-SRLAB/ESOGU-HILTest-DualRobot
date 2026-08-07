@@ -29,6 +29,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/doors_mesh_prep
   scripts/doors_parts_prep
+  scripts/doors_mission_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
