@@ -1453,7 +1453,12 @@ class InspectionNodeBase(Node):
 
     def _home_arm(self, home_deg, label):
         """Plan (collision-aware) + dispatch this arm to its home pose. home_deg index 0
-        is a linear axis in METRES; indices 1..6 are revolute joints in DEGREES."""
+        is a linear axis in METRES; indices 1..6 are revolute joints in DEGREES.
+
+        Recorded and replayed like every other move: the last-viewpoint -> home leg is a
+        named transition ('return_home'), so it gets the same record-once/replay-forever
+        contract as the viewpoint trajectories instead of being re-planned live on the
+        real robot. Cached under <arm>_return_home.json in the trajectory dir."""
         moveit2, ctrl = self.moveit, self.ctrl
         if moveit2 is None or ctrl is None:
             return
@@ -1462,17 +1467,12 @@ class InspectionNodeBase(Node):
                 f"[{label} home] expected {len(moveit2.joint_names)} joint values, got "
                 f"{len(home_deg)}; skipping homing.")
             return
-        home_rad = self._pose_to_rad(home_deg)
-        home_rad, _ = self._wrap_goal_to_current(home_rad, moveit2.joint_names, f"{label} home")
         self.get_logger().info(
             f"[{label}] returning to home pose (axis0={home_deg[0]} m, joints={home_deg[1:]} deg)...")
-        traj = self._plan(home_rad, moveit2.joint_names, f"{label} home")
-        if traj is None:
-            self.get_logger().warning(
-                f"[{label} home] could not plan a path to the home pose; leaving the arm where it is.")
-            return
-        send = self._dispatch(traj, f"{label} home")
-        if self._await(send, f"{label} home"):
+        # _run_cached_move already unwinds the target, short-circuits when the arm is
+        # there, aligns to the recorded start and settles on arrival.
+        if self._run_cached_move("return_home", self._pose_to_rad(home_deg),
+                                 moveit2.joint_names, f"{label} home"):
             self.get_logger().info(f"[{label}] returned to home pose.")
         else:
             self.get_logger().warning(f"[{label} home] homing motion did not complete successfully.")

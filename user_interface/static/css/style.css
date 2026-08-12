@@ -492,6 +492,196 @@ body::before {
     box-shadow: var(--shadow-glow-green);
 }
 
+/* ========== SEND COMMAND BUTTON (status bar) ========== */
+.command-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;          /* durum çubuğunun sağ ucuna yaslansın */
+    padding: 6px 16px;
+    border: 1px solid var(--accent-cyan);
+    border-radius: var(--radius-sm);
+    background: rgba(6, 182, 212, 0.1);
+    color: var(--accent-cyan);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.command-btn:hover {
+    background: var(--accent-cyan);
+    color: #06121a;
+}
+
+/* ========== TASK COMMAND MODAL ========== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(4, 7, 15, 0.72);
+    backdrop-filter: blur(3px);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.modal-overlay.visible {
+    display: flex;
+    animation: modalFade 0.18s ease-out;
+}
+
+@keyframes modalFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.modal-box {
+    width: min(680px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--gradient-card);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-md);
+    padding: 22px 24px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    animation: modalRise 0.22s ease-out;
+}
+
+@keyframes modalRise {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.modal-header h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    line-height: 1;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.modal-close:hover {
+    color: var(--accent-red);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.modal-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+}
+
+.modal-textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 110px;
+    padding: 12px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    transition: border-color var(--transition-fast);
+}
+
+.modal-textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.modal-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.modal-hint {
+    margin-top: 8px;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+}
+
+.modal-hint code {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent-cyan);
+}
+
+.modal-status {
+    min-height: 20px;
+    margin-top: 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.modal-status.pending { color: var(--accent-yellow); }
+.modal-status.ok      { color: var(--accent-green); }
+.modal-status.error   { color: var(--accent-red); }
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.modal-btn {
+    padding: 9px 22px;
+    border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.modal-btn.secondary {
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.modal-btn.secondary:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.modal-btn.primary {
+    border: 1px solid var(--accent-green);
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+}
+
+.modal-btn.primary:hover:not(:disabled) {
+    background: var(--accent-green);
+    color: white;
+    box-shadow: var(--shadow-glow-green);
+}
+
+.modal-btn.primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ========== MAIN CONTENT GRID ========== */
 .content-grid {
     display: grid;

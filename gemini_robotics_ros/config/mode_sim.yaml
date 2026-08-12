@@ -1,0 +1,25 @@
+# mode:=sim  --  Gazebo Harmonic simülasyonu
+#
+# gemini_params.yaml'ın ÜSTÜNE biner. Burada YALNIZCA sim ile gerçek arasında
+# gerçekten farklı olan şeyler bulunur; başka hiçbir ayar buraya konmamalı,
+# yoksa iki dosya birbirinden kayar ve "sim'de çalışıyor gerçekte çalışmıyor"
+# hatalarının kaynağı olur.
+#
+# Kullanım:
+#     ros2 launch gemini_robotics_ros gemini_pick_place.launch.py
+#     (mode varsayılanı zaten sim)
+/**:
+  ros__parameters:
+
+    # Köprü topic'leri (my_robot_cell_gz/bridge/bridgos.yaml, /sim namespace).
+    # depth/image 32FC1 ve METRE cinsinden gelir; depth_to_metres bunu bilir.
+    image_topic: "/sim/image"
+    cloud_topic: "/sim/pointcloud"
+    depth_topic: "/sim/depth/image"
+    camera_info_topic: "/sim/camera_info"
+    # Gazebo rgbd_camera IR genliği üretmez; bu topic sim'de BOŞ kalır ve
+    # render_mode "intensity" sim'de kullanılamaz.
+    intensity_topic: "/intensity"
+
+    # Gazebo /clock yayınlıyor (bridgos.yaml onu /world/cem/clock'tan alır).
+    use_sim_time: true

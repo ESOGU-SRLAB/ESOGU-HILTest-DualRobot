@@ -7,6 +7,7 @@ camera streaming, and real-time joint state monitoring.
 
 import os
 import sys
+import shlex
 import signal
 import subprocess
 import threading
@@ -59,7 +60,14 @@ class ScenarioManager:
         "pick_and_place": {
             "label": "Pick & Place Scenario",
             "hil_params": "use_vacuum_gripper:=true",
-            "scenario_cmd": "ros2 launch pymoveit2_real pick_and_place_scenario.launch.py",
+            "scenario_cmd": "ros2 launch gemini_robotics_ros gemini_pick_place.launch.py",
+            # gemini_pick_place'in TEK argümanı mode ve değeri sim|real - yani
+            # sim_flag'in ürettiği "bayrak:=true/false" biçimine uymuyor.
+            # (argüman adı, fake hardware açıkken, gerçek robot bağlıyken)
+            "mode_arg": ("mode", "sim", "real"),
+            # Senaryo ayağa kalkınca komut penceresi açılsın: bu senaryoda görev
+            # serbest metinle veriliyor (/gemini/command).
+            "command_prompt": True,
         },
         "human_robot_collaboration": {
             "label": "Human-Robot Collaboration Scenario",
@@ -90,13 +98,13 @@ class ScenarioManager:
         print(f"[Log] Logs will be written to: {self.log_filepath}")
 
     def _emit_status(self):
-        """Push current status to all connected clients."""
-        self.socketio.emit("status_update", {
-            "hil_status": self.hil_status,
-            "scenario_status": self.scenario_status,
-            "current_scenario": self.current_scenario,
-            "robot_confirmed": self.robot_confirmed,
-        })
+        """Push current status to all connected clients.
+
+        get_status() üzerinden gidiyor: iki yerde ayrı ayrı sözlük kurulunca
+        biri güncellenip diğeri unutuluyordu (yeni alanlar yalnızca sayfa
+        yenilenince görünüyordu).
+        """
+        self.socketio.emit("status_update", self.get_status())
 
     def _emit_log(self, source, message):
         """Push a log message to all connected clients and write to file."""
@@ -284,6 +292,24 @@ class ScenarioManager:
         thread = threading.Thread(target=_run, daemon=True)
         thread.start()
 
+    @staticmethod
+    def build_scenario_cmd(scenario, use_fake_hardware):
+        """Senaryo launch komutunu sim/gerçek moduna göre kurar.
+
+        İki farklı biçim var, çünkü launch dosyaları farklı:
+          sim_flag : "only_sim:=true|false"   (boolean bayrak)
+          mode_arg : "mode:=sim|real"         (adlandırılmış mod)
+        gemini_pick_place ikincisini kullanıyor - tek argümanı mode ve
+        boolean kabul etmiyor (choices=["sim", "real"]).
+        """
+        cmd = scenario["scenario_cmd"]
+        if scenario.get("sim_flag"):
+            cmd += f" {scenario['sim_flag']}:={'true' if use_fake_hardware else 'false'}"
+        if scenario.get("mode_arg"):
+            arg_name, fake_value, real_value = scenario["mode_arg"]
+            cmd += f" {arg_name}:={fake_value if use_fake_hardware else real_value}"
+        return cmd
+
     def confirm_robot_ready(self):
         """User confirms robot is ready → start the scenario launch."""
         def _run():
@@ -299,10 +325,8 @@ class ScenarioManager:
 
                 self._emit_log("SYSTEM", "✅ Robot confirmation received. Starting scenario...")
 
-                scenario_cmd = scenario["scenario_cmd"]
-                if scenario.get("sim_flag"):
-                    sim_value = "true" if self.use_fake_hardware else "false"
-                    scenario_cmd += f" {scenario['sim_flag']}:={sim_value}"
+                scenario_cmd = self.build_scenario_cmd(
+                    scenario, self.use_fake_hardware)
 
                 self.scenario_process = self._start_process(scenario_cmd, "SENARYO")
                 self.scenario_status = "running"
@@ -310,16 +334,124 @@ class ScenarioManager:
 
                 self._emit_log("SYSTEM", f"🚀 {scenario['label']} is running!")
 
+                # Serbest metinle görev alan senaryolarda komut penceresini aç.
+                if scenario.get("command_prompt"):
+                    self.socketio.emit("command_prompt", {
+                        "scenario": self.current_scenario,
+                        "label": scenario["label"],
+                    })
+
         thread = threading.Thread(target=_run, daemon=True)
         thread.start()
 
+    # --------------------------------------------------------------------
+    # Serbest metin görev komutu (/gemini/command)
+    # --------------------------------------------------------------------
+
+    COMMAND_TOPIC = "/gemini/command"
+    COMMAND_TIMEOUT_SEC = 180
+
+    @staticmethod
+    def build_command_publish_cmd(text):
+        """Kullanıcının yazdığı metni güvenli bir `ros2 topic pub` komutuna çevirir.
+
+        İKİ ayrı kaçış katmanı var ve ikisi de gerekli:
+
+        1. YAML: değer tek tırnak içinde veriliyor, dolayısıyla metindeki her
+           tek tırnak İKİYE katlanmalı ('' YAML'da tek tırnak demektir). Aksi
+           halde "toolkit's" yazan bir komut YAML'ı ortasından kapatır.
+        2. Kabuk: komut /bin/bash üzerinden çalıştığı için tüm YAML yükü
+           shlex.quote'tan geçer; böylece $, `, " ve boşluklar kabuk tarafından
+           yorumlanmaz.
+
+        Satır sonları tek boşluğa indiriliyor: YAML'ın tek tırnaklı skaleri çok
+        satırlıyı katlama kurallarıyla ele alıyor ve metin sessizce değişiyor.
+        """
+        normalized = " ".join(str(text).split())
+        yaml_payload = "{data: '" + normalized.replace("'", "''") + "'}"
+        return (
+            f"ros2 topic pub --once {ScenarioManager.COMMAND_TOPIC} "
+            f"std_msgs/String {shlex.quote(yaml_payload)}"
+        ), normalized
+
+    def publish_command(self, text):
+        """Görev komutunu /gemini/command'a yayınlar (ayrı thread'de)."""
+        cmd, normalized = self.build_command_publish_cmd(text)
+        if not normalized:
+            self._emit_log("SYSTEM", "❌ Empty command, nothing published.")
+            self.socketio.emit("command_result", {
+                "ok": False, "message": "Command is empty.",
+            })
+            return
+
+        def _run():
+            if self.scenario_status != "running":
+                self._emit_log("SYSTEM",
+                    "⚠️ Scenario is not running; publishing anyway — the command "
+                    "will wait until a subscriber appears.")
+
+            self._emit_log("SYSTEM", f"💬 Task command: {normalized}")
+            self._emit_log("SYSTEM", f"🚀 {cmd}")
+            # `--once` Humble'da varsayılan olarak -w 1 demek: eşleşen bir abone
+            # bulunana kadar BEKLER. Yani düğümler henüz kalkmadıysa mesaj
+            # kaybolmaz, komut bekler - bu yüzden zaman aşımı şart, yoksa
+            # düğüm hiç gelmezse süreç sonsuza kadar asılı kalır.
+            full_cmd = (
+                f"source /opt/ros/humble/setup.bash && "
+                f"source {WORKSPACE_SETUP} && {cmd}"
+            )
+            my_env = os.environ.copy()
+            my_env.pop("QT_QPA_PLATFORM_PLUGIN_PATH", None)
+            try:
+                result = subprocess.run(
+                    full_cmd, shell=True, executable="/bin/bash", env=my_env,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    text=True, timeout=self.COMMAND_TIMEOUT_SEC,
+                )
+            except subprocess.TimeoutExpired:
+                self._emit_log("SYSTEM",
+                    f"❌ No subscriber on {self.COMMAND_TOPIC} within "
+                    f"{self.COMMAND_TIMEOUT_SEC} s — command NOT delivered. "
+                    "Is gemini_pick_place running?")
+                self.socketio.emit("command_result", {
+                    "ok": False,
+                    "message": f"No subscriber on {self.COMMAND_TOPIC}. "
+                               "Command was not delivered.",
+                })
+                return
+
+            output = (result.stdout or "").strip()
+            for line in output.splitlines():
+                if line.strip():
+                    self._emit_log("COMMAND", line.rstrip())
+
+            if result.returncode == 0:
+                self._emit_log("SYSTEM", "✅ Task command published.")
+                self.socketio.emit("command_result", {
+                    "ok": True, "message": "Command published to "
+                                           f"{self.COMMAND_TOPIC}.",
+                })
+            else:
+                self._emit_log("SYSTEM",
+                    f"❌ Publish failed (exit {result.returncode}).")
+                self.socketio.emit("command_result", {
+                    "ok": False,
+                    "message": f"ros2 topic pub failed (exit {result.returncode}). "
+                               "See the log panel.",
+                })
+
+        threading.Thread(target=_run, daemon=True).start()
+
     def get_status(self):
         """Get current status as dict."""
+        scenario = self.SCENARIOS.get(self.current_scenario, {})
         return {
             "hil_status": self.hil_status,
             "scenario_status": self.scenario_status,
             "current_scenario": self.current_scenario,
             "robot_confirmed": self.robot_confirmed,
+            # Bu senaryo serbest metin komut alıyor mu (Send Command butonu)
+            "command_prompt": bool(scenario.get("command_prompt")),
         }
 
 
@@ -930,6 +1062,10 @@ def handle_start_scenario(data):
 @socketio.on("confirm_robot")
 def handle_confirm_robot():
     scenario_mgr.confirm_robot_ready()
+
+@socketio.on("send_command")
+def handle_send_command(data):
+    scenario_mgr.publish_command((data or {}).get("text", ""))
 
 @socketio.on("stop_all")
 def handle_stop_all():

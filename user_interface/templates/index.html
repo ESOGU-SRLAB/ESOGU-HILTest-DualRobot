@@ -102,6 +102,12 @@
             <span class="status-value" id="active-scenario-text">—</span>
         </div>
 
+        <!-- Yalnızca serbest metin komut alan senaryolarda görünür -->
+        <button class="command-btn" id="btn-send-command" style="display:none;"
+                onclick="openCommandModal()">
+            💬 Send Command
+        </button>
+
     </div>
 
     <!-- ===== CONFIRM ROBOT READY BANNER ===== -->
@@ -111,6 +117,42 @@
         <button class="confirm-btn" id="btn-confirm" onclick="confirmRobot()">
             ✅ Robot is Ready — Start Scenario
         </button>
+    </div>
+
+    <!-- ===== TASK COMMAND MODAL (/gemini/command) ===== -->
+    <div class="modal-overlay" id="command-modal" onclick="onCommandOverlayClick(event)">
+        <div class="modal-box" role="dialog" aria-modal="true"
+             aria-labelledby="command-modal-title">
+            <div class="modal-header">
+                <h3 id="command-modal-title">💬 Task Command</h3>
+                <button class="modal-close" onclick="closeCommandModal()"
+                        title="Close (Esc)">✕</button>
+            </div>
+
+            <p class="modal-desc">
+                Describe the pick and place task in plain English. Gemini Robotics
+                ER 2 turns it into a pick target and a place target.
+            </p>
+
+            <textarea id="command-text" class="modal-textarea" rows="5" spellcheck="false"
+                      placeholder="There is a thing on the conveyor belt. I want you to pick that up and place it in one of the empty compartments in the toolkit's top row"></textarea>
+
+            <div class="modal-hint">
+                Published to <code>/gemini/command</code>. Ctrl+Enter also confirms.
+            </div>
+
+            <div class="modal-status" id="command-status"></div>
+
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeCommandModal()">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" id="btn-command-confirm"
+                        onclick="sendCommand()">
+                    ✅ Confirm
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ===== CAMERA FEEDS ===== -->

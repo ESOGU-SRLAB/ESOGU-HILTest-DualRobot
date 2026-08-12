@@ -11,7 +11,11 @@
   qos_profile: SENSOR_DATA  # Default is a default-constructed QoS with appropriate queue size
 
 - ros_topic_name: "depth/image"
-  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
+  # DİKKAT: rgbd_camera sensörü iki ayrı görüntü yayınlar - ".../image" RGB,
+  # ".../depth_image" derinlik. Burada RGB olan bağlıydı, yani /sim/depth/image
+  # rgb8 taşıyordu ve derinlik tüketen her şey (er_image render'ı dahil) sessizce
+  # boş kalıyordu. Kawasaki bloğu (aşağıda) baştan doğruydu.
+  gz_topic_name: "/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/depth_image"
   ros_type_name: "sensor_msgs/msg/Image"
   gz_type_name: "gz.msgs.Image"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
@@ -31,7 +35,12 @@
 # `lazy: true` made it worse: with nobody subscribed to /sim/clock the bridge did not
 # even publish.
 - ros_topic_name: "/clock"
-  gz_topic_name: "/clock"
+  # DİKKAT: gz-sim iki saat topic'i tanıtır - "/clock" ve "/world/<ad>/clock".
+  # Bu kurulumda "/clock" TANITILI AMA SESSİZ; gerçekte yayın yapan
+  # "/world/cem/clock". Sessiz olana bağlıydı, dolayısıyla ROS /clock'a hiç
+  # mesaj gelmiyordu ve use_sim_time:=true olan HER düğümün ROS timer'ları
+  # 0'da donuyordu (ölçüldü: /clock 0 mesaj, gz /world/cem/clock sim=345 s).
+  gz_topic_name: "/world/cem/clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"
   gz_type_name: "gz.msgs.Clock"
   subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default

@@ -34,6 +34,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
+    ExecuteProcess,
     IncludeLaunchDescription,
     GroupAction,
     LogInfo,
@@ -623,6 +624,39 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
+    # === VAKUMLA TUTMA KÖPRÜSÜ (ROS → Gazebo) ===
+    # whole_cell_sim.urdf.xacro'daki DetachableJoint eklentisi bu iki gz
+    # topic'ini dinliyor. Tek yönlü ([ değil ]): ROS'tan Gazebo'ya.
+    # Gerçek robotta bu köprü hiç çalışmaz; gemini_robotics_ros yine de aynı
+    # ROS topic'lerine yayınlar ve kimse dinlemediği için zararsızdır.
+    vacuum_attach_bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        name="vacuum_attach_bridge",
+        arguments=[
+            "/vacuum/attach@std_msgs/msg/Empty]gz.msgs.Empty",
+            "/vacuum/detach@std_msgs/msg/Empty]gz.msgs.Empty",
+        ],
+        output="screen",
+    )
+
+    # DetachableJoint BAŞLANGIÇTA BAĞLI gelir: child_model dünyada belirir
+    # belirmez eklemi kurar (ölçüldü, 11 Ağu 2026). RedCube 22. saniyede spawn
+    # edildiğine göre, hemen ardından bir kez detach yayınlanmazsa kutu daha
+    # ilk hareketten itibaren emme kabına kaynaklı olur ve kolun peşinden
+    # sürüklenir. gz topic doğrudan kullanılıyor: köprünün o ana kadar ayağa
+    # kalkmış olmasına bağlı kalmamak için.
+    initial_detach = TimerAction(
+        period=26.0,  # conveyor_spawn (22 s) + spawn'ın oturması
+        actions=[
+            ExecuteProcess(
+                cmd=["gz", "topic", "-t", "/vacuum/detach",
+                     "-m", "gz.msgs.Empty", "-p", ""],
+                output="screen",
+            ),
+        ],
+    )
+
     # Gazebo → ROS TF bridge (diff_drive plugin odom→ota_base_link TF yayınlıyor)
     gz_tf_bridge = Node(
         package="ros_gz_bridge",
@@ -744,7 +778,22 @@ def launch_setup(context, *args, **kwargs):
 
     # === KONVEYÖR BELT (Gazebo plugin'li, hareketli) ===
     # URDF'deki statik conveyor_belt linki devre dışı; aynı pozisyonda plugin'li SDF spawn edilir.
-    # Pozisyon: STL mesh origin offset'i telafi etmek için x=0.7422, y=0.0966
+    #
+    # POZİSYON REFERANSI: my_robot_cell_macro.xacro'daki conveyor_belt linki
+    # (gerçek dünyada ölçülmüş konum). IFRA paketinin kendi STL'i farklı bir
+    # modeldir ve kendi koordinatlarında duruyordu; iki mesh dikey ışınla
+    # ölçülüp bant yüzeyleri üst üste getirildi:
+    #
+    #   bant yüzeyi        URDF (gerçek)      IFRA (eski)      fark
+    #   x merkez             648.75 mm         741.0 mm      -92.0 mm
+    #   y merkez              58.00 mm         110.0 mm      -52.0 mm
+    #   üst yüzey z          851.76 mm         843.33 mm      +8.4 mm
+    #   bant uzunluğu        956.0 mm          956.0 mm         0    (aynı konveyör)
+    #
+    # Eski spawn (0.7422, 0.0966, 0.0) IFRA STL'inin kendi origin offset'ini
+    # telafi ediyordu, gerçek konumu değil. Yeni değerler = eski + yukarıdaki fark.
+    # SDF'in belt_moving z'si (0.8434) mesh'ten türetildiği için z kaymasıyla
+    # birlikte taşınır; bant çarpışma yüzeyi 851.8 mm'ye oturur.
     conveyor_spawn = TimerAction(
         period=22.0,  # Gazebo(0) + sim spawn(10) + robot spawn buffer
         actions=[
@@ -752,13 +801,18 @@ def launch_setup(context, *args, **kwargs):
                 package="ros_gz_sim",
                 executable="create",
                 arguments=[
-                    "-world", "ifarlab",
+                    # Dünya adı SDF'ten gelir: mobile_manipulator_description/worlds/
+                    # ifarlab.sdf içinde <world name="cem">. Dosya adı "ifarlab" olsa da
+                    # dünya adı "cem"; burada "ifarlab" yazılırsa /world/ifarlab/create
+                    # servisi hiç var olmaz ve spawn "timed out" ile sessizce düşer.
+                    # Robot spawn'ı zaten "-world cem" kullanıyor (yukarıda).
+                    "-world", "cem",
                     "-file", os.path.join(_conveyor_pkg, "sdf", "conveyor.sdf"),
                     "-name", "conveyor",
                     "-allow_renaming", "false",
-                    "-x", "0.7422",
-                    "-y", "0.0966",
-                    "-z", "0.0",
+                    "-x", "0.6502",
+                    "-y", "0.0446",
+                    "-z", "0.0084",
                 ],
                 output="screen",
             ),
@@ -766,12 +820,19 @@ def launch_setup(context, *args, **kwargs):
                 package="ros_gz_sim",
                 executable="create",
                 arguments=[
-                    "-world", "ifarlab",
+                    # Dünya adı SDF'ten gelir: mobile_manipulator_description/worlds/
+                    # ifarlab.sdf içinde <world name="cem">. Dosya adı "ifarlab" olsa da
+                    # dünya adı "cem"; burada "ifarlab" yazılırsa /world/ifarlab/create
+                    # servisi hiç var olmaz ve spawn "timed out" ile sessizce düşer.
+                    # Robot spawn'ı zaten "-world cem" kullanıyor (yukarıda).
+                    "-world", "cem",
                     "-file", os.path.join(_conveyor_pkg, "sdf", "RedCube.sdf"),
                     "-name", "RedCube",
                     "-allow_renaming", "true",
-                    "-x", "0.75",
-                    "-y", "0.1",
+                    # Konveyör kaydırıldı; kutu da yeni bant merkezine bırakılır
+                    # (bant görsel merkezi x=0.6490, y=0.0580; z serbest düşer).
+                    "-x", "0.649",
+                    "-y", "0.058",
                     "-z", "1",
                 ],
                 output="screen",
@@ -945,8 +1006,14 @@ def launch_setup(context, *args, **kwargs):
         # 2. Simülasyon (10 sn sonra - unified URDF, tek spawn)
         delayed_sim_spawn_and_nodes,
 
+        # Vakumla tutma köprüsü (ROS → Gazebo DetachableJoint)
+        vacuum_attach_bridge,
+
         # 3. Konveyör belt (22 sn sonra - Gazebo + robot spawn tamamlanınca)
         conveyor_spawn,
+
+        # 3b. RedCube spawn olur olmaz eklem kurulduğu için bir kez ayır (26 sn)
+        initial_detach,
 
         # 4. Sim MoveIt (25 sn sonra - kendi GroupAction ile /sim namespace)
         # Sadece digital_twin=true ise eklenecek.

@@ -352,7 +352,9 @@ def launch_setup(context, *args, **kwargs):
         os.path.dirname(os.path.dirname(_conveyor_pkg)), 'lib'
     )
     # URDF'deki statik conveyor_belt linki devre dışı; aynı pozisyonda plugin'li SDF spawn edilir.
-    # Pozisyon: STL mesh origin offset'i telafi etmek için x=0.7422, y=0.0966
+    # Pozisyon referansı: my_robot_cell_macro.xacro'daki conveyor_belt linki
+    # (gerçek dünyada ölçülmüş konum). Bant yüzeyleri dikey ışınla hizalandı:
+    # x -92.0 mm, y -52.0 mm, z +8.4 mm (ayrıntı: hil_test_whole_unified.launch.py).
     conveyor_spawn = TimerAction(
         period=12.0,  # Gazebo ve robot spawn tamamlanana kadar bekle
         actions=[
@@ -364,9 +366,9 @@ def launch_setup(context, *args, **kwargs):
                     "-file", os.path.join(_conveyor_pkg, "sdf", "conveyor.sdf"),
                     "-name", "conveyor",
                     "-allow_renaming", "false",
-                    "-x", "0.7422",
-                    "-y", "0.0966",
-                    "-z", "0.0",
+                    "-x", "0.6502",
+                    "-y", "0.0446",
+                    "-z", "0.0084",
                 ],
                 output="screen",
             ),

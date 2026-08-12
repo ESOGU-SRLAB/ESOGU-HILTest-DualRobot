@@ -67,6 +67,13 @@ socket.on("status_update", (data) => {
     } else {
         banner.classList.remove("visible");
     }
+
+    // "Send Command" yalnızca serbest metin komut alan senaryo çalışırken.
+    // Senaryo durunca gizlenir; duran bir düğüme komut yollamanın anlamı yok.
+    const sendBtn = document.getElementById("btn-send-command");
+    const canSend = data.command_prompt && data.scenario_status === "running";
+    if (sendBtn) sendBtn.style.display = canSend ? "inline-flex" : "none";
+    if (!canSend) closeCommandModal();
 });
 
 // ==============================================================================
@@ -145,6 +152,78 @@ function emergencyStop() {
         socket.emit("stop_all");
     }
 }
+
+// ==============================================================================
+// Task Command Modal (/gemini/command)
+// ==============================================================================
+
+// Son gönderilen komut: pencere yeniden açıldığında kutuda hazır bekler,
+// çünkü aynı görev çoğu zaman ufak bir değişiklikle tekrar deneniyor.
+let lastCommandText = "";
+
+function openCommandModal() {
+    const modal = document.getElementById("command-modal");
+    const box = document.getElementById("command-text");
+    setCommandStatus("", "");
+    if (lastCommandText) box.value = lastCommandText;
+    modal.classList.add("visible");
+    // Odak ve imleç sona: kullanıcı hemen yazmaya/düzeltmeye başlayabilsin.
+    setTimeout(() => {
+        box.focus();
+        box.setSelectionRange(box.value.length, box.value.length);
+    }, 50);
+}
+
+function closeCommandModal() {
+    const modal = document.getElementById("command-modal");
+    if (modal) modal.classList.remove("visible");
+}
+
+function onCommandOverlayClick(event) {
+    // Yalnızca karartılmış alana tıklanınca kapat; kutunun içine tıklamak
+    // (metin seçmek dahil) kapatmamalı.
+    if (event.target.id === "command-modal") closeCommandModal();
+}
+
+function setCommandStatus(message, kind) {
+    const el = document.getElementById("command-status");
+    el.textContent = message;
+    el.className = `modal-status${kind ? " " + kind : ""}`;
+}
+
+function sendCommand() {
+    const text = document.getElementById("command-text").value.trim();
+    if (!text) {
+        setCommandStatus("Please write the task first.", "error");
+        return;
+    }
+    lastCommandText = text;
+    setCommandStatus("Publishing… waiting for a subscriber on /gemini/command.", "pending");
+    document.getElementById("btn-command-confirm").disabled = true;
+    socket.emit("send_command", { text: text });
+}
+
+socket.on("command_prompt", () => {
+    openCommandModal();
+});
+
+socket.on("command_result", (data) => {
+    document.getElementById("btn-command-confirm").disabled = false;
+    if (data.ok) {
+        setCommandStatus("✅ " + data.message, "ok");
+        // Başarılıysa pencereyi kapat, ama sonucu okuyacak kadar bekle.
+        setTimeout(closeCommandModal, 1200);
+    } else {
+        setCommandStatus("❌ " + data.message, "error");
+    }
+});
+
+document.addEventListener("keydown", (event) => {
+    const modal = document.getElementById("command-modal");
+    if (!modal || !modal.classList.contains("visible")) return;
+    if (event.key === "Escape") closeCommandModal();
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) sendCommand();
+});
 
 // ==============================================================================
 // Chart.js — Live Joint State Graphs

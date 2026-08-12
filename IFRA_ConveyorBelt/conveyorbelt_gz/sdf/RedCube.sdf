@@ -9,39 +9,59 @@
       <pose>0 0 0 0 0 0</pose>
       <self_collide>false</self_collide>
 
+      <!-- Kutu: 0.14 (x) x 0.083 (y) x 0.03 (z) m, 0.1 kg.
+           I = m/12 * (a^2 + b^2) -->
       <inertial>
+        <pose>0 0 -0.0075 0 0 0</pose>
         <mass>0.1</mass>
         <inertia>
-          <ixx>0.000015</ixx>
+          <ixx>0.000064908</ixx>
           <ixy>0.0</ixy>
           <ixz>0.0</ixz>
-          <iyy>0.000015</iyy>
+          <iyy>0.000170833</iyy>
           <iyz>0.0</iyz>
-          <izz>0.000015</izz>
+          <izz>0.000220742</izz>
         </inertia>
       </inertial>
 
+      <!-- Eskiden RedCube.dae kullanılıyordu: ham mesh 2x2x2 birim, COLLADA
+           visual_scene node matrisinde 0.015 ölçek var, yani gerçekte 3 cm
+           küp. Ölçüyü tam tutturmak için mesh yerine box primitifi kullanılıyor
+           (mesh'e non-uniform <scale> vermek, yükleyicinin node matrisini
+           uygulamasına bağlı kalırdı; box'ta böyle bir belirsizlik yok).
+
+           z pose'u -0.0075: ham mesh z ekseninde -1.5..+0.5 aralığındaydı,
+           yani 0.015 ölçekle -0.0225..+0.0075 - merkezi link orijininin 7.5 mm
+           altında. Aynı ofset korunuyor ki spawn yüksekliği ve konveyöre oturma
+           davranışı değişmesin. -->
       <collision name="RedCube_collision">
 
-        <pose>0 0 0 0 0 0</pose>
+        <pose>0 0 -0.0075 0 0 0</pose>
 
         <geometry>
-          <mesh>
-            <uri>model://conveyorbelt_gz/meshes/objects/RedCube.dae</uri>
-          </mesh>
+          <box>
+            <size>0.14 0.083 0.03</size>
+          </box>
         </geometry>
 
       </collision>
 
       <visual name="RedCube_visual">
 
-        <pose>0 0 0 0 0 0</pose>
+        <pose>0 0 -0.0075 0 0 0</pose>
 
         <geometry>
-          <mesh>
-            <uri>model://conveyorbelt_gz/meshes/objects/RedCube.dae</uri>
-          </mesh>
+          <box>
+            <size>0.14 0.083 0.03</size>
+          </box>
         </geometry>
+
+        <!-- DAE'nin RED-material'ı düştüğü için renk burada verilmeli -->
+        <material>
+          <ambient>0.8 0.05 0.05 1</ambient>
+          <diffuse>0.9 0.06 0.06 1</diffuse>
+          <specular>0.2 0.05 0.05 1</specular>
+        </material>
 
       </visual>
 

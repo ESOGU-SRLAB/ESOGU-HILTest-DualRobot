@@ -157,6 +157,41 @@
         </ros>
       </plugin>
     </gazebo>
+
+    <!-- ============ VAKUMLA TUTMA (DetachableJoint) ============
+         Gazebo'da vakum/suction eklentisi YOK (gz-sim 8.14'te böyle bir sistem
+         bulunmuyor). Parçanın gerçekten taşınabilmesi için tek yol, emme kabı
+         ile parça arasında koparılabilir sabit bir eklem kurmak.
+
+         Bağ, attach mesajının geldiği ANDAKİ göreli pozla kurulur - yani
+         mesajı kap parçaya değdiğinde göndermek gerekir, önce değil.
+
+         ÖLÇÜLDÜ (11 Ağu 2026, ayrı bir test dünyasında):
+           * eklenti BAŞLANGIÇTA BAĞLI gelir; child_model dünyada belirir
+             belirmez eklemi kurar. Bu yüzden launch, RedCube spawn edildikten
+             sonra bir kez detach yayınlar - yoksa kutu daha ilk hareketten
+             itibaren kavrayıcıya kaynaklı olur ve peşi sıra sürüklenir.
+           * detach sonrası yeniden attach ÇALIŞIR (test: yük, taşınan
+             tutucuyu 1.000 m peşinden izledi).
+
+         child_model SDF'te sabit bir isimdir: başka bir parça eklenecekse bu
+         blok o parça için de tekrarlanmalı. -->
+    <xacro:if value="$(optenv ENV_USE_VACUUM_GRIPPER false)">
+      <gazebo>
+        <plugin filename="gz-sim-detachable-joint-system"
+                name="gz::sim::systems::DetachableJoint">
+          <parent_link>$(arg tf_prefix)ur10e_suction_cup</parent_link>
+          <child_model>RedCube</child_model>
+          <child_link>RedCube</child_link>
+          <attach_topic>/vacuum/attach</attach_topic>
+          <detach_topic>/vacuum/detach</detach_topic>
+          <output_topic>/vacuum/attached</output_topic>
+          <!-- RedCube conveyor launch'ı tarafından SONRADAN spawn ediliyor;
+               o ana kadar her iterasyonda uyarı basmasın. -->
+          <suppress_child_warning>true</suppress_child_warning>
+        </plugin>
+      </gazebo>
+    </xacro:if>
   </xacro:if>
 
 </robot>
