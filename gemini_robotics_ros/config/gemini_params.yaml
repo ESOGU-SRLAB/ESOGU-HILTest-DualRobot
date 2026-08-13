@@ -95,8 +95,10 @@
     # (gerçek SRDF: <chain base_link="ur10e_table" tip_link="ur10e_suction_cup"/>)
     end_effector: ""
     planner_id: "RRTConnectkConfigDefault"
-    max_velocity: 0.2
-    max_acceleration: 0.2
+    # Eklem limitlerinin ORANI (0-1), mutlak hız değil.
+    # 13 Ağu 2026: gerçek robota geçiş için 0.2 -> 0.05 düşürüldü.
+    max_velocity: 0.05
+    max_acceleration: 0.05
     planning_attempts: 10
     planning_time: 10.0
 
@@ -248,7 +250,28 @@
     # aday denenir (üst sıra gözü, tabanı 0.938 m, yukarı açık - MoveIt onu
     # geçerli buluyor).
     validate_targets: true
-    ik_timeout_sec: 3.0
+    # ik_timeout_sec: doğrulamanın MoveIt'e verdiği IK bütçesi. Bu, doğrudan
+    # görev süresidir - doğrulama yüzlerce sorgu yapıyor ve GEÇERSİZ bir poz
+    # bütçenin TAMAMINI yakıyor.
+    #
+    # ÖLÇÜLDÜ (13 Ağu 2026, canlı hücre):
+    #   bütçe |  geçerli poz  |  geçersiz poz
+    #   ------|---------------|---------------
+    #   3.0 s |     11 ms     |    3004 ms
+    #   1.0 s |     26 ms     |    1005 ms
+    #   0.5 s |      5 ms     |      56 ms     <-- taban; altına inmek kazandırmıyor
+    #
+    # Geçerli poz her bütçede milisaniyelerde çözülüyor; ödenen süre yalnızca
+    # RED cevabının maliyeti. 0.5 s'de çözücü tek geçiş yapıyor ve 56 ms'de
+    # dönüyor.
+    #
+    # Düşürmek cevabı DEĞİŞTİRMİYOR: 55 poz (üst sıra ızgarası + tavanlı
+    # raflar + konveyör + erişilemez uç) 3.0 ve 0.5 ile karşılaştırıldı,
+    # 0 fark - ama toplam süre 63.6 s -> 1.7 s (38x).
+    #
+    # DİKKAT: daha da düşürmek kazandırmaz (taban 56 ms) ama zor-ama-geçerli
+    # bir pozda çözücüye yeniden deneme hakkı bırakmaz. 0.5'in altına inme.
+    ik_timeout_sec: 0.5
 
     # Yaklaşma mesafesi UYARLANIR: approach_distance ilk denenir, çarpışırsa
     # sırayla küçültülür. Tek sabit değer iki yere birden uymuyor - bantta
@@ -270,6 +293,48 @@
     # yukarıdan inişle 15 cm'de geçerli. 0 = denetimi kapat.
     place_max_normal_tilt_deg: 45.0
 
+    # BIRAKMA NOKTASINI YÜZEY BOYUNCA KAYDIRARAK ARAMA
+    #
+    # ER gözü doğru buluyor ama noktayı gözün ortasına koymuyor. 13 Ağu 2026:
+    # üst göz için (0.925, 1.659) döndü; gözün y sınırları 1.519/1.691, yani
+    # ortası 1.605 - nokta 54 mm kaçık. Taşınan kutu 83 mm geniş ve kabın
+    # altında ortalanıyor, dolayısıyla 1.659 ± 0.0415 -> 1.7005: bölme
+    # duvarının 9.5 mm İÇİNE giriyor. Log: ur10e_stackable_bin<->gemini_payload.
+    # Prompt'a "very middle point" yazmak bunu düzeltmedi.
+    #
+    # Bu yüzden doğrulama, ER'nin noktası çarpışırsa yüzey boyunca (normale DİK
+    # düzlemde) içten dışa arıyor ve parçanın sığdığı en yakın noktayı seçiyor.
+    # Yalnızca BIRAKMA için: kavramada kaydırmak kabı parçanın yanına indirir.
+    #
+    # Yarıçaplar sıralanır; boş liste aramayı kapatır. Maliyet, yalnızca ER'nin
+    # noktası tutmadığında ödenen birkaç ek IK çağrısıdır.
+    place_search_radii_m: [0.02, 0.04, 0.06]
+    place_search_directions: 8
+
+    # BIRAKMA YAKLAŞMA MESAFELERİ - kavramanınkinin TERSİ sırada, büyükten.
+    #
+    # Doğrulama bir DURUMU denetler (IK), oysa bu arıza YOLDAydı. 13 Ağu 2026,
+    # nokta gözün ortasına (0.924, 1.603) çekildikten SONRA ölçüldü:
+    #
+    #   d      kutu altı   IK   move_group planı
+    #   22 cm    1.129      1    başarılı
+    #   20 cm    1.109      1    başarılı
+    #   18 cm    1.089      1    BAŞARISIZ (-2)
+    #   15 cm    1.059      1    BAŞARISIZ (-2)
+    #
+    # Sınır rafın üst kenarında: 1.095. Kutunun altı bunu geçmezse kutu
+    # hedefte zaten gözün içindedir ve planlayıcı onu YANDAN sokmak zorunda
+    # kalır - move_group "Computed path is not valid. Invalid states at index
+    # locations: [282 283 284] out of 288" diyor, yani geçersiz durumlar yolun
+    # SONUNDA. IK her mesafede "geçerli" dediği için doğrulama bunu göremiyor.
+    #
+    # 11 Ağu'da bir koşunun 15 cm ile tutması ŞANSTI: yanal giriş yolu bazen
+    # çarpışmadan geçiyor. Büyükten başlamak bunu belirlenime çeviriyor.
+    #
+    # BİLİNEN SINIR: doğrulama yol denetlemiyor. Liste, hedefin bulunduğu
+    # yapının üstünü geçecek kadar büyük bir değerle BAŞLAMALI.
+    place_approach_candidates: [0.25, 0.22, 0.20, 0.18, 0.15, 0.12, 0.10, 0.08, 0.06]
+
     # Bırakmadan önce place_clearance yüksekliğine inilsin mi.
     #
     # false (varsayılan): parça APPROACH_PLACE pozundan, yani hedefin
@@ -280,7 +345,29 @@
     # true: klasik davranış. Gözün ağzı gövdeyi alacak kadar genişse ya da
     #   parçayı yavaşça bırakmak gerekiyorsa açın; approach_distance'ı da
     #   küçültmek gerekebilir.
-    descend_before_release: false
+    # 13 Ağu 2026: AÇILDI. Yukarıdaki gerekçe artık geçerli değil, çünkü
+    # yaklaşma pozu place_approach_candidates ile yapının ÜSTÜNE taşındı -
+    # iniş de artık gövdeyi göze sokmaya çalışan bir hareket değil, açık
+    # üstten dik bir iniş. ÖLÇÜLDÜ (/compute_cartesian_path, kutu kavrayıcıda,
+    # nokta gözün ortasında): 25/22/20 cm -> 5/8/10 cm inişlerin DOKUZU da
+    # fraction 1.000. Kapalı bırakılırsa parça 25 cm'den düşerdi.
+    descend_before_release: true
+
+    # KARTEZYEN YOL EŞİKLERİ - ikisi AYRI, çünkü yarım kalmanın bedeli farklı.
+    #
+    # DİKKAT: pymoveit2, fraction >= eşik olduğunda KISMİ yolu YÜRÜTÜR ve
+    # başarı bildirir. Yani eşik, "ne kadar eksik kalmasına razıyız" demektir.
+    #
+    # cartesian_min_fraction (TOUCH, LIFT, RETREAT): yüksek kalmalı. TOUCH
+    #   yarıda kalırsa kap parçaya hiç değmez ve boşluğu kavrarız.
+    # release_min_fraction (yalnız iniş): gevşek. Yaklaşma pozu artık yapının
+    #   ÜSTÜNDE ve ayrıca doğrulanmış, yani parça oradan bırakılsa bile hedefin
+    #   üstündedir. İniş sadece düşme yüksekliğini azaltıyor.
+    #   13 Ağu 2026: kartezyen planın %29'u görevi düşürmüştü, oysa ulaşılan
+    #   nokta bırakmak için gayet uygundu. İniş hiç olmazsa da görev ölmez -
+    #   parça yaklaşma pozundan bırakılır ve log bunu söyler.
+    cartesian_min_fraction: 0.99
+    release_min_fraction: 0.2
 
     # --- VGC10 vakum kavrayıcı ---
     # vacuum | none. VGC10'da aktüe edilen eklem yoktur; kavrama Modbus
@@ -292,7 +379,12 @@
     vacuum_use_both_channels: true
     # Sim'de VGC10 sürücüsü çalışmaz, durum mesajı hiç gelmez -> false bırakın.
     # Gerçek robotta true yapın: o zaman "tuttu mu" gerçekten doğrulanır.
-    vacuum_require_confirmation: false
+    # 13 Ağu 2026: AÇILDI. Sürücü (vgc10_control) gerçek hücrede ayakta ve
+    # /OnRobotVGInput yayınlıyor, yani ölçülen vakum artık gerçekten okunabilir.
+    # Kapalıyken "[GRASPED]" satırı sadece "komut yayınlandı" demekti - kol boş
+    # kavrayıcıyla yola devam ederdi. SİM'E DÖNERSEN false yap: orada VGC10
+    # sürücüsü yok, durum mesajı hiç gelmez ve her kavrama başarısız sayılır.
+    vacuum_require_confirmation: true
     vacuum_confirm_pct: 15.0
     vacuum_timeout_sec: 3.0
 

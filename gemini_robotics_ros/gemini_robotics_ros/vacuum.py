@@ -25,9 +25,22 @@ from std_msgs.msg import Empty
 from vgc10_msgs.msg import OnRobotVGInput, OnRobotVGOutput
 
 
-MODE_RELEASE = 0
-MODE_GRIP = 1
-MODE_IDLE = 2
+# DİKKAT: bunlar OnRobot dokümanındaki 0/1/2 DEĞİL, ÜST BAYTA KAYDIRILMIŞ
+# hâlleri. Sürücü (vgc10_control) rmca'yı ham register'ın üst baytı olarak
+# alıyor ve düz topluyor:
+#
+#     comModbusTcp.sendCommand:  reg_a = rmca + rvca
+#
+# Yani %60 vakumla tutmak 0x0100 + 60 = 0x013C demek - mesaj dokümanındaki
+# "0x014B = %75 grip" örneğiyle birebir aynı kodlama.
+#
+# 0/1/2 gönderilirse baseOnRobotVG.verifyCommand komutu REDDEDER ve hatayı
+# bildirmek için ROS1'den kalma rclpy.signal_shutdown'ı çağırır; o da rclpy'de
+# olmadığı için SÜRÜCÜ ÇÖKER (13 Ağu 2026, gerçek hücrede yaşandı:
+# AttributeError: module 'rclpy' has no attribute 'signal_shutdown').
+MODE_RELEASE = 0x0000
+MODE_GRIP = 0x0100
+MODE_IDLE = 0x0200
 
 # OnRobot dokümanı hedef vakumun %80'i aşmamasını söylüyor.
 MAX_VACUUM_PCT = 80

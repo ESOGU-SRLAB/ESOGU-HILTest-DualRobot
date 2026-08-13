@@ -180,7 +180,22 @@
       <gazebo>
         <plugin filename="gz-sim-detachable-joint-system"
                 name="gz::sim::systems::DetachableJoint">
-          <parent_link>$(arg tf_prefix)ur10e_suction_cup</parent_link>
+          <!-- DİKKAT: burası ur10e_suction_cup OLAMAZ.
+               URDF -> SDF çevriminde sabit eklemler ERİTİLİR: flange, tool0,
+               vacuum_gripper ve suction_cup ayrı link olarak Gazebo'ya hiç
+               girmez, hepsi wrist_3_link'in içine katılır. ÖLÇÜLDÜ
+               (13 Ağu 2026, `gz model -m whole_cell_sim`): koldaki son link
+               sim_ur10e_wrist_3_link, "suction" geçen tek bir link yok.
+
+               Eklenti parent_link'i bulamayınca eklemi HİÇ kurmuyor ve sessiz
+               kalıyor - belirtisi, /vacuum/attached'ın `gz topic -l` çıktısında
+               olmamasıdır (/vacuum/attach ve /vacuum/detach köprüden gelir, o
+               ikisinin varlığı eklentinin yüklendiğini GÖSTERMEZ).
+
+               wrist_3_link fiziksel olarak aynı gövde - kap ona zaten sabit
+               bağlı - ve bağ, attach mesajı geldiği andaki göreli pozla
+               kurulduğu için kutunun kaba göre konumu doğru kalır. -->
+          <parent_link>$(arg tf_prefix)ur10e_wrist_3_link</parent_link>
           <child_model>RedCube</child_model>
           <child_link>RedCube</child_link>
           <attach_topic>/vacuum/attach</attach_topic>

@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 
-import rclpy
+import logging
+
 from vgc10_msgs.msg import OnRobotVGInput
+
+# Mod, ham register'in UST BAYTI olarak verilir; comModbusTcp reg = rmca + rvca
+# diye topluyor. Yani %75 grip = 0x0100 + 75 = 0x014B (msg dokumanindaki ornek).
+MODE_RELEASE = 0x0000
+MODE_GRIP = 0x0100
+MODE_IDLE = 0x0200
+VALID_MODES = (MODE_RELEASE, MODE_GRIP, MODE_IDLE)
 
 
 class onrobotbaseVG():
@@ -25,15 +33,29 @@ class onrobotbaseVG():
         command.rvcb = max(0, command.rvcb)
         command.rvcb = min(255, command.rvcb)
 
-        # Verify that the selected mode number is available
-        if command.rmca not in [0x0000, 0x0100, 0x0200]:
-            rclpy.signal_shutdown(
-                "Select the mode number for ch A from" +
-                "0x0000 (release), 0x0100 (grip), or 0x0200 (idle).")
-        if command.rmcb not in [0x0000, 0x0100, 0x0200]:
-            rclpy.signal_shutdown(
-                "Select the mode number for ch B from" +
-                "0x0000 (release), 0x0100 (grip), or 0x0200 (idle).")
+        # Verify that the selected mode number is available.
+        #
+        # ESKİDEN rclpy.signal_shutdown() çağrılıyordu - o ROS1 (rospy) API'si,
+        # rclpy'de YOK. Sonuç: geçersiz bir mod gelince sürücü uyarmak yerine
+        # AttributeError ile ÖLÜYORDU ve gripper o anki durumunda kalıyordu
+        # (13 Ağu 2026, gerçek hücrede yaşandı). Bir sürücünün kötü bir mesaj
+        # yüzünden ölmesi, gerçek bir hücrede kabul edilemez.
+        #
+        # Artık geçersiz komut REDDEDİLİR: kanal boşta bırakılır (ne tutar ne
+        # bırakır, yani elindeki parçayı düşürmez) ve sebep loglanır.
+        for channel, mode in (("A", command.rmca), ("B", command.rmcb)):
+            if mode not in VALID_MODES:
+                logging.getLogger("onrobotbaseVG").error(
+                    "Ch %s icin gecersiz mod %s (%#06x). Gecerli degerler: "
+                    "0x0000 (release), 0x0100 (grip), 0x0200 (idle). "
+                    "DIKKAT: 0/1/2 DEGIL - mod ust bayta kaydirilmis olmali. "
+                    "Komut yok sayildi, kanal bosta birakiliyor.",
+                    channel, mode, mode,
+                )
+                if channel == "A":
+                    command.rmca, command.rvca = MODE_IDLE, 0
+                else:
+                    command.rmcb, command.rvcb = MODE_IDLE, 0
 
         # Return the modified command
         return command

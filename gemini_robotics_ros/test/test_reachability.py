@@ -53,6 +53,7 @@ class FakeIKServer(Node):
         self.seen_seed_names = None
         self.seen_link = None
         self.seen_frame = None
+        self.seen_is_diff = None
         self.create_service(
             GetPositionIK, service_name, self._handle,
             callback_group=ReentrantCallbackGroup(),
@@ -64,6 +65,7 @@ class FakeIKServer(Node):
         self.seen_seed_names = list(request.ik_request.robot_state.joint_state.name)
         self.seen_link = request.ik_request.ik_link_name
         self.seen_frame = request.ik_request.pose_stamped.header.frame_id
+        self.seen_is_diff = request.ik_request.robot_state.is_diff
         response.error_code.val = (
             self.with_collisions if avoid else self.without_collisions)
         return response
@@ -138,6 +140,37 @@ def test_missing_service_disables_validation_instead_of_blocking(rig):
     result = missing.check(POSITION, QUAT)
     assert result.ok
     assert "kapalı" in result.reason
+
+
+def test_robot_state_is_sent_as_a_diff_so_the_payload_survives(rig):
+    """is_diff=True olmazsa TAŞINAN PARÇA çarpışma denetiminden düşer.
+
+    MoveIt, is_diff=False gelen bir robot_state'i sahnedekinin YERİNE koyar;
+    iliştirilmiş nesneler o anda kaybolur. Doğrulama böylece planlayıcıdan
+    farklı bir dünyaya bakar ve elinde kutu taşıyan kol için "uygun" der.
+
+    ÖLÇÜLDÜ (13 Ağu 2026, canlı hücre, APPROACH_PLACE (0.924, 1.660, 1.174),
+    140x83x30 mm kutu kavrayıcıda):
+        is_diff=False -> IK  1  ("uygun")   <-- yanlış
+        is_diff=True  -> IK -31             <-- doğru
+                         temas: ur10e_stackable_bin<->gemini_payload
+    Görev tam buradan patladı: kol kutuyu aldı, sonra move_group aynı poza
+    plan üretemedi. Bu yüzden bayrak tohumdan BAĞIMSIZ olarak hep açık.
+    """
+    checker, server = rig
+
+    assert checker.check(POSITION, QUAT).ok
+    assert server.seen_is_diff is True, (
+        "tohumsuz çağrıda da is_diff açık olmalı - yoksa iliştirilmiş parça düşer"
+    )
+
+    from sensor_msgs.msg import JointState
+
+    seed = JointState()
+    seed.name = ["ur10e_elbow_joint"]
+    seed.position = [0.2]
+    assert checker.check(POSITION, QUAT, seed=seed).ok
+    assert server.seen_is_diff is True, "tohumlu çağrıda is_diff kapanmış"
 
 
 def test_seed_and_link_are_forwarded_to_moveit(rig):

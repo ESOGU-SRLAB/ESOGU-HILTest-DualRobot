@@ -107,6 +107,20 @@ class ReachabilityChecker:
         request.ik_request.timeout.nanosec = int(
             (self._timeout - int(self._timeout)) * 1e9
         )
+        # is_diff=True ŞART. False olduğunda MoveIt verilen robot_state'i
+        # sahnedeki durumun YERİNE koyar ve İLİŞTİRİLMİŞ NESNELERİ DÜŞÜRÜR -
+        # yani taşınan parça çarpışma denetimine hiç girmez. Doğrulama o zaman
+        # planlayıcıdan farklı bir dünyaya bakar ve iyimser cevap verir.
+        #
+        # ÖLÇÜLDÜ (13 Ağu 2026, canlı hücre, APPROACH_PLACE (0.924, 1.660, 1.174)):
+        #     is_diff=False -> IK 1 (uygun)      <-- yanlış
+        #     is_diff=True  -> IK -31            <-- doğru; temas:
+        #                      ur10e_stackable_bin<->gemini_payload
+        # Görevin başarısızlığı buydu: doğrulama "gidilebilir" dedi, kol kutuyu
+        # aldı, sonra move_group aynı poza plan üretemedi ("Planning failed!
+        # FAILURE") - çünkü ELİNDEKİ KUTU rafa giriyordu. Hata mesajı hedefi
+        # suçluyordu, oysa hedef yükle birlikte geçersizdi.
+        request.ik_request.robot_state.is_diff = True
         if seed is not None:
             # Tohum ÖNEMLİ: UR10e'de aynı poz için birden çok IK dalı var ve
             # tohumsuz çözüm, kolun o an bulunduğu duruştan çok uzak bir dala
@@ -145,6 +159,9 @@ class ReachabilityChecker:
             return ""
         request = GetStateValidity.Request()
         request.group_name = self._group
+        # _call ile aynı sebep: is_diff olmadan taşınan parça denetimden düşer
+        # ve temas listesi onu HİÇ göstermez. Asıl çarpanı gizleyen buydu.
+        request.robot_state.is_diff = True
         request.robot_state.joint_state = state
         future = self._validity.call_async(request)
         deadline = time.monotonic() + 2.0

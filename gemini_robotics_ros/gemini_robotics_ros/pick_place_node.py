@@ -145,6 +145,10 @@ class GeminiPickPlaceNode(Node):
         # edilmez, yerine yukarıdan iniş kullanılır (bkz. _grasp_frame).
         # 0 verilirse denetim kapanır ve ölçülen normal olduğu gibi kullanılır.
         self.declare_parameter("place_max_normal_tilt_deg", 45.0)
+        # Bırakma noktası çarpışırsa yüzey boyunca bu yarıçaplarda aranır.
+        # Boş liste = arama kapalı.
+        self.declare_parameter("place_search_radii_m", [0.02, 0.04, 0.06])
+        self.declare_parameter("place_search_directions", 8)
         self.declare_parameter("scan_joints", [1.0, 0.0, -1.5708, 0.0, -1.5708, 0.0, 0.0])
         self.declare_parameter("home_joints", [1.0, 0.0, -1.5708, 0.0, -1.5708, 0.0, 0.0])
 
@@ -156,6 +160,10 @@ class GeminiPickPlaceNode(Node):
         # 14.8 mm eksik kalabiliyor ve bu "başarılı" sayılıyordu. Vakumlu
         # kavramada eksik kalan son milimetreler doğrudan tutamamak demek.
         self.declare_parameter("cartesian_min_fraction", 0.99)
+        # Bırakma inişi için AYRI ve gevşek eşik: yarım inen bir iniş de
+        # işimizi görür, çünkü yaklaşma pozu zaten hedefin üstünde ve
+        # doğrulanmış. TOUCH'ta aynı gevşeklik parçayı ıskalatırdı.
+        self.declare_parameter("release_min_fraction", 0.2)
         # Hedefi KAVRAMADAN ÖNCE MoveIt'e sor (/compute_ik + çarpışma denetimi).
         # Kapatmak, ulaşılamaz bir hedefi ancak parça elde kaldıktan sonra
         # öğrenmek demektir.
@@ -167,6 +175,13 @@ class GeminiPickPlaceNode(Node):
         # gibi dar yerlerle bant gibi açık yerlere aynı anda uymuyor.
         self.declare_parameter(
             "approach_distance_candidates", [0.15, 0.12, 0.10, 0.08, 0.06])
+        # BIRAKMA'da liste BÜYÜKTEN başlar - sebebi kavramanınkinin tam tersi.
+        # Taşınan parçanın, yanal harekete geçmeden ÖNCE yapının üstünü
+        # geçmesi gerekiyor; yaklaşma kısaldıkça parça gözün içine gömülüyor
+        # ve planlayıcı onu yandan sokmak zorunda kalıyor.
+        self.declare_parameter(
+            "place_approach_candidates",
+            [0.25, 0.22, 0.20, 0.18, 0.15, 0.12, 0.10, 0.08, 0.06])
         self.declare_parameter("approach_distance", 0.15)  # normal boyunca yaklaşma
         self.declare_parameter("touch_offset", 0.002)      # kabın yüzeye bastırma payı
         self.declare_parameter("lift_distance", 0.20)      # normal boyunca çekme
@@ -215,6 +230,7 @@ class GeminiPickPlaceNode(Node):
         self.planning_frame = str(get("planning_frame"))
         self.approach_distance = float(get("approach_distance"))
         self.cartesian_min_fraction = float(get("cartesian_min_fraction"))
+        self.release_min_fraction = float(get("release_min_fraction"))
         self.validate_targets = bool(get("validate_targets"))
         self.ik_timeout_sec = float(get("ik_timeout_sec"))
         candidates = [float(v) for v in get("approach_distance_candidates") if v > 0]
@@ -223,12 +239,23 @@ class GeminiPickPlaceNode(Node):
         self.approach_candidates = [self.approach_distance] + [
             d for d in candidates if abs(d - self.approach_distance) > 1e-9
         ]
+        # Bırakma listesi büyükten küçüğe sıralanır ve approach_distance ONA
+        # EKLENMEZ: kavramadaki "ayarı ilk dene" kuralı burada zarar verir,
+        # çünkü 15 cm ölçülen koşuda parçayı rafın kenarının ALTINDA bırakıyor.
+        self.place_approach_candidates = sorted(
+            (float(v) for v in get("place_approach_candidates") if float(v) > 0),
+            reverse=True,
+        ) or list(self.approach_candidates)
         self.touch_offset = float(get("touch_offset"))
         self.lift_distance = float(get("lift_distance"))
         self.place_clearance = float(get("place_clearance"))
         self.descend_before_release = bool(get("descend_before_release"))
         self.fallback_quat = [float(v) for v in get("fallback_quat_xyzw")]
         self.place_max_normal_tilt_deg = float(get("place_max_normal_tilt_deg"))
+        # Sıralı olmalı: arama içten dışa gitsin, en yakın geçerli nokta seçilsin.
+        self.place_search_radii = sorted(
+            float(v) for v in get("place_search_radii_m") if float(v) > 0.0)
+        self.place_search_directions = int(get("place_search_directions"))
         self.scan_joints = [float(v) for v in get("scan_joints")]
         self.home_joints = [float(v) for v in get("home_joints")]
         self.scan_settle_sec = float(get("scan_settle_sec"))
@@ -327,10 +354,27 @@ class GeminiPickPlaceNode(Node):
         self.arm.max_velocity = float(get("max_velocity"))
         self.arm.max_acceleration = float(get("max_acceleration"))
         self.arm.cartesian_avoid_collisions = True
-        if hasattr(self.arm, "planning_attempts"):
-            self.arm.planning_attempts = int(get("planning_attempts"))
-        if hasattr(self.arm, "planning_time"):
-            self.arm.planning_time = float(get("planning_time"))
+        # pymoveit2 bu ikisini MoveGroup goal alan adlarıyla açar:
+        # allowed_planning_time / num_planning_attempts. Burada önce
+        # "planning_time"/"planning_attempts" deneniyordu ve o isimler YOK -
+        # hasattr sessizce atlıyordu, yani config'teki 10 s hiç uygulanmadı ve
+        # pymoveit2'nin gömülü 0.5 s'i yürürlükte kaldı. Belirtisi:
+        # "ParallelPlan::solve(): Unable to find solution ... in 0.503596
+        # seconds". Raf gözü gibi dar hedeflerde OMPL, artık eksen (ray)
+        # için rastgele örnekleme yaptığından yarım saniyede geçerli bir
+        # hedef durumu bulamıyor - IK aynı poza tek çağrıda çözüm bulsa bile.
+        # Bu yüzden isim eşleşmezse ARTIK SESSİZ GEÇMİYOR.
+        for attribute, value in (
+            ("allowed_planning_time", float(get("planning_time"))),
+            ("num_planning_attempts", int(get("planning_attempts"))),
+        ):
+            if hasattr(self.arm, attribute):
+                setattr(self.arm, attribute, value)
+            else:
+                self.get_logger().warn(
+                    f"pymoveit2'de '{attribute}' yok; planlama bütçesi "
+                    f"kütüphane varsayılanında kaldı ({value} uygulanamadı)."
+                )
 
         # VGC10: eklem değil, Modbus komutu. Vakum SRDF'inde gripper grubu
         # olmadığı için MoveIt2Gripper burada kullanılamaz.
@@ -578,6 +622,7 @@ class GeminiPickPlaceNode(Node):
         label: str,
         cartesian: bool = False,
         retries: int = 2,
+        min_fraction: Optional[float] = None,
     ) -> bool:
         # `position` KAP AĞZININ gitmesi istenen nokta; MoveIt'e verilecek olan
         # ise frame orijini.
@@ -605,7 +650,10 @@ class GeminiPickPlaceNode(Node):
                 quat_xyzw=list(quat_xyzw),
                 cartesian=cartesian,
                 cartesian_max_step=0.005,
-                cartesian_fraction_threshold=self.cartesian_min_fraction,
+                cartesian_fraction_threshold=(
+                    self.cartesian_min_fraction if min_fraction is None
+                    else float(min_fraction)
+                ),
             )
             self._ensure_attached()
             ok = self._wait_motion()
@@ -876,6 +924,14 @@ class GeminiPickPlaceNode(Node):
         )
         normal = (surface["normal"]["x"], surface["normal"]["y"], surface["normal"]["z"])
 
+        # _validate_reachable, ER'nin noktası taşınan parçayla çarpıştığında
+        # yüzey boyunca kaydırılmış geçerli bir nokta bulmuş olabilir. Hareket
+        # doğrulamanın onayladığı NOKTAYA gitmeli; yoksa doğrulama bir yeri
+        # onaylar, kol başka yere gider.
+        override = detection.get("contact_override")
+        if override is not None:
+            centroid = (float(override[0]), float(override[1]), float(override[2]))
+
         if not for_grasp and self.place_max_normal_tilt_deg > 0.0:
             vector = np.asarray(normal, dtype=np.float64)
             length = float(np.linalg.norm(vector))
@@ -989,17 +1045,122 @@ class GeminiPickPlaceNode(Node):
         if self.reachability is None:
             return self.approach_distance
 
+        # Her zaman ER'nin HAM noktasından başla: önceki bir çağrının kaydırması
+        # (örn. kavramadan önceki, yük henüz takılı DEĞİLKEN yapılan doğrulama)
+        # bu çağrının başlangıç noktasını kirletmemeli, kaymalar birikmemeli.
+        detection.pop("contact_override", None)
+
         contact, normal, quat = self._grasp_frame(detection, for_grasp=need_grasp)
         label = detection.get("label", "?")
         seed = getattr(self.arm, "joint_state", None)
-        last_reason = ""
+        candidates = (
+            self.approach_candidates if need_grasp else self.place_approach_candidates
+        )
 
-        for distance in self.approach_candidates:
-            approach_tip = self._offset(contact, normal, distance)
-            approach_frame = self._frame_position_for_tip(approach_tip, quat)
-            result = self.reachability.check(approach_frame, quat, seed, label)
-            if not result:
-                last_reason = f"yaklaşma {distance * 100:.0f} cm: {result.reason}"
+        # İNİŞ POZU DA DENETLENMELİ - ve mesafeden BAĞIMSIZ olduğu için ayrı.
+        #
+        # 13 Ağu 2026 ölçüldü: yaklaşma yapının üstüne (25 cm) çıkınca kutu
+        # kenarın üzerinde kaldığı için ER'nin ORTALANMAMIŞ noktası (0.922,
+        # 1.650) yaklaşma denetimini GEÇTİ ve kaydırma hiç tetiklenmedi. Kusur
+        # bir aşama sonraya taşındı: dik iniş, kutu kenar hizasına gelince
+        # durdu (kartezyen fraction 0.293) çünkü 1.650 ± 0.0415 -> 1.6915,
+        # bölme duvarı ise 1.691.
+        #
+        # Yani yaklaşmayı denetlemek yetmiyor; kavramada temas pozunu
+        # denetlediğimiz gibi burada da inişin GİDECEĞİ yeri denetliyoruz.
+        if need_grasp or self._release_ok(contact, normal, quat, seed, label):
+            distance, last_reason = self._try_contact(
+                contact, normal, quat, seed, label, need_grasp, candidates)
+            if distance is not None:
+                return distance
+        else:
+            last_reason = "iniş pozu çarpışıyor (nokta gözün ortasında değil)"
+
+        # KAYDIRARAK ARAMA - yalnızca BIRAKMA hedefinde.
+        #
+        # Kavramada nokta kutsaldır: kaydırmak kabı parçanın yanına, boşluğa
+        # indirir. Bırakmada ise hedef bir YÜZEY; ER'nin gösterdiği piksel o
+        # yüzeyin neresine düştüğü önemsizdir, parçanın sığdığı herhangi bir
+        # nokta işi görür.
+        #
+        # ÖLÇÜLDÜ (13 Ağu 2026): ER, üst gözü doğru buldu ama noktayı gözün
+        # ortasından 54 mm kaçık, y = 1.659'da verdi (gözün y sınırları
+        # 1.519/1.691, ortası 1.605). Taşınan kutu 83 mm geniş, kabın altında
+        # ortalanıyor: 1.659 ± 0.0415 -> 1.7005, yani bölme duvarının 9.5 mm
+        # İÇİNE. Log bunu ur10e_stackable_bin<->gemini_payload diye gösterdi.
+        # Prompt'a "very middle point" yazmak bunu düzeltmedi - ER'nin işaret
+        # hassasiyeti bu iş için yeterli değil, geometriyle telafi ediyoruz.
+        if not need_grasp:
+            for radius, ring in self._nudge_rings(contact, normal):
+                # İniş denetimi mesafeden bağımsız: halkayı ÖNCE eleyip
+                # geçemeyecek noktalar için mesafe döngüsünü hiç kurmuyoruz.
+                ring = tuple(
+                    point for point in ring
+                    if self._release_ok(point, normal, quat, seed, label)
+                )
+                if not ring:
+                    continue
+                # DÖNGÜ SIRASI ÖNEMLİ: mesafe DIŞTA, yön içte.
+                #
+                # Aynı x/y'de yaklaşmayı kısaltmak YANAL bir sığmama sorununu
+                # çözmez - kutu hâlâ aynı yerde duruyor. Yön-dışta gezmek, her
+                # aday nokta için beş mesafeyi de boşuna deniyordu; ölçülen
+                # koşuda arama 185 s sürdü. Mesafe dışta olunca tercih edilen
+                # 15 cm tüm yönlerde önce sınanıyor ve yanal bir çözüm sekiz
+                # sorguda bulunuyor.
+                #
+                # Yan fayda: approach_candidates büyükten küçüğe sıralı olduğu
+                # için bu sıra BÜYÜK mesafe tercihini de koruyor. Yön-dışta,
+                # 2. yöndeki 15 cm yerine 1. yöndeki 6 cm kabul edilirdi.
+                for distance in candidates:
+                    for shifted in ring:
+                        ok, _ = self._reach_ok(
+                            shifted, normal, quat, seed, label, distance)
+                        if not ok:
+                            continue
+                        detection["contact_override"] = shifted
+                        self.get_logger().info(
+                            f"'{label}' bırakma noktası yüzey boyunca "
+                            f"{radius * 100:.0f} cm kaydırıldı: "
+                            f"({contact[0]:.3f}, {contact[1]:.3f}) -> "
+                            f"({shifted[0]:.3f}, {shifted[1]:.3f}) - ER'nin "
+                            f"noktasında taşınan parça sığmıyordu"
+                        )
+                        return distance
+
+        # Konumu da yaz: "gidilemiyor" tek başına hiçbir şey öğretmiyor.
+        # Reddedilen adayların NEREDE olduğunu görmeden ER'nin mi yanıldığı
+        # yoksa geometrinin mi dar olduğu ayrılamıyor.
+        searched = ""
+        if not need_grasp and self.place_search_radii:
+            searched = (
+                f", {max(self.place_search_radii) * 100:.0f} cm yarıçapa kadar "
+                f"kaydırma da denendi"
+            )
+        self.get_logger().warn(
+            f"'{label}' hedefine gidilemiyor - {last_reason} "
+            f"[hedef ({contact[0]:.3f}, {contact[1]:.3f}, {contact[2]:.3f}), "
+            f"normal ({normal[0]:.2f}, {normal[1]:.2f}, {normal[2]:.2f})"
+            f"{searched}]"
+        )
+        return None
+
+    def _try_contact(
+        self,
+        contact: Point3,
+        normal: Point3,
+        quat: Sequence[float],
+        seed,
+        label: str,
+        need_grasp: bool,
+        candidates: Sequence[float],
+    ) -> Tuple[Optional[float], str]:
+        """Tek bir temas noktası için çarpışmayan yaklaşma mesafesini arar."""
+        last_reason = ""
+        for distance in candidates:
+            ok, reason = self._reach_ok(contact, normal, quat, seed, label, distance)
+            if not ok:
+                last_reason = reason
                 continue
 
             if need_grasp:
@@ -1007,26 +1168,90 @@ class GeminiPickPlaceNode(Node):
                 touch_frame = self._frame_position_for_tip(touch_tip, quat)
                 touch = self.reachability.check(touch_frame, quat, seed, label)
                 if not touch:
-                    last_reason = f"temas pozu: {touch.reason}"
                     # Temas pozu mesafeden bağımsız; küçültmek işe yaramaz.
-                    break
+                    return None, f"temas pozu: {touch.reason}"
 
             if abs(distance - self.approach_distance) > 1e-9:
                 self.get_logger().info(
                     f"'{label}' için yaklaşma mesafesi {self.approach_distance * 100:.0f} "
                     f"cm yerine {distance * 100:.0f} cm (yakını çarpışıyordu)"
                 )
-            return distance
+            return distance, ""
+        return None, last_reason
 
-        # Konumu da yaz: "gidilemiyor" tek başına hiçbir şey öğretmiyor.
-        # Reddedilen adayların NEREDE olduğunu görmeden ER'nin mi yanıldığı
-        # yoksa geometrinin mi dar olduğu ayrılamıyor.
-        self.get_logger().warn(
-            f"'{label}' hedefine gidilemiyor - {last_reason} "
-            f"[hedef ({contact[0]:.3f}, {contact[1]:.3f}, {contact[2]:.3f}), "
-            f"normal ({normal[0]:.2f}, {normal[1]:.2f}, {normal[2]:.2f})]"
-        )
-        return None
+    def _release_ok(
+        self,
+        contact: Point3,
+        normal: Point3,
+        quat: Sequence[float],
+        seed,
+        label: str,
+    ) -> bool:
+        """İniş sonunda durulacak poz geçerli mi? Yaklaşma MESAFESİNDEN bağımsız.
+
+        İniş kapalıysa denetlenecek bir şey yok: parça yaklaşma pozundan
+        bırakılır ve o poz zaten ayrıca denetleniyor.
+        """
+        if not self.descend_before_release:
+            return True
+        tip = self._offset(contact, normal, self.place_clearance)
+        frame = self._frame_position_for_tip(tip, quat)
+        return bool(self.reachability.check(frame, quat, seed, label))
+
+    def _reach_ok(
+        self,
+        contact: Point3,
+        normal: Point3,
+        quat: Sequence[float],
+        seed,
+        label: str,
+        distance: float,
+    ) -> Tuple[bool, str]:
+        """Tek nokta + tek mesafe: yaklaşma pozuna gidilebiliyor mu?"""
+        approach_tip = self._offset(contact, normal, distance)
+        approach_frame = self._frame_position_for_tip(approach_tip, quat)
+        result = self.reachability.check(approach_frame, quat, seed, label)
+        if result:
+            return True, ""
+        return False, f"yaklaşma {distance * 100:.0f} cm: {result.reason}"
+
+    def _nudge_rings(self, contact: Point3, normal: Point3):
+        """Temas noktası çevresinde, YÜZEY BOYUNCA kaydırılmış aday halkaları.
+
+        (yarıçap, noktalar) çiftleri üretir; içten dışa, böylece en yakın
+        geçerli nokta seçilir ve ER'nin gösterdiği gözden yan gözlere
+        savrulmayız. Kaydırma normale DİK düzlemde yapılır - yatay bir rafta
+        yatay, eğik bir yüzeyde o yüzey boyunca; hiçbir zaman yüzeyin içine ya
+        da üstüne doğru değil (o iş yaklaşma mesafesinin).
+
+        Halka halka verilmesinin sebebi arayan taraftaki döngü sırası: bir
+        halkanın TÜM yönleri, mesafe küçültülmeden önce sınanmalı.
+        """
+        axis = np.asarray(normal, dtype=np.float64)
+        length = float(np.linalg.norm(axis))
+        if length < 1e-9 or not self.place_search_radii:
+            return
+        axis = axis / length
+
+        # Normale dik iki birim vektör. Referans olarak normale EN AZ paralel
+        # olan dünya eksenini seç, yoksa çapraz çarpım sıfıra çöker.
+        reference = np.array([1.0, 0.0, 0.0])
+        if abs(float(axis @ reference)) > 0.9:
+            reference = np.array([0.0, 1.0, 0.0])
+        first = np.cross(axis, reference)
+        first = first / (np.linalg.norm(first) or 1.0)
+        second = np.cross(axis, first)
+
+        base = np.asarray(contact, dtype=np.float64)
+        directions = max(4, int(self.place_search_directions))
+        for radius in self.place_search_radii:
+            ring = []
+            for index in range(directions):
+                angle = 2.0 * np.pi * index / directions
+                point = base + radius * (
+                    np.cos(angle) * first + np.sin(angle) * second)
+                ring.append((float(point[0]), float(point[1]), float(point[2])))
+            yield radius, tuple(ring)
 
     # --- ana akış ---------------------------------------------------------
 
@@ -1260,27 +1485,76 @@ class GeminiPickPlaceNode(Node):
                 place_detection, for_grasp=False)
             place_approach_distance = float(
                 place_detection.get("approach_distance", self.approach_distance))
+
+            # YÜK ARTIK ELDE - hedefi TEKRAR doğrula.
+            #
+            # Bırakma hedefi kavramadan ÖNCE doğrulanmıştı; o sırada sahnede
+            # taşınan parça yoktu. Yani doğrulama, planlayıcının göreceğinden
+            # DAHA GENİŞ bir dünyaya bakıp "gidilebilir" demişti. Aradaki fark
+            # sessiz değil, pahalı: kol kutuyu alıyor, sonra move_group aynı
+            # poza plan üretemiyor ve parça havada kalıyor.
+            #
+            # ÖLÇÜLDÜ (13 Ağu 2026, canlı hücre): toolkit üst seviyesinde
+            # yük ELDEYKEN geçerli bırakma bandı y = 1.58..1.66; ER'nin
+            # gösterdiği y = 1.660 tam kenarda kaldı ve 140x83 mm'lik kutu
+            # ur10e_stackable_bin'e giriyordu. Yük YOKKEN aynı nokta geçerli
+            # görünüyor - bu yüzden tek doğrulama yetmiyor.
+            revalidated = self._validate_reachable(place_detection, need_grasp=False)
+            if revalidated is None:
+                self._status(
+                    "FAILED",
+                    "Bırakma hedefi parça ELDEYKEN geçersiz: taşınan kutu "
+                    "hedefe sığmıyor (gerekçe ve temas eden parçalar yukarıda). "
+                    "Parça hâlâ kavrayıcıda.",
+                )
+                return
+            if abs(revalidated - place_approach_distance) > 1e-9:
+                self.get_logger().info(
+                    f"Bırakma yaklaşma mesafesi parça takılıyken yeniden "
+                    f"seçildi: {place_approach_distance * 100:.0f} cm -> "
+                    f"{revalidated * 100:.0f} cm"
+                )
+            place_approach_distance = revalidated
+
+            # Doğrulama noktayı yüzey boyunca kaydırmış olabilir; hareket
+            # ONAYLANAN noktaya gitmeli. Frame'i bu yüzden TEKRAR üretiyoruz.
+            place_contact, place_normal, place_quat = self._grasp_frame(
+                place_detection, for_grasp=False)
+
             above_place = self._offset(
                 place_contact, place_normal, place_approach_distance)
-            release_pose = self._offset(place_contact, place_normal, self.place_clearance)
+            release_pose = self._offset(
+                place_contact, place_normal, self.place_clearance)
 
             if not self._move_pose(above_place, place_quat, "APPROACH_PLACE"):
                 self._status("FAILED", "Bırakma yaklaşma pozuna gidilemedi")
                 return
 
-            # Bırakmadan önce inmek İSTEĞE BAĞLI. Raf gözüne inerken kartezyen
-            # plan sürekli yarıda kalıyordu (%20, sonra %75) - gripper gövdesi
-            # göze sığmıyor. Parça zaten gözün üstünden bırakılabildiği için
-            # iniş varsayılan olarak KAPALI; açmak isteyen descend_before_release
-            # ile açar.
+            # İNİŞ TAMAMLANMAK ZORUNDA DEĞİL.
+            #
+            # Yaklaşma pozu artık yapının ÜSTÜNDE (place_approach_candidates) ve
+            # ayrıca doğrulanmış durumda - yani parça oradan bırakılsa bile
+            # hedefin üstündedir, yanlış yere düşmez. İniş sadece düşme
+            # yüksekliğini azaltmak için var. Bu yüzden yarım kalan bir iniş
+            # görevi ÖLDÜRMEZ: kol nereye inebildiyse orada bırakır.
+            #
+            # release_min_fraction bu yüzden cartesian_min_fraction'dan AYRI:
+            # TOUCH yarıda kalırsa kap parçaya değmez ve boşluğu kavrarız, o
+            # yüzden orada eşik yüksek kalmalı. İniş için aynı katılık sadece
+            # zarar veriyordu - 13 Ağu 2026'da kartezyen planın %29'u görevi
+            # düşürdü, oysa ulaşılan nokta bırakmak için gayet uygundu.
             descended = False
             if self.descend_before_release:
                 descended = self._move_pose(
-                    release_pose, place_quat, "RELEASE", cartesian=True
+                    release_pose, place_quat, "RELEASE", cartesian=True,
+                    min_fraction=self.release_min_fraction,
                 )
                 if not descended:
-                    self._status("FAILED", "Bırakma pozuna inilemedi")
-                    return
+                    self.get_logger().warn(
+                        "İniş yapılamadı; parça YAKLAŞMA pozundan bırakılıyor. "
+                        "Yaklaşma pozu doğrulanmış ve hedefin üstünde, ama "
+                        "düşme yüksekliği daha fazla olacak."
+                    )
             else:
                 self.get_logger().info(
                     "Bırakma inişi atlandı (descend_before_release=false); "

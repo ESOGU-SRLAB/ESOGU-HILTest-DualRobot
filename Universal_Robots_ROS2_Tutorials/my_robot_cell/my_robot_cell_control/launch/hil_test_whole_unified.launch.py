@@ -1038,6 +1038,41 @@ def launch_setup(context, *args, **kwargs):
     if gripper_controller_spawner:
         nodes_to_start.append(gripper_controller_spawner)
 
+    # === OnRobot VGC10 sürücüsü (yalnız GERÇEK vakum donanımında) ===
+    #
+    # İKİ KOŞUL BİRDEN: use_vacuum_gripper=true VE use_fake_hardware=false.
+    #
+    # use_fake_hardware=true iken başlatılmamalı, çünkü sürücü açılır açılmaz
+    # 192.168.3.56:502'ye Modbus bağlantısı kurmaya çalışır - sahte donanımla
+    # çalışırken ortada gripper yoktur ve bu yalnızca gürültü üretir.
+    #
+    # NEDEN BURADA: gemini_pick_place.launch.py bu sürücüyü BAŞLATMIYOR ve
+    # elle unutulduğunda arıza sinsi oluyordu - vacuum_require_confirmation
+    # açıkken /OnRobotVGInput hiç gelmez, dolayısıyla HER kavrama başarısız
+    # sayılır ve görev "vakum kurulamadı" diye düşer. Hücreyi ayağa kaldıran
+    # launch, gripper'ı da ayağa kaldırsın.
+    #
+    # DİKKAT (13 Ağu 2026, gerçek hücrede ölçüldü): sürücünün "Connected to
+    # gripper" logu komutların çalıştığının KANITI DEĞİL. Gerçek doğrulama
+    # /OnRobotVGInput'un yayınlaması (yüzde = gvca / 10).
+    use_fake_str = LaunchConfiguration("use_fake_hardware").perform(context)
+    if use_vac_str.lower() == "true" and use_fake_str.lower() != "true":
+        nodes_to_start.append(
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([
+                    PathJoinSubstitution([
+                        FindPackageShare("vgc10_control"),
+                        "launch", "bringup.launch.py",
+                    ])
+                ])
+            )
+        )
+    elif use_vac_str.lower() == "true":
+        nodes_to_start.append(LogInfo(
+            msg="VGC10 sürücüsü BAŞLATILMADI (use_fake_hardware=true). "
+                "Gerçek gripper için use_fake_hardware:=false ile çalıştırın."
+        ))
+
     # digital_twin=false (varsayılan) ise real_to_sim_bridge başlat
     if digital_twin_value.lower() != 'true':
         nodes_to_start.append(real_to_sim_bridge_delayed)
