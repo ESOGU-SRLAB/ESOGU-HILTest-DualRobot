@@ -76,6 +76,8 @@ def _grab_frame_from_ros(args):
             intensity_msg=holder.get("intensity"),
             min_m=args.render_min,
             max_m=args.render_max,
+            depth_scale_m=args.depth_scale,
+            depth_is_radial=args.depth_radial,
         )
 
     node.destroy_node()
@@ -89,9 +91,15 @@ def main():
     parser.add_argument("--source", default="render", choices=["render", "rgb"],
                         help="ER girdisi: derinlik render'ı (gerçek donanım) veya RGB (yalnız sim)")
     parser.add_argument("--render-mode", default="normals",
-                        choices=["normals", "turbo", "gray", "intensity"])
+                        choices=["relief", "normals", "turbo", "gray", "intensity"])
     parser.add_argument("--render-min", type=float, default=0.3)
     parser.add_argument("--render-max", type=float, default=4.0)
+    # Gerçek SICK Visionary-T Mini için: --depth-scale 0.00025 --depth-radial
+    # (bkz. config/mode_real.yaml). Varsayılanlar Gazebo'ya göredir.
+    parser.add_argument("--depth-scale", type=float, default=0.001,
+                        help="Tamsayı derinliğin metre/LSB ölçeği (SICK T Mini: 0.00025)")
+    parser.add_argument("--depth-radial", action="store_true",
+                        help="Derinlik ışın boyu mesafe (ToF), planar Z değil")
     parser.add_argument("--depth-topic", default="/sim/depth/image")
     parser.add_argument("--info-topic", default="/sim/camera_info")
     parser.add_argument("--intensity-topic", default="/intensity")

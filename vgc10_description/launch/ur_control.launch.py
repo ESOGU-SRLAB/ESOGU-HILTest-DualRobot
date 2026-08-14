@@ -35,6 +35,26 @@ def generate_launch_description():
             "robot_ip", description="IP address by which the robot can be reached."
         )
     )
+    # 14 Ağu 2026: bu argüman EKSİKTİ. hil_test_whole_unified.launch.py
+    # kinematics_params_file'ı geçiriyordu ama burada tanımlı olmadığı ve
+    # aşağıda yol default_kinematics.yaml'a SABİTLENDİĞİ için değer sessizce
+    # yok sayılıyordu; robot her zaman jenerik nominal DH modeliyle çalışıyordu.
+    # Bu, kolun hedefin birkaç cm uzağında durmasının klasik sebebidir.
+    # Boş bırakılırsa eski davranış (fabrika varsayılanı) korunur.
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "kinematics_params_file",
+            default_value=PathJoinSubstitution([
+                FindPackageShare(LaunchConfiguration("description_package")),
+                "config",
+                LaunchConfiguration("ur_type"),
+                "default_kinematics.yaml",
+            ]),
+            description="Bu robota ait kalibrasyon YAML'ı (ur_calibration ile "
+                        "çıkarılır). Verilmezse description_package içindeki "
+                        "default_kinematics.yaml kullanılır.",
+        )
+    )
     declared_arguments.append(
         DeclareLaunchArgument(
             "safety_limits",
@@ -142,9 +162,10 @@ def generate_launch_description():
     joint_limit_params = PathJoinSubstitution(
         [FindPackageShare(description_package), "config", ur_type, "joint_limits.yaml"]
     )
-    kinematics_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "default_kinematics.yaml"]
-    )
+    # Yol artık SABİT DEĞİL: kinematics_params_file argümanından gelir.
+    # Varsayılanı yukarıda default_kinematics.yaml'a bağlı, yani argüman
+    # verilmezse davranış eskisiyle aynı.
+    kinematics_params = LaunchConfiguration("kinematics_params_file")
     physical_params = PathJoinSubstitution(
         [FindPackageShare(description_package), "config", ur_type, "physical_parameters.yaml"]
     )

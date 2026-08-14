@@ -8,7 +8,9 @@ grubu tanımlı değil. Bu yüzden MoveIt2Gripper bu donanımda tanımsızdır v
 kullanılamaz - kavrama, Modbus üzerinden pompa komutuyla yapılır.
 
 Komut: vgc10_msgs/OnRobotVGOutput
-    rmca/rmcb : kanal kontrol modu  0=Release, 1=Grip, 2=Idle
+    rmca/rmcb : kanal kontrol modu, ham register'ın ÜST BAYTI olarak
+                0x0000=Release, 0x0100=Grip, 0x0200=Idle. OnRobot dokümanının
+                0/1/2'si DEĞİL - aşağıdaki MODE_* notuna bakın.
     rvca/rvcb : hedef vakum yüzdesi (yalnız Grip modunda; 80'i AŞMAMALI)
 Durum:  vgc10_msgs/OnRobotVGInput
     gvca/gvcb : ölçülen vakum, bağıl vakumun 1/1000'i (yani % = gvca / 10)
@@ -109,6 +111,28 @@ class VacuumGripper:
             return None
         return max(self._status.gvca, self._status.gvcb) / 10.0
 
+    @property
+    def raw_status(self) -> str:
+        """Ham register değerleri - teşhis için.
+
+        ÖLÇEK KESİN, tartışmaya açma: gvca 0..1000 aralığındadır (bağıl
+        vakumun 1/1000'i), yani yüzde = gvca / 10. Bu değer gerçek hücrede
+        ÖLÇÜLEREK belirlendi ve gerçek robotlarda sorunsuz çalıştı;
+        vacuum_confirm_pct: 15.0 eşiği de o ölçümlerin üstüne kuruldu.
+        (Ölçüm başka bir oturumda, sunucudaki Claude ile yapıldı - bu yüzden
+        bu çalışma alanında logu yok. Kaydı burada duruyor ki bir daha
+        "doğrulanmamış varsayım" diye açılmasın.)
+
+        Ham sayı yine de loglanıyor, çünkü iki FARKLI arıza ROS tarafında
+        birebir aynı görünüyor: comModbusTcp.getStatus her istisnada sessizce
+        [0, 0] döner, yani kopmuş bir Modbus bağlantısı ile "emme kabı yüzeye
+        oturmadı" ayırt edilemez. Ham 0/0 görürsen sürücünün stdout'undaki
+        "[comModbusTcp] getStatus exception" satırına bak - ayrımı o yapar.
+        """
+        if self._status is None:
+            return "durum mesajı yok"
+        return f"gvca={self._status.gvca} gvcb={self._status.gvcb}"
+
     def _send(self, mode: int, vacuum_pct: int) -> None:
         command = OnRobotVGOutput()
         command.rmca = mode
@@ -141,19 +165,27 @@ class VacuumGripper:
         while time.time() < deadline:
             measured = self.measured_pct
             if measured is not None and measured >= self._confirm_pct:
-                self._node.get_logger().info(f"Vakum kuruldu: {measured:.1f}%")
+                # Ham değer teşhis için: %60 hedefte gvca ~600 beklenir.
+                self._node.get_logger().info(
+                    f"Vakum kuruldu: {measured:.1f}% ({self.raw_status})"
+                )
                 return True
             time.sleep(0.1)
 
         measured = self.measured_pct
         if measured is None:
             self._node.get_logger().warn(
-                "Vakum onaylanamadı: OnRobotVGInput hiç gelmedi. Sim'de VGC10 "
-                "sürücüsü çalışmıyorsa beklenen durum - require_confirmation'ı kapatın."
+                "Vakum onaylanamadı: OnRobotVGInput HİÇ GELMEDİ - yani VGC10 "
+                "sürücüsü ayakta değil. Gerçek hücrede hücreyi "
+                "use_vacuum_gripper:=true use_fake_hardware:=false ile "
+                "başlatın. Sim'de bu ayar zaten kapalı olmalı (mode_sim.yaml)."
             )
         else:
             self._node.get_logger().warn(
-                f"Vakum eşiğe ulaşmadı: {measured:.1f}% < {self._confirm_pct:.1f}%"
+                f"Vakum eşiğe ulaşmadı: {measured:.1f}% < {self._confirm_pct:.1f}% "
+                f"(ham: {self.raw_status}). Ham değerler 0 ise ya kap yüzeye "
+                f"oturmadı ya da Modbus koptu - sürücünün stdout'unda "
+                f"'[comModbusTcp] getStatus exception' arayın."
             )
         return False
 

@@ -881,7 +881,7 @@
 [15:32:05] [HIL] [move_group-23] [ERROR] [1784723525.568552971] [moveit.ros.occupancy_map_monitor.middleware_handle]: No 3D sensor plugin(s) defined for octomap updates
 [15:32:06] [HIL] [INFO] [create-24]: process started with pid [74438]
 [15:32:06] [HIL] [INFO] [create-25]: process started with pid [74440]
-[15:32:11] [HIL] [create-24] [ERROR] [1784723531.444731729] [ros_gz_sim]: Request to create entity from service [/world/ifarlab/create] timed out..
+[15:32:11] [HIL] [create-24] [ERROR] [1784723531.444731729] [ros_gz_sim]: Request to create entity from service [/world/cem/create] timed out..
 [15:32:11] [HIL] [create-24]  sdf_filename: "/home/cem/colcon_ws/install/conveyorbelt_gz/share/conveyorbelt_gz/sdf/conveyor.sdf"
 [15:32:11] [HIL] [create-24] pose {
 [15:32:11] [HIL] [create-24]   position {
@@ -897,7 +897,7 @@
 [15:32:11] [HIL] [create-24]
 [15:32:11] [HIL] [create-24] [INFO] [1784723531.444887297] [ros_gz_sim]: OK creation of entity.
 [15:32:11] [HIL] [INFO] [create-24]: process has finished cleanly [pid 74438]
-[15:32:11] [HIL] [create-25] [ERROR] [1784723531.781892144] [ros_gz_sim]: Request to create entity from service [/world/ifarlab/create] timed out..
+[15:32:11] [HIL] [create-25] [ERROR] [1784723531.781892144] [ros_gz_sim]: Request to create entity from service [/world/cem/create] timed out..
 [15:32:11] [HIL] [create-25]  sdf_filename: "/home/cem/colcon_ws/install/conveyorbelt_gz/share/conveyorbelt_gz/sdf/RedCube.sdf"
 [15:32:11] [HIL] [create-25] pose {
 [15:32:11] [HIL] [create-25]   position {
@@ -2489,7 +2489,7 @@
 [15:36:03] [HIL] [move_group-23] [ERROR] [1784723763.608805722] [moveit.ros.occupancy_map_monitor.middleware_handle]: No 3D sensor plugin(s) defined for octomap updates
 [15:36:04] [HIL] [INFO] [create-24]: process started with pid [76371]
 [15:36:04] [HIL] [INFO] [create-25]: process started with pid [76373]
-[15:36:09] [HIL] [create-24] [ERROR] [1784723769.378564415] [ros_gz_sim]: Request to create entity from service [/world/ifarlab/create] timed out..
+[15:36:09] [HIL] [create-24] [ERROR] [1784723769.378564415] [ros_gz_sim]: Request to create entity from service [/world/cem/create] timed out..
 [15:36:09] [HIL] [create-24]  sdf_filename: "/home/cem/colcon_ws/install/conveyorbelt_gz/share/conveyorbelt_gz/sdf/conveyor.sdf"
 [15:36:09] [HIL] [create-24] pose {
 [15:36:09] [HIL] [create-24]   position {
@@ -2504,7 +2504,7 @@
 [15:36:09] [HIL] [create-24] allow_renaming: true
 [15:36:09] [HIL] [create-24]
 [15:36:09] [HIL] [create-24] [INFO] [1784723769.378678899] [ros_gz_sim]: OK creation of entity.
-[15:36:09] [HIL] [create-25] [ERROR] [1784723769.385921781] [ros_gz_sim]: Request to create entity from service [/world/ifarlab/create] timed out..
+[15:36:09] [HIL] [create-25] [ERROR] [1784723769.385921781] [ros_gz_sim]: Request to create entity from service [/world/cem/create] timed out..
 [15:36:09] [HIL] [create-25]  sdf_filename: "/home/cem/colcon_ws/install/conveyorbelt_gz/share/conveyorbelt_gz/sdf/RedCube.sdf"
 [15:36:09] [HIL] [create-25] pose {
 [15:36:09] [HIL] [create-25]   position {

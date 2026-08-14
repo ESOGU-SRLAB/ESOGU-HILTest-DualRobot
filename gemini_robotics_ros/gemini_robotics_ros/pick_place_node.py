@@ -46,6 +46,7 @@ from .grasp import (
     surface_frame_quaternion,
 )
 from .locator import GeminiLocator
+from .markers import CYAN, GREEN, DetectionMarkers
 from .reachability import ReachabilityChecker
 from .vacuum import VacuumGripper
 
@@ -83,12 +84,21 @@ class GeminiPickPlaceNode(Node):
         self.declare_parameter("camera_frame_override", "")
         self.declare_parameter("deprojection", "auto")
         self.declare_parameter("sample_window", 5)
+        # 0.0 = kalıcı. Görev marker'ları bilerek kalıcı: kol hedefe gittikten
+        # SONRA "nereyi hedeflemişti" sorusunu cevaplayabilmek gerekiyor.
+        self.declare_parameter("marker_lifetime_sec", 0.0)
 
         # ER görüntü kaynağı: render (derinlikten) | rgb (yalnız sim)
         self.declare_parameter("er_image_source", "render")
         self.declare_parameter("render_mode", "normals")
         self.declare_parameter("render_min_m", 0.3)
         self.declare_parameter("render_max_m", 4.0)
+        # Tamsayı derinliğin metre/LSB ölçeği. "16UC1 = milimetre" EVRENSEL
+        # DEĞİL: SICK Visionary-T Mini 0.25 mm/LSB kullanıyor (mode_real.yaml).
+        self.declare_parameter("depth_scale_m", 0.001)
+        # Derinlik ışın boyu MESAFE mi (SICK ToF), yoksa optik eksene izdüşüm
+        # Z mi (Gazebo, RealSense)? Bkz. depth_render.radial_to_planar.
+        self.declare_parameter("depth_is_radial", False)
         self.declare_parameter("publish_er_image", True)
         self.declare_parameter("er_image_rate_hz", 2.0)
 
@@ -184,6 +194,11 @@ class GeminiPickPlaceNode(Node):
             [0.25, 0.22, 0.20, 0.18, 0.15, 0.12, 0.10, 0.08, 0.06])
         self.declare_parameter("approach_distance", 0.15)  # normal boyunca yaklaşma
         self.declare_parameter("touch_offset", 0.002)      # kabın yüzeye bastırma payı
+        # Her waypoint'e varınca beklenecek süre (sn). Lineer eksen, hareket
+        # "tamamlandı" raporlandıktan sonra fiziksel olarak oturmaya devam
+        # ediyor; beklemeden sıradaki hedefe geçilince kap parçaya tam
+        # gelmeden hareket başlıyordu. 0 = kapalı.
+        self.declare_parameter("waypoint_settle_sec", 2.0)
         self.declare_parameter("lift_distance", 0.20)      # normal boyunca çekme
         self.declare_parameter("place_clearance", 0.05)
         # Bırakmadan önce place_clearance'a inilsin mi. Raf gözünde iniş
@@ -247,6 +262,7 @@ class GeminiPickPlaceNode(Node):
             reverse=True,
         ) or list(self.approach_candidates)
         self.touch_offset = float(get("touch_offset"))
+        self.waypoint_settle_sec = float(get("waypoint_settle_sec"))
         self.lift_distance = float(get("lift_distance"))
         self.place_clearance = float(get("place_clearance"))
         self.descend_before_release = bool(get("descend_before_release"))
@@ -305,6 +321,8 @@ class GeminiPickPlaceNode(Node):
             render_mode=render_mode,
             render_min_m=float(get("render_min_m")),
             render_max_m=float(get("render_max_m")),
+            depth_scale_m=float(get("depth_scale_m")),
+            depth_is_radial=bool(get("depth_is_radial")),
             publish_er_image=bool(get("publish_er_image")),
             er_image_rate_hz=float(get("er_image_rate_hz")),
             patch_radius_px=int(get("patch_radius_px")),
@@ -316,6 +334,25 @@ class GeminiPickPlaceNode(Node):
             payload_margin_m=float(get("payload_margin_m")),
             payload_min_height_m=float(get("payload_min_height_m")),
             payload_max_height_m=float(get("payload_max_height_m")),
+        )
+
+        # RViz görselleştirmesi. Eskiden bu yalnızca perception_node'da vardı,
+        # yani küreler ve normal okları SADECE /gemini/query ile geliyordu -
+        # görev sırasında RViz boştu. Oysa kolun nereye gideceğini gözle
+        # doğrulamanın en kritik olduğu an tam olarak burası.
+        #
+        # İKİ AYRI NAMESPACE, TEK PUBLISHER: kavrama ve bırakma hedefleri
+        # birbirini silmeden yan yana durur (renk de ayrı: PICK camgöbeği,
+        # PLACE yeşil). perception ise "gemini_query" namespace'inde kalır.
+        marker_lifetime = float(get("marker_lifetime_sec"))
+        self.pick_markers = DetectionMarkers(
+            node=self, world_frame=self.world_frame,
+            namespace="gemini_pick", lifetime_sec=marker_lifetime,
+        )
+        self.place_markers = DetectionMarkers(
+            node=self, world_frame=self.world_frame,
+            namespace="gemini_place", lifetime_sec=marker_lifetime,
+            publisher=self.pick_markers.publisher,
         )
 
         # MoveIt backend seçimi. pymoveit2_sim ve pymoveit2_real, action adlarını
@@ -453,6 +490,9 @@ class GeminiPickPlaceNode(Node):
         )
 
         self._payload_attached = False
+        # Taşınan parçanın YÜZEY NORMALİ boyunca boyu (payload.size[2], paylı).
+        # Bırakma yükseklikleri bunun ÜSTÜNE eklenir; bkz. _lift_for_payload.
+        self.carried_height = 0.0
         self._busy = threading.Lock()
         # Hangi tarama pozunda olduğumuz; -1 = bilinmiyor (gereksiz hareketi
         # atlamak için kullanılıyor, her ER çağrısı ~5 s).
@@ -589,10 +629,32 @@ class GeminiPickPlaceNode(Node):
             ok = self._wait_motion()
             self._ensure_attached()
             if ok:
+                self._settle(label)
                 return True
             time.sleep(0.4)
         self.get_logger().error(f"ARM joint hedefi başarısız: {label}")
         return False
+
+    def _settle(self, label: str) -> None:
+        """Hedefe VARDIKTAN sonra kısa bir bekleme.
+
+        NEDEN: hareketin "başarılı" dönmesi, eklemlerin fiziksel olarak
+        oturduğu anlamına gelmiyor. Özellikle lineer eksen (Festo sürücü,
+        base_to_robot_mount) hedefi raporladıktan sonra da yol almaya devam
+        ediyor. Beklemeden sıradaki waypoint'e geçilince kol daha konumuna
+        gelmeden yeni yörüngeye başlıyor ve kap parçaya tam oturmuyordu.
+
+        Bu bir ÖNLEM, çözüm değil: asıl mesele sürücünün hedefe varmadan
+        "vardım" demesi. Kalıcı çözüm controller'ın goal tolerance /
+        stopped_velocity_tolerance ayarlarında.
+        """
+        if self.waypoint_settle_sec <= 0.0:
+            return
+        self.get_logger().info(
+            f"{label}: {self.waypoint_settle_sec:.1f} s bekleniyor "
+            "(eksenler otursun)"
+        )
+        time.sleep(self.waypoint_settle_sec)
 
     def _frame_position_for_tip(
         self, tip_position: Point3, quat_xyzw: Sequence[float]
@@ -659,6 +721,7 @@ class GeminiPickPlaceNode(Node):
             ok = self._wait_motion()
             self._ensure_attached()
             if ok:
+                self._settle(label)
                 return True
             time.sleep(0.4)
         self.get_logger().error(f"ARM pose hedefi başarısız: {label}")
@@ -746,6 +809,7 @@ class GeminiPickPlaceNode(Node):
             self.get_logger().warn(f"Parça çarpışma gövdesi eklenemedi: {exc}")
             return
         self._payload_attached = True
+        self.carried_height = float(height)
         self.get_logger().info(
             f"Parça MoveIt sahnesine iliştirildi: {self.payload_id} "
             f"({length * 1000:.0f}x{width * 1000:.0f}x{height * 1000:.0f} mm, {source})"
@@ -788,6 +852,7 @@ class GeminiPickPlaceNode(Node):
         if self._payload_attached:
             self.get_logger().info("Parça MoveIt sahnesinden kaldırıldı")
         self._payload_attached = False
+        self.carried_height = 0.0
 
     # --- hedef seçimi ------------------------------------------------------
 
@@ -917,7 +982,9 @@ class GeminiPickPlaceNode(Node):
         """
         surface = detection.get("surface")
         if surface is None:
-            return self._position_of(detection), (0.0, 0.0, 1.0), self.fallback_quat
+            return self._lift_for_payload(
+                self._position_of(detection), (0.0, 0.0, 1.0), for_grasp
+            ), (0.0, 0.0, 1.0), self.fallback_quat
 
         centroid = (
             surface["centroid"]["x"], surface["centroid"]["y"], surface["centroid"]["z"]
@@ -945,10 +1012,41 @@ class GeminiPickPlaceNode(Node):
                         "inişe çevrildi - yatay bir yüzeye parça bırakılamaz."
                     )
                     normal = (0.0, 0.0, 1.0)
-                    return centroid, normal, list(approach_quaternion(
-                        normal, approach_vector=tuple(self.tool_approach_vector)))
+                    return (
+                        self._lift_for_payload(centroid, normal, for_grasp),
+                        normal,
+                        list(approach_quaternion(
+                            normal,
+                            approach_vector=tuple(self.tool_approach_vector))),
+                    )
 
-        return centroid, normal, surface["quat_xyzw"]
+        return (self._lift_for_payload(centroid, normal, for_grasp),
+                normal, surface["quat_xyzw"])
+
+    def _lift_for_payload(
+        self, contact: Point3, normal: Point3, for_grasp: bool
+    ) -> Point3:
+        """BIRAKMA temas noktasını taşınan parçanın boyu kadar yukarı taşır.
+
+        Böylece place_clearance ve place_approach_candidates'taki sayılar
+        "ÖLÇÜLEN PARÇA BOYU + şu kadar" anlamına gelir. Sabit bir sayı iki işi
+        birden yapamıyordu: aynı değer küçük parçada bol, büyük parçada
+        yetersiz kalıyordu. 114 mm'lik bir kutuda 0.05, parçanın altını yüzeyin
+        64 mm İÇİNE sokmak demekti; iniş çarpışmadan kırpılıyor ve gerçek
+        bırakma yüksekliği öngörülemez oluyordu.
+
+        Kaydırma TEK BİR YERDE yapılıyor ki doğrulama (_release_ok, _reach_ok)
+        ile hareket AYNI noktayı kullansın. Ayrı ayrı uygulanırsa doğrulama bir
+        yüksekliği onaylar, kol başkasına gider.
+
+        Yükseklik ölçümden gelir (payload.size[2], pay dahil) ve yalnızca parça
+        gerçekten iliştirilmişken sıfırdan farklıdır; ölçüm başarısızsa
+        _payload_box config'teki payload_size'a düşer. Kavramada (for_grasp)
+        hiç uygulanmaz: orada kap parçanın ÜST yüzeyine değmelidir.
+        """
+        if for_grasp or self.carried_height <= 0.0:
+            return contact
+        return self._offset(contact, normal, self.carried_height)
 
     @staticmethod
     def _offset(point: Point3, direction: Point3, distance: float) -> Point3:
@@ -1372,6 +1470,12 @@ class GeminiPickPlaceNode(Node):
     def _execute(self, command: str) -> None:
         self._status("START", command)
 
+        # Önceki görevin marker'ları silinir; kalırlarsa bu koşuya ait
+        # sanılıp yanlış yerde hata aranır. BAŞARISIZLIKTA ise bilerek
+        # BIRAKILIYORLAR - "nereyi hedeflemişti" sorusunun tek görsel cevabı.
+        self.pick_markers.clear()
+        self.place_markers.clear()
+
         # Önceki koşudan kalıntı temizliği. İki ayrı yerde kalıntı olabiliyor:
         # MoveIt sahnesinde iliştirilmiş bir kutu (düğüm çökmüşse kalır) ve
         # Gazebo'da kurulu bir DetachableJoint (eklenti başlangıçta bağlı
@@ -1414,6 +1518,9 @@ class GeminiPickPlaceNode(Node):
 
         contact, normal, grasp_quat = self._grasp_frame(pick_detection)
         surface = pick_detection.get("surface")
+        # contact veriliyor, tespitin ham konumu DEĞİL: _grasp_frame yüzey
+        # centroid'ini kullanır ve kolun gerçekten gideceği nokta budur.
+        self.pick_markers.publish([pick_detection], colour=CYAN, contact=contact)
         self._status(
             "PICK_LOCATED",
             pick_detection["label"],
@@ -1434,6 +1541,13 @@ class GeminiPickPlaceNode(Node):
                     f"Bırakma hedefi hiçbir tarama pozunda bulunamadı: {plan['place']!r}",
                 )
                 return
+            # Bırakma noktası çarpışma yüzünden KAYDIRILMIŞ olabilir
+            # (_nudge_rings). O durumda ER'nin ham noktasını çizmek kolun
+            # gerçekte gittiği yeri gizlerdi - 13 Ağu 2026'da tam olarak bu
+            # fark (54 mm) günlerce görünmeden kaldı.
+            place_contact, _, _ = self._grasp_frame(place_detection, for_grasp=False)
+            self.place_markers.publish(
+                [place_detection], colour=GREEN, contact=place_contact)
             self._status(
                 "PLACE_LOCATED",
                 place_detection["label"],

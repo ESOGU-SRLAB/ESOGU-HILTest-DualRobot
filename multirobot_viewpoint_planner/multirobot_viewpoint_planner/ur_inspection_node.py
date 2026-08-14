@@ -99,6 +99,13 @@ class URInspectionNode(InspectionNodeBase):
             end_effector_name=ur_robot.end_effector_name(),
             group_name=ur_robot.MOVE_GROUP_ARM,
             callback_group=self._cb,
+            # This executor unwinds goals itself, with more context than MoveIt2 has:
+            # it tags the trajectory cache with the goal policy, unwinds recorded paths,
+            # and keeps a deliberately RAW last-resort attempt after the unwound and
+            # normalized ones. Letting MoveIt2 also unwind would turn that raw fallback
+            # into a duplicate of the first attempt and would make
+            # wrap_goals_to_current:=false stop disabling anything.
+            unwind_joint_goals=False,
         )
         # Enables the base's nearest-branch IK (it solves /compute_ik for ur_tool_frame
         # against this group instead of letting the pose goal pick an arbitrary branch).

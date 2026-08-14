@@ -886,7 +886,7 @@
 [12:38:11] [HIL] [move_group-23] [INFO] [1786095491.486201994] [moveit_ros.planning_scene_monitor.planning_scene_monitor]: Listening to 'planning_scene_world' for planning scene world geometry
 [12:38:11] [HIL] [move_group-23] [WARN] [1786095491.486711887] [moveit.ros.occupancy_map_monitor.middleware_handle]: Resolution not specified for Octomap. Assuming resolution = 0.1 instead
 [12:38:11] [HIL] [move_group-23] [ERROR] [1786095491.486724660] [moveit.ros.occupancy_map_monitor.middleware_handle]: No 3D sensor plugin(s) defined for octomap updates
-[12:38:16] [HIL] [create-24] [ERROR] [1786095496.153574937] [ros_gz_sim]: Request to create entity from service [/world/ifarlab/create] timed out..
+[12:38:16] [HIL] [create-24] [ERROR] [1786095496.153574937] [ros_gz_sim]: Request to create entity from service [/world/cem/create] timed out..
 [12:38:16] [HIL] [create-24]  sdf_filename: "/home/cem/colcon_ws/install/conveyorbelt_gz/share/conveyorbelt_gz/sdf/conveyor.sdf"
 [12:38:16] [HIL] [create-24] pose {
 [12:38:16] [HIL] [create-24]   position {
@@ -901,7 +901,7 @@
 [12:38:16] [HIL] [create-24] allow_renaming: true
 [12:38:16] [HIL] [create-24]
 [12:38:16] [HIL] [create-24] [INFO] [1786095496.153718560] [ros_gz_sim]: OK creation of entity.
-[12:38:16] [HIL] [create-25] [ERROR] [1786095496.156117581] [ros_gz_sim]: Request to create entity from service [/world/ifarlab/create] timed out..
+[12:38:16] [HIL] [create-25] [ERROR] [1786095496.156117581] [ros_gz_sim]: Request to create entity from service [/world/cem/create] timed out..
 [12:38:16] [HIL] [create-25]  sdf_filename: "/home/cem/colcon_ws/install/conveyorbelt_gz/share/conveyorbelt_gz/sdf/RedCube.sdf"
 [12:38:16] [HIL] [create-25] pose {
 [12:38:16] [HIL] [create-25]   position {

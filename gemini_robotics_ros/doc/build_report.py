@@ -827,7 +827,7 @@ def build():
     table(doc,
           ["Sorun", "Kök neden", "Çözüm"],
           [["Konveyör Gazebo'ya spawn olmuyor",
-            "Dünya adı 'cem', spawn komutları '-world ifarlab' kullanıyordu",
+            "Dünya adı 'cem', spawn komutları '-world cem' kullanıyordu",
             "Üç spawn çağrısı düzeltildi"],
            ["/sim/depth/image rgb8 taşıyordu",
             "Köprü, derinlik yerine RGB topic'ine bağlıydı",
@@ -1126,7 +1126,12 @@ def build():
 
     doc.add_page_break()
 
-    h(doc, "13. Devir Teslim: Ne Doğrulandı, Ne Doğrulanmadı", 1)
+    h(doc, "13. Devir Teslim (12 Ağustos itibarıyla)", 1)
+    para(doc,
+         "Bu bölüm 12 Ağustos itibarıyla geçerliydi ve TARİHSEL KAYIT olarak "
+         "duruyor; güncel durum için Bölüm 19'a bakın. Aşağıdaki maddelerin bir "
+         "kısmı 13-14 Ağustos'ta kapatıldı.",
+         italic=True, color=BAD)
     para(doc,
          "Bu bölüm çalışmaya ara verildiği andaki durumu kaydeder. Ayrım "
          "kasıtlıdır: “yazıldı ve testleri geçti” ile “çalışan hücrede "
@@ -1208,6 +1213,407 @@ def build():
     bullet(doc, "Pick ve place sorgularının tek ER çağrısında birleştirilmesi.")
     bullet(doc, "Gözün içine inebilecek daha ince bir uç eleman ya da toolkit'in "
                 "yeniden konumlandırılması — alt sıraları kullanılabilir kılar.")
+
+
+    # ======================================================================
+    # 13-14 Ağustos 2026 — bu bölümler sonradan eklendi
+    # ======================================================================
+
+    h(doc, "14. Bırakma Arızası: Üst Üste Binmiş Dört Hata", 1)
+    para(doc,
+         "13 Ağustos'ta tek bir belirti vardı: robot parçayı toolkit'e "
+         "bırakamıyordu. Arkasında dört ayrı arıza çıktı. Hiçbiri diğerinin "
+         "sonucu değil; üst üste bindikleri için tek bir belirti veriyorlardı "
+         "ve her düzeltme “işe yaramadı” gibi görünüyordu.")
+
+    h(doc, "14.1 Gazebo'da parça hiç kavranmıyordu", 2)
+    para(doc,
+         "gz-sim 8'de vakum eklentisi yok; parça DetachableJoint ile kola "
+         "bağlanıyor. Eklemin parent_link'i suction_cup olarak yazılmıştı — "
+         "Gazebo'da böyle bir link YOK. URDF→SDF dönüşümü sabit eklemle bağlı "
+         "linkleri birleştirir, yani son aktüe edilen eklemin ötesindeki "
+         "linkler silinir.")
+    para(doc,
+         "Eklenti parent'ı bulamayınca eklemi hiç kurmuyor ve sessiz kalıyor. "
+         "Belirtisi: gz topic -l çıktısında /vacuum/attached YOK — /vacuum/attach "
+         "ve /vacuum/detach ise VAR, çünkü onlar köprüden geliyor. İki dakikalık "
+         "bu kontrol, günlerce görünmeyen bir arızayı ele veriyor.")
+    code(doc, "gz model -m whole_cell_sim   # koldaki son link: ur10e_wrist_3_link\n"
+              "gz topic -l | grep vacuum    # /vacuum/attached var mi?")
+
+    h(doc, "14.2 Doğrulama, planlayıcıdan başka bir dünyaya bakıyordu", 2)
+    para(doc,
+         "Dördünün en sinsisi. /compute_ik ve /check_state_validity'ye gönderilen "
+         "robot_state, is_diff=False ile gidiyordu. MoveIt bu durumda verilen "
+         "durumu sahnedekinin YERİNE koyar ve iliştirilmiş nesneleri düşürür.")
+    para(doc,
+         "Sonuç: doğrulama, elinde kutu TAŞIMAYAN bir kol için cevap veriyordu. "
+         "“Gidilebilir” diyordu, kol kutuyu alıyordu, sonra planlayıcı aynı poza "
+         "plan üretemiyordu. Hata mesajı hedefi suçluyordu, oysa hedef YÜKLE "
+         "BİRLİKTE geçersizdi.")
+    table(doc,
+          ["robot_state.is_diff", "IK sonucu", "doğru mu"],
+          [["False", "1 (uygun)", "HAYIR"],
+           ["True", "−31 · temas: ur10e_stackable_bin ↔ gemini_payload", "evet"]],
+          widths=[1.6, 3.6, 1.0])
+    para(doc,
+         "Ölçüm: APPROACH_PLACE (0.924, 1.660, 1.174), kavrayıcıda 140×83×30 mm "
+         "kutu. Tek fark bir bayrak.", italic=True, color=MUTED)
+
+    h(doc, "14.3 Durum geçerli, yol geçersiz", 2)
+    para(doc,
+         "Nokta gözün ortasına çekildikten sonra bile plan başarısızdı. Sebep "
+         "doğrulamanın yapısal sınırı: IK bir DURUMU denetler, bir YOLU değil. "
+         "Hedef poz her mesafede geçerli çıkıyordu; sorun oraya giderken.")
+    table(doc,
+          ["yaklaşma", "kutunun altı", "sonuç"],
+          [["20 cm", "1.109", "plan başarılı"],
+           ["18 cm", "1.089", "plan başarısız (−2)"]],
+          widths=[1.3, 1.6, 3.3])
+    para(doc,
+         "Sınır rafın üst kenarı: 1.095. Kutunun altı bunu geçmezse parça hedefte "
+         "zaten gözün içindedir ve planlayıcı onu YANDAN sokmaya çalışır. Bu "
+         "yüzden bırakma yaklaşma listesi BÜYÜKTEN küçüğe gider ve yapının "
+         "üstünden başlar — kavrama listesinin tam tersi, çünkü kavramada dar "
+         "yere sokulmak gerekir. İkisinin karışması eski hatayı sessizce geri "
+         "getirir; bir test bunu sabitliyor.")
+
+    h(doc, "14.4 Yükselen yaklaşma, kusuru bir aşama öteye taşıdı", 2)
+    para(doc,
+         "Yaklaşma yapının üstüne çıkınca ER'nin ortalanmamış noktası yaklaşma "
+         "denetimini GEÇTİ — o yükseklikte kutu kenarın üzerindeydi — ve arama "
+         "hiç tetiklenmedi. Kusur dik inişe kaydı.")
+    table(doc,
+          ["ölçülen", "değer"],
+          [["ER'nin verdiği y", "1.659"],
+           ["gözün sınırları", "1.519 – 1.691 (orta: 1.605)"],
+           ["kaçıklık", "54 mm"],
+           ["kutunun yarı genişliği", "41.5 mm → 1.659 + 0.0415 = 1.7005 > 1.691"],
+           ["kartezyen iniş", "%29.3 tamamlandı"]],
+          widths=[2.2, 4.0])
+    para(doc,
+         "İki düzeltme: iniş pozu da ayrıca doğrulanıyor (yoksa arama "
+         "tetiklenmiyor), ve yarım kalan iniş görevi ÖLDÜRMÜYOR — ulaşılan nokta "
+         "bırakmak için uygundu. Bu eşik kavrama eşiğinden ayrı ve gevşek: "
+         "kavrama gevşerse kap parçaya değmeden vakum açar, bu sessiz ve pahalı "
+         "bir hatadır.")
+
+    h(doc, "14.5 Nokta nasıl düzeltiliyor", 2)
+    para(doc,
+         "ER gözü doğru buluyor ama noktayı ortasına koymuyor. Sabit bir geometri "
+         "gömmek yerine temas noktası YÜZEYİN DÜZLEMİNDE — normale dik, asla "
+         "yüzeyin içine ya da üstüne değil — içten dışa halkalar hâlinde "
+         "kaydırılıp ilk geçerli nokta seçiliyor. Kavrama noktası ise ASLA "
+         "kaydırılmıyor: orada kaydırmak, kabı parçanın yanına indirmek demek.")
+
+    # ----------------------------------------------------------------------
+    h(doc, "15. Arama Hızı: 185 sn → 0,6 sn", 1)
+    para(doc,
+         "Arama çalışıyordu ama görev dakikalarca sürüyordu. İki bağımsız sebep "
+         "vardı; ikisi de ölçülerek bulundu.")
+    para(doc,
+         "Birincisi döngü sırası. Yön dış, mesafe iç döngüdeydi; her aday nokta "
+         "için beş mesafe de deneniyordu. Oysa aynı x/y'de yaklaşmayı kısaltmak "
+         "YANAL bir sığmama sorununu çözmez — kutu yerinde duruyor.")
+    para(doc,
+         "İkincisi IK zaman aşımı. Kabul edilen bir IK milisaniyelerde döner; "
+         "REDDEDİLEN ise zaman aşımının tamamını yakar. Arama doğası gereği "
+         "çoğunlukla ret ürettiği için bütçe doğrudan süreye çevriliyordu.")
+    table(doc,
+          ["ik_timeout_sec 3.0 → 0.5", "cevap değişti mi", "hızlanma"],
+          [["boş sahne", "55 pozun 0'ında", "38×"],
+           ["kutu kavrayıcıda", "48 pozun 0'ında", "50×"]],
+          widths=[2.2, 2.4, 1.6])
+    para(doc,
+         "Doğruluktan hiçbir şey verilmedi: 0.5 saniyelik bütçe, kabul edilen bir "
+         "çözümün ihtiyaç duyduğu sürenin (ölçülen: 56 ms) yaklaşık on katı. "
+         "Toplam arama 185 sn → 60.5 sn → 0.6 sn.")
+
+    # ----------------------------------------------------------------------
+    h(doc, "16. Gerçek Donanım: SICK ve VGC10", 1)
+
+    h(doc, "16.1 Derinliğin birimi ve konvansiyonu", 2)
+    para(doc,
+         "Belgede “16UC1, milimetre” yazıyordu. İkisi de yanlıştı ve ikisi de "
+         "sim'de görünmüyordu, çünkü Gazebo 32FC1/metre/planar yayınlıyor. "
+         "Belirti “model nesneyi bulamıyor” olarak çıkıyordu.")
+    table(doc,
+          ["ölçülen", "değer"],
+          [["ölçek oranı (ham /depth ↔ /points ‖xyz‖)", "4019.6 → 0.25 mm/LSB"],
+           ["1000'e bölmenin etkisi", "derinlik 4 KAT büyük"],
+           ["render penceresinden geçen piksel", "15 417 / 217 088 = %7.1"],
+           ["doğru ölçekle", "215 224 / 217 088 = %99.1"],
+           ["|depth − ‖xyz‖| medyanı", "8.2 mm  (radyal)"],
+           ["|depth − z| medyanı", "165 mm  (planar değil)"],
+           ["köşe açısı", "41.9° → köşede %34.3 yapay kabarma"]],
+          widths=[3.0, 3.2])
+    para(doc,
+         "1.8 m'lik bir sahnede bu 0.6 m'lik sahte bir şişkinlik demek; relief'in "
+         "yükseklik penceresi de yüzey normalleri de tamamen anlamsız olur.")
+
+    h(doc, "16.2 VGC10: mod numarası kaydırılmış bayt", 2)
+    para(doc,
+         "OnRobot dokümanı kontrol modunu 0/1/2 diye verir. Bu sürücü rmca'yı ham "
+         "Modbus register'ının ÜST BAYTI olarak alır ve düz toplar.")
+    code(doc, "# comModbusTcp.sendCommand\n"
+              "reg_a = message[0] + message[1]   # rmca + rvca\n\n"
+              "# %60 vakumla tut:\n"
+              "rmca = 0x0100 (256)  rvca = 60   ->  0x013C")
+    para(doc,
+         "Asıl mesele reddedilen bir komut değildi. Sürücü, geçersiz modu "
+         "bildirmek için rclpy.signal_shutdown() çağırıyordu — bu rospy (ROS 1) "
+         "API'si, rclpy'de YOK. Yani kötü bir mod uyarı üretmiyor, AttributeError "
+         "fırlatıp SÜRÜCÜ SÜRECİNİ ÖLDÜRÜYORDU; gripper da o anki durumunda "
+         "kalıyordu.")
+    bullet(doc, "Paketin mod sabitleri 0x0000/0x0100/0x0200 oldu. Eskiden 0/1/2 "
+                "idi — yani gerçek robottaki İLK kavrama sürücüyü öldürecekti, "
+                "çünkü bu kod sim dışında hiç çalışmamıştı.")
+    bullet(doc, "Sürücü artık geçersiz komutu loglayıp kanalı BOŞTA bırakıyor; "
+                "boşta ne tutar ne bırakır, elindeki parçayı düşürmez.")
+    bullet(doc, "Bir test sabitleri sürücünün kabul ettiği kümeye karşı sabitliyor.")
+    para(doc,
+         "“Connected to gripper” logu komutların çalıştığının KANITI DEĞİL. Sürücü "
+         "192.168.3.56:502'ye sorunsuz bağlanmıştı. Gerçek doğrulama "
+         "/OnRobotVGInput'un yayınlaması (yüzde = gvca / 10).",
+         italic=True, color=MUTED)
+
+    # ----------------------------------------------------------------------
+    h(doc, "17. Gerçek Hücrede Kalibrasyon: 4 cm Nereye Gitti", 1)
+    para(doc,
+         "Gerçek robot konveyördeki kutuya iniyor, ama kabın ağzı kutunun "
+         "yaklaşık 4 cm üstünde kalıyordu. Tek belirtinin arkasında üç ayrı "
+         "sebep vardı — ve üçü de FARKLI katmanlarda: kinematik, algı, çarpışma "
+         "modeli.")
+
+    h(doc, "17.1 Kalibrasyon dosyası sessizce yok sayılıyordu", 2)
+    para(doc,
+         "ur_control.launch.py, kinematics_params_file argümanını HİÇ "
+         "TANIMLAMAMIŞTI. Hücre launch'ı onu düzgünce geçiriyordu, ama dosyada "
+         "yol default_kinematics.yaml'a SABİTLENDİĞİ için değer sessizce "
+         "düşüyordu. Robot her açılışta jenerik nominal DH modeliyle çalışıyordu; "
+         "hücreye ait kalibrasyon hiç yüklenmiyordu.")
+    para(doc,
+         "Bu, bir kolun hedefin birkaç santim uzağında durmasının klasik "
+         "sebebidir ve hiçbir hata mesajı üretmez. Argüman tanımlandı, yol artık "
+         "ondan geliyor; verilmezse davranış eskisiyle aynı kalıyor.")
+
+    h(doc, "17.2 Kameranın optik frame'i 45 mm kaymıştı", 2)
+    para(doc,
+         "Bu, kolun NEREYE GİTTİĞİNİ belirleyen algı hatasıydı. Kritik metodolojik "
+         "nokta: sapma mesh'e karşı değil, ŞERİT METREYE karşı ölçüldü. Mesh'e "
+         "karşı doğrulama aynı gün iki kez yanılttı, çünkü conveyorbelt.stl "
+         "gerçek konveyörü temsil etmiyor.")
+    table(doc,
+          ["ölçüm zinciri", "değer"],
+          [["kap ağzı, kol TOUCH pozunda", "TF 0.9995 · metre 1.00–1.01"],
+           ["→ çıkarım", "TF doğru, kol zinciri sağlam, dünya z=0 = yer"],
+           ["kap ile kutu üstü arası boşluk", "0.040 (gözle)"],
+           ["kutu yüksekliği", "0.114 (metre)"],
+           ["çıkarılan gerçek bant", "1.000 − 0.040 − 0.114 = 0.845"],
+           ["metreyle doğrudan bant", "0.845 (birebir tuttu)"]],
+          widths=[2.6, 3.6])
+    table(doc,
+          ["algının okudukları", "değer", "sapma"],
+          [["bant düzlemi", "0.8900 (42 580 nokta, std 1.92 mm)", "+45.0 mm"],
+           ["kutunun üstü / temas", "1.005 (gerçek 0.960)", "+45.0 mm"]],
+          widths=[1.9, 2.8, 1.5])
+    para(doc,
+         "İki bağımsız yüzeyde aynı sapma: bu bir eğim ya da ölçek hatası değil, "
+         "DÜZGÜN BİR ÖTELEME. Düzeltme ur_sick_optical_joint'in origin'ine "
+         "giriyor, ama bu origin PARENT frame'in Z ekseni boyunca — dünya Z'si "
+         "boyunca değil.")
+    code(doc, "# optik eksen dunyada: [-0.002  0.002  -1.000]  (dikeyden 0.2 derece)\n"
+              "d = -(+0.0450) / -1.0000 = +0.0450\n"
+              "z: -0.010 + 0.045 = +0.035")
+    para(doc,
+         "Kamera neredeyse tam dik baktığı için düzeltme birebir çıktı. Eğik "
+         "baksaydı bu bölme ihmal edilemezdi.")
+
+    h(doc, "17.3 Konveyörün çarpışma modeli yerinde değildi", 2)
+    para(doc,
+         "Hizalama BANT YÜZEYİNE göre yapılır, çünkü hem kavrama hem çarpışma "
+         "orada olur. Mesh'in bant yüzeyi joint sıfırken 0.8518'de, gerçek bant "
+         "yerden 0.845 → base_to_conveyorbelt origin z = −0.0068.")
+    para(doc,
+         "TARİHÇE (tekrarlanmaması için): bu değer bir ara +0.0451 yapılmıştı, "
+         "çünkü hizalama YAN RAY ölçümünden (0.900) türetilmiş ve mesh'in "
+         "ray–bant mesafesinin gerçeği yansıttığı varsayılmıştı. Yansıtmıyor. Ray "
+         "hizalandı ama bant 51 mm yukarı çıktı: nokta bulutu konveyörün içine "
+         "gömülmüş göründü ve suction_cup ile conveyor_belt çarpışmaya başladı.",
+         italic=True, color=MUTED)
+    para(doc,
+         "Aynı mesh ikinci bir tuzak daha barındırıyordu ve bu sefer bedeli "
+         "GERÇEK BİR ÇARPIŞMA oldu. Mesh'te yan korkuluklar bandın yalnızca "
+         "3.1 mm üstünde bitiyor; gerçekte korkulukların üstü yerden 0.900, yani "
+         "bandın 55 mm üstünde. Model onları 52 mm ALÇAK gösterdiği için MoveIt "
+         "korkulukları görmüyordu ve kol banda yandan yaklaşırken onlara çarptı.")
+    para(doc,
+         "Eksik iki çarpışma kutusuyla kapatıldı: bandın üstünden korkuluk "
+         "üstüne, yükseklik 0.055, profil genişliği 28.4 mm, ayak izi mesh'in "
+         "yukarı bakan yüzeylerinden ölçüldü.")
+    bullet(doc, "YALNIZ collision, visual YOK: bunlar ayrı bir fiziksel parça "
+                "değil, mesh'in eksiğini kapatan hacimler. RViz'de mesh'in "
+                "üstüne binen kutular olarak görünmeleri kafa karıştırırdı.")
+    bullet(doc, "AYRI BİR LİNK DEĞİL, conveyor_belt'in parçası: SRDF'teki mevcut "
+                "çarpışma çiftleri (upper_arm, forearm, wrist_*, suction_cup) "
+                "olduğu gibi geçerli kalsın diye.")
+    para(doc,
+         "İKİ DÜZELTME BİRBİRİNİN YERİNE GEÇMEZ. base_to_conveyorbelt MoveIt'in "
+         "ÇARPIŞMA MODELİNİ gerçek banda oturtur; 45 mm'lik optik düzeltme ise "
+         "kolun NEREYE GİTTİĞİNİ belirleyen ALGI hatasıdır. Biri düzeltilip "
+         "diğeri atlanırsa belirti kısmen kaybolur ve arıza daha da zor bulunur.")
+
+    h(doc, "17.4 Kameranın kendi çarpışma kabuğu", 2)
+    para(doc,
+         "Aynı sınıftan bir hata kamera gövdesinde de vardı: sick_camera_mo.stl "
+         "gerçek muhafazayı eksik gösteriyor, ön yüzü fiziksel optik kapağın "
+         "~1.9 cm gerisinde bitiyor. MoveIt bu yüzden kamerayı UR'nin kendi "
+         "eklemlerinin ve kablo kanalının içine planlıyordu.")
+    para(doc,
+         "Muhafazayı altı kutuyla sarmalayan bir kabuk eklendi — ön, arka ve dört "
+         "yan; görüş ekseni etrafında 60° döndürülmüş, yani ur_sick_optical_joint'in "
+         "açısıyla aynı. Ön/arka 8.7 × 9.0 × 3.9 cm, yanlar 7.75 cm muhafaza "
+         "derinliği boyunca. Dört komşu link (flange, tool0, cable_channel, "
+         "cable_channel_flange) zaten her SRDF'te kameraya karşı devre dışı "
+         "olduğu için bu kutular kalıcı bir öz-çarpışma getirmiyor.")
+
+    h(doc, "17.5 Neden ayrı bir optik frame var", 2)
+    para(doc,
+         "depth_optical_frame IK ve planlama için kullanılıyor. Gerçek SICK bulutu "
+         "ise ona göre görüş ekseni etrafında ~60° dönük geliyor. Bulutu doğrudan "
+         "IK frame'ine damgalamak o frame'i bozardı; bunun yerine ayrı bir kalibre "
+         "frame (sick_optical_frame) var ve gerçek bulut oraya damgalanıyor.")
+    para(doc,
+         "Kamera sürücüsünün frame_id'si, pointcloud_transformer_ur'un target_frame'i "
+         "ve executor'ın real_ur_sensor_frame'i — üçü de aynı frame'i gösteriyor. "
+         "Kalibrasyon, RViz'de (Fixed Frame = world) bulut şaseye oturana kadar "
+         "ur_cloud_calibrator ile ayarlandı.")
+
+    # ----------------------------------------------------------------------
+    h(doc, "18. Sim ile Gerçeğin Ayrılması", 1)
+    para(doc,
+         "Sim ile gerçek arasındaki farklar iki overlay dosyasında toplanıyor ve "
+         "taban dosyanın üstüne biniyorlar. Kural: buraya YALNIZCA gerçekten "
+         "farklı olan şeyler girer, yoksa iki dosya birbirinden kayar.")
+    table(doc,
+          ["ayar", "sim", "gerçek", "neden farklı"],
+          [["derinlik ölçeği", "32FC1 / m", "0.25 mm/LSB", "donanım"],
+           ["derinlik konvansiyonu", "planar Z", "radyal", "ToF fiziği"],
+           ["use_sim_time", "true", "false", "gerçekte /clock yok"],
+           ["RGB", "var", "yok", "kamerada RGB yayıncısı yok"],
+           ["intensity", "boş", "var", "Gazebo IR genliği üretmez"],
+           ["vakum onayı", "false", "true", "sim'de VGC10 sürücüsü yok"]],
+          widths=[1.7, 1.2, 1.3, 2.0])
+
+    h(doc, "18.1 Taban dosyaya yazılan tek satırın bedeli", 2)
+    para(doc,
+         "Vakum onayı gerçek hücre için açılmıştı — doğru karardı. Ama satır TABAN "
+         "DOSYAYA yazıldığı için sim'i de beraberinde götürdü. Simülasyonda VGC10 "
+         "sürücüsü yok; /OnRobotVGInput hiç yayınlanmıyor. Sonuç: grip() üç saniye "
+         "hiç gelmeyecek bir mesajı bekliyor ve görev “vakum kurulamadı” diye "
+         "düşüyor.")
+    code(doc, "ros2 topic info /OnRobotVGInput   ->  Publisher count: 0\n"
+              "                                      (tek uc: kendi aboneligimiz)")
+    para(doc,
+         "Belirtinin yanıltıcı olma sebebi ayrıca kayda değer: attach beklemeden "
+         "ÖNCE gönderiliyor, yani kutu Gazebo'da gerçekten kavrayıcıya kaynıyor — "
+         "sonra başarısızlık dalındaki release onu hemen çözüyor. Dışarıdan "
+         "bakınca kol kutuya iniyor, hiçbir şey olmuyor, eve dönüyor. “Vakum hiç "
+         "çalışmıyor” gibi görünüyor, oysa vakum yolu sağlam.")
+    para(doc,
+         "Düzeltme: ayar İKİ mod dosyasına da AÇIKÇA yazıldı ve bir test her "
+         "ikisinde de VARLIĞINI şart koşuyor. Yalnız değerleri kontrol etmek "
+         "yetmezdi — asıl hata, ayarın bir dosyada HİÇ OLMAMASIYDI.")
+    para(doc,
+         "Aynı arızanın gerçek tarafta tekrarlanmaması için hücreyi ayağa "
+         "kaldıran launch VGC10 sürücüsünü de kaldırıyor — iki koşul birden: "
+         "use_vacuum_gripper:=true VE use_fake_hardware:=false.")
+
+    h(doc, "18.2 Görev görselleştirmesi", 2)
+    para(doc,
+         "Tespit küreleri, etiketler ve yüzey normali okları yalnızca "
+         "/gemini/query ile — yani robotu hareket ettirmeyen teşhis yoluyla — "
+         "geliyordu. Asıl hareketi /gemini/command yaptığı için görev sırasında "
+         "RViz boştu: kolun nereye gideceğini gözle doğrulamanın en gerekli "
+         "olduğu anda.")
+    bullet(doc, "Marker.DELETEALL kaldırıldı. RViz onu namespace'ten BAĞIMSIZ "
+                "uyguluyor; iki düğüm aynı topic'i paylaşır paylaşmaz bir sorgu, "
+                "görevin çizimini süpürürdü. Her yayıncı artık yalnızca kendi "
+                "bıraktığı id'leri hatırlıyor ve onlara tek tek DELETE gönderiyor.")
+    bullet(doc, "Çizilen nokta, kolun GERÇEKTEN gittiği nokta. Bırakma noktası "
+                "çarpışma yüzünden kaydırılmış olabiliyor; ER'nin ham noktasını "
+                "çizmek, görselleştirmenin tam da açıklaması gereken 54 mm'lik "
+                "farkı gizlerdi.")
+    bullet(doc, "Kavrama camgöbeği, bırakma yeşil, ayrı namespace'ler. Görev "
+                "başında önceki koşunun marker'ları siliniyor; BAŞARISIZLIKTA ise "
+                "bilerek bırakılıyorlar — “nereyi hedeflemişti” sorusunun tek "
+                "görsel cevabı onlar.")
+
+    # ----------------------------------------------------------------------
+    h(doc, "19. Güncel Durum (14 Ağustos)", 1)
+    para(doc,
+         "Bölüm 13, çalışmaya 12 Ağustos'ta ara verildiği andaki durumu kaydeder "
+         "ve tarihsel kayıt olarak duruyor. Aşağıdaki liste onun yerine geçer.",
+         italic=True, color=MUTED)
+
+    h(doc, "19.1 Çalışan hücrede doğrulandı", 2)
+    bullet(doc, "Uçtan uca SİM görevi: komut → tespit → kavrama → taşıma → bırakma.")
+    bullet(doc, "Gerçek VGC10'a Modbus üzerinden komut (tut / bırak / boşta).")
+    bullet(doc, "Gerçek SICK'ten nokta bulutu ve derinlik; ölçek ve konvansiyon "
+                "düzeltmeleri.")
+    bullet(doc, "GERÇEK ROBOT konveyördeki kutuya TOUCH pozunda indi. Dünya z=0'ın "
+                "yer olduğu bağımsız doğrulandı: TF 0.9995 ↔ şerit metre 1.00–1.01.")
+    bullet(doc, "45 mm'lik optik sapma iki bağımsız yüzeyde ölçüldü ve düzeltildi.")
+    bullet(doc, "Konveyör korkulukları: modelde eksik oldukları BİR ÇARPIŞMAYLA "
+                "öğrenildi, ölçülüp çarpışma modeline eklendi.")
+    bullet(doc, "Vakum onayının sim'de kapatılması sonrası kavramanın çalışması.")
+
+    h(doc, "19.2 Yazıldı, hücrede denenmedi", 2)
+    bullet(doc, "Gerçek robotta uçtan uca görev — parçanın gerçekten vakumla alınıp "
+                "bırakılması. Kol hedefe gidiyor; kavrama zincirinin tamamı henüz "
+                "koşulmadı.")
+    bullet(doc, "Kalibrasyon dosyasının artık gerçekten yüklendiğinin ÖLÇÜLMESİ: "
+                "argüman düzeltildi, ama düzeltilmiş DH modelinin konum hatasına "
+                "etkisi sayıyla karşılaştırılmadı.")
+    bullet(doc, "VGC10 sürücüsünün launch'tan otomatik kalkması (statik olarak "
+                "doğrulandı: kurulu dosya, dal mantığı, sözdizimi).")
+    bullet(doc, "Görev marker'larının RViz'de görünmesi (düğümlerin yeniden "
+                "başlatılması gerekiyor).")
+    bullet(doc, "Sim'de ayarlanmış tarama pozlarının gerçek hücrede aynı kadrajı "
+                "vermesi.")
+
+    h(doc, "19.3 Bilinen sınırlar", 2)
+    bullet(doc, "Doğrulama DURUMLARI denetler, YOLLARI değil (bkz. 14.3). Yaklaşma "
+                "listesi bunu telafi ediyor ama kapatmıyor. Kapatmanın yolu, "
+                "seçilen her yaklaşma için plan_only bir plan denemesi.")
+    bullet(doc, "Bırakma komutu doğrulanmıyor: release() koşulsuz başarı dönüyor. "
+                "Kaybolan bir komut parçayı kavrayıcıda bırakır ve kol yoluna "
+                "devam eder.")
+    bullet(doc, "Modbus kopması ile “kap yüzeye oturmadı” ayırt edilemiyor: "
+                "sürücünün durum okuması her istisnada sessizce [0, 0] dönüyor. "
+                "Ayrımı yalnızca sürücünün stdout'undaki "
+                "“[comModbusTcp] getStatus exception” satırı yapıyor.")
+    bullet(doc, "Kategori tanıma zayıf: derinlik render'ı ER 2 için dağılım-içi "
+                "girdi değil (bkz. Bölüm 4).")
+
+    h(doc, "19.4 Test durumu", 2)
+    para(doc, "Paket 85 otomatik test taşıyor; çoğu ROS grafiği ayağa kaldırmadan "
+              "çalışıyor. Bu testlerin büyük kısmı bir düzeltmeyi değil, BİR "
+              "HATANIN GERİ GELMEMESİNİ koruyor.")
+    table(doc,
+          ["test dosyası", "adet", "neyi sabitliyor"],
+          [["test_place_search", "12", "kaydırma yüzeyde kalır, içten dışa aranır"],
+           ["test_payload", "9", "parça boyutu derinlikten, histogram modu"],
+           ["test_markers", "7", "DELETEALL yok, artakalanlar tek tek silinir"],
+           ["test_depth_conventions", "7", "ölçek ve radyal/planar dönüşümleri"],
+           ["test_reachability_live", "7", "gerçek MoveIt'e karşı IK kararları"],
+           ["test_reachability", "6", "çarpışma ↔ erişimsizlik, is_diff bayrağı"],
+           ["test_vacuum_modes", "6", "mod sabitleri, mod başına onay ayarı"],
+           ["test_api_key", "6", "anahtar arama sırası"],
+           ["test_tool_geometry", "5", "emme ekseni ve TCP URDF'ten okunur"],
+           ["test_spin_once_guard", "4", "düğümün executor'dan düşmemesi"],
+           ["test_planning_budget", "3", "planlama bütçesi sessizce atlanmaz"]],
+          widths=[2.1, 0.7, 3.4])
 
     doc.add_paragraph()
     para(doc,

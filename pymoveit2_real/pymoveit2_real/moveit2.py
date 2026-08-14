@@ -42,6 +42,11 @@ from shape_msgs.msg import Mesh, MeshTriangle, SolidPrimitive
 from std_msgs.msg import Header, String
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
+from pymoveit2_real.joint_wrap import (
+    describe_changes,
+    parse_joint_limits,
+    wrap_to_reference,
+)
 from pymoveit2_real.utils import enum_to_str
 
 
@@ -78,6 +83,9 @@ class MoveIt2:
         callback_group: Optional[CallbackGroup] = None,
         follow_joint_trajectory_action_name: str = "DEPRECATED",
         use_move_group_action: bool = False,
+        unwind_joint_goals: bool = True,
+        unwind_limit_margin: float = 0.05,
+        unwind_min_gain: float = 0.35,
     ):
         """
         Construct an instance of `MoveIt2` interface.
@@ -96,6 +104,14 @@ class MoveIt2:
           - `use_move_group_action` - Flag that enables execution via MoveGroup action (MoveIt 2)
                                ExecuteTrajectory action is employed otherwise
                                together with a separate planning service client
+          - `unwind_joint_goals` - Re-express every joint goal as the 2*pi-equivalent
+                                   nearest the start state, subject to URDF limits. See
+                                   `set_joint_goal()`; safe to leave on, since the
+                                   rewritten goal is the SAME physical configuration.
+          - `unwind_limit_margin` - Radians kept clear of each joint's limit edges when
+                                    accepting an equivalent.
+          - `unwind_min_gain` - Only rewrite a joint when doing so saves at least this
+                                many radians of travel (default ~20 deg).
         """
 
         self._node = node
@@ -167,6 +183,31 @@ class MoveIt2:
             ),
             callback_group=self._callback_group,
         )
+
+        # 2*pi joint-goal unwinding. The URDF is picked up from /robot_description, which
+        # robot_state_publisher latches, so a TRANSIENT_LOCAL subscriber gets it even
+        # though it was published long before this node started. Nothing blocks on it:
+        # until it arrives the limit table is empty and every wrap is a no-op, so a run
+        # without a model behaves exactly as it did before this feature existed.
+        self.__unwind_joint_goals = bool(unwind_joint_goals)
+        self.__unwind_limit_margin = float(unwind_limit_margin)
+        self.__unwind_min_gain = float(unwind_min_gain)
+        self.__urdf_xml = None
+        self.__joint_limits = None
+        self.__unwind_warned = False
+        if self.__unwind_joint_goals:
+            self._node.create_subscription(
+                msg_type=String,
+                topic="robot_description",
+                callback=self.__robot_description_callback,
+                qos_profile=QoSProfile(
+                    durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+                    reliability=QoSReliabilityPolicy.RELIABLE,
+                    history=QoSHistoryPolicy.KEEP_LAST,
+                    depth=1,
+                ),
+                callback_group=self._callback_group,
+            )
 
         # Create action client for move action
         self.__move_action_client = ActionClient(
@@ -628,6 +669,11 @@ class MoveIt2:
                 joint_names=joint_names,
                 tolerance=tolerance_joint_position,
                 weight=weight_joint_position,
+                # Unwind against the state this plan actually starts from. It is still
+                # None here when the caller did not supply one, and set_joint_goal then
+                # falls back to the current measured state -- which is exactly what the
+                # loop below is about to resolve it to anyway.
+                reference=start_joint_state,
             )
         # Define starting state for the plan (default to the current state)
         while start_joint_state is None:
@@ -1045,15 +1091,25 @@ class MoveIt2:
         joint_names: Optional[List[str]] = None,
         tolerance: float = 0.001,
         weight: float = 1.0,
+        reference: Optional[Union[JointState, List[float]]] = None,
     ):
         """
         Set joint space goal. With `joint_names` specified, `joint_positions` can be
         defined for specific joints in an arbitrary order. Otherwise, first **n** joints
         passed into the constructor is used, where **n** is the length of `joint_positions`.
+
+        Unless disabled via `unwind_joint_goals`, the goal is first re-expressed as the
+        2*pi-equivalent nearest `reference` (default: the arm's current measured state).
+        This is the single choke point every joint-space motion goes through --
+        `move_to_configuration()` and `plan_async()` both land here -- so it is where the
+        unwinding belongs. See `unwind_joint_goal()` for why it cannot change the pose
+        the arm ends up in.
         """
 
         constraints = self.create_joint_constraints(
-            joint_positions=joint_positions,
+            joint_positions=self.unwind_joint_goal(
+                joint_positions, joint_names=joint_names, reference=reference
+            ),
             joint_names=joint_names,
             tolerance=tolerance,
             weight=weight,
@@ -1945,6 +2001,109 @@ class MoveIt2:
             self.__planning_scene = self.__old_planning_scene
 
         return resp.success
+
+    def __robot_description_callback(self, msg: String):
+        if self.__urdf_xml is None:
+            self.__urdf_xml = msg.data
+
+    @property
+    def joint_limits(self) -> dict:
+        """{joint_name: JointLimit} parsed from /robot_description, or {} if the model
+        has not arrived (or could not be parsed). Parsed once, then cached."""
+        if self.__joint_limits is not None:
+            return self.__joint_limits
+        if self.__urdf_xml is None:
+            return {}  # not an error yet -- the latched message may still be in flight
+        try:
+            self.__joint_limits = parse_joint_limits(self.__urdf_xml)
+        except Exception as e:
+            self._node.get_logger().warn(
+                f"Could not parse /robot_description ({e}); 2*pi joint-goal unwinding "
+                "is DISABLED for this run (goals used exactly as given)."
+            )
+            self.__joint_limits = {}
+            return self.__joint_limits
+        wrappable = [
+            n
+            for n in self.__joint_names
+            if n in self.__joint_limits and self.__joint_limits[n].wrappable
+        ]
+        self._node.get_logger().info(
+            f"Joint limits parsed for {len(self.__joint_limits)} joints; "
+            f"{len(wrappable)}/{len(self.__joint_names)} of this group's joints can be "
+            f"unwound: {wrappable}"
+        )
+        return self.__joint_limits
+
+    def __unwind_reference(self, reference) -> dict:
+        """{joint_name: angle} to measure "nearest" against. `reference` may be a
+        JointState, a plain list in this group's joint order, or None for the arm's
+        current measured state."""
+        if reference is None:
+            reference = self.joint_state
+        if reference is None:
+            return {}
+        if isinstance(reference, JointState):
+            return {
+                n: float(p)
+                for n, p in zip(reference.name, reference.position)
+            }
+        return {
+            n: float(p) for n, p in zip(self.__joint_names, reference)
+        }
+
+    def unwind_joint_goal(
+        self,
+        joint_positions: List[float],
+        joint_names: Optional[List[str]] = None,
+        reference: Optional[Union[JointState, List[float]]] = None,
+    ) -> List[float]:
+        """Re-express each revolute goal as the 2*pi-equivalent NEAREST the reference
+        configuration, subject to that joint's URDF limits.
+
+        theta and theta +/- 2*pi are the SAME physical configuration -- identical link
+        poses, so identical collisions and identical tool orientation -- but wildly
+        different numbers to travel to. IK returns one arbitrary branch, so a goal can
+        sit a whole needless turn away from where the arm already is.
+
+        The limit check is the point, not a detail: an equivalent is accepted ONLY if it
+        stays inside [lower + margin, upper - margin]. That makes this automatically a
+        no-op on joints whose span is <= 2*pi (where no second equivalent is reachable),
+        and prismatic joints are never touched, because metres do not wrap.
+
+        Idempotent: re-wrapping an already-wrapped goal against the same reference saves
+        nothing and therefore changes nothing, so callers that already unwind (the
+        inspection executors) are unaffected.
+
+        Returns the original list unchanged whenever unwinding is off, the URDF is
+        unavailable, or nothing is worth rewriting.
+        """
+        if not self.__unwind_joint_goals or joint_positions is None:
+            return list(joint_positions) if joint_positions is not None else None
+        limits = self.joint_limits
+        if not limits:
+            if not self.__unwind_warned:
+                self.__unwind_warned = True
+                self._node.get_logger().warn(
+                    "No /robot_description yet -- joint limits unknown, so 2*pi "
+                    "joint-goal unwinding is skipped (goals used exactly as given)."
+                )
+            return list(joint_positions)
+        names = list(joint_names) if joint_names is not None else list(self.__joint_names)
+        ref = self.__unwind_reference(reference)
+        if not ref:
+            return list(joint_positions)
+        new_goal, changes = wrap_to_reference(
+            list(joint_positions),
+            names[: len(joint_positions)],
+            ref,
+            limits,
+            margin=self.__unwind_limit_margin,
+            min_gain=self.__unwind_min_gain,
+        )
+        if changes:
+            self._node.get_logger().info(f"[unwind] {describe_changes(changes)}")
+        return new_goal
 
     def __joint_state_callback(self, msg: JointState):
         # Update only if all relevant joints are included in the message

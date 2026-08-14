@@ -43,9 +43,9 @@ ENABLE_KAFKA = False
 # ------------------------------------------------------------
 # MongoDB baglanti bilgileri  (DOGRUDAN KODA GOMULU)
 #   >>> Sadece 'cluster0.xxxx.mongodb.net' kismini Atlas'taki gercek
-#       cluster adresinle degistir. Kullanici/sifre: ifarlab / matisse
+#       cluster adresinle degistir. Kullanici/sifre: cem / matisse
 # ------------------------------------------------------------
-MONGO_URI  = "mongodb+srv://ifarlabmatisse_db_user:2WcRMeMyCCuZfcPl@ifarlab.dphrcjw.mongodb.net/?"
+MONGO_URI  = "mongodb+srv://ifarlabmatisse_db_user:2WcRMeMyCCuZfcPl@cem.dphrcjw.mongodb.net/?"
 MONGO_DB   = "ifarlabmatisse_db_user"
 MONGO_COLL = "joint_states"
 

@@ -107,6 +107,10 @@ class KawasakiInspectionNode(InspectionNodeBase):
             end_effector_name="link6",
             group_name="real_kawasaki",
             callback_group=self._cb,
+            # See the matching note in ur_inspection_node: the executor owns unwinding
+            # here (cache policy tag, recorded-path unwinding, raw last-resort attempt),
+            # so MoveIt2's own pass is turned off to avoid duplicating it.
+            unwind_joint_goals=False,
         )
         # Enables nearest-branch IK in the base class (see _ik_target below).
         self.ik_group_name = "real_kawasaki"

@@ -19,14 +19,13 @@ import threading
 from datetime import datetime
 
 import rclpy
-from geometry_msgs.msg import Point
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from std_msgs.msg import String
-from visualization_msgs.msg import Marker, MarkerArray
 
 from .er_client import make_er_client
 from .locator import GeminiLocator
+from .markers import CYAN, DetectionMarkers
 
 
 class GeminiPerceptionNode(Node):
@@ -56,6 +55,12 @@ class GeminiPerceptionNode(Node):
         self.declare_parameter("render_mode", "normals")
         self.declare_parameter("render_min_m", 0.3)
         self.declare_parameter("render_max_m", 4.0)
+        # Tamsayı derinliğin metre/LSB ölçeği. "16UC1 = milimetre" EVRENSEL
+        # DEĞİL: SICK Visionary-T Mini 0.25 mm/LSB kullanıyor (mode_real.yaml).
+        self.declare_parameter("depth_scale_m", 0.001)
+        # Derinlik ışın boyu MESAFE mi (SICK ToF), yoksa optik eksene izdüşüm
+        # Z mi (Gazebo, RealSense)? Bkz. depth_render.radial_to_planar.
+        self.declare_parameter("depth_is_radial", False)
         self.declare_parameter("publish_er_image", True)
         self.declare_parameter("er_image_rate_hz", 2.0)
         self.declare_parameter("gripper_type", "vacuum")
@@ -98,6 +103,8 @@ class GeminiPerceptionNode(Node):
             render_mode=render_mode,
             render_min_m=float(get("render_min_m")),
             render_max_m=float(get("render_max_m")),
+            depth_scale_m=float(get("depth_scale_m")),
+            depth_is_radial=bool(get("depth_is_radial")),
             publish_er_image=bool(get("publish_er_image")),
             er_image_rate_hz=float(get("er_image_rate_hz")),
             patch_radius_px=int(get("patch_radius_px")),
@@ -110,7 +117,14 @@ class GeminiPerceptionNode(Node):
         self.marker_lifetime_sec = float(get("marker_lifetime_sec"))
 
         self.detections_pub = self.create_publisher(String, "/gemini/detections", 10)
-        self.markers_pub = self.create_publisher(MarkerArray, "/gemini/markers", 10)
+        # Namespace ayrı: pick_place_node aynı topic'e görev marker'ları yazar
+        # ve iki düğüm birbirinin çizimini silmemeli (bkz. markers.py).
+        self.markers = DetectionMarkers(
+            node=self,
+            world_frame=self.world_frame,
+            namespace="gemini_query",
+            lifetime_sec=self.marker_lifetime_sec,
+        )
         self.create_subscription(String, "/gemini/query", self._on_query, 10)
 
         # Aynı anda tek sorgu: ER çağrısı saniyeler sürebiliyor ve topic'e arka
@@ -142,88 +156,9 @@ class GeminiPerceptionNode(Node):
             out = String()
             out.data = json.dumps(payload, ensure_ascii=False)
             self.detections_pub.publish(out)
-            self._publish_markers(detections)
+            self.markers.publish(detections, colour=CYAN)
         finally:
             self._busy.release()
-
-    def _publish_markers(self, detections) -> None:
-        array = MarkerArray()
-
-        # Önceki marker'ları temizle; aksi halde eski tespitler RViz'de asılı kalır.
-        clear = Marker()
-        clear.header.frame_id = self.world_frame
-        clear.action = Marker.DELETEALL
-        array.markers.append(clear)
-
-        stamp = self.get_clock().now().to_msg()
-        lifetime = rclpy.duration.Duration(seconds=self.marker_lifetime_sec).to_msg()
-
-        for index, detection in enumerate(detections):
-            position = detection["position"]
-            surface = detection.get("surface")
-
-            sphere = Marker()
-            sphere.header.frame_id = self.world_frame
-            sphere.header.stamp = stamp
-            sphere.ns = "gemini_detections"
-            sphere.id = index * 3
-            sphere.type = Marker.SPHERE
-            sphere.action = Marker.ADD
-            sphere.pose.position.x = position["x"]
-            sphere.pose.position.y = position["y"]
-            sphere.pose.position.z = position["z"]
-            sphere.pose.orientation.w = 1.0
-            sphere.scale.x = sphere.scale.y = sphere.scale.z = 0.04
-            sphere.color.r, sphere.color.g, sphere.color.b, sphere.color.a = 0.1, 0.8, 1.0, 0.9
-            sphere.lifetime = lifetime
-            array.markers.append(sphere)
-
-            label = detection["label"]
-            if surface is not None:
-                label += f" ({surface['rms_residual'] * 1000:.1f} mm)"
-
-            text = Marker()
-            text.header.frame_id = self.world_frame
-            text.header.stamp = stamp
-            text.ns = "gemini_detections"
-            text.id = index * 3 + 1
-            text.type = Marker.TEXT_VIEW_FACING
-            text.action = Marker.ADD
-            text.pose.position.x = position["x"]
-            text.pose.position.y = position["y"]
-            text.pose.position.z = position["z"] + 0.08
-            text.pose.orientation.w = 1.0
-            text.scale.z = 0.05
-            text.color.r = text.color.g = text.color.b = text.color.a = 1.0
-            text.text = label
-            text.lifetime = lifetime
-            array.markers.append(text)
-
-            # Yüzey normali oku: vakumlu kavramada emme kabının hangi yönden
-            # oturacağını gözle doğrulamanın tek pratik yolu.
-            if surface is not None:
-                centroid, normal = surface["centroid"], surface["normal"]
-                arrow = Marker()
-                arrow.header.frame_id = self.world_frame
-                arrow.header.stamp = stamp
-                arrow.ns = "gemini_normals"
-                arrow.id = index * 3 + 2
-                arrow.type = Marker.ARROW
-                arrow.action = Marker.ADD
-                arrow.pose.orientation.w = 1.0
-                start = Point(x=centroid["x"], y=centroid["y"], z=centroid["z"])
-                end = Point(
-                    x=centroid["x"] + normal["x"] * 0.12,
-                    y=centroid["y"] + normal["y"] * 0.12,
-                    z=centroid["z"] + normal["z"] * 0.12,
-                )
-                arrow.points = [start, end]
-                arrow.scale.x, arrow.scale.y, arrow.scale.z = 0.008, 0.016, 0.0
-                arrow.color.r, arrow.color.g, arrow.color.b, arrow.color.a = 1.0, 0.6, 0.1, 0.95
-                arrow.lifetime = lifetime
-                array.markers.append(arrow)
-
-        self.markers_pub.publish(array)
 
 
 def main():

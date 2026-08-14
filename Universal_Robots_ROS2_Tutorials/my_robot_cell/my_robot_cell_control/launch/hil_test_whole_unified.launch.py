@@ -802,8 +802,8 @@ def launch_setup(context, *args, **kwargs):
                 executable="create",
                 arguments=[
                     # Dünya adı SDF'ten gelir: mobile_manipulator_description/worlds/
-                    # ifarlab.sdf içinde <world name="cem">. Dosya adı "ifarlab" olsa da
-                    # dünya adı "cem"; burada "ifarlab" yazılırsa /world/ifarlab/create
+                    # ifarlab.sdf içinde <world name="cem">. Dosya adı "cem" olsa da
+                    # dünya adı "cem"; burada "cem" yazılırsa /world/cem/create
                     # servisi hiç var olmaz ve spawn "timed out" ile sessizce düşer.
                     # Robot spawn'ı zaten "-world cem" kullanıyor (yukarıda).
                     "-world", "cem",
@@ -821,8 +821,8 @@ def launch_setup(context, *args, **kwargs):
                 executable="create",
                 arguments=[
                     # Dünya adı SDF'ten gelir: mobile_manipulator_description/worlds/
-                    # ifarlab.sdf içinde <world name="cem">. Dosya adı "ifarlab" olsa da
-                    # dünya adı "cem"; burada "ifarlab" yazılırsa /world/ifarlab/create
+                    # ifarlab.sdf içinde <world name="cem">. Dosya adı "cem" olsa da
+                    # dünya adı "cem"; burada "cem" yazılırsa /world/cem/create
                     # servisi hiç var olmaz ve spawn "timed out" ile sessizce düşer.
                     # Robot spawn'ı zaten "-world cem" kullanıyor (yukarıda).
                     "-world", "cem",
@@ -1029,7 +1029,7 @@ def launch_setup(context, *args, **kwargs):
 
         # 8. SICK Visionary-T Mini Kameraları (gerçek donanım)
         sick_visionary_ur,
-        sick_visionary_kawasaki,  # GEÇİCİ DEVRE DIŞI (ağ çekişmesi — yukarıdaki nota bakın)
+        # sick_visionary_kawasaki,  # GEÇİCİ DEVRE DIŞI (ağ çekişmesi — yukarıdaki nota bakın)
 
         # 9. Point Cloud Transformer (gerçek donanım, 15 sn gecikme)
         pointcloud_transformer_delayed,

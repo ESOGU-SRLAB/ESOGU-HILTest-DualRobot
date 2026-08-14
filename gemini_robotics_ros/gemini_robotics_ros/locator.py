@@ -73,6 +73,8 @@ class GeminiLocator:
         render_max_m: float = 4.0,
         render_height_lo_m: float = -0.005,
         render_height_hi_m: float = 0.12,
+        depth_scale_m: float = depth_render.DEFAULT_DEPTH_SCALE_M,
+        depth_is_radial: bool = False,
         publish_er_image: bool = True,
         er_image_rate_hz: float = 2.0,
         # yüzey / kavrama
@@ -105,6 +107,13 @@ class GeminiLocator:
         # aynı değeri okuduğundan RViz'de tam olarak ER'nin gördüğü kare çıkar.
         self._render_height_lo_m = float(render_height_lo_m)
         self._render_height_hi_m = float(render_height_hi_m)
+        # Derinliğin BİRİMİ ve KONVANSİYONU. Sim ile gerçek arasındaki gerçek
+        # modalite farkı burada: Gazebo 32FC1/metre/planar yayınlıyor, SICK
+        # Visionary-T Mini ham 16UC1'i 0.25 mm/LSB ve IŞIN BOYU mesafe olarak
+        # yayınlıyor. İkisini de sabit kabul etmek sim'de görünmüyor, gerçekte
+        # ER'ye okunmaz bir kare gönderiyor. Bkz. depth_render.py.
+        self._depth_scale_m = float(depth_scale_m)
+        self._depth_is_radial = bool(depth_is_radial)
 
         self._tool_approach_vector = tool_approach_vector
         self._normal_snap_deg = float(normal_snap_deg)
@@ -240,6 +249,8 @@ class GeminiLocator:
                 max_m=self._render_max_m,
                 height_lo_m=self._render_height_lo_m,
                 height_hi_m=self._render_height_hi_m,
+                depth_scale_m=self._depth_scale_m,
+                depth_is_radial=self._depth_is_radial,
             )
         except Exception as exc:
             self._node.get_logger().error(f"Derinlik render'ı başarısız: {exc}")
@@ -310,7 +321,11 @@ class GeminiLocator:
                 u_src, v_src = self._scale_pixel(
                     detection.u, detection.v, er_shape, depth.width, depth.height
                 )
-                point_cam = point_from_depth(depth, info, u_src, v_src, self._sample_window)
+                point_cam = point_from_depth(
+                    depth, info, u_src, v_src, self._sample_window,
+                    depth_scale_m=self._depth_scale_m,
+                    depth_is_radial=self._depth_is_radial,
+                )
                 source_msg = depth
 
         if point_cam is None or source_msg is None:

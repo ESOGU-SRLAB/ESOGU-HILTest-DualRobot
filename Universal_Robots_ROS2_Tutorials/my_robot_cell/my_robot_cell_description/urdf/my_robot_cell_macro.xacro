@@ -51,9 +51,9 @@
     </link>
 
     <!-- Chassis assembly - tüm PART1-PART44 parçalarını içerir -->
-    <!-- <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
+    <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </xacro:chassis_assembly> -->
+    </xacro:chassis_assembly>
 
     <!-- <link name="${tf_prefix}chassis">
       <inertial>
@@ -88,7 +88,7 @@
       </collision>
     </link> -->
 
-    <link name="${tf_prefix}platform">
+    <!-- <link name="${tf_prefix}platform">
       <inertial>
         <origin xyz="-1.101122 1.387607 0.574201" rpy="0 0 0"/>
         <mass value="205.0"/>
@@ -155,7 +155,7 @@
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/windowdoor.stl" scale="1 1 1"/>
         </geometry>
       </collision>
-    </link>
+    </link> -->
 
 
     <link name="${tf_prefix}robot_mount">
@@ -263,6 +263,43 @@
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/conveyorbelt.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
+
+      <!-- GERÇEK YAN KORKULUKLAR (14 Ağu 2026, bir çarpışmadan sonra eklendi).
+           conveyorbelt.stl korkulukları bandın sadece 3.1 mm üstünde bitiriyor
+           (link z 0.8549). GERÇEKTE korkulukların üstü yerden 0.900 m, yani
+           bandın (0.845) 55 mm üstünde. Model 52 mm alçak gösterdiği için
+           MoveIt korkulukları görmüyordu ve kol onlara çarptı.
+
+           Bu kutular mesh'in bıraktığı boşluğu dolduruyor: bandın üstünden
+           (link z 0.8518 = dünya 0.845) korkuluk üstüne (link z 0.9068 =
+           dünya 0.900) kadar, yükseklik 0.055.
+           Ayak izi mesh'ten ölçüldü (yukarı bakan yüzeyler, link z 0.8549):
+             sol  x 0.4903..0.5187   y -0.3824..0.4176
+             sağ  x 0.7803..0.8087   y -0.3824..0.5176
+           Profil genişliği iki tarafta da 28.4 mm.
+
+           Link frame ile dünya arasında 6.8 mm var (base_to_conveyorbelt
+           origin z = -0.0068); buradaki bütün z'ler LINK frame'inde.
+
+           SADECE collision, visual YOK: bunlar mesh'in eksiğini kapatan
+           çarpışma hacimleri, ayrı bir fiziksel parça değil; RViz'de mesh'in
+           üstüne binen kutular olarak görünmeleri kafa karıştırır.
+
+           Ayrı bir link değil, conveyor_belt'in parçası: SRDF'teki mevcut
+           çarpışma çiftleri (upper_arm, forearm, wrist_*, suction_cup
+           denetleniyor) olduğu gibi geçerli kalsın diye. -->
+      <collision>
+        <origin rpy="0 0 0" xyz="0.5045 0.0176 0.8793"/>
+        <geometry>
+          <box size="0.0284 0.8000 0.0550"/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin rpy="0 0 0" xyz="0.7945 0.0676 0.8793"/>
+        <geometry>
+          <box size="0.0284 0.9000 0.0550"/>
+        </geometry>
+      </collision>
     </link>
 
     <link name="${tf_prefix}stackable_bin">
@@ -316,7 +353,7 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint> -->
 
-    <joint name="${tf_prefix}base_to_platform" type="fixed">
+    <!-- <joint name="${tf_prefix}base_to_platform" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}platform"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -332,7 +369,7 @@
       <parent link="${tf_prefix}platform"/>
       <child link="${tf_prefix}windowdoor"/>
       <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
+    </joint> -->
 
     <joint name="${tf_prefix}base_to_alumuniumtable" type="fixed">
       <parent link="${parent}"/>
@@ -352,10 +389,35 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
+    <!-- Konveyör yüksekliği (14 Ağu 2026, ŞERİT METREYLE doğrulandı).
+         Hizalama BANT YÜZEYİNE göre yapılır: kavrama da çarpışma da orada olur.
+
+         Mesh'in bant yüzeyi (üstten görünen yüzey, 5 mm ızgarayla ölçüldü;
+         bandın ortasında x 0.56..0.745, y -0.30..0.40 tamamen düz) bu joint
+         sıfırken z = 0.8518'de. Gerçek bant yerden 0.845 m.
+             0.845 - 0.8518 = -0.0068
+
+         Dünya z=0'ın yer olduğu bağımsız doğrulandı: kol TOUCH pozundayken
+         TF kap ağzını 0.9995'te gösterdi, yerden şerit metre 1.00-1.01 m.
+
+         MESH GERÇEK KONVEYÖRÜ TAM TEMSİL ETMİYOR, dikkat:
+           - Mesh'te yan raylar bandın 3.1 mm üstünde (z 0.8549 ham).
+             GERÇEKTE raylar yerden 0.900, yani bandın 55 mm üstünde.
+             Model bu korkulukları 52 mm alçak gösteriyor; MoveIt gerçek
+             korkulukları GÖRMÜYOR. Kol banda yandan yaklaşırsa çarpabilir.
+             Kalıcı çözüm: korkulukları ayrı bir çarpışma kutusu olarak ekle.
+           - Mesh'in altı bu haliyle z = -0.0318'e iniyor (yerin altı). Sadece
+             görsel; alt şase de gerçekle birebir değil.
+
+         TARİHÇE: bu değer bir ara +0.0451 yapıldı, çünkü hizalama YAN RAY
+         ölçümünden (0.900) türetilmişti ve mesh'in ray-bant mesafesinin
+         gerçeği yansıttığı varsayılmıştı. Yansıtmıyor: ray hizalandı ama
+         bant 51 mm yukarı çıktı, nokta bulutu konveyörün içine gömülmüş
+         göründü ve suction_cup ile conveyor_belt çarpışmaya başladı. -->
     <joint name="${tf_prefix}base_to_conveyorbelt" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}conveyor_belt"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0 -0.0068" rpy="0 0 0"/>
     </joint>
 
     <joint name="${tf_prefix}bin_fixed" type="fixed">

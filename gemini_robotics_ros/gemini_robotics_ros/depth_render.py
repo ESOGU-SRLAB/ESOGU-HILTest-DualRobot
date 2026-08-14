@@ -47,21 +47,78 @@ except ImportError:  # pragma: no cover
 RENDER_MODES = ("relief", "normals", "turbo", "gray", "intensity")
 
 
-def depth_to_metres(msg: Image) -> Optional[np.ndarray]:
+# 16 bit tamsayı derinlik için VARSAYILAN birim (metre / LSB). Çoğu RGB-D
+# kamerası (RealSense, Kinect) milimetre yayınlar.
+DEFAULT_DEPTH_SCALE_M = 0.001
+
+# SICK Visionary-T Mini: ham distance map birimi 0.25 mm'dir, milimetre DEĞİL
+# (sick_visionary_cpp_shared/src/VisionaryTMiniData.cpp:41,
+#  DISTANCE_MAP_UNIT = 0.25f; sürücü ham uint16'yı ölçeklemeden /depth'e
+#  koyuyor, ölçeği yalnızca kendi generatePointCloud'unda uyguluyor).
+# ÖLÇÜLDÜ (13 Ağu 2026, canlı hücre): ham /depth ile aynı karenin /points
+# bulutunun ||xyz||'si karşılaştırıldı, oran 4019.6 çıktı - yani 1/0.00025.
+SICK_T_MINI_DEPTH_SCALE_M = 0.00025
+
+
+def depth_to_metres(msg: Image, scale_m: float = DEFAULT_DEPTH_SCALE_M) -> Optional[np.ndarray]:
     """Depth Image mesajını metre cinsinden float32 diziye çevirir.
 
-    Sim (Gazebo) 32FC1/metre, gerçek SICK 16UC1/milimetre yayınlıyor; ikisi de
-    burada aynı birime iner.
+    Sim (Gazebo) 32FC1/metre yayınlıyor ve zaten metriktir; tamsayı encoding'ler
+    ham LSB yayınlar ve `scale_m` (metre/LSB) ile çarpılır.
+
+    scale_m ELLE VERİLMELİ: "16UC1 = milimetre" evrensel bir kural değil.
+    SICK Visionary-T Mini 0.25 mm/LSB kullanıyor ve 1000'e bölmek derinliği
+    4 KAT büyütür. Belirtisi sessizdir: render'ın geçerlilik penceresi
+    (render_min_m..render_max_m) sahnenin neredeyse tamamını dışarıda bırakır ve
+    ER 2'ye %93'ü siyah bir kare gider (ölçüldü: 0.3-4.0 m penceresinde
+    217088 pikselin yalnızca 15417'si, %7.1'i hayatta kalıyordu; doğru ölçekle
+    215224, yani %99.1).
     """
     if msg.encoding == "32FC1":
         depth = np.frombuffer(msg.data, dtype=np.float32).astype(np.float32)
-    elif msg.encoding == "16UC1":
-        depth = np.frombuffer(msg.data, dtype=np.uint16).astype(np.float32) / 1000.0
-    elif msg.encoding == "mono16":
-        depth = np.frombuffer(msg.data, dtype=np.uint16).astype(np.float32) / 1000.0
+    elif msg.encoding in ("16UC1", "mono16"):
+        depth = np.frombuffer(msg.data, dtype=np.uint16).astype(np.float32) * float(scale_m)
     else:
         return None
     return depth.reshape(msg.height, msg.width)
+
+
+def radial_to_planar(depth_m: np.ndarray, camera_info: CameraInfo) -> np.ndarray:
+    """Işın boyu (radyal) mesafeyi pinhole Z derinliğine çevirir.
+
+    NEDEN: bu dosyadaki pinhole açılımı (depth_to_points) derinliğin OPTİK EKSENE
+    İZDÜŞÜM, yani Z olduğunu varsayar. SICK Visionary-T Mini ise ışın boyunca
+    MESAFE yayınlar (VisionaryTMiniData.cpp:272 haritayı RADIAL olarak veriyor).
+    Gazebo'nun depth kamerası planar Z yayınlar - yani bu, sim ile gerçek
+    arasındaki asıl modalite farkı ve sim'de görünmez.
+
+    Radyal veriyi Z sanmak sahneyi kameradan uzaklaşan bir KÂSEYE çevirir: hata
+    ekseni terk ettikçe 1/cos(theta) ile büyür. ÖLÇÜLDÜ (canlı kare, fx=365.7,
+    cx=253.9): köşe açısı 41.9 derece, yani köşede %34.3 fazla. 1.8 m'lik bir
+    sahnede bu 0.6 m'lik yapay bir kabarma demek - relief'in 125 mm'lik yükseklik
+    penceresini de, normals'ın yüzey normallerini de tamamen anlamsız kılar.
+
+    ÖLÇÜLEN DOĞRULAMA: aynı karede |depth - ||xyz|| | medyanı 8.2 mm,
+    |depth - z| medyanı 165 mm. Yani /depth gerçekten radyal.
+    """
+    height, width = depth_m.shape
+    fx, fy = float(camera_info.k[0]), float(camera_info.k[4])
+    cx, cy = float(camera_info.k[2]), float(camera_info.k[5])
+    if fx == 0.0 or fy == 0.0:
+        return depth_m
+
+    if camera_info.width and camera_info.width != width:
+        scale = width / float(camera_info.width)
+        fx, cx = fx * scale, cx * scale
+    if camera_info.height and camera_info.height != height:
+        scale = height / float(camera_info.height)
+        fy, cy = fy * scale, cy * scale
+
+    us = np.arange(width, dtype=np.float32)[None, :]
+    vs = np.arange(height, dtype=np.float32)[:, None]
+    a = (us - cx) / fx
+    b = (vs - cy) / fy
+    return (depth_m / np.sqrt(a * a + b * b + 1.0)).astype(np.float32)
 
 
 def _valid_mask(depth_m: np.ndarray, min_m: float, max_m: float) -> np.ndarray:
@@ -367,6 +424,8 @@ def render(
     smooth: bool = True,
     height_lo_m: float = -0.005,
     height_hi_m: float = 0.12,
+    depth_scale_m: float = DEFAULT_DEPTH_SCALE_M,
+    depth_is_radial: bool = False,
 ) -> Optional[np.ndarray]:
     """Seçilen modda ER 2'ye verilecek BGR görüntüyü üretir.
 
@@ -384,9 +443,16 @@ def render(
 
     if depth_msg is None:
         return None
-    depth_m = depth_to_metres(depth_msg)
+    depth_m = depth_to_metres(depth_msg, scale_m=depth_scale_m)
     if depth_m is None:
         return None
+
+    # Radyal -> planar, HER MODDAN ÖNCE. gray/turbo için de gerekli: geçerlilik
+    # penceresi metrik ve radyal mesafe eksen dışında sistematik olarak büyük.
+    if depth_is_radial:
+        if camera_info is None:
+            return None
+        depth_m = radial_to_planar(depth_m, camera_info)
 
     if mode == "relief":
         if camera_info is None:

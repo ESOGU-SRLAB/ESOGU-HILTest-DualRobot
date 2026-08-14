@@ -121,7 +121,7 @@ scaled_joint_trajectory_controller:
     constraints:
       stopped_velocity_tolerance: 0.2
       goal_time: 0.0
-      $(var tf_prefix)base_to_robot_mount: { trajectory: 0.5, goal: 0.3 }
+      $(var tf_prefix)base_to_robot_mount: { trajectory: 0.2, goal: 0.1 }
       $(var tf_prefix)shoulder_pan_joint: { trajectory: 0.2, goal: 0.1 }
       $(var tf_prefix)shoulder_lift_joint: { trajectory: 0.2, goal: 0.1 }
       $(var tf_prefix)elbow_joint: { trajectory: 0.2, goal: 0.1 }

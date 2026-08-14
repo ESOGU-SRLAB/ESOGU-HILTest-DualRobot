@@ -78,7 +78,9 @@ boşluğa düşüyor ve her iki yüzey birden eleniyor.
   SRDF'inde `gripper` planlama grubu **yok**. `MoveIt2Gripper` bu donanımda
   tanımsızdır.
 - Kavrama Modbus üzerinden: `vgc10_msgs/OnRobotVGOutput`
-  (`rmca` 0=Release/1=Grip/2=Idle, `rvca` hedef vakum %, **80'i aşmayın**).
+  (`rmca` = ham register'ın **üst baytı**: `0x0000` Release / `0x0100` Grip /
+  `0x0200` Idle — OnRobot dokümanındaki 0/1/2 **değil**, çünkü sürücü
+  `reg = rmca + rvca` diye topluyor; `rvca` hedef vakum %, **80'i aşmayın**).
   Durum: `OnRobotVGInput` (`gvca`, bağıl vakumun 1/1000'i).
 - Uç link **`sim_ur10e_suction_cup`**, `tool0` değil. `suction_cup_joint` ve
   `vacuum_gripper_joint` ikisi de `rpy 0 0 0` olduğu için emme ekseni

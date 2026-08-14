@@ -79,15 +79,15 @@ def point_from_cloud(
     return tuple(float(value) for value in np.median(array, axis=0))
 
 
-def _depth_to_metres(image: Image) -> Optional[np.ndarray]:
+def _depth_to_metres(image: Image, scale_m: float) -> Optional[np.ndarray]:
     """Depth Image mesajını metre cinsinden float32 diziye çevirir.
 
-    Sim (32FC1/metre) ve gerçek SICK (16UC1/milimetre) burada aynı birime iner;
-    tek uygulama depth_render'da tutuluyor ki iki yol ayrışmasın.
+    Sim (32FC1/metre) ve tamsayı derinlik (scale_m metre/LSB) burada aynı birime
+    iner; tek uygulama depth_render'da tutuluyor ki iki yol ayrışmasın.
     """
     from .depth_render import depth_to_metres
 
-    return depth_to_metres(image)
+    return depth_to_metres(image, scale_m=scale_m)
 
 
 def point_from_depth(
@@ -96,15 +96,26 @@ def point_from_depth(
     u: int,
     v: int,
     window: int = 5,
+    depth_scale_m: float = 0.001,
+    depth_is_radial: bool = False,
 ) -> Optional[Point3]:
     """Pinhole modeliyle (u, v) + derinlikten optik frame'de 3D nokta üretir.
 
     (u, v) RGB görüntünün çözünürlüğünde gelir; depth farklı çözünürlükteyse
     oranlanarak ölçeklenir.
+
+    depth_scale_m / depth_is_radial render yoluyla AYNI olmalı: gerçek SICK
+    0.25 mm/LSB ve ışın boyu mesafe yayınlıyor (bkz. depth_render.py). Bu yol
+    yalnız deprojection "depth"/"auto" iken kullanılır - varsayılan "cloud"da
+    sürücünün kendi doğru bulutu kullanılır ve buraya hiç düşülmez.
     """
-    depth = _depth_to_metres(depth_image)
+    depth = _depth_to_metres(depth_image, scale_m=depth_scale_m)
     if depth is None:
         return None
+    if depth_is_radial:
+        from .depth_render import radial_to_planar
+
+        depth = radial_to_planar(depth, camera_info)
 
     fx, fy = camera_info.k[0], camera_info.k[4]
     cx, cy = camera_info.k[2], camera_info.k[5]

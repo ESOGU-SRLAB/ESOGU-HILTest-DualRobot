@@ -93,3 +93,44 @@ def test_driver_no_longer_dies_on_a_bad_mode():
     assert "rclpy.signal_shutdown" not in source.replace(
         "# ESKİDEN rclpy.signal_shutdown", ""
     ), "rclpy.signal_shutdown geri gelmiş - rclpy'de böyle bir fonksiyon yok"
+
+
+def _mode_params(name):
+    import yaml
+    path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "config", name,
+    )
+    with open(path, encoding="utf-8") as handle:
+        return list(yaml.safe_load(handle).values())[0]["ros__parameters"]
+
+
+def test_grip_confirmation_is_pinned_per_mode():
+    """Vakum onayı HER İKİ mod dosyasında da AÇIKÇA yazılmalı.
+
+    Bu ayar sim ile gerçek arasında zorunlu olarak farklı: gerçekte VGC10
+    sürücüsü /OnRobotVGInput yayınlar, sim'de öyle bir sürücü yoktur ve
+    kavrama Gazebo'daki DetachableJoint ile yapılır.
+
+    14 Ağu 2026: taban dosyada tek başına true yapıldı ve SİMÜLASYONDAKİ HER
+    KAVRAMA sessizce düştü ("Vakum kurulamadı"), çünkü beklenen durum mesajı
+    hiç gelmiyordu. Belirti "vakum çalışmıyor"du; oysa vakum yolu sağlamdı,
+    kapalı olan doğrulama kapısıydı.
+
+    Taban dosyaya güvenmek yetmez: bir modun değeri yazılmazsa diğerinin
+    ihtiyacı sessizce onu ezer. Bu yüzden test İKİ dosyada da varlığını arar.
+    """
+    sim = _mode_params("mode_sim.yaml")
+    real = _mode_params("mode_real.yaml")
+
+    assert "vacuum_require_confirmation" in sim, (
+        "mode_sim.yaml bu ayarı yazmıyor - taban true olduğunda sim'de her "
+        "kavrama başarısız sayılır"
+    )
+    assert sim["vacuum_require_confirmation"] is False
+
+    assert "vacuum_require_confirmation" in real, (
+        "mode_real.yaml bu ayarı yazmıyor - taban false olduğunda gerçek kol "
+        "boş kavrayıcıyla yoluna devam eder"
+    )
+    assert real["vacuum_require_confirmation"] is True

@@ -673,9 +673,41 @@
          damgalanır. RViz'de (Fixed Frame=world) bulut şaseye oturana kadar
          ur_cloud_calibrator ile ayarlandı: xyz 0 0 -0.01, rpy 0 0 1.04720 (=60° yaw).
          Gerçek UR SICK node frame_id + pointcloud_transformer_ur target_frame +
-         executor real_ur_sensor_frame hepsi bu frame'e işaret eder. -->
+         executor real_ur_sensor_frame hepsi bu frame'e işaret eder.
+
+         Z DÜZELTMESİ -0.01 -> +0.035 (14 Ağu 2026).
+         Belirti: kol konveyördeki kutunun ~4 cm üstünde kalıyordu.
+
+         Sapma MESH'E DEĞİL, ŞERİT METREYE karşı ölçüldü. Mesh'e karşı
+         doğrulama bugün iki kez yanılttı, çünkü conveyorbelt.stl gerçek
+         konveyörü temsil etmiyor (yan korkuluk yüksekliği tutmuyor).
+
+         Ölçüm zinciri:
+           kap ağzı, kol TOUCH pozundayken   TF 0.9995 / metre 1.00-1.01
+             -> TF dogru, kol zinciri saglam, dunya z=0 = yer
+           kap ile kutunun ustu arasi bosluk  0.040 (gozle)
+           kutu yuksekligi                    0.114 (metre)
+             -> gercek bant = 1.000 - 0.040 - 0.114 = 0.845
+           metreyle dogrudan bant             0.845  (birebir tuttu)
+
+         Algının okudukları:
+           bant duzlemi        0.8900  (42580 nokta, std 1.92 mm)  -> +45.0 mm
+           kutunun ustu/temas  1.005   (gercek 0.960)              -> +45.0 mm
+         Iki bagimsiz yuzeyde ayni sapma: duzgun bir otelemedir.
+
+         Bu origin PARENT (depth_optical_frame) Z ekseni boyuncadır, dünya
+         Z'si boyunca değil. Bu pozda optik eksen dünyada [-0.002 0.002
+         -1.000], dikeyden 0.2 derece sapık, cos = -1.0000:
+             d = -(+0.0450) / -1.0000 = +0.0450
+             -0.01 + 0.045 = +0.035
+         Kamera neredeyse tam dik baktigi icin duzeltme birebir cikti.
+
+         NOT: aynı gün base_to_conveyorbelt de -0.0068'e alındı. O, MoveIt'in
+         çarpışma modelini gerçek banda oturtur; buradaki 45 mm ise kolun
+         nereye gittiğini belirleyen algı hatasıdır. İkisi ayrı şeylerdir ve
+         birbirinin yerine geçmez. -->
     <joint name="${tf_prefix}ur_sick_optical_joint" type="fixed">
-      <origin xyz="0 0 -0.01" rpy="0 0 1.04720"/>
+      <origin xyz="0 0 0.035" rpy="0 0 1.04720"/>
       <parent link="${tf_prefix}depth_optical_frame"/>
       <child link="${tf_prefix}sick_optical_frame"/>
     </joint>

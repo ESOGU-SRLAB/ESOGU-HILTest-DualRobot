@@ -72,6 +72,11 @@ class MoveIt2Gripper(MoveIt2):
             ignore_new_calls_while_executing=ignore_new_calls_while_executing,
             callback_group=callback_group,
             use_move_group_action=use_move_group_action,
+            # A gripper's open/closed positions are fixed configurations of narrow (or
+            # prismatic) joints, so 2*pi unwinding could never rewrite them anyway. Off
+            # here so a gripper does not carry a pointless /robot_description
+            # subscription or log a limits line for joints it can never wrap.
+            unwind_joint_goals=False,
         )
         self.__del_redundant_attributes()
 

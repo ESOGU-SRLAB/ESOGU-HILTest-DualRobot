@@ -36,7 +36,7 @@ user_interface/
 ├── requirements.txt      # Gerekli Python bağımlılıkları
 ├── README.md             # Bu dökümantasyon
 ├── log/                  # Çalışma zamanında oluşturulan sistem log dosyaları
-├── figures/              # Laboratuvar logoları (ifarlab, asrlab, matisse vb.)
+├── figures/              # Laboratuvar logoları (cem, asrlab, matisse vb.)
 ├── static/
 │   ├── css/
 │   │   └── style.css     # Özelleştirilmiş arayüz stilleri

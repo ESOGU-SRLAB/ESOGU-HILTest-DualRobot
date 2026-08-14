@@ -536,7 +536,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "world_file",
-            default_value="/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf",
+            default_value="/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf",
             description="Gazebo world file path.",
         )
     )
