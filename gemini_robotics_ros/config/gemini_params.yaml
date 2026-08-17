@@ -317,6 +317,52 @@
     # kaldırır. Kalıntı büyürse (>1 cm) çözüm burası değil, tekrar ölçmektir.
     touch_offset: -0.008
 
+    # Vakum İLK denemede tutmazsa: kabı normal boyunca bu kadar daha bastır ve
+    # yinele. touch_press_retries = 0 ile kapanır (eski davranış).
+    #
+    # 17 Ağu 2026: belirti "kap nesneye değiyor ama tam oturmuyor, vakum
+    # kurulamıyor ve görev iptal oluyor". Eksik olan çoğu zaman birkaç
+    # milimetre - ama tek bir touch_offset bunu karşılayamıyor, çünkü aynı
+    # değer iyi durumda parçayı bantta İTTİRİYOR. Çare, sabit değeri
+    # derinleştirmek değil, YALNIZCA sızdırdığında derine basmak.
+    #
+    # Toplam ek basma = touch_press_step * touch_press_retries = 8 mm. Ø39 mm
+    # kauçuk kabın ezilme payının içinde. Hareket cartesian ve normal boyunca,
+    # yani yanal bileşeni yok: parçayı ittirmez.
+    #
+    # DİKKAT: bu bir TELAFİDİR. Her kavramada devreye giriyorsa sebep yüzey
+    # yüksekliğinin yanlış okunmasıdır; log "vakum N mm basmada kuruldu" derse
+    # touch_offset'i büyütmeden ÖNCE ölçün:
+    #     python3 test/surface_offset.py --truth <şerit metreyle ölçülen z>
+    touch_press_step: 0.004
+    touch_press_retries: 2
+
+    # Kavramada ARA DURAK kullanılsın mı (APPROACH_PICK).
+    #
+    # true  : kol önce temas noktasının approach_distance kadar NORMAL boyunca
+    #         ötesine gider, sonra oradan cartesian iner. İniş kabın kendi
+    #         ekseni boyunca olur; dikey yüzeylerden parça çekmenin tek doğru
+    #         yolu budur.
+    # false : ara durak yok, doğrudan temas pozuna serbest plan.
+    #
+    # NE ZAMAN false: ara durak, temas noktasının tam ÜSTÜNDE değil, ÖLÇÜLEN
+    # NORMAL boyunca ötesindedir. Normal dikeyden theta kadar sapmışsa ara
+    # durak nesnenin yanına düşer (15 cm'de: 8 derece -> 21 mm, 15 derece ->
+    # 40 mm) ve oradan gelen EĞİK iniş, kabı nesnenin üstünden geçirmek yerine
+    # yanına sürter - nesne ittirilir, konumu değişir ve kavrama bozulur.
+    # Temas pozunun kendisi bundan etkilenmez (o zaten temas noktasıdır), yani
+    # ara durağı atlamak süpürmeyi ortadan kaldırır.
+    #
+    # BEDELİ: iniş yönü artık planlayıcının seçtiği yön; kabın ekseni boyunca
+    # olduğu garanti değil. Bu yüzden varsayılan true kaldı - dikey/eğik
+    # yüzeylerde ara durak gereklidir.
+    #
+    # ÖNCE LOGA BAKIN: normal oturtulamadığında (normal_snap_deg aşıldığında)
+    # locator artık UYARI basıyor ve yanal kaymayı mm cinsinden yazıyor.
+    # O uyarı yoksa normal dikeydir, ara durak temas noktasının tam üstündedir
+    # ve süpürmenin sebebi başka yerdedir.
+    pick_approach_enabled: true
+
     # Her waypoint'e VARDIKTAN sonra beklenecek süre (sn). 0 = kapalı.
     #
     # 14 Ağu 2026: hareketin "başarılı" dönmesi eklemlerin fiziksel olarak

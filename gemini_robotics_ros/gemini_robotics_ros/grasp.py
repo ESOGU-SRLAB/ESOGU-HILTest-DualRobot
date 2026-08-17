@@ -141,8 +141,25 @@ def fit_surface(
         return None
     normal = vh[2, :]
 
-    # Artık: noktaların düzleme ortalama karesel uzaklığı
-    rms = float(np.sqrt((centered @ normal) ** 2).mean())
+    # Artık: noktaların düzleme ortalama KARESEL uzaklığı.
+    #
+    # DÜZELTİLDİ 17 Ağu 2026: burada `np.sqrt(d ** 2).mean()` yazıyordu, yani
+    # karekök ortalamadan ÖNCE alınıyordu - bu RMS değil, mutlak sapmanın
+    # ortalaması (MAD). MAD her zaman RMS'ten küçüktür, yani max_surface_rms
+    # kapısı yazılı olduğundan DAHA GEVŞEK çalışıyordu. Fark, tam da kapının
+    # yakalaması gereken durumda büyük: yamaya arka plan karıştığında dağılım
+    # iki tepeli olur ve MAD, RMS'in çok altında kalır.
+    #
+    # ÖLÇÜLDÜ (bant üstünde 29 mm'lik kutu, 12 px yama, kenara yakın işaret):
+    #   kirlenme | MAD (eski) |  RMS  | düzlem eğimi | 15 cm'de yanal kayma
+    #   ---------|------------|-------|--------------|---------------------
+    #      4%    |   2.9 mm   | 5.3mm |    8.0°      |      21 mm
+    #      6%    |   4.0 mm   | 6.2mm |   10.9°      |      29 mm
+    # Yani %4-6 kirlenmede eski kapı GEÇİRİYOR, doğru kapı REDDEDİYOR - ve
+    # geçen yamanın normali on derece eğik. Eğik normal iki belirti üretir:
+    # yaklaşma pozu nesnenin yanına düşer, iniş nesneyi süpürür.
+    residual = centered @ normal
+    rms = float(np.sqrt((residual ** 2).mean()))
     extent = float(np.linalg.norm(centered, axis=1).max())
 
     # Normali kameraya doğru çevir. Optik frame'de kamera orijinde ve +Z ileri

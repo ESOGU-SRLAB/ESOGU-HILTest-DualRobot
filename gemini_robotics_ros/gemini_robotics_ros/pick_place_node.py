@@ -194,6 +194,12 @@ class GeminiPickPlaceNode(Node):
             [0.25, 0.22, 0.20, 0.18, 0.15, 0.12, 0.10, 0.08, 0.06])
         self.declare_parameter("approach_distance", 0.15)  # normal boyunca yaklaşma
         self.declare_parameter("touch_offset", 0.002)      # kabın yüzeye bastırma payı
+        # Vakum ilk denemede tutmazsa kabı normal boyunca kaç mm daha bastırıp
+        # kaç kez yineleyelim. 0 = kapalı (eski davranış: tek deneme, iptal).
+        self.declare_parameter("touch_press_step", 0.004)
+        self.declare_parameter("touch_press_retries", 2)
+        # Kavramada ARA DURAK (APPROACH_PICK) kullanılsın mı.
+        self.declare_parameter("pick_approach_enabled", True)
         # Her waypoint'e varınca beklenecek süre (sn). Lineer eksen, hareket
         # "tamamlandı" raporlandıktan sonra fiziksel olarak oturmaya devam
         # ediyor; beklemeden sıradaki hedefe geçilince kap parçaya tam
@@ -262,6 +268,9 @@ class GeminiPickPlaceNode(Node):
             reverse=True,
         ) or list(self.approach_candidates)
         self.touch_offset = float(get("touch_offset"))
+        self.touch_press_step = float(get("touch_press_step"))
+        self.touch_press_retries = int(get("touch_press_retries"))
+        self.pick_approach_enabled = bool(get("pick_approach_enabled"))
         self.waypoint_settle_sec = float(get("waypoint_settle_sec"))
         self.lift_distance = float(get("lift_distance"))
         self.place_clearance = float(get("place_clearance"))
@@ -330,6 +339,7 @@ class GeminiPickPlaceNode(Node):
             patch_min_points=int(get("patch_min_points")),
             tool_approach_vector=self.tool_approach_vector,
             normal_snap_deg=float(get("normal_snap_deg")),
+            approach_hint_m=self.approach_distance,
             measure_payload=bool(get("payload_measure")),
             payload_margin_m=float(get("payload_margin_m")),
             payload_min_height_m=float(get("payload_min_height_m")),
@@ -732,6 +742,60 @@ class GeminiPickPlaceNode(Node):
             return True
         return self.vacuum.grip()
 
+    def _grip_with_press(
+        self, contact: Point3, normal: Point3, quat: Sequence[float]
+    ) -> bool:
+        """Vakumu kur; sızdırırsa kabı normal boyunca birkaç mm daha bastırıp yinele.
+
+        NEDEN: kap yüzeye DEĞİYOR ama contayı kapatamıyor. Bunun tek bir
+        sebebi yok, ama hepsinin çaresi aynı yönde birkaç milimetre:
+          - algılanan yüzey yüksekliği birkaç mm yüksek okunmuş olabilir
+            (bant yüksekliği ölçümünün kendi belirsizliği ~2-3 mm),
+          - kap eğik oturuyorsa bir kenarı değer, karşı kenarında boşluk kalır
+            ve derine basmak kauçuğu ezerek o boşluğu kapatır,
+          - lineer eksen "vardım" dedikten sonra oturmaya devam ediyor
+            (bkz. waypoint_settle_sec).
+        Tek bir touch_offset bunların hepsini birden karşılayamaz: yeterince
+        derin bir sabit değer, iyi durumda parçayı bantta ittirir.
+
+        ÖNCEDEN: ilk deneme sızdırınca görev komple iptal oluyordu - oysa
+        eksik olan çoğu zaman birkaç milimetreydi.
+
+        Hareket CARTESIAN ve normal boyunca: yanal bileşeni yok, yani parçayı
+        ittirmez. Toplam ek basma touch_press_step * touch_press_retries kadar
+        sınırlı ve kauçuk kabın ezilme payının içinde kalmalı.
+        """
+        if self._grip():
+            return True
+        if self.touch_press_retries <= 0 or self.touch_press_step <= 0.0:
+            return False
+
+        for attempt in range(1, self.touch_press_retries + 1):
+            depth = self.touch_offset - self.touch_press_step * attempt
+            self.get_logger().warning(
+                f"Vakum sızdırdı; kap {self.touch_press_step * 1000 * attempt:.0f} mm "
+                f"daha bastırılıp yineleniyor (deneme {attempt}/"
+                f"{self.touch_press_retries}, toplam basma "
+                f"{-depth * 1000:.0f} mm)"
+            )
+            pressed = self._offset(contact, normal, depth)
+            if not self._move_pose(
+                pressed, quat, f"TOUCH_PRESS_{attempt}", cartesian=True
+            ):
+                self.get_logger().warning(
+                    "Daha derine basılamadı (plan yok); vakum denemesi bırakıldı."
+                )
+                return False
+            if self._grip():
+                self.get_logger().info(
+                    f"Vakum {-depth * 1000:.0f} mm basmada kuruldu. Bu kalıcı "
+                    f"olarak gerekiyorsa touch_offset'i {depth:.4f} yapmak "
+                    "yerine ÖNCE yüzey yüksekliğini ölçün: "
+                    "python3 test/surface_offset.py --truth <şerit metre>"
+                )
+                return True
+        return False
+
     def _release(self) -> bool:
         if self.vacuum is None or self.dry_run:
             return True
@@ -746,8 +810,30 @@ class GeminiPickPlaceNode(Node):
 
         Ölçüm TESPİT anında yapılıyor (locator), çünkü kavrama anında kamera
         artık parçayı değil emme kabını görüyor.
+
+        DÜZELTİLDİ 17 Ağu 2026: burada yalnızca detection["payload"]'a
+        bakılıyordu, ama locator ölçümü YÜZEY yamasının içine yazıyor:
+        detection["surface"]["payload"]. Yani anahtar hiçbir zaman bulunmuyor
+        ve ölçüm HER SEFERİNDE atılıp config'e düşülüyordu.
+
+        Sessiz değildi, ama çelişkisi log'un iki ayrı satırına dağıldığı için
+        görünmüyordu (17 Ağu 2026 koşusu):
+            Parça ölçüldü: 143x84x26 mm, pay ile 153x94x36 mm
+            ... iliştirildi: gemini_payload (140x83x30 mm, config (ölçülemedi))
+        Bedeli iki yerde: (1) MoveIt'in taşıdığı kutu gerçek parçadan 13 mm
+        kısa ve 11 mm dar sanılıyor, yani planlayıcı var olmayan boşluklara
+        güveniyor; (2) carried_height config'ten geliyor ve _lift_for_payload
+        bırakma yüksekliğini o kadar yanlış kaydırıyor (bu koşuda 6 mm).
         """
-        measured = detection.get("payload") if isinstance(detection, dict) else None
+        measured = None
+        if isinstance(detection, dict):
+            surface = detection.get("surface")
+            if isinstance(surface, dict):
+                measured = surface.get("payload")
+            # Düz yapı da kabul edilsin: testler ve ileride ölçümü tespitin
+            # köküne koyan bir yol bu satır olmadan sessizce config'e düşer.
+            if not measured:
+                measured = detection.get("payload")
         if measured:
             return (
                 tuple(measured["size"]),
@@ -1562,14 +1648,26 @@ class GeminiPickPlaceNode(Node):
         approach = self._offset(contact, normal, pick_approach_distance)
         touch = self._offset(contact, normal, self.touch_offset)
 
-        if not self._move_pose(approach, grasp_quat, "APPROACH_PICK"):
-            self._status("FAILED", "Kavrama yaklaşma pozuna gidilemedi")
-            return
-        if not self._move_pose(touch, grasp_quat, "TOUCH", cartesian=True):
-            self._status("FAILED", "Emme kabı yüzeye oturtulamadı")
-            return
+        if self.pick_approach_enabled:
+            if not self._move_pose(approach, grasp_quat, "APPROACH_PICK"):
+                self._status("FAILED", "Kavrama yaklaşma pozuna gidilemedi")
+                return
+            if not self._move_pose(touch, grasp_quat, "TOUCH", cartesian=True):
+                self._status("FAILED", "Emme kabı yüzeye oturtulamadı")
+                return
+        else:
+            # ARA DURAK YOK: doğrudan temas pozuna serbest plan. Bkz.
+            # pick_approach_enabled açıklaması - ara durak, normal eğikse
+            # nesnenin YANINA düşer ve oradan gelen eğik iniş nesneyi süpürür.
+            self.get_logger().info(
+                "Kavrama yaklaşma durağı KAPALI (pick_approach_enabled=false); "
+                "doğrudan temas pozuna gidiliyor."
+            )
+            if not self._move_pose(touch, grasp_quat, "TOUCH"):
+                self._status("FAILED", "Emme kabı yüzeye oturtulamadı")
+                return
 
-        if not self._grip():
+        if not self._grip_with_press(contact, normal, grasp_quat):
             self._status("FAILED", "Vakum kurulamadı (parça tutulmadı)")
             # Kabı yüzeyden çek, pompayı kapat, eve dön.
             self._release()

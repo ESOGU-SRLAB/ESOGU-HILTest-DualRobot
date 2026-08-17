@@ -19,6 +19,7 @@ değil, çağıran tarafın kendi worker thread'inden çağrılmalıdır.
 
 from __future__ import annotations
 
+import math
 import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
@@ -41,6 +42,10 @@ from .grasp import (
 from .payload import measure_payload_box, organized_xyz
 from .image_utils import imgmsg_to_bgr
 
+
+# OnRobot VGC10 kauçuk emme kabının ağız çapı. Yalnız teşhis logunda kullanılır:
+# eğik oturan kabın bir kenarında kalan boşluğu mm cinsinden yazmak için.
+_CUP_DIAMETER_M = 0.039
 
 # Gazebo köprüsü ve SICK sürücüsü sensörleri best-effort yayınlıyor; RELIABLE
 # abone olursak hiçbir mesaj gelmez ve düğüm sessizce boş kalır.
@@ -83,6 +88,10 @@ class GeminiLocator:
         patch_min_points: int = 25,
         tool_approach_vector = (0.0, 0.0, 1.0),
         normal_snap_deg: float = 15.0,
+        # Yalnızca TEŞHİS LOGU için: oturtulmamış bir normalin yaklaşma
+        # pozunu ne kadar yana kaydırdığını mm cinsinden yazabilmek gerekiyor.
+        # Harekete girmez; pick_place_node kendi approach_distance'ını geçer.
+        approach_hint_m: float = 0.15,
         # taşınacak parçanın boyut ölçümü
         measure_payload: bool = True,
         payload_margin_m: float = 0.005,
@@ -117,6 +126,7 @@ class GeminiLocator:
 
         self._tool_approach_vector = tool_approach_vector
         self._normal_snap_deg = float(normal_snap_deg)
+        self._approach_hint = float(approach_hint_m)
         self._measure_payload_enabled = bool(measure_payload)
         self._payload_margin_m = float(payload_margin_m)
         self._payload_min_height_m = float(payload_min_height_m)
@@ -424,6 +434,27 @@ class GeminiLocator:
         if self._normal_snap_deg > 0.0 and deviation <= self._normal_snap_deg:
             self._node.get_logger().info(
                 f"Yüzey normali dünya eksenine oturtuldu ({deviation:.2f} derece sapma)"
+            )
+        elif self._normal_snap_deg > 0.0:
+            # (normal_snap_deg = 0 ise oturtma KASITLI olarak kapalıdır - eğik
+            # yüzeylerle çalışılıyordur; orada uyarmak gürültü olur.)
+            #
+            # OTURTULMADI: ölçülen normal olduğu gibi harekete gidiyor. Bu
+            # sessiz kalırsa teşhis edilemez, çünkü belirtisi normalin kendisi
+            # değil GEOMETRİK SONUCU: yaklaşma pozu temas noktasının tam
+            # üstünde değil, yana kaymış olur ve iniş nesneyi süpürür.
+            # Sayıyı burada hesaplayıp basıyoruz ki logdan doğrudan okunsun.
+            lateral_mm = 1000.0 * self._approach_hint * math.tan(math.radians(deviation))
+            gap_mm = 1000.0 * _CUP_DIAMETER_M * math.tan(math.radians(deviation))
+            self._node.get_logger().warning(
+                f"Yüzey normali dünya eksenine OTURTULMADI: sapma "
+                f"{deviation:.1f} derece > {self._normal_snap_deg:.1f}. "
+                f"Sonuç: {self._approach_hint * 100:.0f} cm yaklaşmada yaklaşma "
+                f"pozu temas noktasından {lateral_mm:.0f} mm YANA düşer, emme "
+                f"kabı yüzeye {gap_mm:.1f} mm eğik oturur. "
+                f"(yama: {patch.inliers} nokta, artık "
+                f"{patch.rms_residual * 1000:.1f} mm, yayılım "
+                f"{patch.extent * 1000:.0f} mm)"
             )
 
         try:

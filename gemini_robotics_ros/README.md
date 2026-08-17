@@ -292,7 +292,19 @@ Sahneye özgü, varsayılanları tahmin — canlı çalıştırmadan önce elden
 - **`render_min_m` / `render_max_m`** — hücrenizin çalışma mesafesi. Sim ve
   gerçekte **aynı** olmalı, yoksa parite bozulur.
 - **`max_surface_rms`** — 4 mm varsayılan. Parçalarınız pürüzlüyse gevşetin,
-  ama gevşettiğiniz kadar kenardan tutma riski artar.
+  ama gevşettiğiniz kadar kenardan tutma riski artar. (17 Ağu 2026: artık
+  gerçekten RMS ölçülüyor; önceki hesap mutlak sapmanın ortalamasıydı ve kapı
+  yazılı olduğundan gevşek çalışıyordu.)
+- **`touch_press_step` / `touch_press_retries`** — vakum ilk denemede tutmazsa
+  kabı normal boyunca kaç mm daha bastırıp kaç kez yineleyeceği. Varsayılan
+  4 mm × 2. `0` ile kapanır. **Telafidir**: her kavramada devreye giriyorsa
+  yüzey yüksekliği yanlış okunuyordur, `test/surface_offset.py` ile ölçün.
+- **`pick_approach_enabled`** — kavramada ara durak (`APPROACH_PICK`)
+  kullanılsın mı. Varsayılan `true`. Ara durak, temas noktasının tam üstünde
+  değil **ölçülen normal boyunca** ötesindedir; normal eğikse nesnenin yanına
+  düşer ve oradan gelen eğik iniş nesneyi süpürür. Kapatmadan önce loga bakın:
+  normal oturtulamadığında artık uyarı basılıyor ve yanal kayma mm cinsinden
+  yazılıyor.
 - **`vacuum_require_confirmation`** — sim'de `false` (VGC10 sürücüsü yok, durum
   mesajı gelmez), **gerçek robotta `true`**: ancak o zaman "tuttu mu" gerçekten
   doğrulanır.
