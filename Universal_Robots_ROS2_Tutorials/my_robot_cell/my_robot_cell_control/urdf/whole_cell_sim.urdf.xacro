@@ -1,0 +1,212 @@
+<?xml version="1.0"?>
+<!--
+  WHOLE CELL SIM - Birleşik Simülasyon URDF
+  İçerik:
+    1. UR10e + Lineer Eksen (simrobot macro, sim_ur10e_ prefix)
+    2. AGV + Kawasaki RS005L (ota_macro + rs005l_macro)
+    3. Çevresel bileşenler (ifarlab_environment)
+  
+  Tüm bileşenler tek bir URDF altında, tek TF ağacında birleştirilmiştir.
+  Tek bir gz_ros2_control plugin'i tüm controller'ları yönetir.
+
+  NOT: OTA inertia makroları ile UR inertia makroları arasında
+  "cylinder_inertial" çakışması var. Bu dosyada OTA bileşenleri UR'den
+  ÖNCE yüklenir (include edilir), böylece UR'nin cylinder_inertial versiyonu 
+  son tanımlanan olur. OTA tarafındaki cylinder_inertial çağrıları 
+  origin bloğu olmadan yapılır; UR versiyonu *origin bekler.
+  Bu sorunu çözmek için OTA bileşenlerini kullanmak yerine satır içi 
+  inertial tanımları yapıyoruz.
+-->
+<robot name="whole_cell_sim" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- ==================== MACRO INCLUDE'LAR ==================== -->
+  <!-- ÖNEMLI: Include sırası kritik! 
+       OTA inertia makroları UR ile çakışıyor (cylinder_inertial).
+       Kawasaki + AGV makrolarını UR'den ÖNCE include ediyoruz,
+       sonra UR'nin versiyonu üste yazacak.
+       Ancak bu durumda OTA wheel/caster çalışmaz.
+       BU YÜZDEN AGV bileşenlerini Gazebo'da ayrı model olarak 
+       spawn etmek üzere burada sadece Kawasaki kolunu dahil ediyoruz.
+       AGV için ota_macro yerine bileşenleri satır içi tanımlıyoruz.
+  -->
+
+  <!-- AGV bileşenleri: inertia_tensors olmadan, sadece gerekli alt makrolar -->
+  <!-- Bu include'lar inertia_tensors include etmez -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_base.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/inertia_tensors.urdf.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_wheel.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_caster.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_ir.xacro"/>
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota_plugin.xacro"/>
+  <!-- OTA ros2_control -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ota/ota.ros2_control.xacro"/>
+
+  <!-- Kawasaki RS005L makrosu -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/khi_rs/rs005l_macro.xacro"/>
+
+  <!-- UR10e sim makrosu (lineer eksen + UR10e kol + ros2_control) -->
+  <!-- Bu EN SON include edilmeli ki cylinder_inertial'ın UR versiyonu kazansın -->
+  <xacro:include filename="$(find my_robot_cell_description)/urdf/simrobot_my_robot_cell_macro.xacro"/>
+
+  <!-- Çevresel bileşenler makrosu -->
+  <xacro:include filename="$(find mobile_manipulator_description)/urdf/ifarlab_environment.xacro"/>
+
+  <!-- ==================== ARGÜMANLAR ==================== -->
+  <!-- UR10e argümanları -->
+  <xacro:arg name="ur_type" default="ur10e"/>
+  <xacro:arg name="joint_limits_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/joint_limits.yaml"/>
+  <xacro:arg name="kinematics_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/default_kinematics.yaml"/>
+  <xacro:arg name="physical_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/physical_parameters.yaml"/>
+  <xacro:arg name="visual_parameters_file" default="$(find ur_description)/config/$(arg ur_type)/visual_parameters.yaml"/>
+  <xacro:arg name="sim_ignition" default="true"/>
+  <xacro:arg name="simulation_controllers" default=""/>
+  <xacro:arg name="tf_prefix" default="sim_"/>
+
+  <!-- Kawasaki argümanları -->
+  <xacro:arg name="kawasaki_name" default="rs005l"/>
+  <xacro:arg name="kawasaki_tf_prefix" default="sim_kawasaki_"/>
+  <xacro:arg name="kawasaki_sim_ignition" default="true"/>
+  <xacro:arg name="kawasaki_use_fake_hardware" default="false"/>
+  <xacro:arg name="kawasaki_simulation_controllers" default=""/>
+
+  <!-- AGV spawn pozisyonu (world frame'e göre) -->
+  <xacro:arg name="agv_x" default="-2.301959"/>
+  <xacro:arg name="agv_y" default="0.135135131"/>
+  <xacro:arg name="agv_z" default="0.17"/>
+  <xacro:arg name="agv_yaw" default="1.570796"/>
+
+  <!-- ==================== WORLD ROOT LINK ==================== -->
+  <link name="world"/>
+
+  <!-- ==================== 1. AGV + KAWASAKI RS005L ==================== -->
+  <!-- AGV'yi world frame'e sabit bağla (başlangıç pozisyonu) -->
+  <!-- <joint name="world_to_agv" type="fixed">
+    <parent link="world"/>
+    <child link="ota_base_link"/>
+    <origin xyz="$(arg agv_x) $(arg agv_y) $(arg agv_z)" 
+            rpy="0 0 $(arg agv_yaw)"/>
+  </joint> -->
+
+  <!-- AGV gövdesi -->
+  <xacro:ota_base link_name="sim_ota_base_link" prefix="sim_"/>
+
+  <!-- AGV ros2_control (tekerlek velocity interface) -->
+  <xacro:ota_ros2_control
+    name="ota_system"
+    sim_ignition="$(arg kawasaki_sim_ignition)"
+    use_fake_hardware="$(arg kawasaki_use_fake_hardware)"
+    prefix="sim_"/>
+
+  <!-- IR sensör -->
+  <xacro:ota_ir base_link="sim_ota_base_link" link_name="sim_ota_ir" xyz_ir="0.403 0.0 0.03" rpy_ir="0 0 0"/>
+
+  <!-- Tahrik tekerlekleri -->
+  <xacro:ota_wheel base_link="sim_ota_base_link" xyz_hub="0 -0.30 -0.06" rpy_hub="0 0 0" side="left" prefix="sim_"/>
+  <xacro:ota_wheel base_link="sim_ota_base_link" xyz_hub="0 0.30 -0.06" rpy_hub="0 0 0" side="right" prefix="sim_"/>
+
+  <!-- Sarhoş tekerlekler -->
+  <xacro:ota_swivel base_link="sim_ota_base_link" xyz_caster="0.37 -0.22 -0.048" rpy_caster="0 0 0" side="front_right" prefix="sim_"/>
+  <xacro:ota_swivel base_link="sim_ota_base_link" xyz_caster="0.37 0.22 -0.048" rpy_caster="0 0 0" side="front_left" prefix="sim_"/>
+  <xacro:ota_swivel base_link="sim_ota_base_link" xyz_caster="-0.37 -0.22 -0.048" rpy_caster="0 0 0" side="back_right" prefix="sim_"/>
+  <xacro:ota_swivel base_link="sim_ota_base_link" xyz_caster="-0.37 0.22 -0.048" rpy_caster="0 0 0" side="back_left" prefix="sim_"/>
+
+  <!-- Diff Drive Plugin (AGV hareketi için) -->
+  <xacro:ota_diff_drive base_link="sim_ota_base_link" prefix="sim_"/>
+  <!-- Joint State Publisher Plugin -->
+  <xacro:ota_joints_state_publisher/>
+
+  <!-- Kawasaki RS005L kol (AGV üstünde) -->
+  <xacro:khi_rs005l
+    name="$(arg kawasaki_name)"
+    tf_prefix="$(arg kawasaki_tf_prefix)"
+    parent="sim_manipulator_base_link"
+    sim_ignition="$(arg kawasaki_sim_ignition)"
+    use_fake_hardware="$(arg kawasaki_use_fake_hardware)">
+    <origin xyz="0 0 0.051" rpy="0 0 3.141593" />
+  </xacro:khi_rs005l>
+
+  <!-- ==================== 2. UR10e + LİNEER EKSEN (SİM) ==================== -->
+  <xacro:simrobot_my_robot_cell
+    parent="world"
+    ur_type="$(arg ur_type)"
+    joint_limits_parameters_file="$(arg joint_limits_parameters_file)"
+    kinematics_parameters_file="$(arg kinematics_parameters_file)"
+    physical_parameters_file="$(arg physical_parameters_file)"
+    visual_parameters_file="$(arg visual_parameters_file)"
+    sim_ignition="$(arg sim_ignition)"
+    tf_prefix="$(arg tf_prefix)ur10e_"
+    >
+      <origin xyz="0.0 0 0" rpy="0 0 0" />
+  </xacro:simrobot_my_robot_cell>
+
+  <!-- ==================== 3. ÇEVRESEL BİLEŞENLER ==================== -->
+  <xacro:ifarlab_environment prefix=""/>
+
+  <!-- ==================== 4. GAZEBO PLUGIN'LERİ ==================== -->
+  <xacro:if value="$(arg sim_ignition)">
+    <gazebo reference="world">
+    </gazebo>
+
+    <!-- gz_ros2_control: Tüm ros2_control bileşenleri için tek plugin -->
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(arg simulation_controllers)</parameters>
+        <controller_manager_node_name>controller_manager</controller_manager_node_name>
+        <ros>
+          <namespace>sim</namespace>
+        </ros>
+      </plugin>
+    </gazebo>
+
+    <!-- ============ VAKUMLA TUTMA (DetachableJoint) ============
+         Gazebo'da vakum/suction eklentisi YOK (gz-sim 8.14'te böyle bir sistem
+         bulunmuyor). Parçanın gerçekten taşınabilmesi için tek yol, emme kabı
+         ile parça arasında koparılabilir sabit bir eklem kurmak.
+
+         Bağ, attach mesajının geldiği ANDAKİ göreli pozla kurulur - yani
+         mesajı kap parçaya değdiğinde göndermek gerekir, önce değil.
+
+         ÖLÇÜLDÜ (11 Ağu 2026, ayrı bir test dünyasında):
+           * eklenti BAŞLANGIÇTA BAĞLI gelir; child_model dünyada belirir
+             belirmez eklemi kurar. Bu yüzden launch, RedCube spawn edildikten
+             sonra bir kez detach yayınlar - yoksa kutu daha ilk hareketten
+             itibaren kavrayıcıya kaynaklı olur ve peşi sıra sürüklenir.
+           * detach sonrası yeniden attach ÇALIŞIR (test: yük, taşınan
+             tutucuyu 1.000 m peşinden izledi).
+
+         child_model SDF'te sabit bir isimdir: başka bir parça eklenecekse bu
+         blok o parça için de tekrarlanmalı. -->
+    <xacro:if value="$(optenv ENV_USE_VACUUM_GRIPPER false)">
+      <gazebo>
+        <plugin filename="gz-sim-detachable-joint-system"
+                name="gz::sim::systems::DetachableJoint">
+          <!-- DİKKAT: burası ur10e_suction_cup OLAMAZ.
+               URDF -> SDF çevriminde sabit eklemler ERİTİLİR: flange, tool0,
+               vacuum_gripper ve suction_cup ayrı link olarak Gazebo'ya hiç
+               girmez, hepsi wrist_3_link'in içine katılır. ÖLÇÜLDÜ
+               (13 Ağu 2026, `gz model -m whole_cell_sim`): koldaki son link
+               sim_ur10e_wrist_3_link, "suction" geçen tek bir link yok.
+
+               Eklenti parent_link'i bulamayınca eklemi HİÇ kurmuyor ve sessiz
+               kalıyor - belirtisi, /vacuum/attached'ın `gz topic -l` çıktısında
+               olmamasıdır (/vacuum/attach ve /vacuum/detach köprüden gelir, o
+               ikisinin varlığı eklentinin yüklendiğini GÖSTERMEZ).
+
+               wrist_3_link fiziksel olarak aynı gövde - kap ona zaten sabit
+               bağlı - ve bağ, attach mesajı geldiği andaki göreli pozla
+               kurulduğu için kutunun kaba göre konumu doğru kalır. -->
+          <parent_link>$(arg tf_prefix)ur10e_wrist_3_link</parent_link>
+          <child_model>RedCube</child_model>
+          <child_link>RedCube</child_link>
+          <attach_topic>/vacuum/attach</attach_topic>
+          <detach_topic>/vacuum/detach</detach_topic>
+          <output_topic>/vacuum/attached</output_topic>
+          <!-- RedCube conveyor launch'ı tarafından SONRADAN spawn ediliyor;
+               o ana kadar her iterasyonda uyarı basmasın. -->
+          <suppress_child_warning>true</suppress_child_warning>
+        </plugin>
+      </gazebo>
+    </xacro:if>
+  </xacro:if>
+
+</robot>

@@ -1,0 +1,105 @@
+<?xml version="1.0" ?>
+<robot name="onrobot_2fg7"
+  xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find onrobot_2fg7_description)/urdf/materials.xacro" />
+
+  <xacro:macro name="onrobot_2fg7" params="prefix parent *origin">
+
+    <link name="${prefix}gripper_base_link">
+      <inertial>
+        <origin xyz="0.046201794305521515 0.04641351769017876 -0.017675503740650633" rpy="0 0 0"/>
+        <mass value="4.92893092862587"/>
+        <inertia ixx="0.006626" iyy="0.0075" izz="0.005595" ixy="-0.000805" iyz="4e-06" ixz="8e-06"/>
+      </inertial>
+      <visual>
+        <origin xyz="-1.123708 -0.518786 -0.735428" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_body_1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="violet">
+          <color rgba="0.4 0.18 0.57 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="-1.123708 -0.518786 -0.735428" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_body_1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="${prefix}gripper_upper_1">
+      <inertial>
+        <origin xyz="0.009933945618336715 0.020191952923398593 0.002410109555269213" rpy="0 0 0"/>
+        <mass value="0.15599517357950826"/>
+        <inertia ixx="3.7e-05" iyy="4.5e-05" izz="6.6e-05" ixy="-7e-06" iyz="-5e-06" ixz="-9e-06"/>
+      </inertial>
+      <visual>
+        <origin xyz="-1.22001 -0.579787 -0.7675" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_upper_1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="grey">
+          <color rgba="0.2 0.2 0.2 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="-1.22001 -0.579787 -0.7675" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_upper_1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="${prefix}gripper_lower_1">
+      <inertial>
+        <origin xyz="0.009953097781983722 0.020157371452492412 -0.0024101337743568374" rpy="0 0 0"/>
+        <mass value="0.15599517357965467"/>
+        <inertia ixx="3.7e-05" iyy="4.5e-05" izz="6.6e-05" ixy="-7e-06" iyz="5e-06" ixz="9e-06"/>
+      </inertial>
+      <visual>
+        <origin xyz="-1.22001 -0.579787 -0.668" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_lower_1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="grey">
+          <color rgba="0.2 0.2 0.2 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="-1.22001 -0.579787 -0.668" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/gripper_lower_1.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${prefix}gripper_joint" type="prismatic">
+      <origin xyz="0.096302 0.061001 0.032072" rpy="0 0 0"/>
+      <parent link="${prefix}gripper_base_link"/>
+      <child link="${prefix}gripper_upper_1"/>
+      <axis xyz="0.0 0.0 -1.0"/>
+      <!-- limits extended ±0.001 beyond nominal 0..0.025 range to work around DART servo bug -->
+      <limit upper="0.026" lower="-0.001" effort="1000" velocity="10"/>
+    </joint>
+
+    <joint name="${prefix}right_finger_joint" type="prismatic">
+      <origin xyz="0.096302 0.061001 -0.067428" rpy="0 0 0"/>
+      <parent link="${prefix}gripper_base_link"/>
+      <child link="${prefix}gripper_lower_1"/>
+      <axis xyz="0.0 0.0 -1.0"/>
+      <mimic joint="${prefix}gripper_joint" multiplier="-1.0"/>
+      <!-- limits extended ±0.001 beyond nominal -0.025..0 range to work around DART servo bug -->
+      <limit upper="0.001" lower="-0.026" effort="1000" velocity="10"/>
+    </joint>
+
+    <joint name="${prefix}2fg7_attach_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${prefix}gripper_base_link"/>
+      <xacro:insert_block name="origin"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+  </xacro:macro>
+
+</robot>

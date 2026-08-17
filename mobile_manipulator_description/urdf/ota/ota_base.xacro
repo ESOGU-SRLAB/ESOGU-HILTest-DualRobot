@@ -1,0 +1,157 @@
+<?xml version='1.0'?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="ota_base" params="link_name prefix:=''">
+    <!-- <link name="world"/> -->
+    <link name="${prefix}ifarlab_ray_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/ifarlab_ray.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}ifarlab_ray_material">
+          <color rgba="0.75 0.75 0.75 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file://$(find mobile_manipulator_description)/meshes/environment/ifarlab_ray.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+    </link>
+
+    
+
+    <link name='${link_name}'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/>
+      
+      <visual>
+        <origin xyz="0 0 -0.1625" rpy=" 0 0 0"/>
+        <geometry>
+          <mesh filename="file:////home/ifarlab/colcon_ws/src/mobile_manipulator_description/meshes/ota/OTA-v0.7.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="${prefix}DefaultWhite">
+          <color rgba="1 1 1 1"/>
+        </material>
+      </visual>    
+      
+      <collision>
+        <origin xyz="0 0 0.015" rpy=" 0 0 0"/>
+        <geometry>
+          <box size="1.02605 0.728 0.3"/>
+        </geometry>
+      </collision>
+
+      <!-- AGV DECK KEEP-OUT. The deck carries cables and loose hardware that no CAD
+           model covers, and the Kawasaki was planning paths down into them. This box
+           fills the whole gap between the top of the AGV body and the underside of the
+           Kawasaki base, so the arm treats the deck as solid.
+
+           Heights are in ota_base_link: the body box above ends at 0.015 + 0.3/2 =
+           0.165, and base_link (the Kawasaki's lowest point) sits at 0.212
+           (base2manipulatorbase) + 0.051 (base_mount, in rs005l_macro.xacro) = 0.263.
+           That gap is 9.8 cm. Footprint deliberately matches the AGV body exactly, so
+           the keep-out never overhangs the platform.
+
+           SRDF: no new entries needed. The links this box swallows or touches
+           (manipulator_base_link, base_link, link1, link2) are ALREADY disabled against
+           ota_base_link, while link3..link7 and camera_link stay checked, which is
+           exactly the set that can reach down into the deck. All 57 chassis parts are
+           likewise already disabled, so raising the AGV cannot cause spurious
+           chassis collisions. -->
+      <xacro:property name="agv_body_top" value="0.165"/>
+      <xacro:property name="agv_deck_top" value="0.263"/>
+      <collision>
+        <origin xyz="0 0 ${(agv_body_top + agv_deck_top) / 2.0}" rpy="0 0 0"/>
+        <geometry>
+          <box size="1.02605 0.728 ${agv_deck_top - agv_body_top}"/>
+        </geometry>
+      </collision>
+
+
+      <!-- basit inertial (istersen box_inertial ile değiştirirsin) -->
+      <!-- <inertial>
+        <mass value="50.0"/>
+        <origin xyz="0 0 0"/>
+        <inertia ixx="5.0" iyy="5.0" izz="5.0" ixy="0" ixz="0" iyz="0"/>
+      </inertial> -->
+      <xacro:box_inertial x="1.02605" y="0.728"  z="0.3" mass="50.0" />
+
+    </link>
+
+    <gazebo reference="${link_name}">
+      <mu1>0.1</mu1>
+      <mu2>0.1</mu2>
+      <material>Gazebo/Orange</material>
+      <visual>
+        <material>
+          <ambient>0.85 0.35 0 1</ambient>
+          <diffuse>0.85 0.35 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </gazebo>
+
+    <link name='${prefix}manipulator_base_link'>
+      <origin xyz="0 0 0" rpy=" 0 0 0"/>
+      
+      <visual>
+        <origin xyz="0 0 -0.0" rpy=" 0 0 0"/>
+        <geometry>
+          <box size="0.187945 0.190701 0.103"/>
+        </geometry>
+      </visual>    
+      
+      <collision>
+        <origin xyz="0 0 -0.0" rpy=" 0 0 0"/>
+        <geometry>
+          <box size="0.187945 0.190701 0.103"/>
+        </geometry>
+      </collision>    
+    
+      <xacro:box_inertial x="0.187945" y="0.190701"  z="0.103" mass="5.0" />
+    </link>
+
+    <!-- <gazebo reference="${prefix}manipulator_base_link">
+      <material>Gazebo/Orange</material>
+      <visual>
+        <material>
+          <ambient>1 0.5 0 1</ambient>
+          <diffuse>1 0.5 0 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+        </material>
+      </visual>
+    </gazebo> -->
+
+    <!-- ifarlab_ray (şase rayı): kabinete 0.0497m (-Y), şaseye 0.1m (+X) kaydırıldı -->
+    <joint name="${prefix}ifarlab_ray_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${prefix}ifarlab_ray_link"/>
+      <origin xyz="0.095 -0.0497 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- AGV başlangıç konumu (ifarlab_ray_link frame'e göre, orijinal değerler).
+         Ray frame zaten +0.1 X, -0.0787 Y kaydırıldığından AGV net world
+         pozisyonu: x≈-2.202, y≈0.056, z=0.165
+         axis 1 0 0 = joint frame local X = yaw 90° nedeniyle world +Y yönü
+         Bu eksende AGV ileri/geri hareket eder (ray üzerinde kayar) -->
+    <joint name="${prefix}world_to_agv" type="prismatic">
+      <parent link="${prefix}ifarlab_ray_link"/>
+      <child link="${link_name}"/>
+      <origin xyz="-2.301959 0.135135131 0.165" rpy="0 0 1.570796"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit effort="1000" lower="0.0" upper="2.0" velocity="1.25"/>
+      <dynamics damping="100.0" friction="50.0"/>
+    </joint>
+    
+    <joint name="${prefix}base2manipulatorbase" type="fixed">
+      <parent link="${link_name}"/>
+      <child link="${prefix}manipulator_base_link"/>
+      <origin rpy="0 0 0" xyz="0.001 -0.26 0.212"/>
+    </joint>
+
+  </xacro:macro>     
+</robot>

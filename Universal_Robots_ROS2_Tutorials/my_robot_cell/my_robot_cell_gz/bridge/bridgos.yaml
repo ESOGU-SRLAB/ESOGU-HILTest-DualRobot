@@ -1,0 +1,130 @@
+- ros_topic_name: "pointcloud"
+  gz_topic_name: "/world/ifarlab/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: true                # Default "false"
+  direction: GZ_TO_ROS  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
+  qos_profile: SENSOR_DATA  # Default is a default-constructed QoS with appropriate queue size
+
+- ros_topic_name: "depth/image"
+  # DİKKAT: rgbd_camera sensörü iki ayrı görüntü yayınlar - ".../image" RGB,
+  # ".../depth_image" derinlik. Burada RGB olan bağlıydı, yani /sim/depth/image
+  # rgb8 taşıyordu ve derinlik tüketen her şey (er_image render'ı dahil) sessizce
+  # boş kalıyordu. Kawasaki bloğu (aşağıda) baştan doğruydu.
+  gz_topic_name: "/world/ifarlab/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/depth_image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: true                # Default "false"
+  direction: GZ_TO_ROS  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
+  qos_profile: SENSOR_DATA  # Default is a default-constructed QoS with appropriate queue size
+
+# ABSOLUTE "/clock", and NOT lazy. This bridge node runs inside the /sim namespace
+# (PushRosNamespace), so the relative name "clock" used to resolve to /sim/clock --
+# while every node with use_sim_time:=true subscribes to the ABSOLUTE /clock, which
+# rclcpp's TimeSource never namespaces. Measured on the running cell: /clock had 0
+# publishers and 10 subscribers, /sim/clock had 1 publisher and 0 subscribers, so the
+# sim controller_manager (use_sim_time:=true) sat on a clock that never advanced.
+# `lazy: true` made it worse: with nobody subscribed to /sim/clock the bridge did not
+# even publish.
+- ros_topic_name: "/clock"
+  # DİKKAT: gz-sim iki saat topic'i tanıtır - "/clock" ve "/world/<ad>/clock".
+  # Bu kurulumda "/clock" TANITILI AMA SESSİZ; gerçekte yayın yapan
+  # "/world/ifarlab/clock". Sessiz olana bağlıydı, dolayısıyla ROS /clock'a hiç
+  # mesaj gelmiyordu ve use_sim_time:=true olan HER düğümün ROS timer'ları
+  # 0'da donuyordu (ölçüldü: /clock 0 mesaj, gz /world/ifarlab/clock sim=345 s).
+  gz_topic_name: "/world/ifarlab/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: false               # clock must flow whether or not anything is listening yet
+  direction: BIDIRECTIONAL  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
+
+- ros_topic_name: "pose"
+  gz_topic_name: "/world/ifarlab/dynamic_pose/info"
+  ros_type_name: "geometry_msgs/msg/PoseArray"
+  gz_type_name: "gz.msgs.Pose_V"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: true                # Default "false"
+  direction: GZ_TO_ROS  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
+
+- ros_topic_name: "sim_joint_states"
+  gz_topic_name: "/sim_robot_joint_states"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  gz_type_name: "gz.msgs.Model"
+  subscriber_queue: 5       # Default 10 if qos_profile is empty, otherwise not set by default
+  publisher_queue: 6        # Default 10 if qos_profile is empty, otherwise not set by default
+  lazy: true                # Default "false"
+  direction: GZ_TO_ROS  # Default "BIDIRECTIONAL" - Bridge both directions
+                            # "GZ_TO_ROS" - Bridge Gz topic to ROS
+                            # "ROS_TO_GZ" - Bridge ROS topic to Gz
+
+
+- ros_topic_name: "image"
+  gz_topic_name: "/world/ifarlab/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: true
+
+- ros_topic_name: "camera_info"
+  gz_topic_name: "/world/ifarlab/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: true
+
+- ros_topic_name: "kawasaki/pointcloud"
+  gz_topic_name: "/world/ifarlab/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  subscriber_queue: 5
+  publisher_queue: 6
+  lazy: true
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+
+- ros_topic_name: "kawasaki/depth_image"
+  gz_topic_name: "/world/ifarlab/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/depth_image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  subscriber_queue: 5
+  publisher_queue: 6
+  lazy: true
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+
+- ros_topic_name: "kawasaki/image"
+  gz_topic_name: "/world/ifarlab/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  subscriber_queue: 5
+  publisher_queue: 6
+  lazy: true
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+
+- ros_topic_name: "kawasaki/camera_info"
+  gz_topic_name: "/world/ifarlab/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  subscriber_queue: 5
+  publisher_queue: 6
+  lazy: true
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA

@@ -1,0 +1,190 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  
+  <!-- Renk tanımlamaları -->
+  <material name="chassis_red">
+    <color rgba="1.0 0.0 0.0 1.0"/>
+  </material>
+  
+  <material name="chassis_grey">
+    <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+  
+  <!-- Lineer ekseni taşıyan 4 ayağın collision'ı BÜYÜTÜLÜR (PART54..57).
+       STL'deki ayaklar 60 x 40 mm kesitinde; gerçek ayaklar bundan kalın, ayrıca
+       tabanda kaynak/civata/ayak plakası var. Bu yuzden bu 4 parca icin collision
+       mesh yerine, kesiti bu carpanla buyutulmus bir KUTU kullanilir. Yukseklik
+       (404 mm) aynen korunur: ayak zemine basiyor, uzatmanin anlami yok.
+       Gorsel mesh degismez, sadece collision buyur. -->
+  <xacro:property name="foot_collision_scale" value="3.0"/>
+  <xacro:property name="foot_size_x" value="${0.0600 * foot_collision_scale}"/>
+  <xacro:property name="foot_size_y" value="${0.0400 * foot_collision_scale}"/>
+  <xacro:property name="foot_size_z" value="0.4037"/>
+
+  <xacro:macro name="chassis_assembly" params="tf_prefix parent *origin">
+    
+    <!-- Ana chassis base link - tüm parçalar buna bağlanacak -->
+    <link name="${tf_prefix}chassis">
+      <inertial>
+        <origin xyz="-1.124731 1.232845 1.108302" rpy="0 0 0"/>
+        <mass value="120.90442642947052"/>
+        <inertia
+            ixx="1.363e6"
+            ixy="-903.3"
+            ixz="1.847e4"
+            iyy="8.130e5"
+            iyz="-385.3"
+            izz="1.039e6"/>
+      </inertial>
+    </link>
+
+    <!-- Ana chassis'i parent'a bağla -->
+    <joint name="${tf_prefix}base_to_chassis" type="fixed">
+      <xacro:insert_block name="origin"/>
+      <parent link="${parent}"/>
+      <child link="${tf_prefix}chassis"/>
+    </joint>
+
+    <!-- PART1-PART44 parçalarını oluştur -->
+    <xacro:macro name="chassis_part" params="part_num color_material:=chassis_grey">
+      <link name="${tf_prefix}chassis_part${part_num}">
+        <visual>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis_last/PART${part_num}.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="${color_material}"/>
+        </visual>
+        
+        <collision>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis_last/PART${part_num}.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+        </collision>
+        
+        <inertial>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <mass value="2.75"/>
+          <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                  iyy="0.001" iyz="0.0"
+                  izz="0.001"/>
+        </inertial>
+      </link>
+
+      <joint name="${tf_prefix}_chassis_to_part${part_num}" type="fixed">
+        <parent link="${tf_prefix}chassis"/>
+        <child link="${tf_prefix}chassis_part${part_num}"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </joint>
+    </xacro:macro>
+
+    <!-- Ayak parcasi: gorsel olarak ayni mesh, ama collision olarak kesiti
+         foot_collision_scale kadar buyutulmus bir kutu. cx/cy/cz = ayagin mesh
+         icindeki bbox merkezi (mesh origin'i 0 0 0 oldugu icin ayni zamanda
+         chassis frame'indeki merkezi). -->
+    <xacro:macro name="chassis_foot" params="part_num cx cy cz">
+      <link name="${tf_prefix}chassis_part${part_num}">
+        <visual>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <geometry>
+            <mesh filename="file:////home/ifarlab/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis_last/PART${part_num}.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+          <material name="chassis_grey"/>
+        </visual>
+
+        <collision>
+          <origin xyz="${cx} ${cy} ${cz}" rpy="0 0 0"/>
+          <geometry>
+            <box size="${foot_size_x} ${foot_size_y} ${foot_size_z}"/>
+          </geometry>
+        </collision>
+
+        <inertial>
+          <origin xyz="0 0 0" rpy="0 0 0"/>
+          <mass value="2.75"/>
+          <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                  iyy="0.001" iyz="0.0"
+                  izz="0.001"/>
+        </inertial>
+      </link>
+
+      <joint name="${tf_prefix}_chassis_to_part${part_num}" type="fixed">
+        <parent link="${tf_prefix}chassis"/>
+        <child link="${tf_prefix}chassis_part${part_num}"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </joint>
+    </xacro:macro>
+
+    <!-- Tüm parçaları oluştur (1-44) -->
+    <xacro:chassis_part part_num="1"/>
+    <xacro:chassis_part part_num="2"/>
+    <xacro:chassis_part part_num="3"/>
+    <xacro:chassis_part part_num="4"/>
+    <xacro:chassis_part part_num="5"/>
+    <xacro:chassis_part part_num="6"/>
+    <xacro:chassis_part part_num="7"/>
+    <xacro:chassis_part part_num="8"/>
+    <xacro:chassis_part part_num="9"/>
+    <xacro:chassis_part part_num="10"/>
+    <xacro:chassis_part part_num="11"/>
+    <xacro:chassis_part part_num="12"/>
+    <xacro:chassis_part part_num="13"/>
+    <xacro:chassis_part part_num="14"/>
+    <xacro:chassis_part part_num="15"/>
+    <xacro:chassis_part part_num="16"/>
+    <xacro:chassis_part part_num="17"/>
+    <xacro:chassis_part part_num="18"/>
+    <xacro:chassis_part part_num="19"/>
+    <xacro:chassis_part part_num="20"/>
+    <xacro:chassis_part part_num="21"/>
+    <xacro:chassis_part part_num="22"/>
+    <xacro:chassis_part part_num="23"/>
+    <xacro:chassis_part part_num="24"/>
+    <xacro:chassis_part part_num="25"/>
+    <xacro:chassis_part part_num="26"/>
+    <xacro:chassis_part part_num="27"/>
+    <xacro:chassis_part part_num="28" color_material="chassis_red"/>
+    <xacro:chassis_part part_num="29"/>
+    <xacro:chassis_part part_num="30"/>
+    <xacro:chassis_part part_num="31"/>
+    <xacro:chassis_part part_num="32"/>
+    <xacro:chassis_part part_num="33"/>
+    <xacro:chassis_part part_num="34"/>
+    <xacro:chassis_part part_num="35"/>
+    <xacro:chassis_part part_num="36"/>
+    <xacro:chassis_part part_num="37"/>
+    <xacro:chassis_part part_num="38"/>
+    <xacro:chassis_part part_num="39"/>
+    <xacro:chassis_part part_num="40"/>
+    <xacro:chassis_part part_num="41"/>
+    <xacro:chassis_part part_num="42"/>
+    <xacro:chassis_part part_num="43"/>
+    <xacro:chassis_part part_num="44"/>
+    <xacro:chassis_part part_num="45"/>
+    <xacro:chassis_part part_num="46"/>
+    <xacro:chassis_part part_num="47"/>
+    <xacro:chassis_part part_num="48"/>
+    <xacro:chassis_part part_num="49"/>
+    <xacro:chassis_part part_num="50"/>
+    <xacro:chassis_part part_num="51"/>
+    <xacro:chassis_part part_num="52"/>
+    <xacro:chassis_part part_num="53"/>
+    <!-- Lineer ekseni tasiyan 4 ayak: collision'lari buyutulmus kutu (yukariya bak). -->
+    <xacro:chassis_foot part_num="54" cx="-1.4596" cy="1.8920" cz="0.1836"/>
+    <xacro:chassis_foot part_num="55" cx="-0.7659" cy="0.5209" cz="0.1836"/>
+    <xacro:chassis_foot part_num="56" cx="-1.4712" cy="0.5209" cz="0.1836"/>
+    <xacro:chassis_foot part_num="57" cx="-0.7659" cy="1.8920" cz="0.1836"/>
+
+    <!-- Gazebo için renk tanımlamaları -->
+    <!-- <gazebo reference="${tf_prefix}chassis_part17">
+      <material>Gazebo/Red</material>
+    </gazebo> -->
+
+    <!-- <gazebo reference="${tf_prefix}chassis_part23">
+      <material>Gazebo/Red</material>
+    </gazebo> -->
+
+  </xacro:macro>
+
+</robot>

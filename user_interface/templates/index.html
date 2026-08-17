@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ESOGÜ - IFARLAB — Scenario Control Dashboard for multi-robot HIL testing">
+    <title>ESOGÜ - IFARLAB — Dashboard</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/analytics.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <!-- Plotly (3D visualizations) -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+
+<!-- ===== TAB SWITCHER (top-right, floating) ===== -->
+<div class="tab-switcher" id="tab-switcher">
+    <button class="tab-btn active" id="tab-btn-home" onclick="switchTab('home')">
+        🏠 Dashboard
+    </button>
+    <button class="tab-btn" id="tab-btn-analytics" onclick="switchTab('analytics')">
+        📈 Data Analytics
+    </button>
+</div>
+
+<!-- ===== VIEW: HOME (existing dashboard — unchanged) ===== -->
+<div id="view-home">
+
+<div class="dashboard">
+
+    <!-- ===== HEADER (Logos + Title) ===== -->
+    <header class="header fade-in">
+        <div class="header-left">
+            <img src="/figures/ifarlab.png" alt="ESOGÜ IFARLAB" title="ESOGÜ IFARLAB" id="logo-ifarlab">
+            <img src="/figures/asrlab.jpg" alt="ESOGÜ ASRLAB" title="ESOGÜ ASRLAB" id="logo-asrlab">
+        </div>
+        <div class="header-center">
+            <h1>Scenario Control Dashboard</h1>
+            <p>ESOGÜ - IFARLAB — HIL Test Environment</p>
+        </div>
+        <div class="header-right">
+            <img src="/figures/matisse.png" alt="MATISSE" title="MATISSE Project" id="logo-matisse">
+        </div>
+    </header>
+
+    <!-- ===== CONTROL BAR (Scenario Buttons + Emergency Stop) ===== -->
+    <nav class="control-bar fade-in" id="control-bar">
+        <button class="scenario-btn" id="btn-multi_robot_inspection" onclick="startScenario('multi_robot_inspection')">
+            <span class="btn-icon">🤖</span>
+            Multi-Robot Inspection
+        </button>
+        <button class="scenario-btn" id="btn-ur10e_inspection" onclick="startScenario('ur10e_inspection')">
+            <span class="btn-icon">🔍</span>
+            UR10e Inspection
+        </button>
+        <button class="scenario-btn" id="btn-pick_and_place" onclick="startScenario('pick_and_place')">
+            <span class="btn-icon">📦</span>
+            Pick &amp; Place
+        </button>
+        <button class="scenario-btn" id="btn-human_robot_collaboration" onclick="startScenario('human_robot_collaboration')">
+            <span class="btn-icon">🤝</span>
+            Human-Robot Collaboration
+        </button>
+
+        <div class="control-separator"></div>
+
+        <div class="toggle-container" title="Enable this switch when not connected to real hardware">
+            <label class="toggle-switch">
+                <input type="checkbox" id="fake-hardware-toggle" checked>
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Use Fake Hardware</span>
+        </div>
+
+        <button class="emergency-btn" id="btn-emergency" onclick="emergencyStop()">
+            🛑 STOP ALL
+        </button>
+    </nav>
+
+    <!-- ===== STATUS BAR ===== -->
+    <div class="status-bar fade-in" id="status-bar">
+        <div class="status-item">
+            <span class="status-dot stopped" id="hil-dot"></span>
+            <span class="status-label">HIL:</span>
+            <span class="status-value" id="hil-status-text">Offline</span>
+        </div>
+        <div class="status-item">
+            <span class="status-dot stopped" id="scenario-dot"></span>
+            <span class="status-label">Scenario:</span>
+            <span class="status-value" id="scenario-status-text">—</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Active:</span>
+            <span class="status-value" id="active-scenario-text">—</span>
+        </div>
+
+        <!-- Yalnızca serbest metin komut alan senaryolarda görünür -->
+        <button class="command-btn" id="btn-send-command" style="display:none;"
+                onclick="openCommandModal()">
+            💬 Send Command
+        </button>
+
+    </div>
+
+    <!-- ===== CONFIRM ROBOT READY BANNER ===== -->
+    <div class="confirm-banner" id="confirm-banner">
+        <span class="banner-icon">⚠️</span>
+        <span class="banner-text">HIL initialized. Please confirm when the robot is ready.</span>
+        <button class="confirm-btn" id="btn-confirm" onclick="confirmRobot()">
+            ✅ Robot is Ready — Start Scenario
+        </button>
+    </div>
+
+    <!-- ===== TASK COMMAND MODAL (/gemini/command) ===== -->
+    <div class="modal-overlay" id="command-modal" onclick="onCommandOverlayClick(event)">
+        <div class="modal-box" role="dialog" aria-modal="true"
+             aria-labelledby="command-modal-title">
+            <div class="modal-header">
+                <h3 id="command-modal-title">💬 Task Command</h3>
+                <button class="modal-close" onclick="closeCommandModal()"
+                        title="Close (Esc)">✕</button>
+            </div>
+
+            <p class="modal-desc">
+                Describe the pick and place task in plain English. Gemini Robotics
+                ER 2 turns it into a pick target and a place target.
+            </p>
+
+            <textarea id="command-text" class="modal-textarea" rows="5" spellcheck="false"
+                      placeholder="There is a thing on the conveyor belt. I want you to pick that up and place it in one of the empty compartments in the toolkit's top row"></textarea>
+
+            <div class="modal-hint">
+                Published to <code>/gemini/command</code>. Ctrl+Enter also confirms.
+            </div>
+
+            <div class="modal-status" id="command-status"></div>
+
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeCommandModal()">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" id="btn-command-confirm"
+                        onclick="sendCommand()">
+                    ✅ Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CAMERA FEEDS ===== -->
+    <div class="content-grid">
+        <!-- Real Camera (Left) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>🎥 Real World Camera</h3>
+                <span class="panel-badge live">● LIVE</span>
+            </div>
+            <div class="camera-container" id="real-camera-wrapper">
+                <img src="/stream/real" alt="Real World Camera" id="real-camera"
+                     onerror="this.style.display='none'; document.getElementById('real-placeholder').style.display='flex';">
+                <div class="camera-placeholder" id="real-placeholder" style="display:none;">
+                    <span class="placeholder-icon">📷</span>
+                    <span class="placeholder-text">Waiting for camera connection...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gazebo Camera (Right) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>🎮 Gazebo Simulation Camera</h3>
+                <span class="panel-badge sim">● SIM</span>
+            </div>
+            <div class="camera-container" id="gazebo-camera-wrapper">
+                <img src="/stream/gazebo" alt="Gazebo Simulation Camera" id="gazebo-camera"
+                     onerror="this.style.display='none'; document.getElementById('gazebo-placeholder').style.display='flex';">
+                <div class="camera-placeholder" id="gazebo-placeholder" style="display:none;">
+                    <span class="placeholder-icon">🎮</span>
+                    <span class="placeholder-text">Waiting for simulation stream...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real Joint States Chart (Left) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>📊 Real World — Joint States</h3>
+                <span class="panel-badge live">● LIVE</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="real-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Sim Joint States Chart (Right) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>📊 Simulation — Joint States</h3>
+                <span class="panel-badge sim">● SIM</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="sim-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Log Panel (Full Width) -->
+        <div class="panel log-section fade-in">
+            <div class="panel-header">
+                <h3>📋 System Logs</h3>
+                <div class="log-controls">
+                    <button class="log-control-btn" onclick="toggleAutoScroll()">
+                        ⬇️ Auto-Scroll: <span id="autoscroll-label">ON</span>
+                    </button>
+                    <button class="log-control-btn" onclick="clearLogs()">
+                        🗑️ Clear
+                    </button>
+                </div>
+            </div>
+            <div class="log-container" id="log-container">
+                <div class="log-entry">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-source system">SYSTEM</span>
+                    <span class="log-msg">Dashboard started. You can select a scenario to begin.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<!-- ===== /VIEW: HOME ===== -->
+
+<!-- ===== VIEW: DATA ANALYTICS ===== -->
+<div id="view-analytics" hidden>
+    <header class="analytics-header">
+        <div class="analytics-title">
+            <h1>📈 Data Analytics</h1>
+            <p>Collected data from Elasticsearch — ROS2 → Kafka → Elasticsearch</p>
+        </div>
+
+        <div class="analytics-toolbar">
+            <label class="tb-field">
+                <span>Range</span>
+                <select id="range-preset">
+                    <option value="all">All data</option>
+                    <option value="custom">Custom (absolute)</option>
+                    <option value="900000">Last 15 min</option>
+                    <option value="3600000">Last 1 hour</option>
+                    <option value="21600000">Last 6 hours</option>
+                    <option value="86400000">Last 24 hours</option>
+                    <option value="604800000">Last 7 days</option>
+                    <option value="2592000000">Last 30 days</option>
+                </select>
+            </label>
+
+            <label class="tb-field" id="custom-from-field" style="display:none;">
+                <span>From (UTC)</span>
+                <input type="datetime-local" id="range-from" step="1">
+            </label>
+            <label class="tb-field" id="custom-to-field" style="display:none;">
+                <span>To (UTC)</span>
+                <input type="datetime-local" id="range-to" step="1">
+            </label>
+            <button class="tb-btn" id="btn-fit" style="display:none;" onclick="fitToData()"
+                    title="Set the custom range to span all available data">
+                ⤢ Fit to data
+            </button>
+
+            <label class="tb-field">
+                <span>Points</span>
+                <select id="point-count">
+                    <option value="200">200</option>
+                    <option value="500" selected>500</option>
+                    <option value="1000">1000</option>
+                    <option value="2000">2000</option>
+                    <option value="5000">5000</option>
+                    <option value="10000">10000</option>
+                    <option value="20000">20000</option>
+                    <option value="60000">60000 (max detail)</option>
+                </select>
+            </label>
+
+            <label class="tb-field">
+                <span>Auto-refresh</span>
+                <select id="refresh-interval">
+                    <option value="0">Off</option>
+                    <option value="2000">2 s</option>
+                    <option value="5000">5 s</option>
+                    <option value="10000">10 s</option>
+                    <option value="30000">30 s</option>
+                </select>
+            </label>
+
+            <button class="tb-btn" id="btn-refresh" onclick="refreshAnalytics()">
+                🔄 Refresh
+            </button>
+            <span class="tb-status" id="analytics-status">Idle</span>
+        </div>
+    </header>
+
+    <div class="analytics-grid" id="analytics-grid">
+        <!-- Panels are generated by analytics.js -->
+    </div>
+</div>
+<!-- ===== /VIEW: DATA ANALYTICS ===== -->
+
+<!-- ===== JavaScript ===== -->
+<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/analytics.js"></script>
+
+</body>
+</html>

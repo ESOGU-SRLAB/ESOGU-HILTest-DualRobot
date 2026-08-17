@@ -1,0 +1,12 @@
+# action/MoveAxis.action
+
+# Goal
+float64 target_position   # in meters
+float64 velocity          # in cm/s
+---
+# Result
+bool success
+float64 final_position  # in meters
+---
+# Feedback
+float64 current_position # in meters

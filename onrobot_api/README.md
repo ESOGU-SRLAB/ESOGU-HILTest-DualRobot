@@ -1,0 +1,3 @@
+OnRobot c++ API for linux. This driver provides [library](https://touchlab-avatarx.github.io/onrobot_api/api.html) for implementing robot drivers as well as a [CLI tool](https://touchlab-avatarx.github.io/onrobot_api/cli.html) for inspecting and configuring the gripper. The library uses the [libmodbus](https://libmodbus.org/) to connect to the gripper via ethernet. Read the documentation to learn more about [installation](https://touchlab-avatarx.github.io/onrobot_api/install.html), [example usage](https://touchlab-avatarx.github.io/onrobot_api/example.html) and the [API](https://touchlab-avatarx.github.io/onrobot_api/api.html).
+
+This library is compatible with [Docker](https://www.docker.com/) and can be containerised for easier distribution.

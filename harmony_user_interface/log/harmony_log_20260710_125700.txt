@@ -1,0 +1,9 @@
+[12:57:12] [SYSTEM] 🚀 Starting: ros2 launch my_robot_cell_control hil_test_whole_unified.launch.py digital_twin:=true use_fake_hardware:=true use_mock_hardware:=true fake_sensor_commands:=true
+[12:57:12] [SYSTEM] ✅ HIL system initialized. Please confirm when robots are ready.
+[12:57:13] [HIL] /bin/bash: line 1: /home/ifarlab/colcon_ws/install/setup.bash: No such file or directory
+[12:57:25] [SYSTEM] 📋 Stopping current process...
+[12:57:27] [SYSTEM] 🚀 Starting: ros2 launch my_robot_cell_control hil_test_whole_unified.launch.py digital_twin:=true use_fake_hardware:=true use_mock_hardware:=true fake_sensor_commands:=true
+[12:57:27] [SYSTEM] ✅ HIL system initialized. Please confirm when robots are ready.
+[12:57:27] [HIL] /bin/bash: line 1: /home/ifarlab/colcon_ws/install/setup.bash: No such file or directory
+[12:57:53] [SYSTEM] 🚨 EMERGENCY STOP — Terminating all processes!
+[12:57:53] [SYSTEM] ✅ All processes stopped.

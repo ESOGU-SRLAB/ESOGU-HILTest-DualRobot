@@ -1,0 +1,313 @@
+# ==============================================================================
+# WHOLE CELL HW CONTROLLERS
+# ==============================================================================
+# Birleşik donanım (fake + gerçek) controller yapılandırması.
+# Tek bir controller_manager altında tüm bileşenlerin controller'ları:
+#   1. UR10e + Lineer Eksen (ur10e_ prefix)
+#   2. Kawasaki RS005L kol (joint1-6, tf_prefix yok)
+#   3. AGV (world_to_agv + tekerlekler)
+#
+# Bu dosya whole_cell_hw.urdf.xacro ile birlikte kullanılır.
+# ==============================================================================
+
+controller_manager:
+  ros__parameters:
+    update_rate: 500  # Hz
+
+    # --- Ortak ---
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # --- UR10e ---
+    io_and_status_controller:
+      type: ur_controllers/GPIOController
+
+    speed_scaling_state_broadcaster:
+      type: ur_controllers/SpeedScalingStateBroadcaster
+
+    force_torque_sensor_broadcaster:
+      type: force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster
+
+    joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    scaled_joint_trajectory_controller:
+      type: ur_controllers/ScaledJointTrajectoryController
+
+    forward_velocity_controller:
+      type: velocity_controllers/JointGroupVelocityController
+
+    forward_position_controller:
+      type: position_controllers/JointGroupPositionController
+
+    # --- Kawasaki RS005L ---
+    # kawasaki_controller:
+    #   type: joint_trajectory_controller/JointTrajectoryController
+
+    # # --- AGV ---
+    # ota_base_controller:
+    #   type: diff_drive_controller/DiffDriveController
+
+
+# ==============================================================================
+# UR10e Controller Parametreleri
+# ==============================================================================
+
+speed_scaling_state_broadcaster:
+  ros__parameters:
+    state_publish_rate: 100.0
+
+force_torque_sensor_broadcaster:
+  ros__parameters:
+    sensor_name: tcp_fts_sensor
+    state_interface_names:
+      - force.x
+      - force.y
+      - force.z
+      - torque.x
+      - torque.y
+      - torque.z
+    frame_id: ur10e_tool0
+    topic_name: ft_data
+
+# UR10e kolu (lineer eksen hariç, 6 eksen)
+joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - ur10e_shoulder_pan_joint
+      - ur10e_shoulder_lift_joint
+      - ur10e_elbow_joint
+      - ur10e_wrist_1_joint
+      - ur10e_wrist_2_joint
+      - ur10e_wrist_3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.2
+      goal_time: 0.0
+      ur10e_shoulder_pan_joint:  { trajectory: 0.2, goal: 0.1 }
+      ur10e_shoulder_lift_joint: { trajectory: 0.2, goal: 0.1 }
+      ur10e_elbow_joint:         { trajectory: 0.2, goal: 0.1 }
+      ur10e_wrist_1_joint:       { trajectory: 0.2, goal: 0.1 }
+      ur10e_wrist_2_joint:       { trajectory: 0.2, goal: 0.1 }
+      ur10e_wrist_3_joint:       { trajectory: 0.2, goal: 0.1 }
+
+# UR10e kolu + lineer eksen (7 eksen, MoveIt için)
+scaled_joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - ur10e_base_to_robot_mount
+      - ur10e_shoulder_pan_joint
+      - ur10e_shoulder_lift_joint
+      - ur10e_elbow_joint
+      - ur10e_wrist_1_joint
+      - ur10e_wrist_2_joint
+      - ur10e_wrist_3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    speed_scaling_interface_name: ""
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    constraints:
+      stopped_velocity_tolerance: 0.2
+      goal_time: 0.0
+      ur10e_base_to_robot_mount:  { trajectory: 0.5, goal: 0.3 }
+      ur10e_shoulder_pan_joint:   { trajectory: 0.2, goal: 0.1 }
+      ur10e_shoulder_lift_joint:  { trajectory: 0.2, goal: 0.1 }
+      ur10e_elbow_joint:          { trajectory: 0.2, goal: 0.1 }
+      ur10e_wrist_1_joint:        { trajectory: 0.2, goal: 0.1 }
+      ur10e_wrist_2_joint:        { trajectory: 0.2, goal: 0.1 }
+      ur10e_wrist_3_joint:        { trajectory: 0.2, goal: 0.1 }
+
+forward_velocity_controller:
+  ros__parameters:
+    joints:
+      - ur10e_shoulder_pan_joint
+      - ur10e_shoulder_lift_joint
+      - ur10e_elbow_joint
+      - ur10e_wrist_1_joint
+      - ur10e_wrist_2_joint
+      - ur10e_wrist_3_joint
+    interface_name: velocity
+
+forward_position_controller:
+  ros__parameters:
+    joints:
+      - ur10e_shoulder_pan_joint
+      - ur10e_shoulder_lift_joint
+      - ur10e_elbow_joint
+      - ur10e_wrist_1_joint
+      - ur10e_wrist_2_joint
+      - ur10e_wrist_3_joint
+
+# ==============================================================================
+# Kawasaki RS005L Controller Parametreleri
+# ==============================================================================
+# kawasaki_controller: AGV pozisyonu + 6 eksen kol (7 DOF mobil manipülatör)
+# kawasaki_controller:
+#   ros__parameters:
+#     joints:
+#       - world_to_agv
+#       - joint1
+#       - joint2
+#       - joint3
+#       - joint4
+#       - joint5
+#       - joint6
+#     command_interfaces:
+#       - position
+#     state_interfaces:
+#       - position
+#       - velocity
+#     state_publish_rate: 100.0
+#     action_monitor_rate: 20.0
+#     allow_partial_joints_goal: true
+#     constraints:
+#       stopped_velocity_tolerance: 0.5
+#       goal_time: 0.0
+#       world_to_agv: { trajectory: 0.5, goal: 0.3 }
+#       joint1: { trajectory: 0.2, goal: 0.1 }
+#       joint2: { trajectory: 0.2, goal: 0.1 }
+#       joint3: { trajectory: 0.2, goal: 0.1 }
+#       joint4: { trajectory: 0.2, goal: 0.1 }
+#       joint5: { trajectory: 0.2, goal: 0.1 }
+#       joint6: { trajectory: 0.2, goal: 0.1 }
+
+# # ==============================================================================
+# # AGV (OTA) Diff Drive Controller Parametreleri
+# # ==============================================================================
+# ota_base_controller:
+#   ros__parameters:
+#     left_wheel_names:
+#       - wheel_left_base
+#     right_wheel_names:
+#       - wheel_right_base
+
+#     wheel_separation: 0.60
+#     wheel_radius: 0.102
+
+#     base_frame_id: ota_base_link
+#     odom_frame_id: odom
+
+#     cmd_vel_timeout: 0.25
+#     use_stamped_vel: false
+
+#     publish_rate: 50.0
+#     velocity_rolling_window_size: 10
+
+#     enable_odom_tf: true
+
+#     linear:
+#       x:
+#         has_velocity_limits: true
+#         max_velocity: 1.0
+#         has_acceleration_limits: true
+#         max_acceleration: 1.5
+
+#     angular:
+#       z:
+#         has_velocity_limits: true
+#         max_velocity: 2.0
+#         has_acceleration_limits: true
+#         max_acceleration: 3.0
+
+kawasaki_controller_manager:
+  ros__parameters:
+    update_rate: 500  # Hz
+
+    # --- Kawasaki RS005L ---
+    kawasaki_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    kawasaki_joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # --- AGV ---
+    ota_base_controller:
+      type: diff_drive_controller/DiffDriveController
+
+kawasaki_controller:
+  ros__parameters:
+    joints:
+      - world_to_agv
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: true
+    constraints:
+      stopped_velocity_tolerance: 0.5
+      # goal_time > 0: hedef noktasına vardıktan sonra eklemlerin goal
+      # toleransına oturması için ek süre. 0 olursa yörünge biter bitmez
+      # tolerans dışıysa GOAL_TOLERANCE_VIOLATED ile abort eder.
+      goal_time: 3.0
+      # trajectory (path) toleransları KAPALI (0.0): gerçek kol TCP bridge +
+      # robotun kendi iç planlayıcısı, AGV ise diff-drive üzerinden komut
+      # aldığı için interpolasyonun gerisinde kalır. trajectory > 0 iken bu
+      # gecikme PATH_TOLERANCE_VIOLATED (-4) tetikleyip hareketi daha viewpoint'e
+      # varmadan iptal ediyordu (sim config'i de bu yüzden 0.0). Uç nokta
+      # hâlâ aşağıdaki goal toleransları ile denetlenir.
+      world_to_agv: { trajectory: 0.0, goal: 0.3 }
+      joint1: { trajectory: 0.0, goal: 0.1 }
+      joint2: { trajectory: 0.0, goal: 0.1 }
+      joint3: { trajectory: 0.0, goal: 0.1 }
+      joint4: { trajectory: 0.0, goal: 0.1 }
+      joint5: { trajectory: 0.0, goal: 0.1 }
+      joint6: { trajectory: 0.0, goal: 0.1 }
+
+# ==============================================================================
+# AGV (OTA) Diff Drive Controller Parametreleri
+# ==============================================================================
+ota_base_controller:
+  ros__parameters:
+    left_wheel_names:
+      - wheel_left_base
+    right_wheel_names:
+      - wheel_right_base
+
+    wheel_separation: 0.60
+    wheel_radius: 0.102
+
+    base_frame_id: ota_base_link
+    odom_frame_id: odom
+
+    cmd_vel_timeout: 0.25
+    use_stamped_vel: false
+
+    publish_rate: 50.0
+    velocity_rolling_window_size: 10
+
+    enable_odom_tf: true
+
+    linear:
+      x:
+        has_velocity_limits: true
+        max_velocity: 1.0
+        has_acceleration_limits: true
+        max_acceleration: 1.5
+
+    angular:
+      z:
+        has_velocity_limits: true
+        max_velocity: 2.0
+        has_acceleration_limits: true
+        max_acceleration: 3.0

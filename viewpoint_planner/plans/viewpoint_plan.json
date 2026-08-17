@@ -1,0 +1,1587 @@
+{
+  "coverage_achieved": 0.5462400747314339,
+  "coverage_threshold": 0.98,
+  "total_viewpoints": 24,
+  "camera_config": {
+    "horizontal_fov_deg": 70.0,
+    "vertical_fov_deg": 60.0,
+    "fov_safety_margin_deg": 3.0,
+    "min_range_m": 0.2,
+    "max_range_m": 1.8,
+    "frame_rate_hz": 5.0,
+    "viewpoint_distances": [
+      0.3,
+      0.6,
+      1.0,
+      1.4
+    ],
+    "tilt_variations_deg": [
+      -15.0,
+      0.0,
+      15.0
+    ],
+    "max_incidence_angle_deg": 80.0
+  },
+  "ur_viewpoints": [
+    {
+      "id": "vp_000",
+      "position": [
+        -0.27278788628762285,
+        1.510145051723409,
+        1.7597164129268372
+      ],
+      "rotation": [
+        [
+          8.59650202895653e-08,
+          -0.7063227088743715,
+          -0.707889985045955
+        ],
+        [
+          -0.9999999999999962,
+          -6.071904599936631e-08,
+          -6.085377692725584e-08
+        ],
+        [
+          0.0,
+          0.7078899850459576,
+          -0.7063227088743741
+        ]
+      ],
+      "rank": 0,
+      "new_points_covered": 464,
+      "total_points_visible": 464,
+      "cumulative_coverage": 0.1083605791686128,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.30236805073901635,
+        -4.874262646681061,
+        -0.46135453207394567,
+        -0.5862817328309027,
+        -0.6833359306710407,
+        -5.483742723141595,
+        -1.3433804622457775
+      ]
+    },
+    {
+      "id": "vp_015",
+      "position": [
+        -0.4687392738945384,
+        1.1862122905828048,
+        1.8662200328451002
+      ],
+      "rotation": [
+        [
+          -4.635582229183867e-07,
+          -0.258819045102493,
+          -0.9659258262889646
+        ],
+        [
+          -0.9999999999998925,
+          1.1997769660515832e-07,
+          4.4776285950553486e-07
+        ],
+        [
+          0.0,
+          0.9659258262890684,
+          -0.2588190451025208
+        ]
+      ],
+      "rank": 15,
+      "new_points_covered": 28,
+      "total_points_visible": 183,
+      "cumulative_coverage": 0.474077533862681,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.7495313003285824,
+        6.19380463852711,
+        5.180065731262595,
+        -1.453551021129839,
+        3.8666419624143638,
+        -1.5939012895039337,
+        3.227939943488647
+      ]
+    },
+    {
+      "id": "vp_002",
+      "position": [
+        -0.503019666613866,
+        0.765664046467044,
+        1.8464176284603289
+      ],
+      "rotation": [
+        [
+          -4.2982506175881395e-07,
+          -0.865709220695438,
+          -0.5005472457248292
+        ],
+        [
+          -0.9999999999999075,
+          3.7210351925062573e-07,
+          2.1514775080689881e-07
+        ],
+        [
+          0.0,
+          0.5005472457248754,
+          -0.865709220695518
+        ]
+      ],
+      "rank": 2,
+      "new_points_covered": 291,
+      "total_points_visible": 392,
+      "cumulative_coverage": 0.2347034096216721,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.2850978344981541,
+        -0.29629719799258447,
+        -2.256439323008802,
+        1.0043326226759106,
+        1.795903250016302,
+        -1.826339361663737,
+        3.2932447530796423
+      ]
+    },
+    {
+      "id": "vp_006",
+      "position": [
+        -0.9303477651377314,
+        0.9785275102040811,
+        1.8327175619948544
+      ],
+      "rotation": [
+        [
+          -0.9999999999907344,
+          -3.7280282164021158e-06,
+          -2.1525099832975513e-06
+        ],
+        [
+          -4.30482213459348e-06,
+          0.8660121370425969,
+          0.5000229779483969
+        ],
+        [
+          0.0,
+          0.50002297795303,
+          -0.866012137050621
+        ]
+      ],
+      "rank": 6,
+      "new_points_covered": 52,
+      "total_points_visible": 285,
+      "cumulative_coverage": 0.3330219523587109,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.8839416400060841,
+        0.49301840691711624,
+        -2.1950657592284255,
+        -0.3205970316549529,
+        -1.5082087980617411,
+        -0.7027134725759089,
+        0.7481522620253608
+      ]
+    },
+    {
+      "id": "vp_004",
+      "position": [
+        -1.1295300518216953,
+        1.2803737546479932,
+        1.7153305432197616
+      ],
+      "rotation": [
+        [
+          0.8807352708108506,
+          -0.469551001705177,
+          -0.0618646874024458
+        ],
+        [
+          -0.4736088921776465,
+          -0.8731891133733112,
+          -0.11504516302997186
+        ],
+        [
+          0.0,
+          0.13062399888226953,
+          -0.9914319799744229
+        ]
+      ],
+      "rank": 4,
+      "new_points_covered": 107,
+      "total_points_visible": 342,
+      "cumulative_coverage": 0.305464736104624,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.495391054725326,
+        0.45531187784382326,
+        -2.465337153640887,
+        0.024646148795732112,
+        -0.5402217811759454,
+        2.186404211600303,
+        0.0932380681706865
+      ]
+    },
+    {
+      "id": "vp_022",
+      "position": [
+        -0.9646746160479869,
+        1.664276612247888,
+        1.4131455751842512
+      ],
+      "rotation": [
+        [
+          0.9999999999997119,
+          -3.795056127102991e-07,
+          6.573230029720139e-07
+        ],
+        [
+          7.590112254207876e-07,
+          0.4999999999997312,
+          -0.8660254037842612
+        ],
+        [
+          0.0,
+          0.8660254037845107,
+          0.49999999999987527
+        ]
+      ],
+      "rank": 22,
+      "new_points_covered": 36,
+      "total_points_visible": 90,
+      "cumulative_coverage": 0.5364315740308268,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.8726772896881132,
+        -0.3874666049452382,
+        -2.0255086797931616,
+        -1.3554909708809837,
+        4.736969195336857,
+        -1.0894870639172909,
+        -1.1304071156460427
+      ]
+    },
+    {
+      "id": "vp_020",
+      "position": [
+        -1.1074978192781835,
+        2.145007721055404,
+        1.4280782747489114
+      ],
+      "rotation": [
+        [
+          0.6660214944312511,
+          0.33575274036439584,
+          0.6660971898254497
+        ],
+        [
+          0.7459325498700018,
+          -0.2997838637499518,
+          -0.5947388217357156
+        ],
+        [
+          0.0,
+          0.8929724141164432,
+          -0.4501113946869721
+        ]
+      ],
+      "rank": 20,
+      "new_points_covered": 22,
+      "total_points_visible": 136,
+      "cumulative_coverage": 0.5221858944418496,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.94999383900593,
+        -3.4069550599185905,
+        -0.9133182840714023,
+        1.1251153350865317,
+        -2.2062074908525067,
+        1.3681703709548139,
+        5.863411897370604
+      ]
+    },
+    {
+      "id": "vp_005",
+      "position": [
+        -0.806819680065235,
+        2.2516527395509134,
+        1.8621428910440372
+      ],
+      "rotation": [
+        [
+          0.9999999999977432,
+          -1.8399107319365523e-06,
+          -1.062261823453925e-06
+        ],
+        [
+          -2.1245403463015143e-06,
+          -0.8660276728259793,
+          -0.4999960698796595
+        ],
+        [
+          0.0,
+          0.4999960698807879,
+          -0.8660276728279336
+        ]
+      ],
+      "rank": 5,
+      "new_points_covered": 66,
+      "total_points_visible": 295,
+      "cumulative_coverage": 0.3208780943484353,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6653201411264733,
+        2.218468535648824,
+        -1.042815424271292,
+        0.46703513973566096,
+        -1.9392902604128897,
+        1.0210653596518362,
+        -0.36120867095861814
+      ]
+    },
+    {
+      "id": "vp_007",
+      "position": [
+        -0.39942144964639176,
+        2.687014674149207,
+        2.062223894863254
+      ],
+      "rotation": [
+        [
+          0.912162714740301,
+          -0.2392398797362309,
+          -0.3327513512841052
+        ],
+        [
+          -0.4098282345539462,
+          -0.5324808780240792,
+          -0.74061118861458
+        ],
+        [
+          0.0,
+          0.8119288112159212,
+          -0.5837564607929411
+        ]
+      ],
+      "rank": 7,
+      "new_points_covered": 123,
+      "total_points_visible": 283,
+      "cumulative_coverage": 0.36174684726763195,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.9132263416771433,
+        1.608592883000005,
+        -1.2189960803356632,
+        0.3750324399869013,
+        -1.2996158834242324,
+        1.3086168496405566,
+        -0.3821019349192004
+      ]
+    },
+    {
+      "id": "vp_010",
+      "position": [
+        -1.075841655755554,
+        2.693761166069679,
+        1.1428626418219159
+      ],
+      "rotation": [
+        [
+          0.999999999999712,
+          -3.794035677599041e-07,
+          6.572325500558498e-07
+        ],
+        [
+          7.588818696489326e-07,
+          0.49995076036710606,
+          -0.8660538304330604
+        ],
+        [
+          0.0,
+          0.8660538304333097,
+          0.49995076036725006
+        ]
+      ],
+      "rank": 10,
+      "new_points_covered": 70,
+      "total_points_visible": 211,
+      "cumulative_coverage": 0.41522652965903784,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.7993648946145864,
+        2.405978165667444,
+        -0.7179341034882263,
+        1.152641714879642,
+        4.647311204382857,
+        -4.332681964891016,
+        -0.7632920302747922
+      ]
+    },
+    {
+      "id": "vp_001",
+      "position": [
+        -1.0995956403458182,
+        2.6242769188121873,
+        0.9797576100642789
+      ],
+      "rotation": [
+        [
+          0.9999999999999848,
+          4.525287728269538e-08,
+          1.688860372076986e-07
+        ],
+        [
+          1.7484369152498138e-07,
+          -0.2588190451025168,
+          -0.9659258262890535
+        ],
+        [
+          0.0,
+          0.9659258262890684,
+          -0.2588190451025208
+        ]
+      ],
+      "rank": 1,
+      "new_points_covered": 250,
+      "total_points_visible": 398,
+      "cumulative_coverage": 0.16674451191032227,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.95,
+        2.4614915066907224,
+        5.765243571858126,
+        1.2365812329439874,
+        3.826743138734355,
+        -4.915043486676591,
+        5.409507586696404
+      ]
+    },
+    {
+      "id": "vp_016",
+      "position": [
+        -0.9853149252571817,
+        2.965121434340067,
+        0.6311374759839901
+      ],
+      "rotation": [
+        [
+          0.9999999999999282,
+          3.295342684205901e-08,
+          3.775600905147239e-07
+        ],
+        [
+          3.7899544890423345e-07,
+          -0.08694939988681366,
+          -0.9962127292196076
+        ],
+        [
+          0.0,
+          0.9962127292196791,
+          -0.08694939988681985
+        ]
+      ],
+      "rank": 16,
+      "new_points_covered": 35,
+      "total_points_visible": 163,
+      "cumulative_coverage": 0.4822512844465203,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.8956606503304165,
+        -4.108641136224721,
+        -6.0042615332762415,
+        0.17585501633598802,
+        -2.0973015170234315,
+        1.5214126740322662,
+        -0.6019759491186288
+      ]
+    },
+    {
+      "id": "vp_018",
+      "position": [
+        -0.6138012886318558,
+        1.8275918360010843,
+        0.31469123373894203
+      ],
+      "rotation": [
+        [
+          0.8808491193534868,
+          0.209312631746099,
+          -0.42460929232143374
+        ],
+        [
+          -0.47339711546880686,
+          0.38946761887327275,
+          -0.7900697088959912
+        ],
+        [
+          0.0,
+          0.8969410214951176,
+          0.44215020520100956
+        ]
+      ],
+      "rank": 18,
+      "new_points_covered": 66,
+      "total_points_visible": 152,
+      "cumulative_coverage": 0.508640822045773,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.869407529226082,
+        -5.421082491961078,
+        2.9803363978705915,
+        -1.2755510885806922,
+        -2.8269162933436145,
+        1.4761111058908742,
+        -6.089205034888104
+      ]
+    },
+    {
+      "id": "vp_019",
+      "position": [
+        -0.44725066138747127,
+        1.894037617377629,
+        0.4272061255179425
+      ],
+      "rotation": [
+        [
+          0.8808698020859511,
+          -0.0,
+          -0.47335862913129345
+        ],
+        [
+          -0.47335862913129345,
+          0.0,
+          -0.8808698020859511
+        ],
+        [
+          0.0,
+          1.0000000000000002,
+          -0.0
+        ]
+      ],
+      "rank": 19,
+      "new_points_covered": 36,
+      "total_points_visible": 142,
+      "cumulative_coverage": 0.5170481083605791,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.1145032422489576,
+        -0.8472331025388719,
+        -3.2338452657148196,
+        -1.6624179753748187,
+        0.18387326301264093,
+        -1.570796435537677,
+        5.06652271952944
+      ]
+    },
+    {
+      "id": "vp_017",
+      "position": [
+        -0.3511181385251037,
+        1.4322436472356186,
+        0.7758907093316869
+      ],
+      "rotation": [
+        [
+          -0.5123108124154929,
+          0.4860865692386694,
+          -0.7079953945386634
+        ],
+        [
+          -0.8588001114823971,
+          -0.2899713237822825,
+          0.42234938132045724
+        ],
+        [
+          0.0,
+          0.8244006784262922,
+          0.5660066443163623
+        ]
+      ],
+      "rank": 17,
+      "new_points_covered": 47,
+      "total_points_visible": 154,
+      "cumulative_coverage": 0.4932274638019617,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.8527011894837861,
+        -2.350963772682226,
+        5.791647895519635,
+        1.5892451939548347,
+        -5.973149266467982,
+        5.294075299842269,
+        5.0030757853042065
+      ]
+    },
+    {
+      "id": "vp_011",
+      "position": [
+        -0.26326387138368856,
+        0.7876424084703209,
+        0.8039988912292991
+      ],
+      "rotation": [
+        [
+          1.6721963993973398e-07,
+          0.7091888720216787,
+          -0.7050185414587271
+        ],
+        [
+          -0.999999999999986,
+          1.1859030782873283e-07,
+          -1.178929466535664e-07
+        ],
+        [
+          0.0,
+          0.7050185414587369,
+          0.7091888720216886
+        ]
+      ],
+      "rank": 11,
+      "new_points_covered": 71,
+      "total_points_visible": 206,
+      "cumulative_coverage": 0.4318075665576833,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.8855810118247125,
+        -2.65340695200785,
+        5.450158595910022,
+        2.229298969596917,
+        -0.5520858503942119,
+        5.051470726123971,
+        -0.3581350373626273
+      ]
+    },
+    {
+      "id": "vp_014",
+      "position": [
+        -0.5637716579688996,
+        0.6433498686271537,
+        0.40712306182301705
+      ],
+      "rotation": [
+        [
+          -0.8808696377533998,
+          0.1225143075310048,
+          -0.4572296203598282
+        ],
+        [
+          -0.47335893493647535,
+          -0.22798583850313828,
+          0.8508547326999049
+        ],
+        [
+          0.0,
+          0.9659258262890682,
+          0.25881904510252074
+        ]
+      ],
+      "rank": 14,
+      "new_points_covered": 57,
+      "total_points_visible": 187,
+      "cumulative_coverage": 0.4675385333956095,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.283753575987988,
+        1.1700311310606546,
+        -3.3035138557405577,
+        -0.9699343938365794,
+        -0.603539969605762,
+        -1.7738483072765738,
+        0.8777606164153685
+      ]
+    },
+    {
+      "id": "vp_023",
+      "position": [
+        -0.8172133324728836,
+        0.6598865296240686,
+        0.2768164415988704
+      ],
+      "rotation": [
+        [
+          -0.9999999999999882,
+          -3.947373664571029e-08,
+          1.473267571644808e-07
+        ],
+        [
+          1.5252327449073723e-07,
+          -0.2588046760568799,
+          0.9659296763486824
+        ],
+        [
+          0.0,
+          0.9659296763486935,
+          0.25880467605688295
+        ]
+      ],
+      "rank": 23,
+      "new_points_covered": 42,
+      "total_points_visible": 48,
+      "cumulative_coverage": 0.5462400747314339,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0592955847927406,
+        0.7973159314181146,
+        -3.520189210981303,
+        -0.7499304535814116,
+        -0.6322857917514565,
+        -1.7524503687919102,
+        0.7557483421663147
+      ]
+    },
+    {
+      "id": "vp_013",
+      "position": [
+        -1.0039773250086006,
+        -0.13534507112190508,
+        0.4269814979554752
+      ],
+      "rotation": [
+        [
+          -0.999999999999982,
+          4.9111641296120155e-08,
+          -1.8328714056021824e-07
+        ],
+        [
+          -1.8975281079746878e-07,
+          -0.2588190451025161,
+          0.9659258262890509
+        ],
+        [
+          0.0,
+          0.9659258262890682,
+          0.25881904510252074
+        ]
+      ],
+      "rank": 13,
+      "new_points_covered": 55,
+      "total_points_visible": 188,
+      "cumulative_coverage": 0.45422699673049977,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.291310220592991,
+        0.6922960950319395,
+        -3.4602773003924345,
+        -0.46416376386173425,
+        -0.9576307084270346,
+        -1.7712771571445618,
+        0.8611284680590763
+      ]
+    },
+    {
+      "id": "vp_008",
+      "position": [
+        -0.9014246760714822,
+        -0.5572972066861092,
+        1.0010056550262478
+      ],
+      "rotation": [
+        [
+          -0.9999999999999584,
+          -9.868032575328368e-08,
+          -2.712007674989755e-07
+        ],
+        [
+          -2.885960203862963e-07,
+          0.3419323856967686,
+          0.9397245573100836
+        ],
+        [
+          0.0,
+          0.9397245573101227,
+          -0.3419323856967828
+        ]
+      ],
+      "rank": 8,
+      "new_points_covered": 76,
+      "total_points_visible": 254,
+      "cumulative_coverage": 0.37949556282111163,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.1149864491104284,
+        0.9694521982867703,
+        -2.973952823818673,
+        -0.45533619389602775,
+        -0.994958768173928,
+        -1.374937526866309,
+        0.57353420190667
+      ]
+    },
+    {
+      "id": "vp_012",
+      "position": [
+        -1.2507745267528692,
+        -0.18172322969084398,
+        1.2422482240821449
+      ],
+      "rotation": [
+        [
+          -0.9999999999999848,
+          4.525287728269538e-08,
+          -1.688860372076986e-07
+        ],
+        [
+          -1.7484369152498138e-07,
+          -0.2588190451025168,
+          0.9659258262890535
+        ],
+        [
+          0.0,
+          0.9659258262890684,
+          0.2588190451025208
+        ]
+      ],
+      "rank": 12,
+      "new_points_covered": 41,
+      "total_points_visible": 205,
+      "cumulative_coverage": 0.4413825315273237,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.08263262353469741,
+        0.4623256474169373,
+        -2.773072462878643,
+        -0.3795453977862304,
+        -1.6790838362521938,
+        -1.8043930530475958,
+        1.0941040629536218
+      ]
+    },
+    {
+      "id": "vp_003",
+      "position": [
+        -1.1094701494865338,
+        -0.181723204984664,
+        1.4718346696196334
+      ],
+      "rotation": [
+        [
+          -0.9999999999999848,
+          -4.525287728269538e-08,
+          -1.688860372076986e-07
+        ],
+        [
+          -1.7484369152498138e-07,
+          0.2588190451025168,
+          0.9659258262890535
+        ],
+        [
+          0.0,
+          0.9659258262890684,
+          -0.2588190451025208
+        ]
+      ],
+      "rank": 3,
+      "new_points_covered": 196,
+      "total_points_visible": 367,
+      "cumulative_coverage": 0.28047641289117237,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.1390517806620207,
+        0.637774124491567,
+        -2.574998186748239,
+        -0.40847386071392744,
+        -1.5707103032814467,
+        -1.3613010782778452,
+        0.9162152562831678
+      ]
+    },
+    {
+      "id": "vp_021",
+      "position": [
+        -1.1094702893614872,
+        0.6182767950153237,
+        1.4718346696196334
+      ],
+      "rotation": [
+        [
+          -0.9999999999999848,
+          4.525287728269538e-08,
+          -1.688860372076986e-07
+        ],
+        [
+          -1.7484369152498138e-07,
+          -0.2588190451025168,
+          0.9659258262890535
+        ],
+        [
+          0.0,
+          0.9659258262890684,
+          0.2588190451025208
+        ]
+      ],
+      "rank": 21,
+      "new_points_covered": 25,
+      "total_points_visible": 118,
+      "cumulative_coverage": 0.5280242877160205,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.9740817225767251,
+        0.5862588131995935,
+        -2.4682688101564167,
+        -0.558591002763251,
+        -1.8326981750011722,
+        -1.7879225552721867,
+        0.9681101524699819
+      ]
+    },
+    {
+      "id": "vp_009",
+      "position": [
+        -0.20685015106192628,
+        0.22378929147994678,
+        1.2502574141137113
+      ],
+      "rotation": [
+        [
+          -0.39186710191078256,
+          4.866767289688531e-07,
+          -0.9200218336755968
+        ],
+        [
+          -0.9200218336757255,
+          -2.0729138414737141e-07,
+          0.3918671019107277
+        ],
+        [
+          0.0,
+          0.9999999999998601,
+          5.289838905501335e-07
+        ]
+      ],
+      "rank": 9,
+      "new_points_covered": 83,
+      "total_points_visible": 251,
+      "cumulative_coverage": 0.3988790284913592,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.14972572814576438,
+        1.922215391962819,
+        -3.61249090168149,
+        2.607146455587115,
+        -0.5661324576057294,
+        1.5712130749896804,
+        -2.3245408610308815
+      ]
+    }
+  ]
+}

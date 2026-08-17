@@ -1,0 +1,28 @@
+/onrobot/controller_manager:
+  ros__parameters:
+    update_rate: 130
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    gripper_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+/onrobot/gripper_controller:
+  ros__parameters:
+    joints:
+      - ur10e_gripper_joint
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    allow_partial_joints_goal: true
+    state_publish_rate: 100.0
+    constraints:
+      stopped_velocity_tolerance: 0.2
+      goal_time: 0.0
+      ur10e_gripper_joint: { trajectory: 0.2, goal: 0.04 }
