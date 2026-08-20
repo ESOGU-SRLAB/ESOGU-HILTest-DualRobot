@@ -97,6 +97,7 @@ class GeminiLocator:
         payload_margin_m: float = 0.005,
         payload_min_height_m: float = 0.004,
         payload_max_height_m: float = 0.30,
+        payload_max_span_m: float = 0.45,
     ):
         self._node = node
         self._er = er_client
@@ -131,6 +132,7 @@ class GeminiLocator:
         self._payload_margin_m = float(payload_margin_m)
         self._payload_min_height_m = float(payload_min_height_m)
         self._payload_max_height_m = float(payload_max_height_m)
+        self._payload_max_span_m = float(payload_max_span_m)
         self._patch_radius_px = int(patch_radius_px)
         self._patch_depth_band = float(patch_depth_band)
         self._patch_min_points = int(patch_min_points)
@@ -507,11 +509,24 @@ class GeminiLocator:
                 margin_m=self._payload_margin_m,
                 min_height_m=self._payload_min_height_m,
                 max_height_m=self._payload_max_height_m,
+                max_span_m=self._payload_max_span_m,
             )
         except Exception as exc:  # noqa: BLE001 - ölçüm görevi düşürmesin
             self._node.get_logger().debug(f"Parça ölçülemedi: {exc}")
             return None
         if box is None:
+            # Sessiz kalmamalı: ölçüm reddedildiğinde config'teki payload_size
+            # kullanılıyor ve gerçek parça ondan büyükse planlayıcı var olmayan
+            # boşluklara güvenir. Reddin en sık sebebi ayak izinin
+            # payload_max_span_m'i aşması, yani üst düzlemin parçaya değil
+            # destek yüzeyine oturması.
+            self._node.get_logger().warn(
+                "Parça ÖLÇÜLEMEDİ; config'teki payload_size'a düşülüyor. "
+                "En olası sebep ölçümün parçadan taşıp destek yüzeyine "
+                "(konveyör bandı) yayılması - o durumda ayak izi "
+                f"payload_max_span_m={self._payload_max_span_m:.2f} m sınırını "
+                "aşıyor ve ölçüm reddediliyor."
+            )
             return None
 
         centre_world = self._to_world_point(box.centre, source_frame, cloud.header.stamp)

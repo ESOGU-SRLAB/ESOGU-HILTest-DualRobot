@@ -361,6 +361,19 @@
     # locator artık UYARI basıyor ve yanal kaymayı mm cinsinden yazıyor.
     # O uyarı yoksa normal dikeydir, ara durak temas noktasının tam üstündedir
     # ve süpürmenin sebebi başka yerdedir.
+    # 17 Ağu 2026: teşhis için kısa süre kapatıldı, sonra GERİ AÇILDI.
+    #
+    # Teşhis sonucu: sorun ara durak DEĞİLDİ. Lineer ray, yörüngeyi sabit
+    # 53 mm geriden takip ediyordu (linear_axis_adapter'daki ölü feedforward,
+    # orada anlatıldı). Kap yanlış Y'de parçanın üstüne iniyor, yörünge
+    # bitiyor, ray kalan 53 mm'yi kap parçaya basılıyken kapatıyor ve
+    # PARÇAYI BANT ÜZERİNDE SÜRÜKLÜYOR; vakum da parçaya değil çıplak
+    # konveyöre yapışıyor.
+    #
+    # Ara durak bu yüzden artık daha da gerekli: ray önce YUKARIDA hedefine
+    # varıyor, waypoint_settle_sec artığı kapatıyor, iniş ancak ondan sonra
+    # ve ray neredeyse duruyorken yapılıyor. Kapatmak, inişi rayın hâlâ
+    # hareket ettiği ana denk getirir - sürüklemenin tam reçetesi.
     pick_approach_enabled: true
 
     # Her waypoint'e VARDIKTAN sonra beklenecek süre (sn). 0 = kapalı.
@@ -376,6 +389,16 @@
     # ayarlarında. Görev süresine doğrudan eklenir: 8 waypoint'lik bir pick and
     # place'te 2.0 sn -> +16 sn.
     waypoint_settle_sec: 2.0
+    # Kavramadan sonra parçayı yüzeyden çekme mesafesi.
+    #
+    # 17 Ağu 2026: ara durak AÇIKKEN bu değer KULLANILMIYOR. Kavramadan sonra
+    # kol, APPROACH_PICK pozunun kendisine geri dönüyor - o poza saniyeler önce
+    # varıldığı için gidilebilirliği kanıtlanmış ve yol inişin birebir tersi.
+    # Burada yeni bir poz hesaplamak, kanıtlanmamış bir poza taze IK/plan
+    # istemek demekti ve 7 eksenin artıklığı araya ray hareketi sokabiliyordu.
+    #
+    # Yalnızca pick_approach_enabled=false iken geçerli: o zaman kanıtlanmış
+    # bir poz yok, çekilme mesafesi bir yerden gelmeli.
     lift_distance: 0.20
 
     # place_clearance: iniş sonunda KAP UCUNUN bırakma yüzeyinden yüksekliği.
@@ -552,6 +575,22 @@
     # Bu aralık dışındaki yükseklikler ölçüm hatası sayılır ve yedeğe düşülür.
     payload_min_height_m: 0.004
     payload_max_height_m: 0.30
+
+    # Ölçülen parçanın YATAY aklı başındalık sınırı. Bunu aşan ölçüm
+    # reddedilir ve payload_size'a düşülür.
+    #
+    # 17 Ağu 2026: yükseklik iki yönden sınırlıydı ama ayak izi hiç
+    # sınırlanmamıştı. Bir koşuda ölçüm 881x347x4 mm çıktı (68219 piksel,
+    # görüntünün %31'i) - bu bir parça değil, konveyör bandının kendisiydi.
+    # 891x357 mm'lik kutu emme kabına iliştirilince o andan sonra hiçbir plan
+    # üretilemedi; kartezyen de serbest de %0 döndü. Belirti "robot parçayı
+    # kaldıramadı" olarak göründü, sebebi ise iki adım önceki ölçümdü.
+    #
+    # Vakum kabının taşıyabileceğinden büyük bir ölçüm, ölçümün başarısız
+    # olduğunun kanıtıdır. Gerçekten büyük parça taşıyacaksanız bu değeri
+    # büyütün; 0 = sınır yok (eski davranış).
+    payload_max_span_m: 0.45
+
     payload_size: [0.14, 0.083, 0.03]
     payload_object_id: "gemini_payload"
     # Parçaya DEĞMESİ normal olan link'ler; verilmezse kavrama anı çarpışma

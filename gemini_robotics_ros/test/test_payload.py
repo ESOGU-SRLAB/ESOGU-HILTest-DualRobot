@@ -173,6 +173,32 @@ def test_object_taller_than_the_limit_is_rejected():
         xyz, seed_uv, normal, point, max_height_m=0.03) is None
 
 
+def test_object_wider_than_the_limit_is_rejected():
+    """Ayak izi sınırı. Yükseklik iki yönden sınırlıydı, yatay hiç değildi.
+
+    Gerçek koşuda (17 Ağu 2026) ölçüm parçadan taşıp konveyör bandına yayıldı
+    ve 881x347 mm çıktı. O kutu emme kabına iliştirilince hiçbir plan
+    üretilemedi - kartezyen de serbest de %0 döndü - ve belirti iki adım
+    sonra "robot parçayı kaldıramadı" olarak göründü. Uydurulmuş devasa bir
+    kutu, elle verilen yedekten daha tehlikelidir.
+    """
+    xyz, seed_uv, normal, point, _ = make_scene(box_size=(0.30, 0.20, 0.03))
+    assert measure_payload_box(
+        xyz, seed_uv, normal, point, max_span_m=0.25) is None
+
+
+def test_span_limit_does_not_reject_a_normal_part():
+    xyz, seed_uv, normal, point, _ = make_scene(box_size=(0.14, 0.083, 0.03))
+    assert measure_payload_box(
+        xyz, seed_uv, normal, point, max_span_m=0.45) is not None
+
+
+def test_span_limit_of_zero_disables_the_check():
+    xyz, seed_uv, normal, point, _ = make_scene(box_size=(0.30, 0.20, 0.03))
+    assert measure_payload_box(
+        xyz, seed_uv, normal, point, max_span_m=0.0) is not None
+
+
 def test_support_plane_is_the_mode_not_the_median():
     """Medyan, cismin pikselleriyle destek arasındaki boşluğa düşebilir."""
     # Eşit sayıda nokta: medyan tam iki tepenin ORTASINA, yani hiçbir yüzeyin

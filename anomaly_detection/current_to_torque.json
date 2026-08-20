@@ -1,0 +1,109 @@
+{
+  "method": "quasi-static gravity regression",
+  "source_parquet": "ur10e_clean.parquet",
+  "qd_max": 0.005,
+  "min_r2": 0.3,
+  "n_quasi_static": 197090,
+  "n_regression": 65697,
+  "nm_per_amp": [
+    10.521918385217846,
+    10.521918385217846,
+    9.129936053678362,
+    3.4085094600399217,
+    3.4085094600399217,
+    3.4085094600399217
+  ],
+  "a": [
+    0.095039703159539,
+    0.095039703159539,
+    0.10952979233596162,
+    0.2933833723284687,
+    0.2933833723284687,
+    0.2933833723284687
+  ],
+  "trusted": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+  ],
+  "r2": [
+    0.0,
+    0.9840630640468445,
+    0.9930850016834404,
+    7.775612537430643e-05,
+    0.012493697637409595,
+    0.009518521247215972
+  ],
+  "per_joint": [
+    {
+      "joint": "shoulder_pan",
+      "nm_per_amp": 10.521918385217846,
+      "offset_a": 0.0,
+      "r2": 0.0,
+      "corr": 0.0,
+      "measurable": false,
+      "reason": "yerçekimi torku sıfır (dikey eksen)",
+      "source": "'shoulder_lift' ekleminden kopyalandı (aynı 'buyuk' modül ailesi)",
+      "trusted": false
+    },
+    {
+      "joint": "shoulder_lift",
+      "nm_per_amp": 10.521918385217846,
+      "offset_a": 0.0431517165554411,
+      "r2": 0.9840630640468445,
+      "corr": 0.9919995282493059,
+      "measurable": true,
+      "reason": "",
+      "trusted": true,
+      "source": "quasi-statik yerçekimi regresyonu"
+    },
+    {
+      "joint": "elbow",
+      "nm_per_amp": 9.129936053678362,
+      "offset_a": -0.013494370276770567,
+      "r2": 0.9930850016834404,
+      "corr": 0.9965365029357633,
+      "measurable": true,
+      "reason": "",
+      "trusted": true,
+      "source": "quasi-statik yerçekimi regresyonu"
+    },
+    {
+      "joint": "wrist_1",
+      "nm_per_amp": 3.4085094600399217,
+      "offset_a": -36.29049627981442,
+      "r2": 7.775612537430643e-05,
+      "corr": 0.008817943375541676,
+      "measurable": false,
+      "reason": "R² 0.000 < 0.3",
+      "source": "'elbow' katsayısının tork sınırı oranıyla ölçeklenmesi (56.0/150.0) — ZAYIF varsayım",
+      "trusted": false
+    },
+    {
+      "joint": "wrist_2",
+      "nm_per_amp": 3.4085094600399217,
+      "offset_a": -1.2217706613608972,
+      "r2": 0.012493697637409595,
+      "corr": -0.11177521029910766,
+      "measurable": false,
+      "reason": "R² 0.012 < 0.3",
+      "source": "'elbow' katsayısının tork sınırı oranıyla ölçeklenmesi (56.0/150.0) — ZAYIF varsayım",
+      "trusted": false
+    },
+    {
+      "joint": "wrist_3",
+      "nm_per_amp": 3.4085094600399217,
+      "offset_a": 0.7729568303231985,
+      "r2": 0.009518521247215972,
+      "corr": 0.0975629091776997,
+      "measurable": false,
+      "reason": "R² 0.010 < 0.3",
+      "source": "'elbow' katsayısının tork sınırı oranıyla ölçeklenmesi (56.0/150.0) — ZAYIF varsayım",
+      "trusted": false
+    }
+  ],
+  "note": "nm_per_amp: tork [Nm] = nm_per_amp * akim [A]. trusted=false olan eklemlerde katsayi olculemedi, ayni modul ailesinden kopyalandi; tespit basarimini etkilemez (AE z-skor normalize ediyor), yalnizca fiziksel yorumlanabilirligi ve Nm cinsinden arizanin anlamini etkiler."
+}

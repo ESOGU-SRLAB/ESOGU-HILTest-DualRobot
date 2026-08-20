@@ -174,6 +174,7 @@ def measure_payload_box(
     margin_m: float = 0.005,
     min_height_m: float = 0.004,
     max_height_m: float = 0.30,
+    max_span_m: float = 0.45,
     min_pixels: int = 60,
 ) -> Optional[PayloadBox]:
     """Parçanın yönlü sınırlayıcı kutusunu ölçer. Ölçemezse None.
@@ -244,6 +245,26 @@ def measure_payload_box(
     extent_major = float(span_major.max() - span_major.min())
     extent_minor = float(span_minor.max() - span_minor.min())
     if extent_major <= 0.0 or extent_minor <= 0.0:
+        return None
+
+    # YATAY AKLI BAŞINDALIK SINIRI. Yükseklik iki yönden de sınırlanmıştı ama
+    # ayak izi hiç sınırlanmamıştı, ve kaçak tam oradan oluyor.
+    #
+    # 17 Ağu 2026 koşusu: ölçüm 881x347x4 mm, 68219 piksel - görüntünün
+    # %31'i. Bu bir parça değil, KONVEYÖR BANDININ KENDİSİ. Üst düzlem
+    # parçaya değil banda oturunca destek düzlemi 4 mm aşağıda "bulunuyor",
+    # eşik bandın 2 mm altına düşüyor ve bağlı bileşen bütün banda yayılıyor.
+    #
+    # Bedeli sessiz değil ama gecikmeli: 891x357 mm'lik kutu emme kabına
+    # iliştiriliyor ve o andan sonra HİÇBİR plan üretilemiyor - kartezyen de
+    # serbest de %0 dönüyor. Belirti "robot parçayı kaldıramadı" olarak
+    # görünüyor, sebebi ise iki adım önceki ölçüm.
+    #
+    # Vakum kabının taşıyabileceğinden büyük bir ölçüm, ölçümün kendisinin
+    # başarısız olduğunun kanıtıdır. None dönmek çağıranı payload_size
+    # config'ine düşürür - hatalı devasa kutuyla devam etmekten her koşulda
+    # iyidir.
+    if max_span_m > 0.0 and max(extent_major, extent_minor) > max_span_m:
         return None
 
     top = _histogram_mode(local_heights, 0.002)

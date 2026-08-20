@@ -182,7 +182,7 @@ def build():
     meta = doc.add_paragraph()
     meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = meta.add_run("\ngemini_robotics_ros paketi — geliştirme raporu\n"
-                       "ESOGÜ IFARLAB · 10–11 Ağustos 2026")
+                       "ESOGÜ IFARLAB · 10–18 Ağustos 2026")
     run.font.size = Pt(11)
 
     doc.add_paragraph()
@@ -224,6 +224,20 @@ def build():
                 "parçanın MoveIt çarpışma sahnesine iliştirilmesi (Bölüm 11).")
     bullet(doc, "Parçanın kalınlığının elle girilmesi — boyut artık derinlikten "
                 "ölçülüyor; yüzde yerine histogram modu kullanılıyor (Bölüm 11.2).")
+    bullet(doc, "Gerçek hücrede kabın parçayı bant üzerinde sürüklemesi — sebep "
+                "kolda değil 7. eksende: lineer ray yörüngeyi sabit 53 mm "
+                "geriden takip ediyordu (Bölüm 21).")
+    bullet(doc, "Düzlem uydurmadaki artığın RMS değil mutlak sapmanın ortalaması "
+                "olarak hesaplanması — kavrama kapısı yazıldığından gevşek "
+                "çalışıyordu (Bölüm 22.1).")
+    bullet(doc, "Kap yüzeye tam oturmadığında görevin iptal olması — sızdıran "
+                "kavrama artık normal boyunca birkaç mm bastırılıp yineleniyor "
+                "(Bölüm 22.3).")
+    bullet(doc, "Derinlikten ölçülen parça boyutunun her koşuda sessizce atılıp "
+                "config değerine düşülmesi (Bölüm 22.8); ve ölçümün konveyör "
+                "bandının tamamına yayılabilmesi (Bölüm 22.9).")
+    bullet(doc, "Kavrayıcının robot tanımında koşullu hale gelmesi ve çalışma "
+                "anında eklenen çarpışma geometrisinin URDF'e taşınması (Bölüm 20).")
 
     figure(doc, "fig_orientation_error.png",
            "Şekil 1 — Vakum ucunun diklik hatasının gün içindeki seyri. "
@@ -1553,7 +1567,8 @@ def build():
     h(doc, "19. Güncel Durum (14 Ağustos)", 1)
     para(doc,
          "Bölüm 13, çalışmaya 12 Ağustos'ta ara verildiği andaki durumu kaydeder "
-         "ve tarihsel kayıt olarak duruyor. Aşağıdaki liste onun yerine geçer.",
+         "ve tarihsel kayıt olarak duruyor. Aşağıdaki liste onun yerine geçer. "
+         "GÜNCEL durum için Bölüm 23'e bakın.",
          italic=True, color=MUTED)
 
     h(doc, "19.1 Çalışan hücrede doğrulandı", 2)
@@ -1614,6 +1629,555 @@ def build():
            ["test_spin_once_guard", "4", "düğümün executor'dan düşmemesi"],
            ["test_planning_budget", "3", "planlama bütçesi sessizce atlanmaz"]],
           widths=[2.1, 0.7, 3.4])
+
+    # ----------------------------------------------------------------------
+    h(doc, "20. Robot Tanımı: ur_macro.xacro'da Toplananlar", 1)
+    para(doc,
+         "Kavrama zincirinin en alt katmanı robot tanımıdır: MoveIt neyi "
+         "çarpışma sayacağını, IK'nın hangi frame'i hedefleyeceğini ve kap "
+         "ucunun nerede olduğunu buradan öğrenir. Bu bölüm, paketin dışında "
+         "ama doğrudan onun için yapılan URDF değişikliklerini toplar. Hepsi "
+         "Universal_Robots_ROS2_Description/urdf/ur_macro.xacro içindedir.")
+    para(doc,
+         "Ortak gerekçe şu: bu geometrilerin bir kısmı eskiden düğüm ayağa "
+         "kalkarken ÇALIŞMA ANINDA planlama sahnesine ekleniyordu. O yol iki "
+         "sebeple bırakıldı — geometriyi ekleyen düğüm çalışmadığında kol "
+         "çıplak bir modelle plan yapıyor, ve aynı hücreyi kullanan ikinci bir "
+         "düğüm (inspection, multirobot) aynı kutuları kendi kodunda yeniden "
+         "tanımlamak zorunda kalıyordu. URDF tek kaynak olunca ikisi de bitti.")
+
+    h(doc, "20.1 Kavrayıcı artık koşullu", 2)
+    para(doc,
+         "Makro iki yeni argüman alıyor: use_gripper (OnRobot 2FG7 parmaklı) "
+         "ve use_vacuum_gripper (OnRobot VGC10 vakum). İkisi de varsayılan "
+         "false ve ortam değişkeninden de okunabiliyor "
+         "($(optenv ENV_USE_VACUUM_GRIPPER false)). Argümanlar ros2_control "
+         "makrosuna da geçiriliyor, yani kavrayıcı yalnız istendiğinde hem "
+         "URDF'e hem donanım arayüzüne giriyor.")
+    code(doc, "use_gripper:=false\nuse_vacuum_gripper:=false")
+    para(doc,
+         "Neden önemli: aynı hücre üç farklı işte kullanılıyor (inceleme, "
+         "temizleme, pick and place) ve her birinde uçta başka bir alet var. "
+         "Kavrayıcıyı taban dosyaya sabitlemek, kullanılmadığı işlerde "
+         "MoveIt'e hayali bir çarpışma hacmi taşıtır; hiç koymamak ise pick "
+         "and place'i imkânsız kılar. Koşullu tanım ikisini de çözüyor.")
+
+    h(doc, "20.2 Vakum kavrayıcının iki link'i", 2)
+    para(doc,
+         "use_vacuum_gripper açıkken iki link ve iki sabit joint ekleniyor. "
+         "Kap ayrı bir link olarak duruyor, çünkü TCP ölçümü (Bölüm 7.9.1) "
+         "tam olarak bu link'in mesh'inden okunuyor: emme ekseni dönel yüzey "
+         "uydurmasıyla, ağız halkası yarıçap profiliyle bulunuyor. Kap gövdeye "
+         "gömülü olsaydı ölçülecek bir şey kalmazdı ve sabit yine elle "
+         "girilirdi — 156 mm hatasının kaynağı buydu.")
+    table(doc,
+          ["link / joint", "ebeveyn", "origin xyz (m)"],
+          [["vacuum_gripper_joint", "tool0", "0.04267, 0.056052, -0.0195"],
+           ["suction_cup_joint", "vacuum_gripper", "0.070588, 0.044218, 0.0195"],
+           ["vacuum_gripper (mesh)", "—", "vacuum_gripper.stl, 0.001 ölçek"],
+           ["suction_cup (mesh)", "—", "suction_cup.stl, 0.001 ölçek"]],
+          widths=[2.2, 1.6, 2.4])
+    para(doc,
+         "Mesh origin'lerindeki büyük negatif ötelemeler (-1.12, -0.53, -0.70 "
+         "gibi) CAD'in kendi dünya orijininden gelir; mesh'ler hücrenin "
+         "içindeki mutlak konumlarında dışa aktarıldığı için link frame'ine "
+         "geri taşınmaları gerekiyor. Bu sayılar tahmin değil, CAD'den "
+         "okunmuştur — ve doğruluklarının bağımsız kanıtı, aynı mesh'ten "
+         "ölçülen 84.2 mm'lik TCP'nin gerçek hücrede şerit metreyle tutmasıdır "
+         "(Bölüm 17.1).")
+
+    h(doc, "20.3 Kamera kabuğu ve kalibre optik frame", 2)
+    para(doc,
+         "Bölüm 17.4'teki altı kutuluk SICK çarpışma kabuğu artık "
+         "ur_inspection_node'un _setup_planning_scene_extras'ında değil, "
+         "sick_camera link'inin kendi <collision> listesinde. Aynı şekilde "
+         "Bölüm 17.2'deki kalibre optik frame de burada tanımlı:")
+    code(doc, "<joint name=\"${tf_prefix}ur_sick_optical_joint\" type=\"fixed\">\n"
+              "  <origin xyz=\"0 0 0.035\" rpy=\"0 0 1.04720\"/>\n"
+              "  <parent link=\"${tf_prefix}depth_optical_frame\"/>\n"
+              "  <child  link=\"${tf_prefix}sick_optical_frame\"/>\n"
+              "</joint>")
+    para(doc,
+         "Dosyadaki yorum, 45 mm'lik düzeltmenin ölçüm zincirini olduğu gibi "
+         "taşıyor: şerit metreyle bant 0.845, iki bağımsız yüzeyde (bant "
+         "düzlemi ve kutunun üstü) aynı +45.0 mm sapma, optik eksen dikeyden "
+         "0.2° sapık olduğu için düzeltmenin birebir yazılabilmesi. Bu, "
+         "belgelemenin kodun içinde durmasının en somut faydası: sayıyı "
+         "değiştirecek kişi, onun nasıl ölçüldüğünü aynı ekranda görüyor.")
+    rich(doc,
+         [("Not: ", {"b": True}),
+          ("bu origin PARENT frame'in Z ekseni boyuncadır, dünya Z'si boyunca "
+           "değil. Kamera başka bir tarama pozunda eğik bakıyorsa aynı 45 mm "
+           "dünyada 45 mm etmez; düzeltme o pozdaki eksen açısına bölünerek "
+           "hesaplanır. Bu pozda cos = -1.0000 çıktığı için bölme görünmedi.",
+           {})])
+
+    # ----------------------------------------------------------------------
+    h(doc, "21. Lineer Ray: Yörüngeyi 53 mm Geriden Takip Etmek", 1)
+    para(doc,
+         "Gerçek hücrede ilk uçtan uca kavrama denemelerinde tekrarlayan ve "
+         "sim'de HİÇ görülmeyen bir belirti vardı: kap parçanın Y'de birkaç "
+         "santim yanına iniyor, sonra parçayı bant üzerinde sürüklüyor ve "
+         "vakum parçaya değil çıplak konveyöre yapışıyordu. Kolun kendisi "
+         "suçsuz çıktı; sorun 7. eksende, yani UR'yi taşıyan Festo lineer "
+         "rayındaydı. Bu bölüm o zincirin tamamını anlatır, çünkü tek bir "
+         "düzeltme değil, üst üste dört ayrı hatadır ve her düzeltme bir "
+         "sonrakini görünür kılmıştır.")
+
+    h(doc, "21.1 Kök neden: feedforward hiç çalışmıyordu", 2)
+    para(doc,
+         "Adapter'ın takip yasası şu: v_cmd = ff_gain·|v_ff| + kp·hata. "
+         "v_ff, MoveIt yörüngesinin ray bileşeninin türevidir ve kontrolcü "
+         "yalnız POZİSYON komutu yayınladığı için adapter'ın kendisi "
+         "türetmek zorundadır.")
+    para(doc,
+         "TopicBasedSystem, velocity dizisini eklem sayısı kadar oluşturup "
+         "SIFIRLARLA dolduruyor — komut arayüzü pozisyon-tek olduğu için. "
+         "Eski kontrol `if v == v` idi, yani “NaN değilse gerçek bir hızdır”. "
+         "0.0 bu testi geçiyor. Sonuç: vel hiçbir zaman None olmadı, türev "
+         "dalı HİÇ çalışmadı ve feedforward terimi kalıcı olarak sıfır kaldı. "
+         "Takip yasası saf orantısala düştü.")
+    para(doc,
+         "Rampa takip eden bir P kontrolcünün kalıcı hatası v_rampa / kp'dir. "
+         "Gerçek hücrede ölçüldü (17 Ağustos, TOUCH inişi, setpoint 53 mm/s "
+         "rampada, kp = 1.0):")
+    code(doc, "target 0.6788 | actual 0.7326 | error -53.4 mm\n"
+              "target 0.6258 | actual 0.6796 | error -53.3 mm\n"
+              "target 0.5729 | actual 0.6263 | error -53.0 mm")
+    para(doc,
+         "53 mm/s ÷ 1.0 = 53 mm. Hata gürültülü değil, taş gibi sabit — bir "
+         "arıza değil, yasanın kendisinin çıktısı. Ray yörüngenin tamamını "
+         "5 cm geriden koştu: kap parçanın YANLIŞ Y'sine indi, yörünge bitti "
+         "ve ancak ondan sonra P terimi kalan 53 mm'yi kapattı — kap zaten "
+         "parçaya basılıyken. Parçanın bant üzerinde sürüklenmesi tam olarak "
+         "bu son 53 mm'dir.")
+    rich(doc,
+         [("Belirtinin sim'de görünmemesinin sebebi de burada: ", {}),
+          ("sim'de ray mock_components ile sürülüyor ve komut edilen pozisyonu "
+           "aynı döngüde geri veriyor, yani takip hatası tanım gereği sıfır.",
+           {})])
+
+    h(doc, "21.2 Düzeltmenin açtığı ikinci sorun: varış ve duruş", 2)
+    para(doc,
+         "Feedforward canlanınca hata birkaç milimetreye düştü — ve hareket "
+         "BOZULDU. Sebep, sürücünün çalışma mantığında: ona bir POZİSYON ve "
+         "bir hız sınırı verilir, o bir trapez planlar ve VARIŞTA DURUR.")
+    para(doc,
+         "Hedef her döngü değil, setpoint 10 mm ilerledikçe yazılıyor (bu "
+         "batching'in kendisi ölçülmüş bir karardır, aşağıdaki tabloya bakın). "
+         "53 mm hata varken hedef her zaman çok ileride olduğu için sürücü "
+         "asla varmıyor, dolayısıyla hiç durmuyordu: hareket DOĞRU OLMADIĞI "
+         "İÇİN pürüzsüzdü. Hata kapanınca sürücü anında varmaya, durmaya ve "
+         "sıradaki 10 mm'lik partiyi beklemeye başladı — ~5 Hz'de 10 mm'lik "
+         "hoplamalar, yani kolu sallayan titreme.")
+    para(doc,
+         "Çözüm, sürücüyü BİLEREK sürekli “varmamış” tutmak: gerçek "
+         "setpoint'in lookahead_sec kadar ötesine nişan al, rayın gerçekte "
+         "nerede olduğuna hız sınırı karar versin. Konum doğruluğu hızdan, "
+         "pürüzsüzlük ise hiç varmamaktan geliyor. Öndeleme setpoint hızıyla "
+         "orantılı olduğu için kendiliğinden kayboluyor: yavaşlayan bir "
+         "yörünge kendi öndelemesini sıfıra indiriyor ve duran akış tam "
+         "hedefi çiviliyor.")
+    bullet(doc, "max_lookahead 0.06 → 0.15 m. Ray 0.15 m/s'ye kadar pürüzsüz "
+                "gidip üstünde vızıldıyordu — ve o eşik tam da eski tavanın "
+                "bağladığı yer: 0.15 m/s × 0.4 s = 60 mm. Üstünde öndeleme "
+                "büyümeyi bırakıyor, yani sürücünün önündeki pist ZAMAN olarak "
+                "kısalıyor (60 mm, 0.15 m/s'de 400 ms ama 0.30 m/s'de 200 ms) "
+                "ve sürücü sıradaki hedef gelmeden yavaşlama rampasına "
+                "giriyor. O yavaşla/hızlan testere dişi, vızıltının kendisi.")
+    bullet(doc, "min_lookahead 0.03 m. Pist her zaman parti boyunu (10 mm) "
+                "aşmalı, yoksa sürücü hedefler arasında varıp bekliyor. "
+                "20 mm/s'de ölçüldü: öndeleme 0.020 × 0.4 = 8 mm, partiden "
+                "küçük, ve v_meas 6 ile 23 mm/s arasında dalgalandı.")
+
+    h(doc, "21.3 Üçüncü hata: işaretsiz hata pozitif geri besleme kuruyor", 2)
+    para(doc,
+         "Takip yasasında hata mutlak değerle giriyordu. Bu, rayın yörüngenin "
+         "ÖNÜNDE olmasını geride olmasıyla aynı saymak demek: iki durumda da "
+         "hız komutu ARTIYOR.")
+    para(doc,
+         "Feedforward ölüyken zararsızdı, çünkü saf P kontrolcü yalnız geri "
+         "kalabilir, öne geçemez. Feedforward çalışır çalışmaz aktif olarak "
+         "zararlı hale geldi: ray öne geçiyor → |hata| büyüyor → hız komutu "
+         "artıyor → daha da öne geçiyor → öndeleme hedefine çarpıp duruyor → "
+         "setpoint yetişiyor → tekrar fırlıyor. Ölçüldü (hızlı segment):")
+    code(doc, "target 1.1553 | actual 1.1832 | error -28.1 mm | v_cmd 0.151 | v_meas 0.129\n"
+              "target 1.2803 | actual 1.3137 | error -33.6 mm | v_cmd 0.156 | v_meas 0.136\n"
+              "target 1.4053 | actual 1.4367 | error -31.7 mm | v_cmd 0.156 | v_meas 0.109\n"
+              "target 1.5300 | actual 1.5605 | error -30.8 mm | v_cmd 0.146 | v_meas 0.095")
+    para(doc,
+         "Ray 33 mm ÖNDE, v_ff 0.124 m/s, ama komut 0.156 m/s — yani tam da "
+         "fazla ilerlediği için %26 daha hızlı gitmesi söyleniyor. v_meas'in "
+         "0.136 ile 0.095 arasında gidip gelmesi o testere dişidir ve "
+         "hissedilen titreme budur.")
+    para(doc,
+         "Düzeltme: hatayı HAREKET YÖNÜNE izdüşür. Geride → hızlan, önde → "
+         "yavaşla, yolunda → tam olarak v_ff.")
+    code(doc, "direction     = sign(v_ff)          # duruşta hata isaretinden\n"
+              "signed_error  = error * direction   # + geride, - onde\n"
+              "v_cmd = ff_gain*|v_ff| + kp*signed_error")
+
+    h(doc, "21.4 Dördüncü hata: son birkaç milimetre hiç gönderilmiyordu", 2)
+    para(doc,
+         "Hedef partili yazıldığı için yörüngenin sonunda kalan artık 10 "
+         "mm'den küçük kalıyor ve bir daha yazılmıyordu. “Akış durunca tam "
+         "hedefi yaz” kaçış yolu da hiç çalışmıyordu, çünkü joint trajectory "
+         "controller tutulan pozisyonu YAYINLAMAYA DEVAM ediyor: zaman damgası "
+         "her döngü tazeleniyor ve akış hiçbir zaman durmuş görünmüyor.")
+    para(doc,
+         "Sonuç ölçüldü: ray hedefin 2.6 mm gerisinde park etti ve orada 13 "
+         "saniye oturdu; v_cmd 0.010 m/s, v_meas 0.000. Sürücü ölü bandı gibi "
+         "okunuyor ama değil — sürücü kendisine verilmiş BAYAT hedefin tam "
+         "üstünde dinleniyordu. Sürücüde hiçbir sorun yoktu.")
+    para(doc,
+         "Düzeltme: hedefi yalnız VARMAYI değil, HAREKET ETMEYİ bıraktığında "
+         "da yeniden yaz (creep_velocity_m_per_s = 0.002). Tolerans "
+         "(final_tolerance_m = 0.0002) döngü altı titremenin hedefi her "
+         "döngü yeniden yazmasını engelliyor; yazsaydı sürücünün konumlama "
+         "profili sürekli baştan başlar ve ray sürünürdü.")
+
+    h(doc, "21.5 Ray durumunun kendi yankısını okuması", 2)
+    para(doc,
+         "Aynı zincirdeki beşinci bulgu URDF tarafında: TopicBasedSystem'in "
+         "durum topic'i /joint_states OLAMAZ. joint_state_broadcaster bu "
+         "eklemin durumunu ~400 Hz'de tekrar /joint_states'e yayınlıyor, yani "
+         "TopicBasedSystem KENDİ ÇIKTISINI tüketiyordu; yankı, adapter'ın "
+         "gerçek ölçümünü 5'e 1 bastırıyor ve durum initial_value'da (1.0 m) "
+         "kilitli kalıyordu. Yörünge kontrolcüsünün iptal ettiği 0.500001 m'lik "
+         "konum hatası tam olarak buydu.")
+    code(doc, "<param name=\"joint_states_topic\">/linear_axis/joint_states</param>")
+
+    h(doc, "21.6 Ölçülen değerler", 2)
+    table(doc,
+          ["ölçüm", "sonuç", "sonuç ne anlama geliyor"],
+          [["takip hatası (ff ölü, kp 1.0, 53 mm/s rampa)", "sabit 53.0–53.4 mm geride",
+            "kalıcı P hatası: v/kp"],
+           ["hedef her döngü yazılıyor", "147.6 mm maks hata",
+            "sürücü profilini bitiremiyor"],
+           ["hedef her 10 mm'de yazılıyor", "14.2 mm maks hata",
+            "ikisi de aynı son konuma varıyor"],
+           ["hız kelimesi taraması 20 / 50 / 200", "20.3 / 50.4 / 201.2 mm/s",
+            "oran 1.00 — kelime doğrudan mm/s"],
+           ["sürücü doygunluğu", "~322 mm/s",
+            "eski ×1000 katsayısı her komutu buranın üstüne atıyordu"],
+           ["işaretsiz hata, ff canlı", "ray 28–33 mm ÖNDE, v_cmd %26 fazla",
+            "pozitif geri besleme, testere dişi"],
+           ["son hedef hiç yazılmıyor", "2.6 mm geride, 13 s",
+            "bayat hedef; sürücü suçsuz"],
+           ["kp 4.0 denemesi", "~%30 fazla hız, kol gözle titriyor",
+            "1.0'a geri alındı"]],
+          widths=[2.3, 1.9, 2.0])
+    para(doc,
+         "Son satır ayrıca bir yöntem notu: feedforward düzeldikten sonra kp "
+         "yalnızca birkaç milimetreyi kapatmak zorunda. Emniyet payı diye "
+         "büyütülen her mm/s doğrudan koş-bekle titremesine gidiyor. Takip "
+         "artık feedforward'ın işi; orantısal terim mütevazı kalmalı.",
+         italic=True, color=MUTED)
+
+    # ----------------------------------------------------------------------
+    h(doc, "22. Kavrama Zincirindeki Düzeltmeler (17–18 Ağustos)", 1)
+    para(doc,
+         "Bildirilen iki belirti — “yaklaşma sırasında cismin tam konumuna "
+         "gitmiyor, sonra inerken cismi ittiriyor” ve “kap yüzeye değiyor ama "
+         "tam oturmuyor, vakum kurulamıyor” — dokuz ayrı düzeltmeye yol açtı. "
+         "Bir kısmı doğrudan belirtinin sebebi, bir kısmı ise arayışta ortaya "
+         "çıkan ve sessizce zarar veren başka hatalar.")
+
+    h(doc, "22.1 Düzlem artığı RMS değil, mutlak sapmanın ortalamasıydı", 2)
+    para(doc,
+         "grasp.fit_surface, yamanın düzleme uzaklığını np.sqrt(d**2).mean() "
+         "ile hesaplıyordu — karekök ortalamadan ÖNCE alınıyor. Bu RMS değil, "
+         "MAD'dir. MAD her zaman RMS'ten küçük olduğu için max_surface_rms "
+         "kapısı yazıldığından DAHA GEVŞEK çalışıyordu.")
+    para(doc,
+         "Farkın büyüdüğü yer, kapının yakalaması gereken yerin ta kendisi: "
+         "yama iki yüzeye bölündüğünde artık dağılımı iki tepelidir. Bant "
+         "üstündeki 29 mm'lik kutuda, ER'nin kenara yakın bir piksel "
+         "gösterdiği 12 px'lik yamayla ölçüldü:")
+    table(doc,
+          ["arka plan kirlenmesi", "MAD (eski)", "RMS (doğru)", "düzlem eğimi",
+           "15 cm'de yanal kayma"],
+          [["%4", "2.9 mm", "5.3 mm", "8.0°", "21 mm"],
+           ["%6", "4.0 mm", "6.2 mm", "10.9°", "29 mm"]],
+          widths=[1.5, 1.1, 1.2, 1.1, 1.3])
+    para(doc,
+         "4 mm'lik kapı, %6 kirlenmede MAD ile GEÇİYOR, RMS ile geçmiyor. "
+         "Geçtiğinde ne oluyor: yaklaşma pozu temas noktasının 29 mm yanına "
+         "düşüyor ve oradan gelen eğik iniş nesneyi süpürüyor. Bildirilen "
+         "birinci belirtinin geometrisi budur.")
+
+    h(doc, "22.2 Oturtulmayan normal artık sessiz değil", 2)
+    para(doc,
+         "locator, ölçülen normali dünya eksenlerinden birine "
+         "oturtabildiğinde (normal_snap_deg = 15°) bunu logluyordu; "
+         "OTURTAMADIĞINDA hiçbir şey yazmıyordu. Oysa teşhis için gerekli olan "
+         "tam da o durumdur, çünkü belirtisi normalin kendisi değil GEOMETRİK "
+         "SONUCUDUR.")
+    para(doc, "Eklenen uyarı, sonucu doğrudan milimetreye çeviriyor:")
+    code(doc, "Yuzey normali dunya eksenine OTURTULMADI: sapma 12.4 derece > 15.0.\n"
+              "Sonuc: 15 cm yaklasmada yaklasma pozu temas noktasindan 33 mm YANA\n"
+              "duser, emme kabi yuzeye 8.6 mm egik oturur.\n"
+              "(yama: 96 nokta, artik 2.1 mm, yayilim 24 mm)")
+    para(doc,
+         "İkinci sayı (kabın bir kenarındaki boşluk) Ø39 mm'lik kap ağzından "
+         "hesaplanıyor ve doğrudan ikinci belirtiyi ölçüyor: “temas var ama "
+         "tam vakum yok”. Uyarı normal_snap_deg = 0 iken bastırılıyor, çünkü "
+         "orada oturtma KASITLI olarak kapalıdır (eğik yüzeylerle çalışılıyor "
+         "demektir) ve uyarı gürültü olurdu.")
+
+    h(doc, "22.3 Sızdıran kap: sabit derinlik yerine koşullu basma", 2)
+    para(doc,
+         "Kap yüzeye değip de vakum kuramadığında eksik olan çoğu zaman birkaç "
+         "milimetredir. Tek bir touch_offset bunu karşılayamaz: aynı değer iyi "
+         "durumda parçayı bantta İTTİRİR. Çare sabit değeri derinleştirmek "
+         "değil, YALNIZCA sızdırdığında derine basmaktır.")
+    bullet(doc, "İlk deneme tutmazsa kap normal boyunca touch_press_step "
+                "(4 mm) daha bastırılıp vakum yineleniyor; en fazla "
+                "touch_press_retries (2) kez.")
+    bullet(doc, "Toplam ek basma 8 mm — Ø39 mm kauçuk kabın ezilme payının "
+                "içinde.")
+    bullet(doc, "Hareket CARTESIAN ve NORMAL boyunca: yanal bileşeni yok, "
+                "yani parçayı ittirmiyor.")
+    bullet(doc, "Derine inilemiyorsa (plan yok) vakum körlemesine "
+                "yinelenmiyor — kap zaten yerinde demektir.")
+    rich(doc,
+         [("Bu bir TELAFİDİR, çözüm değil. ", {"b": True}),
+          ("Her kavramada devreye giriyorsa sebep yüzey yüksekliğinin yanlış "
+           "okunmasıdır. Log “vakum N mm basmada kuruldu” dediğinde "
+           "touch_offset'i büyütmeden ÖNCE ölçülmesi gerekiyor: "
+           "python3 test/surface_offset.py --truth <şerit metreyle okunan z>.",
+           {})])
+
+    h(doc, "22.4 Ara durak: kapatıldı, ölçüldü, geri açıldı", 2)
+    para(doc,
+         "Kullanıcının hipotezi makuldü: ara durak (APPROACH_PICK) temas "
+         "noktasının tam ÜSTÜNDE değil, ÖLÇÜLEN NORMAL boyunca ötesindedir; "
+         "normal θ kadar eğikse ara durak nesnenin yanına düşer ve oradan "
+         "gelen eğik iniş nesneyi süpürür. Temas pozunun kendisi bundan "
+         "etkilenmez, yani ara durağı atlamak süpürmeyi geometrik olarak "
+         "ortadan kaldırır. Bunu bir parametre olarak açtık "
+         "(pick_approach_enabled) ve teşhis için kapattık.")
+    para(doc,
+         "Ölçüm hipotezi çürüttü. Sim koşusunda kavrama normali 0.78° sapmayla "
+         "oturtuldu, uyarı hiç çıkmadı ve APPROACH_PICK ile TOUCH aynı x,y'de "
+         "(0.648, 0.059) idi — iniş tamamen dikeydi. Gerçek hücrede de sebep "
+         "başkaydı: Bölüm 21'deki 53 mm'lik ray gecikmesi.")
+    para(doc,
+         "Ayar bu yüzden true'ya geri alındı ve dosyadaki gerekçe tersine "
+         "döndü. Ara durak artık DAHA DA gerekli: ray hedefine önce YUKARIDA "
+         "varıyor, waypoint_settle_sec artığı kapatıyor, iniş ancak ondan "
+         "sonra ve ray neredeyse duruyorken yapılıyor. Kapatmak, inişi rayın "
+         "hâlâ hareket ettiği ana denk getirir — sürüklemenin tam reçetesi.")
+    rich(doc,
+         [("Ayar yine de duruyor. ", {"b": True}),
+          ("Ölçülen normal gerçekten eğik olduğunda (locator uyarısı "
+           "çıktığında) doğru araç odur. Kapatmanın bedeli açıkça yazıldı: "
+           "iniş yönü artık planlayıcının seçtiği yön olur, kabın ekseni "
+           "boyunca olduğu garanti değildir — dikey yüzeyden parça çekmek bu "
+           "yüzden ara durak olmadan çalışmaz.", {})])
+
+    h(doc, "22.5 Kaldırma hedefi artık kanıtlanmış bir poz", 2)
+    para(doc,
+         "Kavramadan sonra parça yüzeyden normal boyunca çekilir. Bu hedef "
+         "eskiden yeniden hesaplanıyordu (temas + normal × lift_distance) ve "
+         "ona taze IK/plan gerekiyordu. Oysa APPROACH_PICK pozuna saniyeler "
+         "önce varılmıştır: gidilebilirliği KANITLANMIŞTIR, yol inişin birebir "
+         "tersidir (o hacmi kap az önce süpürdü, boş olduğu kesin) ve "
+         "kartezyen gidiş konfigürasyonu koruduğu için 7 eksenin artıklığı "
+         "araya yeni bir ray hareketi sokamaz.")
+    para(doc,
+         "lift_distance artık yalnız ara durak KAPALIYKEN kullanılıyor — o "
+         "zaman kanıtlanmış bir poz yoktur ve çekilme mesafesi bir yerden "
+         "gelmelidir.")
+
+    h(doc, "22.6 Parça sahneye kaldırmadan SONRA iliştiriliyor", 2)
+    para(doc,
+         "Parça MoveIt sahnesine kavrama anında ekleniyordu ve kaldırma "
+         "hiçbir zaman planlanamıyordu. Aritmetiği:")
+    code(doc, "temas (parcanin ustu)        0.856\n"
+              "kutu = temas - boy/2         0.826 .. 0.856   (config 30 mm)\n"
+              "konveyor bandi               0.845")
+    para(doc,
+         "Kutunun altı bandın 19 mm İÇİNDE. Parça daha kavrandığı anda bandın "
+         "ÜSTÜNDE DURUYOR, yani kutusu tanım gereği destek yüzeyiyle kesişiyor; "
+         "başlangıç durumu çarpışmalı olunca kartezyen de serbest de %0 "
+         "dönüyor. Ölçüm tuttuğunda taşma pay kadar (5 mm) kalıyor ve kimi "
+         "zaman geçiyordu — bu yüzden hata KESİNTİLİ görünüyordu. Ölçüm "
+         "config'e düşünce (30 mm, gerçek parça 12 mm) her seferinde çarpar "
+         "oldu.")
+    para(doc,
+         "Kaldırma dikey ve kabın az önce indiği boşluğa doğru olduğu için o "
+         "hareket boyunca parçanın modellenmemesi yeni bir risk açmıyor. "
+         "Kaldırmadan sonra iliştirilince kutu bandın 15–23 cm üstünde doğuyor "
+         "ve taşıma ile bırakmanın tamamı yine çarpışma denetimine giriyor.")
+
+    h(doc, "22.7 Varış teşhisi: ray nerede, kap ucu nerede", 2)
+    para(doc,
+         "“Kap parçanın yanına iniyor” belirtisinin üç farklı sebebi olabilir "
+         "ve üçü de aynı görünür. Her waypoint'ten sonra basılan tek satırlık "
+         "bir log üçünü ayırıyor:")
+    code(doc, "TOUCH VARIS: ray=+0.6788 kap ucu TF=(0.648, 0.031, 0.874)\n"
+              "             hedeften sapma=(+0, -28, +0) mm")
+    bullet(doc, "RAY SIÇRAMASI — kol artıklı; aynı kartezyen poz için IK farklı "
+                "ray konumları seçebilir. Belirtisi: ray değeri waypoint'ler "
+                "arasında değişiyor.")
+    bullet(doc, "KAMERANIN YANAL KALİBRASYONU — ur_sick_optical_joint'in "
+                "xyz'sinde x ve y hâlâ 0. Belirtisi: ray sabit, TF ucu hedefe "
+                "milimetrik oturuyor, ama kap yine de parçanın yanında; yani "
+                "HEDEFİN KENDİSİ yanlış yerde.")
+    bullet(doc, "SÜRÜCÜ — TF ucu hedeften santimetrelerce sapıyorsa kol hedefe "
+                "hiç varmamıştır. Bölüm 21'deki 53 mm bu satırla yakalandı.")
+
+    h(doc, "22.8 Ölçülen parça kutusu bir katman derindeydi", 2)
+    para(doc,
+         "Parçanın boyutu derinlikten ölçülüyor (Bölüm 11.2), ama ölçümü "
+         "OKUYAN taraf yanlış yere bakıyordu: locator sonucu "
+         "detection[\"surface\"][\"payload\"] içine yazarken, _payload_box "
+         "detection[\"payload\"]'a bakıyordu. Anahtar hiçbir zaman bulunmadı; "
+         "ölçüm ÖZELLİK YAZILDIĞINDAN BERİ her koşuda atıldı ve config'e "
+         "düşüldü.")
+    para(doc,
+         "Sessiz değildi — ama çelişkisi log'un iki ayrı satırına dağıldığı "
+         "için görünmüyordu:")
+    code(doc, "Parca olculdu: 143x84x26 mm, pay ile 153x94x36 mm\n"
+              "... ilistirildi: gemini_payload (140x83x30 mm, config (olculemedi))")
+    para(doc,
+         "Bedeli iki yerde: MoveIt'in taşıdığı kutu gerçek parçadan 13 mm kısa "
+         "ve 11 mm dar sanılıyor (planlayıcı var olmayan boşluklara güveniyor, "
+         "raf gözü gibi dar yerlerde kritik), ve carried_height config'ten "
+         "geldiği için _lift_for_payload bırakma yüksekliğini o kadar yanlış "
+         "kaydırıyor — bu koşuda 6 mm.")
+
+    h(doc, "22.9 Ölçümün yatay aklı başındalık sınırı", 2)
+    para(doc,
+         "Ölçülen yükseklik iki yönden sınırlanmıştı (payload_min/max_height_m) "
+         "ama AYAK İZİ hiç sınırlanmamıştı, ve kaçak tam oradan oldu. Bir "
+         "koşuda ölçüm 881 × 347 × 4 mm çıktı — 68219 piksel, görüntünün %31'i. "
+         "Bu bir parça değil, KONVEYÖR BANDININ KENDİSİDİR: üst düzlem parçaya "
+         "değil banda oturunca destek düzlemi 4 mm aşağıda “bulunuyor”, eşik "
+         "bandın 2 mm altına düşüyor ve bağlı bileşen bütün banda yayılıyor.")
+    para(doc,
+         "Bedeli gecikmeli: 891 × 357 mm'lik kutu kaba iliştiriliyor ve o "
+         "andan sonra HİÇBİR plan üretilemiyor; kartezyen de serbest de %0 "
+         "dönüyor. Belirti “robot parçayı kaldıramadı” olarak görünüyor, "
+         "sebebi ise iki adım önceki ölçüm.")
+    para(doc,
+         "Eklenen kapı (payload_max_span_m = 0.45) şu ilkeye dayanıyor: vakum "
+         "kabının taşıyabileceğinden büyük bir ölçüm, ölçümün KENDİSİNİN "
+         "başarısız olduğunun kanıtıdır. Reddedilen ölçüm payload_size'a "
+         "düşüyor — hatalı devasa kutuyla devam etmekten her koşulda iyidir.")
+
+    # ----------------------------------------------------------------------
+    h(doc, "23. Güncel Durum (18 Ağustos)", 1)
+    para(doc,
+         "Bölüm 13 (12 Ağustos) ve Bölüm 19 (14 Ağustos) tarihsel kayıt olarak "
+         "duruyor. Aşağıdaki liste ikisinin de yerine geçer.",
+         italic=True, color=MUTED)
+
+    h(doc, "23.1 Çalışan hücrede doğrulandı", 2)
+    bullet(doc, "Uçtan uca SİM görevi: komut → tespit → kavrama → taşıma → "
+                "bırakma. Son koşuda kavrama normali 0.78° sapmayla oturtuldu, "
+                "iniş tamamen dikeydi.")
+    bullet(doc, "Gerçek VGC10'a Modbus üzerinden komut (tut / bırak / boşta).")
+    bullet(doc, "Gerçek SICK'ten nokta bulutu ve derinlik; ölçek ve konvansiyon "
+                "düzeltmeleri.")
+    bullet(doc, "GERÇEK ROBOT konveyördeki kutuya TOUCH pozunda indi; dünya "
+                "z = 0'ın yer olduğu bağımsız doğrulandı (TF 0.9995 ↔ şerit "
+                "metre 1.00–1.01).")
+    bullet(doc, "45 mm'lik optik sapma iki bağımsız yüzeyde ölçüldü ve "
+                "düzeltildi; konveyör korkulukları ölçülüp çarpışma modeline "
+                "eklendi.")
+    bullet(doc, "LİNEER RAY: feedforward canlandırıldı, takip hatası sabit "
+                "53 mm'den birkaç mm'ye indi; öndeleme, işaretli hata ve son "
+                "yaklaşma yeniden-yazması gerçek hücrede ölçülerek ayarlandı "
+                "(Bölüm 21).")
+
+    h(doc, "23.2 Yazıldı, hücrede henüz denenmedi", 2)
+    bullet(doc, "GERÇEK ROBOTTA uçtan uca görev — parçanın gerçekten vakumla "
+                "alınıp bırakılması. Ray düzeltmelerinden sonraki ilk tam "
+                "koşu henüz yapılmadı.")
+    bullet(doc, "Basma-yineleme (_grip_with_press) SİMÜLASYONDA HİÇ ÇALIŞAMAZ: "
+                "vacuum_require_confirmation sim'de false olduğu için grip() "
+                "koşulsuz başarı döner. Yol birim testleriyle sabitlendi ama "
+                "hücrede hiç tetiklenmedi; gerçek robot (onay true) onun ilk "
+                "canlı denemesi olacak.")
+    bullet(doc, "Ölçülen parça kutusunun MoveIt'e gerçekten gitmesinin gerçek "
+                "hücrede doğrulanması (düzeltme sim log'undan bulundu).")
+    bullet(doc, "Kalibrasyon dosyasının yüklendiğinin ÖLÇÜLMESİ: argüman "
+                "düzeltildi, ama düzeltilmiş DH modelinin konum hatasına "
+                "etkisi sayıyla karşılaştırılmadı.")
+    bullet(doc, "Sim'de ayarlanmış tarama pozlarının gerçek hücrede aynı "
+                "kadrajı vermesi.")
+
+    h(doc, "23.3 Bilinen sınırlar", 2)
+    bullet(doc, "Kameranın YANAL kalibrasyonu hiç yapılmadı: "
+                "ur_sick_optical_joint'in x ve y'si hâlâ 0. Ray gecikmesi "
+                "kapandıktan sonra kalan bir Y sapması varsa sebebi burasıdır "
+                "ve varış logu (Bölüm 22.7) ile ayırt edilir.")
+    bullet(doc, "Bir tespitte normal 14.70° sapmayla oturtuldu — 15°'lik "
+                "eşiğin bir derece altında. Gerçek hücrede SICK gürültüsüyle "
+                "aynı yüzey eşiği aşarsa oturtma iptal olur ve 15 cm'lik "
+                "yaklaşmada yaklaşma pozu ~40 mm yana kayar. Yeni uyarı bunu "
+                "yakalar.")
+    bullet(doc, "Doğrulama DURUMLARI denetler, YOLLARI değil (Bölüm 14.3). "
+                "Yaklaşma listesi telafi ediyor ama kapatmıyor; kapatmanın "
+                "yolu her yaklaşma için plan_only bir plan denemesi.")
+    bullet(doc, "Bırakma komutu doğrulanmıyor: release() koşulsuz başarı "
+                "dönüyor. Kaybolan bir komut parçayı kavrayıcıda bırakır ve "
+                "kol yoluna devam eder.")
+    bullet(doc, "Modbus kopması ile “kap yüzeye oturmadı” ayırt edilemiyor: "
+                "sürücünün durum okuması her istisnada sessizce [0, 0] "
+                "dönüyor.")
+    bullet(doc, "waypoint_settle_sec = 2.0 bir ÖNLEMDİR: sürücü hedefe "
+                "varmadan “vardım” diyor. 8 waypoint'lik bir görevde doğrudan "
+                "+16 saniye. Kalıcı çözüm controller'ın goal_tolerance / "
+                "stopped_velocity_tolerance ayarlarında.")
+    bullet(doc, "Kategori tanıma zayıf: derinlik render'ı ER 2 için "
+                "dağılım-içi girdi değil (Bölüm 4).")
+
+    h(doc, "23.4 Güvenlik: bekleyen iş", 2)
+    rich(doc,
+         [("Gemini API anahtarı hâlâ döndürülmedi. ", {"b": True, "color": BAD}),
+          ("Anahtar bir kayıt dosyasına iki kez tam olarak yazıldı. Anahtarın "
+           "config/gemini_params.yaml'a YAZILMAMASI kuralı yerinde ve dosya "
+           "temiz; ama sızmış anahtarın aistudio.google.com/apikey üzerinden "
+           "iptal edilip yenilenmesi bekliyor. Bu, kapanmamış tek güvenlik "
+           "maddesidir.", {})])
+
+    h(doc, "23.5 Test durumu", 2)
+    para(doc,
+         "Paket 99 otomatik test taşıyor; 92'si ROS grafiği ayağa "
+         "kaldırmadan çalışıyor, 7'si canlı MoveIt istiyor ve o olmadan "
+         "atlanıyor. Testlerin büyük kısmı bir düzeltmeyi değil, BİR HATANIN "
+         "GERİ GELMEMESİNİ koruyor.")
+    code(doc, "python3 -m pytest test/ -q -p no:anyio\n"
+              "  ->  92 passed, 7 skipped")
+    table(doc,
+          ["test dosyası", "adet", "neyi sabitliyor"],
+          [["test_payload", "15", "boyut derinlikten, histogram modu, "
+            "yatay sınır (881 mm kaçağı)"],
+           ["test_place_search", "12", "kaydırma yüzeyde kalır, içten dışa aranır"],
+           ["test_grasp_press", "11", "artık RMS'tir; basma yalnız normal boyunca "
+            "ve sınırlı; ölçülen kutu okunur"],
+           ["test_api_key", "10", "anahtar arama sırası ve dosya biçimleri"],
+           ["test_vacuum_modes", "8", "mod sabitleri, kaydırılmış bayt, mod "
+            "başına onay ayarı"],
+           ["test_depth_conventions", "7", "ölçek ve radyal/planar dönüşümleri"],
+           ["test_markers", "7", "DELETEALL yok, artakalanlar tek tek silinir"],
+           ["test_planning_budget", "7", "planlama bütçesi sessizce atlanmaz"],
+           ["test_reachability_live", "7", "gerçek MoveIt'e karşı IK kararları"],
+           ["test_reachability", "6", "çarpışma ↔ erişimsizlik, is_diff bayrağı"],
+           ["test_tool_geometry", "5", "emme ekseni ve TCP URDF'ten okunur"],
+           ["test_spin_once_guard", "4", "düğümün executor'dan düşmemesi"]],
+          widths=[2.1, 0.7, 3.4])
+    para(doc,
+         "Not: paketin kurulu hali sembolik bağ DEĞİL, düz kopyadır. "
+         "Buradaki hiçbir değişiklik colcon build çalıştırılmadan etkili "
+         "olmaz:",
+         italic=True, color=MUTED)
+    code(doc, "colcon build --packages-select gemini_robotics_ros\n"
+              "source install/setup.bash")
+
 
     doc.add_paragraph()
     para(doc,

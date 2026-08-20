@@ -36,8 +36,10 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import numpy as np
 import rclpy
 from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.duration import Duration
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
+from rclpy.time import Time
 from std_msgs.msg import String
 
 from .er_client import make_er_client
@@ -238,6 +240,7 @@ class GeminiPickPlaceNode(Node):
         self.declare_parameter("payload_margin_m", 0.005)
         self.declare_parameter("payload_min_height_m", 0.004)
         self.declare_parameter("payload_max_height_m", 0.30)
+        self.declare_parameter("payload_max_span_m", 0.45)
 
         # --- güvenlik ---
         self.declare_parameter("workspace_min", [-2.0, -2.0, 0.60])
@@ -344,6 +347,7 @@ class GeminiPickPlaceNode(Node):
             payload_margin_m=float(get("payload_margin_m")),
             payload_min_height_m=float(get("payload_min_height_m")),
             payload_max_height_m=float(get("payload_max_height_m")),
+            payload_max_span_m=float(get("payload_max_span_m")),
         )
 
         # RViz görselleştirmesi. Eskiden bu yalnızca perception_node'da vardı,
@@ -645,8 +649,8 @@ class GeminiPickPlaceNode(Node):
         self.get_logger().error(f"ARM joint hedefi başarısız: {label}")
         return False
 
-    def _settle(self, label: str) -> None:
-        """Hedefe VARDIKTAN sonra kısa bir bekleme.
+    def _settle(self, label: str, expected_tip: Optional[Point3] = None) -> None:
+        """Hedefe VARDIKTAN sonra kısa bir bekleme, ardından NEREDE olduğunu yaz.
 
         NEDEN: hareketin "başarılı" dönmesi, eklemlerin fiziksel olarak
         oturduğu anlamına gelmiyor. Özellikle lineer eksen (Festo sürücü,
@@ -658,13 +662,71 @@ class GeminiPickPlaceNode(Node):
         "vardım" demesi. Kalıcı çözüm controller'ın goal tolerance /
         stopped_velocity_tolerance ayarlarında.
         """
-        if self.waypoint_settle_sec <= 0.0:
-            return
-        self.get_logger().info(
-            f"{label}: {self.waypoint_settle_sec:.1f} s bekleniyor "
-            "(eksenler otursun)"
-        )
-        time.sleep(self.waypoint_settle_sec)
+        if self.waypoint_settle_sec > 0.0:
+            self.get_logger().info(
+                f"{label}: {self.waypoint_settle_sec:.1f} s bekleniyor "
+                "(eksenler otursun)"
+            )
+            time.sleep(self.waypoint_settle_sec)
+        self._report_arrival(label, expected_tip)
+
+    def _cup_tip_world(self):
+        """Kap AĞZININ dünya konumu, TF'ten. Okunamazsa None. Salt okuma."""
+        try:
+            tf = self.locator._tf_buffer.lookup_transform(
+                self.world_frame, self.end_effector, Time(),
+                timeout=Duration(seconds=0.5))
+            t = tf.transform.translation
+            r = tf.transform.rotation
+            rot = quaternion_to_matrix((r.x, r.y, r.z, r.w))
+            return np.array([t.x, t.y, t.z]) + rot @ self.tool_tip_offset
+        except Exception:  # noqa: BLE001 - teşhis görevi düşürmesin
+            return None
+
+    def _report_arrival(self, label: str, expected_tip: Optional[Point3]) -> None:
+        """Beklemeden SONRA kolun gerçekte nerede olduğunu loglar. Salt okuma.
+
+        17 Ağu 2026 teşhis. Belirti: kap parçanın Y'de birkaç cm yanına
+        iniyor, sim'de hiç olmuyor. İki aday var ve bu log ikisini ayırır:
+
+          RAY SIÇRAMASI - kol 7 eksenli ve ARTIKLI. Aynı kartezyen poz için
+            IK farklı ray (base_to_robot_mount) konumları seçebilir, yani
+            APPROACH ile TOUCH aynı (x, y)'de olsa bile ray kayar. Belirtisi:
+            ray değeri waypoint'ler arasında değişiyor.
+
+          KAMERA YANAL KALİBRASYONU - ur_sick_optical_joint'in xyz'sinde x ve
+            y hâlâ 0; yanal konum hiç kalibre edilmedi. Belirtisi: ray sabit,
+            TF ucu hedefe milimetrik oturuyor, ama kap yine de parçanın
+            yanında - yani hedefin KENDİSİ yanlış yerde.
+
+        Üçüncü ihtimal de burada görünür: TF ucu hedeften cm'lerce sapıyorsa
+        kol hedefe hiç varmamıştır (controller toleransı gevşek) ve sorun
+        algıda değil, sürücüdedir.
+        """
+        rail = None
+        state = getattr(self.arm, "joint_state", None)
+        if state is not None:
+            rail_name = f"{self.robot.prefix}base_to_robot_mount"
+            try:
+                rail = state.position[list(state.name).index(rail_name)]
+            except (ValueError, IndexError, AttributeError):
+                rail = None
+
+        tip = self._cup_tip_world()
+
+        parts = [f"{label} VARIŞ:"]
+        if rail is not None:
+            parts.append(f"ray={rail:+.4f}")
+        if tip is not None:
+            parts.append(
+                f"kap ucu TF=({tip[0]:.3f}, {tip[1]:.3f}, {tip[2]:.3f})")
+            if expected_tip is not None:
+                err = tip - np.asarray(expected_tip, dtype=np.float64)
+                parts.append(
+                    f"hedeften sapma=({err[0]*1000:+.0f}, {err[1]*1000:+.0f}, "
+                    f"{err[2]*1000:+.0f}) mm")
+        if len(parts) > 1:
+            self.get_logger().info(" ".join(parts))
 
     def _frame_position_for_tip(
         self, tip_position: Point3, quat_xyzw: Sequence[float]
@@ -731,7 +793,7 @@ class GeminiPickPlaceNode(Node):
             ok = self._wait_motion()
             self._ensure_attached()
             if ok:
-                self._settle(label)
+                self._settle(label, expected_tip=position)
                 return True
             time.sleep(0.4)
         self.get_logger().error(f"ARM pose hedefi başarısız: {label}")
@@ -856,7 +918,8 @@ class GeminiPickPlaceNode(Node):
                 "config (ölçülemedi)")
 
     def _attach_payload(
-        self, detection: Dict[str, Any], contact: Point3, quat_xyzw: Sequence[float]
+        self, detection: Dict[str, Any], contact: Point3, quat_xyzw: Sequence[float],
+        shift: Optional[Point3] = None, fallback_lift: Optional[Point3] = None,
     ) -> None:
         """Kavranan parçayı planlama sahnesine ekleyip uca iliştirir.
 
@@ -872,6 +935,16 @@ class GeminiPickPlaceNode(Node):
         if resolved is None:
             return
         (length, width, height), centre, box_quat, source = resolved
+
+        # Kutu TESPİT anındaki dünya konumunda hesaplandı; parça o zamandan
+        # beri kapla taşındıysa aynı vektör kadar kaydır. TF okunamadıysa
+        # planlanan kaldırma pozunu kullan - hiç kaydırmamaktan iyidir, çünkü
+        # kaydırmayan kutu kavrama yüksekliğinde, yani konveyörün içinde doğar.
+        if shift is None and fallback_lift is not None:
+            shift = tuple(
+                float(fallback_lift[i]) - float(contact[i]) for i in range(3))
+        if shift is not None:
+            centre = tuple(float(centre[i]) + float(shift[i]) for i in range(3))
 
         try:
             self.arm.add_collision_box(
@@ -1675,18 +1748,82 @@ class GeminiPickPlaceNode(Node):
             self._move_joints(self.home_joints, "HOME")
             return
         self._status("GRASPED", pick_detection["label"])
-        # Parça artık robotun bir parçası: hem Gazebo'da (DetachableJoint,
-        # vakum komutuyla birlikte) hem MoveIt sahnesinde. Bundan SONRAKİ her
-        # plan onu taşıyor ve çarpışma denetimine sokuyor.
-        self._attach_payload(pick_detection, contact, grasp_quat)
 
         # Parçayı yüzeyden NORMAL boyunca çek: dikey bir yüzeyde dünya +Z'ye
         # kaldırmak parçayı yüzeye sürter.
-        lift = self._offset(contact, normal, max(self.lift_distance,
-                                                 pick_approach_distance))
-        if not self._move_pose(lift, grasp_quat, "LIFT", cartesian=True):
-            self._status("FAILED", "Kaldırma başarısız")
-            return
+        #
+        # İLİŞTİRME KALDIRMADAN SONRA (17 Ağu 2026). Eskiden parça buradan
+        # ÖNCE sahneye ekleniyordu ve kaldırma hiçbir zaman planlanamıyordu:
+        #
+        #   temas (parçanın üstü)      0.856
+        #   kutu = temas - boy/2       0.826 .. 0.856   (config 30 mm)
+        #   konveyör bandı             0.845
+        #
+        # Kutunun altı bandın 19 mm İÇİNDE. Parça daha kavrandığı anda bandın
+        # üstünde DURUYOR, yani kutusu tanım gereği destek yüzeyiyle kesişiyor;
+        # başlangıç durumu çarpışmalı olunca kartezyen de serbest de %0 dönüyor.
+        # Ölçüm tuttuğunda taşma pay kadar (5 mm) kalıyordu ve kimi zaman
+        # geçiyordu - bu yüzden hata kesintili görünüyordu; config'e düşünce
+        # (30 mm, gerçek parça 12 mm) her seferinde çarpar oldu.
+        #
+        # Kaldırma dikey ve kabın az önce indiği boşluğa doğru, yani o hareket
+        # boyunca parçanın modellenmemesi yeni bir risk açmıyor. Kaldırmadan
+        # sonra iliştirince kutu bandın 15-23 cm üstünde doğuyor ve taşıma ile
+        # bırakmanın tamamı yine çarpışma denetimine giriyor.
+        #
+        # HEDEF = APPROACH_PICK POZUNUN KENDİSİ (17 Ağu 2026). Eskiden burada
+        # yeni bir poz hesaplanıyordu (temas + normal * lift_distance) ve ona
+        # taze IK/plan gerekiyordu. Oysa approach pozuna saniyeler önce plan
+        # yapıp aynı ray konumuyla vardık: gidilebilirliği KANITLANMIŞ. Üstelik
+        # temastan oraya giden yol inişin birebir tersi, yani o hacmi kap az
+        # önce süpürdü ve boş olduğu kesin. Kartezyen gidiş konfigürasyonu da
+        # koruyor, dolayısıyla 7 eksenin artıklığı araya yeni bir ray hareketi
+        # sokamıyor.
+        #
+        # lift_distance yalnızca ara durak KAPALIYKEN geçerli: o zaman
+        # kanıtlanmış bir poz yok, geri çekilme mesafesi bir yerden gelmeli.
+        if self.pick_approach_enabled:
+            lift = approach
+            lift_label = "LIFT_TO_APPROACH"
+        else:
+            lift = self._offset(contact, normal, max(self.lift_distance,
+                                                     pick_approach_distance))
+            lift_label = "LIFT"
+        tip_before_lift = self._cup_tip_world()
+        if not self._move_pose(lift, grasp_quat, lift_label, cartesian=True):
+            # Kartezyene özgü bir IK/adım sorunuysa serbest plan kurtarır.
+            # Kaldırma dikey, ara nokta gerektirmiyor - serbest plan güvenli.
+            self.get_logger().warn(
+                f"{lift_label} kartezyen planı başarısız; serbest planla "
+                "yineleniyor."
+            )
+            if not self._move_pose(lift, grasp_quat, f"{lift_label}_FREE"):
+                # Parça henüz iliştirilmedi, ama vakumu bırakmak gerekiyor:
+                # aksi halde pompa açık kalır ve parça kabın ucunda asılı durur.
+                self._release()
+                self._status("FAILED", "Kaldırma başarısız")
+                return
+
+        # Parça artık robotun bir parçası: hem Gazebo'da (DetachableJoint,
+        # vakum komutuyla birlikte) hem MoveIt sahnesinde. Bundan SONRAKİ her
+        # plan onu taşıyor ve çarpışma denetimine sokuyor.
+        #
+        # Kutu tespit anındaki dünya konumuyla hesaplanıyor; parça o zamandan
+        # beri kapla birlikte taşındı, o yüzden aynı vektör kadar kaydırılmalı.
+        # Kaydırmayı planlanan mesafeden DEĞİL, TF'ten ölçüyoruz: araya vakum
+        # bastırması ve rayın kalan takip hatası da giriyor ve ikisi de bu
+        # farkın içinde.
+        tip_after_lift = self._cup_tip_world()
+        shift = None
+        if tip_before_lift is not None and tip_after_lift is not None:
+            shift = tuple(float(v) for v in (tip_after_lift - tip_before_lift))
+        else:
+            self.get_logger().warn(
+                "Kaldırma sonrası kap ucu TF'ten okunamadı; parça kutusu "
+                "planlanan kaldırma mesafesiyle kaydırılıyor."
+            )
+        self._attach_payload(pick_detection, contact, grasp_quat, shift=shift,
+                             fallback_lift=lift)
 
         # 6) Taşı ve bırak
         if place_detection is not None:

@@ -39,6 +39,7 @@ WHY THE MODBUS ACCESS LOOKS UNUSUAL
     "Traversing task aborted". Readiness is tracked by our own state machine from
     the ZSW1 status word instead, and faults are actually acted upon.
 """
+import math
 import threading
 import time
 
@@ -81,7 +82,9 @@ class LinearAxisControllerAdapter(Node):
         self.declare_parameter('modbus_cycle_time_ms', 10)
         self.declare_parameter('modbus_timeout_ms', 1000)
 
-        # Tracking law: v_cmd = ff_gain*|v_ff| + position_kp*|error|, clamped.
+        # Tracking law: v_cmd = ff_gain*|v_ff| + position_kp*signed_error,
+        # clamped. signed_error is the following error PROJECTED ON THE DIRECTION
+        # OF TRAVEL: positive behind, negative ahead. See _write_setpoint.
         #
         # Now that the drive actually honours the commanded speed, these gains decide
         # how SMOOTH the motion is. The rail steps between batched targets, so what
@@ -89,6 +92,14 @@ class LinearAxisControllerAdapter(Node):
         # 1.0 the rail moves continuously, well above it the rail sprints to each
         # target and then waits (the "tik tik" stutter). Keep the feedforward at 1.0
         # and let a modest proportional term close the residual lag.
+        #
+        # 17 Aug 2026: briefly raised to 4.0 as a safety net after the
+        # feedforward fix, then put BACK to 1.0. With the feedforward alive
+        # this term only has to close a few mm, and every extra mm/s it adds
+        # goes straight into the sprint-and-wait stutter: the drive covers its
+        # batch faster than the trajectory advances and then sits idle. At 4.0
+        # that was ~30% excess speed and the arm visibly shook.
+        # Tracking is the feedforward's job now; leave this modest.
         self.declare_parameter('position_kp', 1.0)
         self.declare_parameter('feedforward_gain', 1.0)
         # The drive saturates at ~322 mm/s (measured); staying below keeps commands
@@ -107,6 +118,79 @@ class LinearAxisControllerAdapter(Node):
         # larger = coarser path but a freer profile. 10 mm measured 14.2 mm error.
         self.declare_parameter('setpoint_batch_m', 0.01)
         self.declare_parameter('settle_write_sec', 0.15)
+
+        # Lookahead (target lead). THE reason motion is smooth or jerky.
+        #
+        # The drive is given a POSITION and a speed limit; it plans a trapezoid
+        # and DECELERATES TO A STOP on arrival. So whether the rail glides or
+        # hops depends entirely on whether it ever reaches the target it was
+        # given.
+        #
+        # Before the feedforward fix the tracking error sat at a steady 53 mm,
+        # so the target was always far ahead, the drive never arrived, and it
+        # cruised continuously. The motion was smooth BECAUSE it was wrong.
+        # Fixing the lag collapsed the error to a few mm, so the drive now
+        # arrives instantly, stops, and waits for the next 10 mm batch --
+        # 10 mm hops at ~5 Hz, which is the stutter that shakes the arm.
+        #
+        # The fix is to keep the drive permanently un-arrived on purpose: aim
+        # it lookahead_sec of travel PAST the real setpoint, and let the speed
+        # limit (feedforward + kp*error) decide where the rail actually is.
+        # Position accuracy comes from the speed, smoothness from never
+        # arriving.
+        #
+        # The lead is proportional to setpoint speed, so it VANISHES at rest:
+        # a decelerating trajectory shrinks its own lead to zero, and a stream
+        # that stops pins the exact target (see the settle write below). That
+        # is what keeps the rail from overrunning the goal by the lead.
+        # 0.0 disables the lead entirely and restores the hop-and-wait profile.
+        self.declare_parameter('lookahead_sec', 0.4)
+        # 17 Aug 2026: raised 0.06 -> 0.15 m. The rail ran smoothly up to
+        # ~0.15 m/s and buzzed above it -- and that threshold is exactly where
+        # the old cap bound: 0.15 m/s * 0.4 s = 60 mm. Past that speed the lead
+        # stopped growing, so the runway ahead of the drive shrank in TIME
+        # (60 mm is 400 ms at 0.15 m/s but only 200 ms at 0.30 m/s) until the
+        # drive started its deceleration ramp before the next target arrived.
+        # That decel/accel sawtooth is the buzz.
+        #
+        # The cap only binds at speed, i.e. mid-trajectory, never near the
+        # goal: the lead is proportional to setpoint speed, so a decelerating
+        # trajectory shrinks it to zero on its own and the settle/creep write
+        # pins the exact target. 0.15 m covers the full 0.30 m/s range at the
+        # configured 0.4 s.
+        self.declare_parameter('max_lookahead_m', 0.15)
+        # Minimum lead. The runway must always exceed setpoint_batch_m, or the
+        # drive arrives between target rewrites and waits -- the hop-and-wait
+        # the lead exists to prevent. MEASURED at 20 mm/s (17 Aug 2026):
+        # lead was 0.020 * 0.4 = 8 mm against a 10 mm batch, and v_meas rippled
+        # between 6 and 23 mm/s.
+        #
+        # Only applied while the setpoint is genuinely MOVING (see
+        # creep_velocity). Below that the lead is forced to zero, so the floor
+        # can never leave the rail parked a lead length past the goal.
+        self.declare_parameter('min_lookahead_m', 0.03)
+
+        # Final-approach re-issue. THE cause of the standing park error.
+        #
+        # The target is batched: it is only rewritten once the setpoint has
+        # moved setpoint_batch_m (10 mm). At the end of a trajectory the
+        # remainder is smaller than that, and the "write the exact target once
+        # the stream settles" escape hatch never fires either, because the
+        # joint trajectory controller KEEPS STREAMING the held position -- so
+        # sp_stamp is refreshed every cycle and the stream never looks settled.
+        #
+        # Net effect: the last few mm were never sent to the drive at all. On
+        # 2026-08-17 the rail parked 2.6 mm short and sat there for 13 s with
+        # v_cmd 0.010 m/s and v_meas 0.000 -- which reads like a drive deadband
+        # but is not. The drive was resting exactly on the stale target it had
+        # been given. Nothing was wrong with the drive.
+        #
+        # So also re-issue whenever the setpoint has stopped MOVING, not just
+        # when it has stopped ARRIVING. The tolerance keeps sub-cycle jitter
+        # from rewriting the target every cycle, which would restart the
+        # drive's positioning profile and make it creep.
+        self.declare_parameter('creep_velocity_m_per_s', 0.002)
+        self.declare_parameter('final_tolerance_m', 0.0002)
 
         # Safety. The dangerous failure is NOT "no comms" -- it is the rail falling
         # behind while the arm keeps executing the trajectory.
@@ -147,6 +231,11 @@ class LinearAxisControllerAdapter(Node):
         self.velocity_alpha = float(g('velocity_estimate_alpha').value)
         self.setpoint_batch_m = float(g('setpoint_batch_m').value)
         self.settle_write_sec = float(g('settle_write_sec').value)
+        self.lookahead_sec = float(g('lookahead_sec').value)
+        self.max_lookahead = abs(float(g('max_lookahead_m').value))
+        self.min_lookahead = abs(float(g('min_lookahead_m').value))
+        self.creep_velocity = abs(float(g('creep_velocity_m_per_s').value))
+        self.final_tolerance = abs(float(g('final_tolerance_m').value))
         self.enable_safety_stop = bool(g('enable_safety_stop').value)
         self.safety_action = str(g('safety_action').value)
         self.following_error_limit = float(g('following_error_limit').value)
@@ -224,12 +313,16 @@ class LinearAxisControllerAdapter(Node):
             f"{self.modbus_cycle_time_ms} ms")
         self.get_logger().info(
             f"  tracking: v = {self.feedforward_gain:.2f}*|v_ff| + "
-            f"{self.position_kp:.2f}*|err|, clamped to "
+            f"{self.position_kp:.2f}*signed_err, clamped to "
             f"[{self.min_velocity:.3f}, {self.max_velocity:.3f}] m/s")
         self.get_logger().info(
             f"  setpoint batching: re-issue target every "
             f"{self.setpoint_batch_m * 1000:.0f} mm "
             f"(settle write after {self.settle_write_sec:.2f} s)")
+        self.get_logger().info(
+            f"  lookahead: aim {self.lookahead_sec:.2f} s of travel ahead, "
+            f"capped at {self.max_lookahead * 1000:.0f} mm "
+            f"({'ON -- continuous motion' if self.lookahead_sec > 0.0 else 'OFF -- hop and wait'})")
 
     # ====================================================================== #
     # ROS side -- these callbacks never touch Modbus, so they never block.
@@ -256,10 +349,37 @@ class LinearAxisControllerAdapter(Node):
         now = time.monotonic()
 
         # Prefer an explicit velocity command if the controller ever provides one.
+        #
+        # BUG (17 Aug 2026): TopicBasedSystem sizes msg.velocity to the joint
+        # count and fills it with ZEROS, because the command interface is
+        # position-only. The old test was `if v == v` (not-NaN), which accepts
+        # 0.0 as a real velocity command -- so `vel` was never None, the
+        # differentiation branch below NEVER ran, and the feedforward term was
+        # permanently zero. The tracking law degenerated to pure proportional:
+        #
+        #     v_cmd = position_kp * |error|
+        #
+        # A P-only loop following a ramp has a steady-state lag of
+        # v_ramp / kp. Measured on the real cell (2026-08-17, TOUCH descent,
+        # setpoint ramping at 53 mm/s with kp = 1.0):
+        #
+        #     target 0.6788 | actual 0.7326 | error -53.4 mm
+        #     target 0.6258 | actual 0.6796 | error -53.3 mm
+        #     target 0.5729 | actual 0.6263 | error -53.0 mm
+        #
+        # A rock-steady 53 mm = 53 mm/s / 1.0. The rail therefore ran the whole
+        # trajectory 5 cm behind the arm: the cup descended onto the part at the
+        # WRONG Y, the trajectory ended, and only then did the P term drag the
+        # rail the last 53 mm in -- with the cup already pressed on the part,
+        # which SHOVED THE PART ALONG THE BELT and left the cup sucking on bare
+        # conveyor.
+        #
+        # Zero is not a command here, it is the absence of one. Only take an
+        # explicit velocity when the controller actually populates it.
         vel = None
         if idx < len(msg.velocity):
             v = float(msg.velocity[idx])
-            if v == v:  # not NaN
+            if v == v and v != 0.0:  # not NaN, and actually populated
                 vel = v
 
         with self._lock:
@@ -303,15 +423,24 @@ class LinearAxisControllerAdapter(Node):
             cmd_v = self._cmd_velocity
             word = self._cmd_vel_word
             fault = self._fault_code
+            sp_v = self._setpoint_vel
+            aim = self._last_written_target
 
         if state == ST_RUNNING:
             if sp is not None and abs(err) > 0.002:
                 # cmd vs measured speed is the diagnostic that matters: if the drive
                 # honours mdi_velocity these two track each other.
+                # cmd vs measured speed says whether the drive honours
+                # mdi_velocity; v_ff says whether the feedforward is alive (it
+                # read a permanent 0.000 while the zero-velocity bug was in);
+                # aim-target says how far ahead the lookahead is pointing, i.e.
+                # whether the drive is cruising or hopping.
+                lead_mm = (aim - sp) * 1000.0 if aim is not None else 0.0
                 self.get_logger().info(
                     f"[{state}] target {sp:.4f} m | actual {pos:.4f} m | "
                     f"error {err * 1000.0:+.1f} mm | "
-                    f"v_cmd {cmd_v:.3f} m/s (word {word}) | v_meas {meas_v:.3f} m/s")
+                    f"v_cmd {cmd_v:.3f} m/s (word {word}) | v_meas {meas_v:.3f} m/s | "
+                    f"v_ff {sp_v:+.3f} m/s | lead {lead_mm:+.0f} mm")
         elif state == ST_FAULT:
             self.get_logger().error(
                 f"[{state}] drive fault code {fault} | actual {pos:.4f} m",
@@ -457,8 +586,40 @@ class LinearAxisControllerAdapter(Node):
             sp_vel = 0.0
 
         error = setpoint - measured
+
+        # HATA İŞARETLİ OLMAK ZORUNDA. abs(error) kullanmak, rayın yörüngenin
+        # ÖNÜNDE olmasını geride olmasıyla aynı sayması demek: iki durumda da
+        # hız komutu ARTIYOR.
+        #
+        # Feedforward ölüyken bu zararsızdı, çünkü saf P kontrolcü yalnızca
+        # geri kalabilir, öne geçemez. Feedforward çalışmaya başlar başlamaz
+        # aktif olarak zararlı hale geldi ve pozitif geri besleme kurdu:
+        # ray öne geçiyor -> |hata| büyüyor -> hız komutu artıyor -> daha da
+        # öne geçiyor -> lead hedefine çarpıp duruyor -> setpoint yetişiyor ->
+        # tekrar fırlıyor. ÖLÇÜLDÜ (17 Ağu 2026, hızlı segment):
+        #
+        #   target 1.1553 | actual 1.1832 | error -28.1 mm | v_cmd 0.151 | v_meas 0.129
+        #   target 1.2803 | actual 1.3137 | error -33.6 mm | v_cmd 0.156 | v_meas 0.136
+        #   target 1.4053 | actual 1.4367 | error -31.7 mm | v_cmd 0.156 | v_meas 0.109
+        #   target 1.5300 | actual 1.5605 | error -30.8 mm | v_cmd 0.146 | v_meas 0.095
+        #
+        # Ray 33 mm ÖNDE, v_ff 0.124 m/s, ama komut 0.156 m/s - yani tam da
+        # fazla ilerlediği için %26 daha hızlı gitmesi söyleniyor. v_meas'in
+        # 0.136 ile 0.095 arasında gidip gelmesi o testere dişi, ve hissedilen
+        # titreme bu.
+        #
+        # Doğrusu hareket yönüne izdüşürmek: geride -> hızlan, önde -> yavaşla,
+        # yolunda -> tam olarak v_ff.
+        if abs(sp_vel) > 1e-9:
+            direction = math.copysign(1.0, sp_vel)
+        elif error != 0.0:
+            direction = math.copysign(1.0, error)
+        else:
+            direction = 1.0
+        signed_error = error * direction     # + geride, - önde
+
         velocity = (self.feedforward_gain * abs(sp_vel)
-                    + self.position_kp * abs(error))
+                    + self.position_kp * signed_error)
         velocity = max(self.min_velocity, min(velocity, self.max_velocity))
 
         # mdi_velocity is in mm/s, MEASURED by sweeping the raw word against achieved
@@ -483,22 +644,47 @@ class LinearAxisControllerAdapter(Node):
         # Decide whether this cycle re-issues the target. Between re-issues the
         # telegram is still sent every cycle (the drive loop does that), just with
         # an unchanged mdi_tarpos, so the drive gets to finish its profile.
+        # Aim PAST the setpoint while the trajectory is running, so the drive
+        # never arrives and therefore never decelerates to a stop mid-path.
+        # See the lookahead_sec docstring: the lead is what makes the motion
+        # continuous, the speed limit above is what makes it accurate.
+        settled = (now - sp_stamp) > self.settle_write_sec
+        moving = abs(sp_vel) >= self.creep_velocity
+        if settled or not moving or self.lookahead_sec <= 0.0:
+            # Stream has stopped, the setpoint is at rest, or the lead is
+            # disabled: aim at the REAL target. This is the safety pin --
+            # without it the rail would come to rest a lead length past the
+            # goal, and it is what lets min_lookahead have a floor at all.
+            written = setpoint
+        else:
+            magnitude = abs(sp_vel) * self.lookahead_sec
+            magnitude = max(self.min_lookahead,
+                            min(magnitude, self.max_lookahead))
+            written = setpoint + math.copysign(magnitude, sp_vel)
+
+        # The setpoint has stopped moving even if the controller is still
+        # streaming it. This is the normal end of a trajectory, and it is when
+        # the sub-batch remainder has to be flushed -- see creep_velocity.
+        crawling = abs(sp_vel) < self.creep_velocity
+
         if self._last_written_target is None:
             reissue = True
-        elif abs(setpoint - self._last_written_target) >= self.setpoint_batch_m:
+        elif abs(written - self._last_written_target) >= self.setpoint_batch_m:
             reissue = True
         else:
-            # The stream has settled (trajectory ended) but the last batch left a
-            # sub-threshold remainder: write the exact final target once so the axis
-            # lands on it instead of stopping up to setpoint_batch_m short.
-            reissue = (setpoint != self._last_written_target
-                       and (now - sp_stamp) > self.settle_write_sec)
+            # The last batch left a sub-threshold remainder: write the exact
+            # final target once so the axis lands on it instead of stopping up
+            # to setpoint_batch_m short. `crawling` is what makes this fire
+            # against a controller that holds position by re-streaming it.
+            reissue = ((settled or crawling)
+                       and abs(written - self._last_written_target)
+                       > self.final_tolerance)
 
         tg = self.telegram
         if reissue:
-            tg.mdi_tarpos.value = int(setpoint * self.position_scaling)
+            tg.mdi_tarpos.value = int(written * self.position_scaling)
             tg.mdi_velocity.value = word
-            self._last_written_target = setpoint
+            self._last_written_target = written
         with self._lock:
             self._cmd_velocity = velocity
             self._cmd_vel_word = word
