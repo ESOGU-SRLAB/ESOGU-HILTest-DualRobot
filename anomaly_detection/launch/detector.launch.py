@@ -1,4 +1,6 @@
 """UR10e anomali tespiti düğümünü başlatır."""
+from pathlib import Path
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -17,11 +19,24 @@ def generate_launch_description():
         DeclareLaunchArgument("tf_prefix", default_value="ur10e_"),
         DeclareLaunchArgument("joint_states_topic", default_value="/joint_states"),
         DeclareLaunchArgument("wrench_topic",
-                             default_value="/force_torque_sensor_broadcaster/ft_data"),
+                             default_value="/force_torque_sensor_broadcaster/wrench"),
         DeclareLaunchArgument("adaptive", default_value="true",
                              description="mutlak eşiğin yanında medyan+k·MAD kuralı "
                                          "(yavaş kayma ve iyi uyan koşular için şart)"),
         DeclareLaunchArgument("adaptive_k", default_value="8.0"),
+        DeclareLaunchArgument("freeze_timeout", default_value="3.0",
+                             description="s; alarm bundan uzun sürerse rejim "
+                                         "değişimi sayılır, taban çizgisi çözülür"),
+        DeclareLaunchArgument("motion_qd_min", default_value="-1.0",
+                             description="rad/s; taban çizgisi yalnız robot "
+                                         "hareket ederken beslenir; negatif = kapalı"),
+        DeclareLaunchArgument("threshold_override", default_value="0.0",
+                             description="pozitifse fusion_config.json'daki θ_mutlak "
+                                         "yerine bu kullanılır"),
+        DeclareLaunchArgument("log_dir", default_value=str(Path.home() / "anomali_kayit"),
+                             description="olay/skor kayıtları; boş dize kaydı kapatır"),
+        DeclareLaunchArgument("log_scores", default_value="true",
+                             description="her kararı CSV'ye yaz (~170 MB/gün)"),
     ]
     b = LaunchConfiguration("models_base")
     node = Node(
@@ -41,6 +56,11 @@ def generate_launch_description():
             "wrench_topic": LaunchConfiguration("wrench_topic"),
             "adaptive": ParameterValue(LaunchConfiguration("adaptive"), value_type=bool),
             "adaptive_k": ParameterValue(LaunchConfiguration("adaptive_k"), value_type=float),
+            "freeze_timeout": ParameterValue(LaunchConfiguration("freeze_timeout"), value_type=float),
+            "motion_qd_min": ParameterValue(LaunchConfiguration("motion_qd_min"), value_type=float),
+            "threshold_override": ParameterValue(LaunchConfiguration("threshold_override"), value_type=float),
+            "log_dir": LaunchConfiguration("log_dir"),
+            "log_scores": ParameterValue(LaunchConfiguration("log_scores"), value_type=bool),
         }],
     )
     return LaunchDescription(args + [node])

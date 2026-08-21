@@ -85,7 +85,8 @@ class FusionDetector:
                  stride: int = 25, fts_frame: str = "tool",
                  providers: list[str] | None = None,
                  adaptive: bool = True, adaptive_window: int = 600,
-                 adaptive_k: float = 8.0, adaptive_warmup: int = 200):
+                 adaptive_k: float = 8.0, adaptive_warmup: int = 200,
+                 freeze_timeout: float = 3.0, motion_qd_min: float = 0.02):
         ctt = json.loads(Path(current_to_torque).read_text(encoding="utf-8"))
         rc = json.loads(Path(residual_calibration).read_text(encoding="utf-8"))
         self.trusted = list(ctt["trusted"])
@@ -142,15 +143,36 @@ class FusionDetector:
         # göre çalışan sağlam bir kural. Alarm = mutlak VEYA uyarlanabilir. Alarm
         # sürerken taban çizgisi dondurulur, yoksa uzun süren bir arıza yeni "normal"
         # olur ve alarm sessizce söner.
+        # Dondurmanın süre sınırı (2026-08-21 gerçek robot kaydıyla ölçüldü).
+        # Sınırsız dondurma kalıcı kilit üretiyor: düğüm robot DURURKEN başlatıldı,
+        # taban çizgisi hareketsiz gürültüden 0,0103 öğrenildi, robot hareket edince
+        # skor 0,34'e fırlayıp alarmı kilitledi ve `_hist` bir daha güncellenemedi.
+        # Sonuç: 292 saniyelik tek alarm, ortasındaki gerçek sıkışma (birleşik 10,27)
+        # ayrı bir olay üretemedi. `freeze_timeout` süresinden uzun süren alarm artık
+        # arıza değil REJİM DEĞİŞİMİ sayılır ve taban çizgisi yeniden uyum sağlar.
         self.adaptive = bool(adaptive)
         self.adaptive_k = float(adaptive_k)
         self.adaptive_warmup = int(adaptive_warmup)
+        self.freeze_timeout = float(freeze_timeout)
         self._hist: deque = deque(maxlen=int(adaptive_window))
+        self._alarm_run = 0                   # ardışık alarmlı karar sayısı
+
+        # Taban çizgisi YALNIZ robot hareket ederken beslenir. Dururken öğrenilen
+        # dağılım hareketli çalışma için geçersizdir (ölçülen fark ×400: hareketsiz
+        # medyan 0,0037, hareketli medyan 1,4866). Karar üretimi hareketten BAĞIMSIZ
+        # sürer -- sıkışma anında robot yavaşlıyor, orada kör kalınamaz.
+        self.motion_qd_min = float(motion_qd_min)
+        self._qd_peak = 0.0                   # karar penceresi içindeki maks |q̇|
 
     @property
     def adaptive_window(self) -> int:
         """Uyarlanabilir taban çizgisinin kaç karar geriye baktığı."""
         return self._hist.maxlen or 0
+
+    @property
+    def decision_period(self) -> float:
+        """İki karar arasındaki süre (s)."""
+        return self.stride * self.extractor.dt
 
     @property
     def lag_seconds(self) -> float:
@@ -165,9 +187,12 @@ class FusionDetector:
         self.raw_buf.clear()
         self._hist.clear()
         self._since = 0
+        self._alarm_run = 0
+        self._qd_peak = 0.0
 
     def push(self, q, qd, effort_amps, wrench) -> dict | None:
         """Bir örnek ekler. Karar anı gelmediyse None, geldiyse skor sözlüğü."""
+        self._qd_peak = max(self._qd_peak, float(np.max(np.abs(qd))))
         f = self.extractor.push(q, qd, effort_amps, wrench)
         if f is None:
             return None
@@ -177,6 +202,8 @@ class FusionDetector:
         if len(self.res_buf) < self.window or self._since < self.stride:
             return None
         self._since = 0
+        qd_peak, self._qd_peak = self._qd_peak, 0.0
+        moving = qd_peak > self.motion_qd_min
 
         s_res = self.ae_res.score(np.stack(self.res_buf))
         s_raw = self.ae_raw.score(np.stack(self.raw_buf))
@@ -198,10 +225,17 @@ class FusionDetector:
             hit_ad = bool(fused > thr_ad)
 
         detected = hit_abs or hit_ad
-        if not detected:                      # alarm sürerken taban çizgisi donar
+        self._alarm_run = self._alarm_run + 1 if detected else 0
+        # Alarm `freeze_timeout` saniyeden uzun sürdüyse dondurmayı bırak: bu artık
+        # bir arıza atağı değil, yeni bir çalışma rejimi. Kayan pencere sayesinde
+        # eşik yaklaşık `adaptive_window` karar içinde yeni seviyeye taşınır.
+        frozen = detected and self._alarm_run * self.decision_period <= self.freeze_timeout
+        if moving and not frozen:
             self._hist.append(fused)
 
         return {
+            "moving": moving, "qd_peak": qd_peak, "frozen": frozen,
+            "baseline_n": len(self._hist),
             "s_residual": s_res, "s_raw": s_raw,
             "z_residual": z_res, "z_raw": z_raw,
             "fused": fused, "threshold": self.thr_fused,
