@@ -280,14 +280,26 @@ private:
     publishGripperTrajectory(positions, velocities);
     publishKawasakiTrajectory(positions, velocities);
 
-    // Report the rate actually achieved once a second. The configured rate and the
-    // delivered one have already diverged once during development, and a mirror that
-    // silently runs at the wrong rate looks exactly like a stuttering one.
+    // Report the rate actually achieved. The configured rate and the delivered one
+    // have already diverged once during development, and a mirror that silently runs
+    // at the wrong rate looks exactly like a stuttering one -- so the check stays.
+    // What does NOT stay is the periodic INFO: on a shared terminal it was a line
+    // every five seconds for the whole session. Report once when the rate first
+    // settles, then stay quiet unless it actually drifts.
     ++publish_count_;
     const auto now = this->now();
-    if ((now - last_rate_report_).seconds() >= 5.0) {
-      RCLCPP_INFO(this->get_logger(), "Mirroring at %.1f Hz (configured %.1f Hz).",
-                  publish_count_ / (now - last_rate_report_).seconds(), update_rate_);
+    const double window = (now - last_rate_report_).seconds();
+    if (window >= 5.0) {
+      const double achieved = publish_count_ / window;
+      if (!rate_reported_) {
+        RCLCPP_INFO(this->get_logger(), "Mirroring at %.1f Hz (configured %.1f Hz).",
+                    achieved, update_rate_);
+        rate_reported_ = true;
+      } else if (std::abs(achieved - update_rate_) > 0.2 * update_rate_) {
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 30000,
+                             "Mirror rate drifted: %.1f Hz achieved vs %.1f Hz "
+                             "configured.", achieved, update_rate_);
+      }
       publish_count_ = 0;
       last_rate_report_ = now;
     }
@@ -497,6 +509,7 @@ private:
   rclcpp::Time last_state_time_;
   rclcpp::Time last_rate_report_;
   uint64_t publish_count_{0};
+  bool rate_reported_{false};
 
   // ==================== UR10E members ====================
   std::map<std::string, std::string> ur_joint_mapping_;

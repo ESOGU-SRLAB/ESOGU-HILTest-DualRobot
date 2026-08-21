@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-ESOGÜ Robotics Lab — Scenario Control Dashboard
-Flask + SocketIO backend for managing ROS2 launch scenarios,
-camera streaming, and real-time joint state monitoring.
+Robotic Testbed as a Service — ESOGÜ IFARLAB Control Dashboard
+Flask + SocketIO backend for managing ROS2 launch scenarios, camera streaming,
+real-time joint state monitoring, and UR10e anomaly detection.
 """
 
 import os
@@ -490,10 +490,12 @@ class JointStateCollector:
         """ROS2 subscriber spin loop."""
         try:
             import rclpy
+            from rclpy.executors import SingleThreadedExecutor
             from rclpy.node import Node as RosNode
             from sensor_msgs.msg import JointState
 
-            rclpy.init()
+            if not rclpy.ok():
+                rclpy.init()
             node = RosNode("dashboard_joint_listener")
 
             def real_cb(msg):
@@ -515,11 +517,18 @@ class JointStateCollector:
 
             node.get_logger().info("Dashboard joint state listener started.")
 
-            while self._running and rclpy.ok():
-                rclpy.spin_once(node, timeout_sec=0.1)
+            # Özel executor: global executor'ı paylaşmak iki collector arasında
+            # sessiz sağırlığa yol açıyor (ayrıntı AnomalyCollector içinde).
+            executor = SingleThreadedExecutor()
+            executor.add_node(node)
 
+            while self._running and rclpy.ok():
+                executor.spin_once(timeout_sec=0.1)
+
+            executor.remove_node(node)
             node.destroy_node()
-            rclpy.shutdown()
+            # rclpy.shutdown() ÇAĞIRMA: context artık AnomalyCollector ile
+            # paylaşılıyor, burada kapatmak onun düğümünü de öldürür.
 
         except Exception as e:
             print(f"[JointStateCollector] ROS2 error: {e}")
@@ -564,6 +573,249 @@ class JointStateCollector:
 
 
 joint_collector = JointStateCollector(socketio)
+
+
+# ==============================================================================
+# Anomaly Detection (ROS2)
+# ==============================================================================
+
+ANOMALY_LOG_DIR = os.path.expanduser("~/anomali_kayit")
+ANOMALY_LABEL_FILE = os.path.join(ANOMALY_LOG_DIR, "etiketler.json")
+
+
+class AnomalyCollector:
+    """anomaly_detection düğümünü dinler ve SocketIO ile arayüze iter.
+
+    JointStateCollector ile aynı kalıp, iki farkla:
+
+    1. rclpy.init() KORUMALI. JointStateCollector zaten init ediyor; ikinci kez
+       çağrılırsa "rcl_init called while already initialized" ile patlar.
+    2. Alarm KENAR olarak yakalanır, seviye olarak değil. Dedektör 20 Hz karar
+       veriyor, arayüz 5 Hz besleniyor; anlık değeri örneklersek kısa olaylar
+       düşer. Ölçülen: 21 Ağu 2026'daki en net gerçek olay (pick&place çarpışması,
+       tepe 146,4) yalnız 0,25 saniye sürdü -- 5 kararlık bir pencere.
+    """
+
+    THR_FUSED = 18.0        # fusion_config.json'daki gömülü değer
+    THR_RESIDUAL = 1.6008
+    THR_RAW = 3.4461
+
+    def __init__(self, socketio_instance, buffer_seconds=60):
+        self.socketio = socketio_instance
+        self.buffer_seconds = buffer_seconds
+        self.samples = deque(maxlen=buffer_seconds * 25)   # ~20 Hz karar
+        self._lock = threading.Lock()
+        self._running = False
+        self._connected_at = 0.0
+        self._n_msgs = 0
+        # Kenar mandalı: son push'tan beri alarm gördük mü
+        self._alarm_edge = False
+        self._alarm_now = False
+        self._last_alarm_t = 0.0
+
+    def start(self):
+        self._running = True
+        threading.Thread(target=self._ros_spin, daemon=True).start()
+        threading.Thread(target=self._periodic_push, daemon=True).start()
+
+    def _ros_spin(self):
+        try:
+            import rclpy
+            from rclpy.executors import SingleThreadedExecutor
+            from rclpy.node import Node as RosNode
+            from std_msgs.msg import Bool, Float32, Float32MultiArray
+
+            if not rclpy.ok():
+                rclpy.init()
+            node = RosNode("dashboard_anomaly_listener")
+            ns = "/ur10e_anomaly_detector"
+
+            def detail_cb(msg):
+                d = list(msg.data)
+                if len(d) < 11:
+                    return
+                rec = {
+                    "t": time.time(),
+                    "s_kal": d[0], "s_ham": d[1],
+                    "fused": d[4], "thr": d[5], "thr_ad": d[6],
+                    "hit_abs": bool(d[7]), "hit_ad": bool(d[8]),
+                    "hit_kal": bool(d[9]), "hit_ham": bool(d[10]),
+                }
+                if len(d) >= 15:
+                    rec["moving"] = bool(d[11])
+                    rec["qd_peak"] = d[12]
+                with self._lock:
+                    self.samples.append(rec)
+                    self._n_msgs += 1
+                    if not self._connected_at:
+                        self._connected_at = rec["t"]
+
+            def det_cb(msg):
+                with self._lock:
+                    self._alarm_now = bool(msg.data)
+                    if msg.data:
+                        self._alarm_edge = True          # mandal: push temizler
+                        self._last_alarm_t = time.time()
+
+            node.create_subscription(Float32MultiArray, ns + "/detail", detail_cb, 20)
+            node.create_subscription(Bool, ns + "/detected", det_cb, 20)
+            node.create_subscription(Float32, ns + "/score", lambda m: None, 10)
+            node.get_logger().info("Dashboard anomaly listener started.")
+
+            # ÖZEL executor şart. rclpy.spin_once(node) executor vermezsen düğümü
+            # GLOBAL executor'a ekler ve orada bırakır. İki collector aynı global
+            # executor'a düşünce iki thread aynı wait-set üzerinde yarışır: düğüm
+            # ROS grafiğinde görünmez olur, abonelikler hiç veri almaz ve hiçbir
+            # hata basılmaz. (21 Ağu 2026'da tam olarak bu yaşandı.)
+            executor = SingleThreadedExecutor()
+            executor.add_node(node)
+            try:
+                while self._running and rclpy.ok():
+                    executor.spin_once(timeout_sec=0.1)
+            finally:
+                executor.remove_node(node)
+                node.destroy_node()
+
+        except Exception as e:
+            print(f"[AnomalyCollector] ROS2 error: {e}")
+            print("[AnomalyCollector] Anomaly monitoring disabled.")
+
+    def _periodic_push(self):
+        while self._running:
+            time.sleep(0.2)
+            try:
+                now = time.time()
+                with self._lock:
+                    cutoff = now - self.buffer_seconds
+                    seri = [r for r in self.samples if r["t"] > cutoff]
+                    edge, self._alarm_edge = self._alarm_edge, False
+                    alarm_now = self._alarm_now
+                    last_alarm = self._last_alarm_t
+                    n = self._n_msgs
+                    t0 = self._connected_at
+                son = seri[-1] if seri else None
+                canli = bool(son and now - son["t"] < 2.0)
+                self.socketio.emit("anomaly_update", {
+                    "connected": canli,
+                    "alarm": alarm_now,
+                    "alarm_edge": edge,          # bu pencerede alarm OLDU mu
+                    "last_alarm_ago": (now - last_alarm) if last_alarm else None,
+                    "thresholds": {"fused": self.THR_FUSED,
+                                   "residual": self.THR_RESIDUAL,
+                                   "raw": self.THR_RAW},
+                    "current": son,
+                    "series": self._downsample(seri, 240),
+                    "decision_hz": (n / (now - t0)) if t0 and now > t0 else 0.0,
+                    "now": now,
+                    "window": self.buffer_seconds,
+                })
+            except Exception as e:
+                print(f"[AnomalyCollector] Push error: {e}")
+
+    @staticmethod
+    def _downsample(data, max_points):
+        if len(data) <= max_points:
+            return data
+        step = len(data) / max_points
+        return [data[int(i * step)] for i in range(max_points)]
+
+    def stop(self):
+        self._running = False
+
+
+anomaly_collector = AnomalyCollector(socketio)
+
+
+def _anomaly_labels():
+    try:
+        with open(ANOMALY_LABEL_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _read_anomaly_events(limit=200):
+    """olaylar_*.jsonl dosyalarını okuyup basladi/bitti çiftlerini birleştirir.
+
+    Tabloda TEPE değeri birincil sütun: 21 Ağu 2026'da giriş değerine (8,5) bakıp
+    tepeyi (90,55) görmemek yanlış yoruma yol açtı. Tepe yalnız `anomali_bitti`
+    kaydında var, o yüzden eşleştirme şart.
+    """
+    import glob
+    etiket = _anomaly_labels()
+    olaylar = []
+    for path in sorted(glob.glob(os.path.join(ANOMALY_LOG_DIR, "**", "olaylar_*.jsonl"),
+                                 recursive=True)):
+        kosu = os.path.basename(path).replace("olaylar_", "").replace(".jsonl", "")
+        acik = {}
+        try:
+            with open(path, encoding="utf-8") as f:
+                for satir in f:
+                    satir = satir.strip()
+                    if not satir:
+                        continue
+                    try:
+                        e = json.loads(satir)
+                    except ValueError:
+                        continue
+                    sira = e.get("sira")
+                    if e.get("olay") == "anomali_basladi":
+                        eid = f"{kosu}#{sira}"
+                        kayit = {
+                            "id": eid, "kosu": kosu, "sira": sira,
+                            "zaman": e.get("zaman"), "t_ros": e.get("t_ros"),
+                            "giris": e.get("birlesik"), "esik": e.get("esik"),
+                            "kural": e.get("kural"), "tetikleyen": e.get("tetikleyen"),
+                            "s_kal": e.get("s_kal"), "s_ham": e.get("s_ham"),
+                            "q": e.get("q"), "akim": e.get("akim"),
+                            "sure_s": None, "tepe": None,
+                            "etiket": etiket.get(eid, {}).get("etiket", "?"),
+                            "not": etiket.get(eid, {}).get("not", ""),
+                        }
+                        acik[sira] = kayit
+                        olaylar.append(kayit)
+                    elif e.get("olay") == "anomali_bitti" and sira in acik:
+                        acik[sira]["sure_s"] = e.get("sure_s")
+                        acik[sira]["tepe"] = e.get("tepe")
+        except OSError:
+            continue
+    # Bitmemiş olayın tepesi bilinmiyor; girişi tepe kabul et ki tablo boş kalmasın
+    for o in olaylar:
+        if o["tepe"] is None:
+            o["tepe"] = o["giris"]
+            o["devam"] = True
+    olaylar.sort(key=lambda o: (o.get("t_ros") or 0), reverse=True)
+    return olaylar[:limit]
+
+
+@app.route("/api/anomaly/events")
+def api_anomaly_events():
+    try:
+        return jsonify({"ok": True, "events": _read_anomaly_events()})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e), "events": []}), 500
+
+
+@app.route("/api/anomaly/label", methods=["POST"])
+def api_anomaly_label():
+    """Operatör etiketi. Dedektörün kayıtlarına DOKUNMAZ, ayrı dosyaya yazar."""
+    data = request.get_json(silent=True) or {}
+    eid = data.get("id")
+    etk = data.get("etiket")
+    if not eid or etk not in ("gercek", "yanlis", "?"):
+        return jsonify({"ok": False, "error": "geçersiz id veya etiket"}), 400
+    try:
+        os.makedirs(ANOMALY_LOG_DIR, exist_ok=True)
+        tum = _anomaly_labels()
+        tum[eid] = {"etiket": etk, "not": (data.get("not") or "")[:500],
+                    "zaman": time.strftime("%Y-%m-%dT%H:%M:%S")}
+        tmp = ANOMALY_LABEL_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(tum, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, ANOMALY_LABEL_FILE)
+        return jsonify({"ok": True, "etiket": etk})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # ==============================================================================
@@ -1084,7 +1336,8 @@ def handle_health_check():
 
 def main():
     print("=" * 60)
-    print("  ESOGÜ - IFARLAB — Scenario Control Dashboard")
+    print("  Robotic Testbed as a Service")
+    print("  ESOGÜ - IFARLAB — Control Dashboard")
     print("  http://localhost:8080")
     print("=" * 60)
 
@@ -1094,6 +1347,9 @@ def main():
 
     # Start joint state collector
     joint_collector.start()
+
+    # Start anomaly detection collector
+    anomaly_collector.start()
 
     try:
         socketio.run(app, host="0.0.0.0", port=8080, debug=False, allow_unsafe_werkzeug=True)

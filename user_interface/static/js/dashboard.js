@@ -1,5 +1,5 @@
 /**
- * ESOGÜ Robotics Lab — Scenario Control Dashboard
+ * Robotic Testbed as a Service — ESOGÜ IFARLAB Control Dashboard
  * Frontend JavaScript: SocketIO, Chart.js live graphs, process control
  */
 

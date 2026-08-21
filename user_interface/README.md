@@ -1,4 +1,6 @@
-# ESOGÜ IFARLAB — Scenario Control Dashboard
+# Robotic Testbed as a Service
+
+**ESOGÜ IFARLAB — Control Dashboard**
 
 Bu proje, ESOGÜ IFARLAB sistemindeki robotik senaryoları (HIL - Hardware-in-the-Loop ve gerçek ortam) başlatmak, durdurmak ve canlı olarak izlemek için geliştirilmiş modern, web tabanlı bir arayüzdür. 
 <img width="1181" height="450" alt="image" src="https://github.com/user-attachments/assets/0c569df9-11c5-4900-becf-462e4a8c86b8" />

@@ -20,9 +20,11 @@ def generate_launch_description():
         DeclareLaunchArgument("joint_states_topic", default_value="/joint_states"),
         DeclareLaunchArgument("wrench_topic",
                              default_value="/force_torque_sensor_broadcaster/wrench"),
-        DeclareLaunchArgument("adaptive", default_value="true",
-                             description="mutlak eşiğin yanında medyan+k·MAD kuralı "
-                                         "(yavaş kayma ve iyi uyan koşular için şart)"),
+        DeclareLaunchArgument("adaptive", default_value="false",
+                             description="mutlak eşiğin yanında medyan+k·MAD kuralı; "
+                                         "gerçek robotta ölçüldü, k=8..30 taramasının "
+                                         "hiçbirinde gerçek olayı yakalamadı, yalnız "
+                                         "yanlış alarm ekledi -- varsayılan kapalı"),
         DeclareLaunchArgument("adaptive_k", default_value="8.0"),
         DeclareLaunchArgument("freeze_timeout", default_value="3.0",
                              description="s; alarm bundan uzun sürerse rejim "

@@ -1,5 +1,5 @@
 /* ==============================================================================
-   ESOGÜ Robotics Lab — Scenario Control Dashboard
+   Robotic Testbed as a Service — ESOGÜ IFARLAB Control Dashboard
    Modern Dark Theme CSS
    ============================================================================== */
 
@@ -69,7 +69,9 @@
 }
 
 html {
-    font-size: 15px;
+    /* Tarayıcı varsayılanı 16px. 15px, rem tabanlı her ölçüyü %94'e indiriyordu;
+       arayüz "%100'de bile küçük" görünüyordu. */
+    font-size: 16px;
     scroll-behavior: smooth;
 }
 

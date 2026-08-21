@@ -2,7 +2,10 @@
   "norm": "minmax_val",
   "w_kal": 0.95,
   "w_ham": 0.050000000000000044,
-  "fused_threshold": 0.6435986433178186,
+  "fused_threshold": 18.0,
+  "fused_threshold_fmu": 0.6435986433178186,
+  "fused_threshold_kaynak": "gercek_robot_2026-08-21",
+  "fused_threshold_not": "FMU dogrulama setinden gelen P97 esigi (fused_threshold_fmu = 0,6436) gercek UR10e'de kararlarin %97'sini alarm ilan ediyordu: temiz kosuda birlesik skor medyani 4,27. 18,0 degeri 21 Agu 2026 gercek robot kayitlarindan secildi. Etiketli kume: 5 dogrulanmis gercek olay (tepe 10,27 / 31,98 / 79,86 / 146,44 / 195,83) ve 29 dogrulanmis yanlis alarm (tepe 8,28-90,55, ~45 dk gozlem). 18,0 inspection cevriminin tavaninin (17,43) hemen ustunde oturur, boylece o 16 periyodik yanlis alarmin tamami susar; en zayif gercek olaya (31,98) %78 pay birakir. Kacan tek olay 10:21 sikismasi (10,27) -- onu robotun kendi koruyucu durdurmasi zaten aninda kesmisti.",
   "scale": {
     "residual": {
       "lo": 0.007320923265069723,

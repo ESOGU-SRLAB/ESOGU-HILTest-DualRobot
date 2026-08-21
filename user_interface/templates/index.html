@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ESOGÜ - IFARLAB — Scenario Control Dashboard for multi-robot HIL testing">
-    <title>ESOGÜ - IFARLAB — Dashboard</title>
+    <meta name="description" content="Robotic Testbed as a Service — ESOGÜ IFARLAB control dashboard for multi-robot HIL testing">
+    <title>Robotic Testbed as a Service — ESOGÜ IFARLAB</title>
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/analytics.css">
+    <link rel="stylesheet" href="/static/css/anomaly.css">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -29,6 +30,9 @@
     <button class="tab-btn" id="tab-btn-analytics" onclick="switchTab('analytics')">
         📈 Data Analytics
     </button>
+    <button class="tab-btn" id="tab-btn-anomaly" onclick="switchTab('anomaly')">
+        🚨 Anomaly Detection
+    </button>
 </div>
 
 <!-- ===== VIEW: HOME (existing dashboard — unchanged) ===== -->
@@ -39,12 +43,12 @@
     <!-- ===== HEADER (Logos + Title) ===== -->
     <header class="header fade-in">
         <div class="header-left">
-            <img src="/figures/cem.png" alt="ESOGÜ IFARLAB" title="ESOGÜ IFARLAB" id="logo-cem">
+            <img src="/figures/ifarlab.png" alt="ESOGÜ IFARLAB" title="ESOGÜ IFARLAB" id="logo-ifarlab">
             <img src="/figures/asrlab.jpg" alt="ESOGÜ ASRLAB" title="ESOGÜ ASRLAB" id="logo-asrlab">
         </div>
         <div class="header-center">
-            <h1>Scenario Control Dashboard</h1>
-            <p>ESOGÜ - IFARLAB — HIL Test Environment</p>
+            <h1>Robotic Testbed as a Service</h1>
+            <p>ESOGÜ - IFARLAB — Control Dashboard</p>
         </div>
         <div class="header-right">
             <img src="/figures/matisse.png" alt="MATISSE" title="MATISSE Project" id="logo-matisse">
@@ -311,9 +315,95 @@
 </div>
 <!-- ===== /VIEW: DATA ANALYTICS ===== -->
 
+<!-- ===== VIEW: ANOMALY DETECTION ===== -->
+<div id="view-anomaly" hidden>
+    <header class="analytics-header">
+        <div class="analytics-title">
+            <h1>🚨 Anomaly Detection</h1>
+            <p>UR10e — kalıntı + ham otokodlayıcı birleşimi (Denk. 4), θ<sub>mutlak</sub> = <span id="an-thr-head">18.0</span></p>
+        </div>
+        <div class="analytics-toolbar">
+            <span class="an-conn" id="an-conn">● bağlantı yok</span>
+            <button class="tb-btn" id="an-btn-refresh" onclick="refreshAnomalyEvents()">🔄 Olayları yenile</button>
+        </div>
+    </header>
+
+    <!-- Durum bandı -->
+    <div class="an-banner an-idle" id="an-banner">
+        <div class="an-banner-state" id="an-banner-state">BEKLENİYOR</div>
+        <div class="an-banner-metrics">
+            <div class="an-metric">
+                <span class="an-metric-label">birleşik skor</span>
+                <span class="an-metric-value" id="an-score">—</span>
+            </div>
+            <div class="an-metric">
+                <span class="an-metric-label">eşik</span>
+                <span class="an-metric-value" id="an-thr">18.00</span>
+            </div>
+            <div class="an-metric">
+                <span class="an-metric-label">son alarmdan beri</span>
+                <span class="an-metric-value" id="an-since">—</span>
+            </div>
+            <div class="an-metric">
+                <span class="an-metric-label">karar hızı</span>
+                <span class="an-metric-value" id="an-hz">—</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="an-grid">
+        <!-- Canlı skor grafiği -->
+        <section class="an-card an-card-wide">
+            <h3>Canlı birleşik skor <small>— son 60 s, logaritmik eksen</small></h3>
+            <div class="an-chart-wrap"><canvas id="an-chart"></canvas></div>
+        </section>
+
+        <!-- Model kırılımı -->
+        <section class="an-card">
+            <h3>Model kırılımı</h3>
+            <div class="an-bar-row">
+                <div class="an-bar-label">kalıntı <small>θ=1.60</small></div>
+                <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-kal"></div></div>
+                <div class="an-bar-val" id="an-val-kal">—</div>
+            </div>
+            <div class="an-bar-row">
+                <div class="an-bar-label">ham <small>θ=3.45</small></div>
+                <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-ham"></div></div>
+                <div class="an-bar-val" id="an-val-ham">—</div>
+            </div>
+            <p class="an-note">Çubuklar her modelin kendi eşiğine oranını gösterir.
+               Alarm kararını yalnız birleşik skor verir; bu kırılım hangi modelin
+               sürüklediğini söyler.</p>
+        </section>
+    </div>
+
+    <!-- Olay tablosu -->
+    <section class="an-card an-events">
+        <h3>Olay geçmişi
+            <small>— operatör etiketi yeniden eğitim kümesini oluşturur</small>
+            <span class="an-stats" id="an-event-stats"></span>
+        </h3>
+        <div class="an-table-wrap">
+            <table class="an-table">
+                <thead>
+                    <tr>
+                        <th>zaman</th><th>süre</th><th class="an-th-peak">TEPE</th>
+                        <th>giriş</th><th>tetikleyen</th><th>koşu</th><th>etiket</th>
+                    </tr>
+                </thead>
+                <tbody id="an-event-body">
+                    <tr><td colspan="7" class="an-empty">Yükleniyor…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+<!-- ===== /VIEW: ANOMALY DETECTION ===== -->
+
 <!-- ===== JavaScript ===== -->
 <script src="/static/js/dashboard.js"></script>
 <script src="/static/js/analytics.js"></script>
+<script src="/static/js/anomaly.js"></script>
 
 </body>
 </html>

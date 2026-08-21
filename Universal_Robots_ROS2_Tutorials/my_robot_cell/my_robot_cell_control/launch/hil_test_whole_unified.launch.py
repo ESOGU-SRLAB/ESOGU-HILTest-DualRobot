@@ -1073,6 +1073,45 @@ def launch_setup(context, *args, **kwargs):
                 "Gerçek gripper için use_fake_hardware:=false ile çalıştırın."
         ))
 
+    # === UR10e anomali tespiti (yalnız GERÇEK donanımda) ===
+    #
+    # use_fake_hardware=true iken ÇALIŞMAZ. Sebebi VGC10'unkiyle aynı değil, daha
+    # sinsi: sahte donanımda /joint_states'in effort alanı gerçek motor akımı
+    # değildir. Dedektörün bütün kalıntı hesabı `effort = actual_current`
+    # varsayımına dayanır (UR sürücüsü hardware_interface.cpp içinde bu alana
+    # actual_current yazar). Mock donanımda bu alan ya sıfırdır ya da komut
+    # torkudur; her iki durumda da skorlar anlamsız olur ama sistem hatasız
+    # çalışmaya devam eder -- yani sessizce yanlış sonuç üretir.
+    #
+    # Eşik ve kural seçimleri paketin içine gömülüdür (fusion_config.json:
+    # fused_threshold = 18,0; uyarlanabilir kural kapalı). İkisi de 21 Ağu 2026'da
+    # bu hücrede ölçüldü; ayrıntı anomaly_detection/docs raporunun 10. bölümünde.
+    #
+    # Gecikme: KTS yayıncısı ve joint_state_broadcaster ayağa kalkmadan başlarsa
+    # düğüm veri beklerken "veri gelmiyor" uyarısı basar. 30 s, real_to_sim_bridge
+    # ile aynı gerekçeyle seçildi.
+    use_anomaly_str = LaunchConfiguration("use_anomaly_detection").perform(context)
+    if use_anomaly_str.lower() == "true" and use_fake_str.lower() != "true":
+        nodes_to_start.append(TimerAction(
+            period=30.0,
+            actions=[
+                IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource([
+                        PathJoinSubstitution([
+                            FindPackageShare("anomaly_detection"),
+                            "launch", "detector.launch.py",
+                        ])
+                    ])
+                )
+            ],
+        ))
+    elif use_anomaly_str.lower() == "true":
+        nodes_to_start.append(LogInfo(
+            msg="Anomali tespiti BAŞLATILMADI (use_fake_hardware=true). Sahte "
+                "donanımda effort alanı gerçek motor akımı değildir, kalıntı "
+                "hesabı anlamsız olur."
+        ))
+
     # digital_twin=false (varsayılan) ise real_to_sim_bridge başlat
     if digital_twin_value.lower() != 'true':
         nodes_to_start.append(real_to_sim_bridge_delayed)
@@ -1257,6 +1296,17 @@ def generate_launch_description():
             "use_vacuum_gripper",
             default_value="false",
             description="Enable vacuum gripper on the robot.",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_anomaly_detection",
+            default_value="true",
+            description="UR10e anomali tespiti başlatılsın mı? "
+                        "use_fake_hardware:=true iken bu değere bakılmaksızın "
+                        "başlatılmaz (sahte donanımda effort alanı gerçek motor "
+                        "akımı değildir).",
         )
     )
 

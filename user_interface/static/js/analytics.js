@@ -126,19 +126,24 @@ let currentTab = "home";
 // Tab switching
 // ==============================================================================
 
+const TABS = ["home", "analytics", "anomaly"];
+
 function switchTab(tab) {
+    if (!TABS.includes(tab)) tab = "home";
     currentTab = tab;
-    const home = document.getElementById("view-home");
-    const analytics = document.getElementById("view-analytics");
-    const btnHome = document.getElementById("tab-btn-home");
-    const btnAnalytics = document.getElementById("tab-btn-analytics");
+
+    // Görünürlük ve buton durumu: sekme sayısından bağımsız.
+    TABS.forEach((name) => {
+        const view = document.getElementById("view-" + name);
+        const btn = document.getElementById("tab-btn-" + name);
+        if (view) view.hidden = name !== tab;
+        if (btn) btn.classList.toggle("active", name === tab);
+    });
+
+    // Analytics dışına çıkılınca otomatik yenilemeyi her hâlükârda durdur.
+    if (tab !== "analytics") stopAutoRefresh();
 
     if (tab === "analytics") {
-        home.hidden = true;
-        analytics.hidden = false;
-        btnHome.classList.remove("active");
-        btnAnalytics.classList.add("active");
-
         // Surface any build/render failure instead of silently doing nothing.
         try {
             if (typeof Chart === "undefined") {
@@ -154,12 +159,14 @@ function switchTab(tab) {
             console.error("[analytics] switchTab failed:", err);
             showFatal(err.message || String(err));
         }
-    } else {
-        analytics.hidden = true;
-        home.hidden = false;
-        btnAnalytics.classList.remove("active");
-        btnHome.classList.add("active");
-        stopAutoRefresh();
+    } else if (tab === "anomaly") {
+        // Grafik ilk açılışta kurulur; soket dinleyicisi anomaly.js içinde
+        // sekmeden bağımsız bağlanır, o yüzden burada sadece kurulum var.
+        try {
+            if (typeof initAnomalyTab === "function") initAnomalyTab();
+        } catch (err) {
+            console.error("[anomaly] switchTab failed:", err);
+        }
     }
 }
 window.switchTab = switchTab;

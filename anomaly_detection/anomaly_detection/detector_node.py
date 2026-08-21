@@ -163,9 +163,10 @@ class AnomalyDetectorNode(Node):
                 f"|q̇|>{d.motion_qd_min} rad/s iken beslenir, dondurma en fazla "
                 f"{d.freeze_timeout:.0f} s ({int(d.freeze_timeout/d.decision_period)} karar)")
         else:
-            self.get_logger().warn(
-                "Uyarlanabilir kural KAPALI — yalnız mutlak eşikle yavaş kayma ve "
-                "iyi uyan koşulardaki arızalar kaçırılır.")
+            self.get_logger().info(
+                "Uyarlanabilir kural kapalı (gerçek robotta ölçülen varsayılan). "
+                "Karşılığı: çok yavaş kayan bozulmalar mutlak eşiğe ulaşana kadar "
+                "görünmez kalır.")
         if not all(d.trusted):
             names = [JOINT_SUFFIX[i].replace("_joint", "")
                      for i, t in enumerate(d.trusted) if not t]
@@ -185,6 +186,10 @@ class AnomalyDetectorNode(Node):
         self.n_foreign = 0
         self.n_short = 0
         self.n_alarms = 0
+        self.health_state: str | None = None
+        self.t_health = time.monotonic()
+        self.n_samples_health = 0
+        self.n_scores_health = 0
         self.alarm_active = False
         self.alarm_t0 = 0.0
         self.alarm_peak = 0.0
@@ -193,7 +198,6 @@ class AnomalyDetectorNode(Node):
         self.t_flush = time.monotonic()
         self._open_logs(str(g("log_dir")).strip(), bool(g("log_scores")))
         self.infer_ms: deque = deque(maxlen=200)
-        self.t_start = time.monotonic()
 
         qos = QoSProfile(depth=50, reliability=ReliabilityPolicy.BEST_EFFORT,
                          history=HistoryPolicy.KEEP_LAST)
@@ -361,27 +365,46 @@ class AnomalyDetectorNode(Node):
                 f"tepe {self.alarm_peak:.4f})")
 
     def on_health(self) -> None:
-        el = max(time.monotonic() - self.t_start, 1e-6)
-        rate = self.n_samples / el
+        """Sağlık raporu. Düğüm büyük bir launch içinde ortak terminale yazdığı için
+        periyodik satır basmaz: durum DEĞİŞTİĞİNDE bir satır yazar. Pratikte bu,
+        açılışta bir satır ve sonrasında sessizlik demektir.
+
+        Hız pencereli ölçülür. Kümülatif ortalama, düğüm daha yeni başlarken düşük
+        çıkıp yavaşça tırmanıyor (ölçülen: 365 → 495 Hz) ve ilk raporu yanıltıyordu.
+        """
+        now = time.monotonic()
+        el = max(now - self.t_health, 1e-6)
+        rate = (self.n_samples - self.n_samples_health) / el
+        dec = (self.n_scores - self.n_scores_health) / el
+        self.t_health, self.n_samples_health = now, self.n_samples
+        self.n_scores_health = self.n_scores
+
         ms = float(np.mean(self.infer_ms)) if self.infer_ms else 0.0
         budget = self.det.stride * self.det.extractor.dt * 1e3
-        text = (f"örnek {rate:6.0f} Hz | karar {self.n_scores/el:5.1f} Hz | "
+        text = (f"örnek {rate:6.0f} Hz | karar {dec:5.1f} Hz | "
                 f"çıkarım {ms:5.2f} ms / {budget:.0f} ms bütçe (%{100*ms/budget:.0f})"
                 + (f" | bayat wrench {self.n_stale:,}" if self.n_stale else "")
                 + (f" | UR dışı {self.n_foreign:,}" if self.n_foreign else "")
                 + (f" | kısa mesaj {self.n_short:,}" if self.n_short else "")
                 + (f" | alarm {self.n_alarms}" if self.n_alarms else ""))
+
+        durum = "veri_yok" if rate <= 0 else ("iyi" if rate > 400 else "dusuk")
+        if durum == self.health_state:
+            return                              # durum değişmedi -> sessiz kal
+        self.health_state = durum
+
         # NOT: rclpy günlükçüsü şiddeti ÇAĞRI YERİNE göre önbelleğe alıyor; aynı satırdan
         # bir kez info bir kez warn çağırmak "Logger severity cannot be changed between
-        # calls" ile düğümü düşürüyor. Bu yüzden iki ayrı çağrı yeri.
-        if rate > 400:
+        # calls" ile düğümü düşürüyor. Bu yüzden ayrı çağrı yerleri.
+        if durum == "iyi":
             self.get_logger().info(text)
+        elif durum == "dusuk":
+            self.get_logger().warn(
+                text + "  —  örnek hızı 500 Hz'in altında; q̈ türevi sabit dt "
+                "varsayıyor, düşük hızda kalıntı bozulur.")
         else:
-            self.get_logger().warn(text)
-            if rate > 0:
-                self.get_logger().warn(
-                    "Örnek hızı 500 Hz'in altında — q̈ türevi sabit dt varsayıyor, "
-                    "düşük hızda kalıntı bozulur.")
+            self.get_logger().warn("Veri gelmiyor — /joint_states ve wrench konularını "
+                                   "kontrol et.")
 
 
     def close_logs(self) -> None:
