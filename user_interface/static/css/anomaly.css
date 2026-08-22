@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Anomaly Detection sekmesi
-   style.css'teki değişkenleri kullanır; yeni renk tanımlamaz.
+   Anomaly Detection tab
+   Uses the variables from style.css; defines no new colours.
    ========================================================================== */
 
 #view-anomaly {
@@ -10,16 +10,17 @@
 }
 
 .an-conn {
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
     color: var(--text-muted);
     white-space: nowrap;
 }
 .an-conn.live { color: var(--accent-green); }
 .an-conn.dead { color: var(--accent-red); }
 
-/* ---------- Durum bandı ---------- */
-/* Uzaktan okunabilir olmalı: operatör ekrana yapışık durmuyor. */
+/* ---------- Status banner ---------- */
+/* Must stay readable from a distance: the operator is not glued to the screen. */
 .an-banner {
     display: flex;
     align-items: center;
@@ -61,9 +62,8 @@
     font-size: 1.5rem; font-weight: 700; color: var(--text-primary);
     font-variant-numeric: tabular-nums;
 }
-.an-metric-value.over { color: var(--accent-red); }
 
-/* ---------- Kart ızgarası ---------- */
+/* ---------- Card grid ---------- */
 .an-grid {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
@@ -92,10 +92,16 @@
     margin: 14px 0 0; font-size: 0.75rem; line-height: 1.5; color: var(--text-muted);
 }
 
-/* ---------- Model çubukları ---------- */
+/* ---------- Model bars ---------- */
 .an-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.an-bar-label { flex: 0 0 108px; font-size: 0.82rem; color: var(--text-secondary); }
-.an-bar-label small { display: block; color: var(--text-muted); font-size: 0.68rem; }
+.an-bar-label {
+    flex: 0 0 108px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+.an-bar-label small {
+    display: block; font-weight: 500; letter-spacing: 0;
+    color: var(--text-muted); font-size: 0.68rem;
+}
 .an-bar-track {
     flex: 1 1 auto; height: 12px; border-radius: 6px;
     background: var(--bg-input); overflow: hidden; min-width: 0;
@@ -111,7 +117,7 @@
     color: var(--text-primary); font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Olay tablosu ---------- */
+/* ---------- Event table ---------- */
 .an-events { margin-top: 0; }
 .an-stats { float: right; font-size: 0.78rem; font-weight: 500; color: var(--text-muted); }
 .an-table-wrap { overflow-x: auto; max-height: 460px; overflow-y: auto; }
@@ -136,10 +142,10 @@
 .an-table td.an-entry { color: var(--text-muted); }
 .an-empty { text-align: center; color: var(--text-muted); padding: 28px 12px !important; }
 
-.an-row-gercek { background: rgba(239, 68, 68, 0.06); }
-.an-row-yanlis { opacity: 0.55; }
+.an-row-true { background: rgba(239, 68, 68, 0.06); }
+.an-row-false { opacity: 0.55; }
 
-/* ---------- Etiket butonları ---------- */
+/* ---------- Label buttons ---------- */
 .an-label-group { display: inline-flex; gap: 4px; }
 .an-lbl {
     font-family: inherit; font-size: 0.72rem; font-weight: 600;
@@ -149,7 +155,7 @@
     cursor: pointer; transition: all var(--transition-fast);
 }
 .an-lbl:hover { color: var(--text-primary); background: var(--bg-card-hover); }
-.an-lbl.on-gercek { background: var(--accent-red);   border-color: var(--accent-red);   color: #fff; }
-.an-lbl.on-yanlis { background: var(--accent-green); border-color: var(--accent-green); color: #fff; }
-.an-lbl.on-bilinmiyor { background: var(--bg-card-hover); color: var(--text-primary); }
+.an-lbl.on-true { background: var(--accent-red);   border-color: var(--accent-red);   color: #fff; }
+.an-lbl.on-false { background: var(--accent-green); border-color: var(--accent-green); color: #fff; }
+.an-lbl.on-unknown { background: var(--bg-card-hover); color: var(--text-primary); }
 .an-lbl:disabled { opacity: 0.4; cursor: wait; }

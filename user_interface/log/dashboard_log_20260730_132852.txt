@@ -283,10 +283,10 @@
 [13:29:08] [HIL] [robot_state_publisher-9] [INFO] [1785407348.143391447] [sim.robot_state_publisher]: got segment world
 [13:29:08] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:166] [0m[1;36mSubscribing to [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
 [13:29:08] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:168] [0m[1;36mWaiting for a world to be set from the GUI...[0m[1;36m[0m
-[13:29:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
+[13:29:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
 [13:29:08] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:172] [0m[1;36mUnsubscribing from [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
 [13:29:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mGazebo Sim Server v[0m[1;32m8.14.0[0m[1;32m[0m
-[13:29:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m].[0m
+[13:29:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf[0m[1;32m].[0m
 [13:29:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing entity system service on [[0m[1;32m/[0m[1;32mentity/system/add[0m[1;32m][0m[1;32m[0m
 [13:29:08] [HIL] [gz sim-10] [1;36m[Dbg] [Physics.cc:945] [0m[1;36mLoaded [[0m[1;36mgz::physics::dartsim::Plugin[0m[1;36m] from library [[0m[1;36m/usr/lib/x86_64-linux-gnu/gz-physics-7/engine-plugins/libgz-physics-dartsim-plugin.so[0m[1;36m][0m[1;36m[0m
 [13:29:08] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::Physics[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
@@ -8511,7 +8511,7 @@
 [13:30:23] [HIL] [gz sim-10] [1;36m32[0m[1;36m)[0m[1;36m[0m
 [13:30:23] [HIL] [gz sim-10] [1;36m32[0m[1;36m)[0m[1;36m[0m
 [13:30:23] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:565] [0m[1;36mSensorsPrivate::Stop[0m[1;36m[0m
-[13:30:23] [HIL] [ERROR] [gz sim-10]: process has died [pid 35083, exit code -2, cmd 'ruby /usr/bin/gz sim -r -v 8 /home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf --force-version 8'].
+[13:30:23] [HIL] [ERROR] [gz sim-10]: process has died [pid 35083, exit code -2, cmd 'ruby /usr/bin/gz sim -r -v 8 /home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf --force-version 8'].
 [13:30:23] [HIL] [INFO] [launch]: process[gz sim-10] was required: shutting down launched system
 [13:30:24] [HIL] [urscript_interface-4] [31m[1785407422.905990] ERROR ./src/comm/tcp_socket.cpp 143: Failed to connect to robot on IP 192.168.3.5:30002. Please check that the robot is booted and reachable on 192.168.3.5. Retrying in 10 seconds. [0m
 [13:30:27] [HIL] [ERROR] [urscript_interface-4]: process[urscript_interface-4] failed to terminate '5' seconds after receiving 'SIGINT', escalating to 'SIGTERM'
@@ -8806,10 +8806,10 @@
 [13:30:41] [HIL] [robot_state_publisher-9] [INFO] [1785407441.184974629] [sim.robot_state_publisher]: got segment world
 [13:30:41] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:166] [0m[1;36mSubscribing to [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
 [13:30:41] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:168] [0m[1;36mWaiting for a world to be set from the GUI...[0m[1;36m[0m
-[13:30:41] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
+[13:30:41] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
 [13:30:41] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:172] [0m[1;36mUnsubscribing from [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
 [13:30:41] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mGazebo Sim Server v[0m[1;32m8.14.0[0m[1;32m[0m
-[13:30:41] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m].[0m
+[13:30:41] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf[0m[1;32m].[0m
 [13:30:41] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing entity system service on [[0m[1;32m/[0m[1;32mentity/system/add[0m[1;32m][0m[1;32m[0m
 [13:30:41] [HIL] [gz sim-10] [1;36m[Dbg] [Physics.cc:945] [0m[1;36mLoaded [[0m[1;36mgz::physics::dartsim::Plugin[0m[1;36m] from library [[0m[1;36m/usr/lib/x86_64-linux-gnu/gz-physics-7/engine-plugins/libgz-physics-dartsim-plugin.so[0m[1;36m][0m[1;36m[0m
 [13:30:41] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::Physics[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
@@ -16983,7 +16983,7 @@
 [13:32:08] [HIL] [gz sim-10] [1;36m50[0m[1;36m[0m
 [13:32:08] [HIL] [gz sim-10] [1;36mExiting postupdate worker thread ([0m[1;36m6[0m[1;36m)[0m[1;36m[0m
 [13:32:08] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:565] [0m[1;36mSensorsPrivate::Stop[0m[1;36m[0m
-[13:32:08] [HIL] [ERROR] [gz sim-10]: process has died [pid 36256, exit code -2, cmd 'ruby /usr/bin/gz sim -r -v 8 /home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf --force-version 8'].
+[13:32:08] [HIL] [ERROR] [gz sim-10]: process has died [pid 36256, exit code -2, cmd 'ruby /usr/bin/gz sim -r -v 8 /home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf --force-version 8'].
 [13:32:08] [HIL] [INFO] [launch]: process[gz sim-10] was required: shutting down launched system
 [13:32:10] [HIL] [move_group-23] [INFO] [1785407530.103738206] [moveit.ompl_planning.model_based_planning_context]: Unable to solve the planning problem
 [13:32:10] [HIL] [move_group-23] [INFO] [1785407530.114665169] [moveit.ros_planning_interface.moveit_cpp]: Deleting MoveItCpp

@@ -584,31 +584,32 @@ ANOMALY_LABEL_FILE = os.path.join(ANOMALY_LOG_DIR, "etiketler.json")
 
 
 class AnomalyCollector:
-    """anomaly_detection düğümünü dinler ve SocketIO ile arayüze iter.
+    """Listens to the anomaly_detection node and pushes it to the UI over SocketIO.
 
-    JointStateCollector ile aynı kalıp, iki farkla:
+    Same pattern as JointStateCollector, with two differences:
 
-    1. rclpy.init() KORUMALI. JointStateCollector zaten init ediyor; ikinci kez
-       çağrılırsa "rcl_init called while already initialized" ile patlar.
-    2. Alarm KENAR olarak yakalanır, seviye olarak değil. Dedektör 20 Hz karar
-       veriyor, arayüz 5 Hz besleniyor; anlık değeri örneklersek kısa olaylar
-       düşer. Ölçülen: 21 Ağu 2026'daki en net gerçek olay (pick&place çarpışması,
-       tepe 146,4) yalnız 0,25 saniye sürdü -- 5 kararlık bir pencere.
+    1. rclpy.init() is GUARDED. JointStateCollector already initialises it, and a
+       second call blows up with "rcl_init called while already initialized".
+    2. The alarm is captured as an EDGE, not as a level. The detector decides at
+       20 Hz while the UI is fed at 5 Hz, so sampling the instantaneous value
+       drops short events. Measured: the clearest real event of 21 Aug 2026 (the
+       pick & place collision, peak 146.4) lasted only 0.25 s -- a five-decision
+       window.
     """
 
-    THR_FUSED = 18.0        # fusion_config.json'daki gömülü değer
+    THR_FUSED = 18.0        # value baked into fusion_config.json
     THR_RESIDUAL = 1.6008
     THR_RAW = 3.4461
 
     def __init__(self, socketio_instance, buffer_seconds=60):
         self.socketio = socketio_instance
         self.buffer_seconds = buffer_seconds
-        self.samples = deque(maxlen=buffer_seconds * 25)   # ~20 Hz karar
+        self.samples = deque(maxlen=buffer_seconds * 25)   # ~20 Hz decisions
         self._lock = threading.Lock()
         self._running = False
         self._connected_at = 0.0
         self._n_msgs = 0
-        # Kenar mandalı: son push'tan beri alarm gördük mü
+        # Edge latch: have we seen an alarm since the last push?
         self._alarm_edge = False
         self._alarm_now = False
         self._last_alarm_t = 0.0
@@ -654,7 +655,7 @@ class AnomalyCollector:
                 with self._lock:
                     self._alarm_now = bool(msg.data)
                     if msg.data:
-                        self._alarm_edge = True          # mandal: push temizler
+                        self._alarm_edge = True          # latch; cleared by push
                         self._last_alarm_t = time.time()
 
             node.create_subscription(Float32MultiArray, ns + "/detail", detail_cb, 20)
@@ -662,11 +663,12 @@ class AnomalyCollector:
             node.create_subscription(Float32, ns + "/score", lambda m: None, 10)
             node.get_logger().info("Dashboard anomaly listener started.")
 
-            # ÖZEL executor şart. rclpy.spin_once(node) executor vermezsen düğümü
-            # GLOBAL executor'a ekler ve orada bırakır. İki collector aynı global
-            # executor'a düşünce iki thread aynı wait-set üzerinde yarışır: düğüm
-            # ROS grafiğinde görünmez olur, abonelikler hiç veri almaz ve hiçbir
-            # hata basılmaz. (21 Ağu 2026'da tam olarak bu yaşandı.)
+            # A DEDICATED executor is mandatory. Without one, rclpy.spin_once(node)
+            # adds the node to the GLOBAL executor and leaves it there. Once both
+            # collectors land on that same global executor, two threads race on the
+            # same wait set: the node disappears from the ROS graph, the
+            # subscriptions never receive data, and no error is ever printed.
+            # (Exactly what happened on 21 Aug 2026.)
             executor = SingleThreadedExecutor()
             executor.add_node(node)
             try:
@@ -698,7 +700,7 @@ class AnomalyCollector:
                 self.socketio.emit("anomaly_update", {
                     "connected": canli,
                     "alarm": alarm_now,
-                    "alarm_edge": edge,          # bu pencerede alarm OLDU mu
+                    "alarm_edge": edge,          # did an alarm occur in this window?
                     "last_alarm_ago": (now - last_alarm) if last_alarm else None,
                     "thresholds": {"fused": self.THR_FUSED,
                                    "residual": self.THR_RESIDUAL,
@@ -735,11 +737,11 @@ def _anomaly_labels():
 
 
 def _read_anomaly_events(limit=200):
-    """olaylar_*.jsonl dosyalarını okuyup basladi/bitti çiftlerini birleştirir.
+    """Reads the olaylar_*.jsonl files and merges the started/ended record pairs.
 
-    Tabloda TEPE değeri birincil sütun: 21 Ağu 2026'da giriş değerine (8,5) bakıp
-    tepeyi (90,55) görmemek yanlış yoruma yol açtı. Tepe yalnız `anomali_bitti`
-    kaydında var, o yüzden eşleştirme şart.
+    PEAK is the primary column in the table: on 21 Aug 2026, reading the entry
+    value (8.5) without seeing the peak (90.55) led to a wrong interpretation. The
+    peak only exists in the `anomali_bitti` record, hence the pairing.
     """
     import glob
     etiket = _anomaly_labels()
@@ -779,7 +781,8 @@ def _read_anomaly_events(limit=200):
                         acik[sira]["tepe"] = e.get("tepe")
         except OSError:
             continue
-    # Bitmemiş olayın tepesi bilinmiyor; girişi tepe kabul et ki tablo boş kalmasın
+    # An unfinished event has no known peak; use its entry value so the table
+    # does not show a blank cell.
     for o in olaylar:
         if o["tepe"] is None:
             o["tepe"] = o["giris"]
@@ -798,12 +801,12 @@ def api_anomaly_events():
 
 @app.route("/api/anomaly/label", methods=["POST"])
 def api_anomaly_label():
-    """Operatör etiketi. Dedektörün kayıtlarına DOKUNMAZ, ayrı dosyaya yazar."""
+    """Operator label. Does NOT touch the detector's logs; writes to a separate file."""
     data = request.get_json(silent=True) or {}
     eid = data.get("id")
     etk = data.get("etiket")
     if not eid or etk not in ("gercek", "yanlis", "?"):
-        return jsonify({"ok": False, "error": "geçersiz id veya etiket"}), 400
+        return jsonify({"ok": False, "error": "invalid id or label"}), 400
     try:
         os.makedirs(ANOMALY_LOG_DIR, exist_ok=True)
         tum = _anomaly_labels()

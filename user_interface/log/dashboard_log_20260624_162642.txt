@@ -271,10 +271,10 @@
 [16:27:08] [HIL] [create-11] [INFO] [1782307628.429912575] [sim.ros_gz_sim]: OK creation of entity.
 [16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:166] [0m[1;36mSubscribing to [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
 [16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:168] [0m[1;36mWaiting for a world to be set from the GUI...[0m[1;36m[0m
-[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
 [16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:172] [0m[1;36mUnsubscribing from [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
 [16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mGazebo Sim Server v[0m[1;32m8.11.0[0m[1;32m[0m
-[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m].[0m
+[16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf[0m[1;32m].[0m
 [16:27:08] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing entity system service on [[0m[1;32m/[0m[1;32mentity/system/add[0m[1;32m][0m[1;32m[0m
 [16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [Physics.cc:906] [0m[1;36mLoaded [[0m[1;36mgz::physics::dartsim::Plugin[0m[1;36m] from library [[0m[1;36m/usr/lib/x86_64-linux-gnu/gz-physics-7/engine-plugins/libgz-physics-dartsim-plugin.so[0m[1;36m][0m[1;36m[0m
 [16:27:08] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::Physics[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
@@ -954,7 +954,7 @@
 [16:27:23] [HIL] [gz sim-10] [1;36m)[0m[1;36m)5[0m[1;36m)[0m[1;36m)[0m[1;36m)[0m[1;36m3[0m[1;36m3[0m[1;36m3[0m[1;36m)[0m[1;36m)[0m[1;36m[0m
 [16:27:23] [HIL] [gz sim-10] [1;36m)[0m[1;36m[Dbg] [Sensors.cc:565] [0m[1;36mSensorsPrivate::Stop[0m[1;36m[0m
 [16:27:23] [HIL] [INFO] [rviz2-14]: process has finished cleanly [pid 7326]
-[16:27:23] [HIL] [ERROR] [gz sim-10]: process has died [pid 7317, exit code -2, cmd 'ruby /usr/bin/gz sim -r -v 8 /home/cem/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf --force-version 8'].
+[16:27:23] [HIL] [ERROR] [gz sim-10]: process has died [pid 7317, exit code -2, cmd 'ruby /usr/bin/gz sim -r -v 8 /home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf --force-version 8'].
 [16:27:23] [HIL] [INFO] [launch]: process[gz sim-10] was required: shutting down launched system
 [16:27:23] [SYSTEM] ✅ HIL successfully stopped.
 [16:27:23] [SYSTEM] ✅ All processes stopped.

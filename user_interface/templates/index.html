@@ -320,79 +320,75 @@
     <header class="analytics-header">
         <div class="analytics-title">
             <h1>🚨 Anomaly Detection</h1>
-            <p>UR10e — kalıntı + ham otokodlayıcı birleşimi (Denk. 4), θ<sub>mutlak</sub> = <span id="an-thr-head">18.0</span></p>
+            <p>UR10e — residual + raw autoencoder fusion (Eq. 4), θ<sub>abs</sub> = <span id="an-thr-head">18.0</span></p>
         </div>
         <div class="analytics-toolbar">
-            <span class="an-conn" id="an-conn">● bağlantı yok</span>
-            <button class="tb-btn" id="an-btn-refresh" onclick="refreshAnomalyEvents()">🔄 Olayları yenile</button>
+            <span class="an-conn" id="an-conn">● NO CONNECTION</span>
         </div>
     </header>
 
-    <!-- Durum bandı -->
+    <!-- Status banner -->
     <div class="an-banner an-idle" id="an-banner">
-        <div class="an-banner-state" id="an-banner-state">BEKLENİYOR</div>
+        <div class="an-banner-state" id="an-banner-state">WAITING</div>
         <div class="an-banner-metrics">
             <div class="an-metric">
-                <span class="an-metric-label">birleşik skor</span>
-                <span class="an-metric-value" id="an-score">—</span>
-            </div>
-            <div class="an-metric">
-                <span class="an-metric-label">eşik</span>
+                <span class="an-metric-label">threshold</span>
                 <span class="an-metric-value" id="an-thr">18.00</span>
             </div>
             <div class="an-metric">
-                <span class="an-metric-label">son alarmdan beri</span>
+                <span class="an-metric-label">since last alarm</span>
                 <span class="an-metric-value" id="an-since">—</span>
             </div>
             <div class="an-metric">
-                <span class="an-metric-label">karar hızı</span>
+                <span class="an-metric-label">decision rate</span>
                 <span class="an-metric-value" id="an-hz">—</span>
             </div>
         </div>
     </div>
 
     <div class="an-grid">
-        <!-- Canlı skor grafiği -->
+        <!-- Live score chart -->
         <section class="an-card an-card-wide">
-            <h3>Canlı birleşik skor <small>— son 60 s, logaritmik eksen</small></h3>
+            <h3>Live Fused Score
+                <small>— last 60 s · hover a red marker for event details</small></h3>
             <div class="an-chart-wrap"><canvas id="an-chart"></canvas></div>
         </section>
 
-        <!-- Model kırılımı -->
+        <!-- Per-model breakdown -->
         <section class="an-card">
-            <h3>Model kırılımı</h3>
+            <h3>Model Breakdown</h3>
             <div class="an-bar-row">
-                <div class="an-bar-label">kalıntı <small>θ=1.60</small></div>
-                <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-kal"></div></div>
-                <div class="an-bar-val" id="an-val-kal">—</div>
+                <div class="an-bar-label">RESIDUAL <small>θ = 1.60</small></div>
+                <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-res"></div></div>
+                <div class="an-bar-val" id="an-val-res">—</div>
             </div>
             <div class="an-bar-row">
-                <div class="an-bar-label">ham <small>θ=3.45</small></div>
-                <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-ham"></div></div>
-                <div class="an-bar-val" id="an-val-ham">—</div>
+                <div class="an-bar-label">RAW <small>θ = 3.45</small></div>
+                <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-raw"></div></div>
+                <div class="an-bar-val" id="an-val-raw">—</div>
             </div>
-            <p class="an-note">Çubuklar her modelin kendi eşiğine oranını gösterir.
-               Alarm kararını yalnız birleşik skor verir; bu kırılım hangi modelin
-               sürüklediğini söyler.</p>
+            <p class="an-note">Each bar shows the model’s score as a ratio of its own
+               threshold. The alarm decision is made by the fused score alone; this
+               breakdown only tells you which model is driving it.</p>
         </section>
     </div>
 
-    <!-- Olay tablosu -->
+    <!-- Event table -->
     <section class="an-card an-events">
-        <h3>Olay geçmişi
-            <small>— operatör etiketi yeniden eğitim kümesini oluşturur</small>
+        <h3>Event history
+            <small>— operator labels build the retraining set</small>
             <span class="an-stats" id="an-event-stats"></span>
         </h3>
         <div class="an-table-wrap">
             <table class="an-table">
                 <thead>
                     <tr>
-                        <th>zaman</th><th>süre</th><th class="an-th-peak">TEPE</th>
-                        <th>giriş</th><th>tetikleyen</th><th>koşu</th><th>etiket</th>
+                        <th>time</th><th>duration</th><th class="an-th-peak">PEAK</th>
+                        <th>entry</th><th>trigger</th><th>run</th><th>label</th>
                     </tr>
                 </thead>
                 <tbody id="an-event-body">
-                    <tr><td colspan="7" class="an-empty">Yükleniyor…</td></tr>
+                    <tr><td colspan="7" class="an-empty">Loading…</td></tr>
                 </tbody>
             </table>
         </div>

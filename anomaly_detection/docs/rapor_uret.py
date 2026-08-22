@@ -186,6 +186,35 @@ def table(headers, rows, caption=None, widths=None, highlight=(), num_from=1):
     return t
 
 
+FIG_DIR = Path(__file__).resolve().parent / "figures"
+
+
+def figure(name, caption, width_cm=16.0):
+    """Şekil + altyazı. Dosya yoksa sessizce atlanır (rapor yine üretilir)."""
+    yol = FIG_DIR / name
+    if not yol.exists():
+        print(f"  ! şekil bulunamadı, atlanıyor: {yol}")
+        return None
+    par = doc.add_paragraph()
+    par.paragraph_format.space_before = Pt(6)
+    par.paragraph_format.space_after = Pt(2)
+    par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    par.add_run().add_picture(str(yol), width=Cm(width_cm))
+    cap = doc.add_paragraph()
+    cap.paragraph_format.space_after = Pt(12)
+    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    import re as _re
+    for tk in _re.split(r"(`[^`]+?`)", caption):
+        if not tk:
+            continue
+        if tk.startswith("`") and tk.endswith("`"):
+            r = cap.add_run(tk[1:-1]); r.font.name = "Consolas"; r.font.size = Pt(8.5)
+        else:
+            r = cap.add_run(tk); r.italic = True; r.font.size = Pt(9)
+        r.font.color.rgb = MUTED
+    return par
+
+
 def note(title, body):
     """Kenarlıklı vurgu kutusu."""
     t = doc.add_table(rows=1, cols=1)
@@ -842,6 +871,30 @@ table(
             "yan yana. Test kümesi 41.688 pencere, bunların 3.623'ü (%8,7) arızalıdır — "
             "bildirinin %8,0 oranıyla uyumludur.",
     widths=[4.4, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9], highlight=(2,), num_from=1)
+figure("sekil_pr_roc.png",
+       "Şekil 6.1. Düzeltilmiş hattın kesinlik–duyarlılık ve ROC eğrileri "
+       "(41.688 test penceresi, %8,7 arızalı). Birleşim her iki eğride de iki tekil "
+       "modelin üstünde kalmaktadır; PR panelinde fark daha belirgindir, çünkü ROC "
+       "sınıf dengesizliğinde iyimser davranmaktadır. Kesikli çizgi rastgele "
+       "sınıflandırıcının kesinlik tabanıdır (0,087).")
+
+p("Bildirinin çalışma noktası (θ = 0,6436) doğrudan sayılabilir hâle getirildiğinde "
+  "karar dağılımı Şekil 6.2'deki gibidir.")
+figure("sekil_karisiklik.png",
+       "Şekil 6.2. FMU doğrulama setinden gelen çalışma noktasındaki karışıklık "
+       "matrisi (satır normalleştirmeli) ve türetilmiş ölçütler. Hücre değerleri "
+       "Tablo 6.2'de sayıyla verilmiştir.")
+table(
+    ["", "Tahmin: normal", "Tahmin: anomali", "Toplam"],
+    [["Gerçek: normal", "37.519  (DN)", "546  (YP)", "38.065"],
+     ["Gerçek: anomali", "892  (YN)", "**2.731  (DP)**", "3.623"],
+     ["Toplam", "38.411", "3.277", "41.688"]],
+    caption="Tablo 6.2. θ = 0,6436 çalışma noktasında karışıklık matrisi. Buradan "
+            "kesinlik 0,833, duyarlılık 0,754, F1 0,792 ve özgüllük 0,986 çıkmaktadır; "
+            "bu değerler `fusion_config.json` içindeki `expected` alanıyla birebir "
+            "aynıdır. Temiz doğrulama kümesindeki yanlış alarm oranı %3,0'tür.",
+    widths=[4.2, 4.0, 4.0, 2.6], highlight=(1,), num_from=1)
+
 p("Mutlak değerlerin düşmesi beklenen ve açıklanabilir bir sonuçtur. Düzeltilmiş hatta "
   "arıza genlikleri gerçek Nm ölçeğinde uygulanmakta, yani problem **zorlaşmaktadır**; "
   "ayrıca veri kümesi süreksizliklerden arındırıldığı için modelin öğrenmesi gereken "
@@ -857,7 +910,7 @@ table(
      ["Gizyazar hatası", "0,988", "0,491", "0,989", "0,986 / 0,530"],
      ["Sensör gürültüsü", "0,296", "1,000", "0,996", "0,272 / 1,000"],
      ["Motor kayması", "0,451", "0,256", "0,443", "0,597 / 0,605"]],
-    caption="Tablo 6.2. Arıza tipine göre AUC. Gizyazar (kalıntı 0,988 ↔ ham 0,491) ve "
+    caption="Tablo 6.3. Arıza tipine göre AUC. Gizyazar (kalıntı 0,988 ↔ ham 0,491) ve "
             "sensör gürültüsü (kalıntı 0,296 ↔ ham 1,000) satırları bildirinin "
             "asimetrisini neredeyse birebir yeniden üretmektedir.",
     widths=[3.8, 2.4, 2.4, 2.4, 3.6], num_from=1)
@@ -867,6 +920,13 @@ p("Gizyazar hatası ve sensör gürültüsü satırları, bildirinin temel savı
   "genlikli KTS gürültüsü ters dinamik modelden süzülemediği için kalıntı modeli bu "
   "senaryoda kör kalmakta, ham model ise mükemmel sonuç vermektedir. İki modelin kör "
   "noktaları **örtüşmemektedir** — birleşimin varlık sebebi tam olarak budur.")
+
+figure("sekil_ariza_tipi.png",
+       "Şekil 6.3. Arıza tipine göre tespit oranı. Tamamlayıcılık grafikte "
+       "doğrudan görülmektedir: gizyazar hatasında kalıntı modeli 0,99, ham model "
+       "0,49; sensör gürültüsünde tam tersi (0,30'a karşı 1,00). Birleşim her iki "
+       "sütunda da yüksek olanı takip etmektedir. Motor kayması ise her iki model "
+       "için de zor kalmaktadır (Bölüm 11.1).")
 
 h(2, "6.3. Tamamlayıcılık analizi")
 table(
@@ -878,7 +938,7 @@ table(
      ["Geri çağırma — kalıntı", "0,470", "0,595"],
      ["Geri çağırma — ham", "0,514", "0,613"],
      ["Geri çağırma — OR", "0,757", "0,854"]],
-    caption="Tablo 6.3. Pencere düzeyinde tamamlayıcılık, her model kendi P97 eşiğiyle. "
+    caption="Tablo 6.4. Pencere düzeyinde tamamlayıcılık, her model kendi P97 eşiğiyle. "
             "Yalnızca-kalıntı oranı bildiriyle 0,2 puan farkla örtüşmektedir.",
     widths=[7.4, 3.0, 3.0], num_from=1)
 
@@ -895,7 +955,7 @@ table(
      ["0,90", "0,6395", "0,833", "0,752", "0,790"],
      ["0,95  (seçilen)", "0,6436", "0,833", "0,754", "**0,792**"],
      ["1,00  (yalnız kalıntı)", "0,6547", "0,756", "0,470", "0,579"]],
-    caption="Tablo 6.4. Ağırlık taraması (`fusion_config.json → online_sweep`). "
+    caption="Tablo 6.5. Ağırlık taraması (`fusion_config.json → online_sweep`). "
             "0,25–0,95 aralığında geniş ve kararlı bir bölge bulunmakta, uçlar keskin "
             "biçimde kötüleşmektedir — yani optimum gerçekten iki modelin arasındadır. "
             "Bildiri de aynı bölgeyi (w_kal ∈ [0,25; 0,95]) raporlamıştır.",
@@ -904,6 +964,18 @@ p("En iyi tekil modele göre kazanç **ΔF1 = +0,178**'dir (0,792'ye karşılık
   "Bildirinin raporladığı kazanç +0,161'dir; iki hat farklı mutlak seviyelerde "
   "çalışmasına rağmen birleşimin sağladığı marj korunmuştur.")
 
+
+figure("sekil_agirlik.png",
+       "Şekil 6.4. w_kal süpürmesi. Eğri 0,3–0,95 arasında geniş bir plato "
+       "çizmektedir, yani bildirinin 0,95 değeri hassas bir ayar noktası değildir. "
+       "Kritik olan uçtur: w_kal = 1 (saf kalıntı) PR-AUC'yi 0,553'e düşürmektedir. "
+       "Ham modele verilen yalnızca %5'lik ağırlık başarımı 0,553'ten 0,780'e "
+       "taşımaktadır (+0,227). Bu, birleşimin kozmetik değil işlevsel olduğunun "
+       "sayısal kanıtıdır.")
+p("Uç noktalar özellikle önemlidir: w_kal = 0,98'de PR-AUC 0,718'e, 0,99'da 0,621'e, "
+  "1,00'da 0,553'e düşmektedir. Bildirinin seçtiği 0,95, bu uçurumun hemen "
+  "öncesindeki omuzda oturmaktadır — ham modelin katkısı küçük bir ağırlıkla "
+  "alınmakta, fakat sıfırlanmamaktadır.")
 
 # ═══════════════════════════════════════════════════════════════════
 h(1, "7. Çevrimiçi sistem")
@@ -1289,21 +1361,30 @@ p("İlk çalıştırmada düğüm robot **dururken** başlatılmıştır. Uyarla
   "10 saniyelik hareketsiz gürültüden öğrenilmiş ve eşik 0,0103'te oturmuştur. Robot "
   "hareket etmeye başladığında skor anında 0,34'e çıkmış, eşiği aşmış ve alarmı "
   "kilitlemiştir. Alarm sürerken taban çizgisi donduğu için eşik bir daha "
-  "güncellenememiş; sonuç 292 saniye süren **tek bir alarm bloğu** olmuştur.")
+  "güncellenememiş; sonuç kayıt sonuna kadar hiç açılmayan, **564 saniyelik tek bir "
+  "alarm bloğu** olmuştur — 620 saniyelik koşunun %91'i.")
 p("Bu kilit, o blok içinde gerçekleşen gerçek bir olayı da görünmez kılmıştır: bir elin "
   "eklem arasına sıkışması sonucu robot koruyucu durdurmaya geçmiş, birleşik skor "
   "koşunun en yüksek değeri olan **10,27**'ye çıkmış, fakat sistem zaten alarm "
   "durumunda olduğu için yeni bir olay kaydı üretmemiştir.")
 table(
     ["Rejim", "Karar", "Birleşik medyan", "Birleşik maksimum"],
-    [["hareketsiz", "1.031", "0,0037", "0,0065"],
-     ["normal hareket", "4.515", "1,4866", "6,8786"],
-     ["**sıkışma (11 s)**", "220", "**2,8012**", "**10,2699**"],
-     ["koruyucu durdurma sonrası", "2.280", "0,3151", "0,3834"]],
+    [["hareketsiz (katlanmış poz)", "1.114", "0,0037", "0,0068"],
+     ["normal hareket", "2.884", "1,4532", "6,4341"],
+     ["**sıkışma (11 s)**", "219", "**2,8136**", "**10,2699**"],
+     ["koruyucu durdurma", "2.441", "0,3152", "0,9712"]],
     caption="Tablo 10.1. İlk koşunun rejimlere ayrılmış skor dağılımı. Sıkışma anı "
-            "348 saniyelik koşunun en yüksek değeridir; onu izleyen iki dakikalık "
+            "620 saniyelik koşunun en yüksek değeridir; onu izleyen 122 saniyelik "
             "düz seviye robotun koruyucu durdurmada beklediği süredir.",
     widths=[5.0, 2.6, 3.4, 3.4], highlight=(2,), num_from=1)
+figure("sekil_kilit.png",
+       "Şekil 10.1. Kilitlenmenin zaman çizelgesi (10:17 koşusu, logaritmik "
+       "eksen). Uyarlanabilir eşik +56. saniyeden itibaren 0,0103'te donmuş, alarm "
+       "kayıt sonuna kadar 564 saniye boyunca hiç açılmamıştır (pembe alan). "
+       "Koşunun en yüksek değeri olan sıkışma tepesi (10,27) bu blok içinde kaldığı "
+       "için ayrı bir olay kaydı üretmemiştir. Tepenin ardından gelen 122 saniyelik "
+       "düz seviye, robotun koruyucu durdurmada beklediği süredir.")
+
 p("Düzeltme, dondurmaya **3 saniyelik süre sınırı** koymaktır (Bölüm 7.5). Aynı kayıt "
   "yeni kuralla yeniden koşturulduğunda tek 292 saniyelik blok yerine ayrı olaylar "
   "üretilmekte ve sıkışma, 10:21:26'da başlayan kendi 1,8 saniyelik olayı olmaktadır.")
@@ -1318,6 +1399,16 @@ p("Sapmanın kaynağı ölçülmüştür: kalıntı **poza bağlıdır**. Yerçe
   "`residual_calibration_clean.json` içindeki `b` ise **sabit** bir offsettir ve poza "
   "bağlı bir hatayı telafi edemez. Bu, bir eşik sorunu değil model sadakati sorunudur; "
   "tek bir global eşik bu nedenle kalıcı olarak kırılgandır.")
+
+figure("sekil_rejim.png",
+       "Şekil 10.2. Beş çalışma rejiminde birleşik skorun dağılımı (logaritmik "
+       "eksen; nokta bulutu ham kararlar, kalın çizgi medyandır). Aynı robot ve aynı "
+       "modellerle skor üç büyüklük mertebesi değişmektedir: katlanmış park pozunda "
+       "0,0037, koruyucu durdurmada 0,32, harekette 1,57, yerçekimi yüklü duruşta "
+       "4,41. FMU eşiği (kırmızı kesikli çizgi) rejimlerin üçünün **içinden** "
+       "geçmektedir — tek bir global eşiğin neden kırılgan olduğu budur. Hareket / "
+       "duruş ayrımı hareket bayrağı taşıyan 10:38 koşusundan, park pozu ile "
+       "koruyucu durdurma platosu 10:17 koşusundan alınmıştır.")
 
 h(2, "10.4. Eşiğin gerçek robot verisinden yeniden ölçülmesi")
 p("Eşik, operatörün doğruladığı etiketli bir küme üzerinden yeniden belirlenmiştir: "
@@ -1336,6 +1427,15 @@ table(
             "gerçek olaya (31,98) %78 pay bırakır. Kaçan tek olay, robotun kendi "
             "koruyucu durdurmasının zaten anında kestiği ilk sıkışmadır.",
     widths=[4.0, 3.2, 4.0, 2.6, 2.6], highlight=(2,), num_from=2)
+figure("sekil_esik.png",
+       "Şekil 10.3. Eşik takasının iki yüzü, ortak logaritmik θ ekseninde. Üstte "
+       "yakalanan gerçek olay sayısı, altta saat başına yanlış alarm. İki ölçüt "
+       "kasıtlı olarak ayrı panellerde tutulmuştur; farklı birimleri tek eksende "
+       "üst üste bindirmek yanıltıcı olurdu. θ = 18 (kırmızı kesikli çizgi) yanlış "
+       "alarm oranını 38,7'den 6,7'ye düşürürken beş gerçek olaydan dördünü "
+       "korumaktadır; 17,43'ün hemen üstünde oturması muayene çevriminin on altı "
+       "periyodik alarmını birden susturan basamaktır.")
+
 p("Aynı etiketli küme üzerinde uyarlanabilir kural da yeniden sınanmıştır. k ∈ [8; 30] "
   "aralığında hiçbir değer doğrulanmış gerçek olayları yakalamamış, yalnızca temiz "
   "veriye yanlış blok eklemiştir. Sebebi ölçülmüştür: kuralın taban çizgisi normal "
@@ -1350,6 +1450,14 @@ p("Kalan yanlış alarmlar gürültü değil, **yapılıdır**. Muayene çevrimi
   "0,15 s / ~8,4) tekrarlanmaktadır. Aynı yörünge her seferinde aynı sıçramayı "
   "üretmektedir. Bu, modellerin gerçek yörüngeleri tanımadığının doğrudan kanıtıdır: "
   "FMU ile eğitilmiş özkodlayıcılar için gerçek muayene taraması dağıtım dışıdır.")
+figure("sekil_muayene.png",
+       "Şekil 10.4. Muayene koşusunun tam skor izi. Beş ana tepe ≈92 saniyelik "
+       "eşit aralıklarla tekrarlamakta ve her çevrimde aynı üçlü örüntü "
+       "görünmektedir. Bu düzenlilik, alarmların ölçüm gürültüsü değil "
+       "**yörüngenin kendisi** tarafından üretildiğini göstermektedir: aynı hareket "
+       "her seferinde aynı sıçramayı vermektedir. Tepelerin tavanı 17,43'tür ve "
+       "θ = 18 çizgisinin altında kalmaktadır.")
+
 p("Genlik dışında ayırt edici bir öznitelik aranmış fakat bulunamamıştır. Blokların "
   "keskinliği (tepe/blok-içi-medyan) gerçek olaylarda 1,08–1,99, yanlış alarmlarda "
   "1,00–4,83 aralığındadır; en keskin blok bir **yanlış** alarmdır. Yükseliş süresi de "
@@ -1358,12 +1466,20 @@ p("Genlik dışında ayırt edici bir öznitelik aranmış fakat bulunamamışt�
 table(
     ["", "n", "En düşük tepe", "Medyan tepe", "En yüksek tepe"],
     [["Doğrulanmış gerçek olay", "5", "10,27", "79,86", "195,83"],
-     ["Doğrulanmış yanlış alarm", "29", "8,30", "10,43", "90,55"]],
+     ["Doğrulanmış yanlış alarm", "29", "8,28", "10,42", "90,55"]],
     caption="Tablo 10.3. İki sınıfın tepe skor dağılımı. Örtüşme gerçektir: bir yanlış "
             "alarmın tepesi (90,55) üç gerçek olayın tepesinden büyüktür. Bu vaka "
             "eşikle temizlenememektedir ve modellerin gerçek veriyle yeniden "
             "eğitilmesini gerektirmektedir.",
     widths=[6.0, 1.6, 3.0, 3.0, 3.0], num_from=3)
+
+figure("sekil_tepeler.png",
+       "Şekil 10.5. Otuz dört etiketli olayın tepe skorları (logaritmik eksen). "
+       "İki sınıf 8–90 aralığında örtüşmektedir. θ = 18 çizgisi yanlış alarmların "
+       "yirmi dördünü elemekte, fakat en yüksek tepeli yanlış alarmı (90,55) "
+       "durduramamaktadır — o tek vaka üç gerçek olaydan daha yüksek skorludur. "
+       "Bu örtüşme bir eşik seçimiyle değil, ancak modellerin gerçek veriyle "
+       "yeniden eğitilmesiyle kapanabilir.")
 
 h(2, "10.6. Tespit gecikmesi")
 p("Gerçek robotta ölçülen bileşenler: Savitzky–Golay filtresi 50 ms, karar periyodu "
@@ -1376,20 +1492,104 @@ p("Doğrulanmış en net gerçek olay — al-yerleştir senaryosunun sonundaki �
 
 h(2, "10.7. Operatör arayüzü")
 p("Sistem, laboratuvarın mevcut web tabanlı kontrol panosuna (`user_interface` paketi, "
-  "Flask + SocketIO) üçüncü bir sekme olarak entegre edilmiştir. Sekme, durum bandı "
-  "(NORMAL / ANOMALİ), 60 saniyelik logaritmik eksenli canlı skor grafiği, iki modelin "
-  "kendi eşiklerine oranını gösteren kırılım ve olay geçmişi tablosundan oluşmaktadır.")
-p("İki tasarım kararı doğrudan bu bölümdeki ölçümlerden gelmektedir. Birincisi, tabloda "
-  "birincil sütun **tepe** değeridir; giriş değeri ikincil gösterilir, çünkü giriş "
-  "değerine bakıp tepeyi görmemek yanlış yoruma yol açmaktadır (8,5 giriş / 90,55 tepe). "
-  "İkincisi, alarm hem sunucu tarafında kenar olarak yakalanmakta hem de arayüzde en az "
-  "beş saniye mandallanmaktadır; 5 Hz'lik bir güncelleme hızında 0,25 saniyelik bir olay "
-  "aksi hâlde ekrana hiç yansımamaktadır. Sahte 0,25 s'lik alarmlarla yapılan ölçümde "
-  "kenar yakalama dört olayın dördünü, seviye örnekleme yalnız ikisini görmüştür.")
-p("Tablodaki her satırda operatör için `Gerçek` / `Yanlış alarm` / `?` düğmeleri "
-  "bulunmaktadır. Etiketler dedektörün kayıtlarına dokunmadan ayrı bir dosyaya yazılır "
-  "ve modellerin gerçek veriyle yeniden eğitilmesi için gereken etiketli kümeyi "
-  "biriktirir.")
+  "Flask + SocketIO) **Anomaly Detection** adıyla üçüncü bir sekme olarak entegre "
+  "edilmiştir. Sekme, gerçek robot çalışırken alınmış hâliyle Şekil 10.6'da "
+  "görülmektedir.")
+
+figure("real_system.png",
+       "Şekil 10.6. Gerçek UR10e'ye bağlı çalışan operatör arayüzü (21 Ağustos 2026, "
+       "15:22). Durum bandı NORMAL, karar hızı 20,0 Hz, çalışma eşiği θ = 18,00. Canlı "
+       "grafikte görülen ~14'lük tepe eşiğin altında kalmış, dolayısıyla alarm "
+       "üretilmemiştir. Sağdaki kırılım o an kararı ham modelin sürüklediğini "
+       "göstermektedir (ham 5,60 / θ 3,45 = 1,62 kat; kalıntı 1,57 / θ 1,60 = 0,98 kat). "
+       "Alt tabloda pick and place koşusunun olayları, tepe değerleri ve operatör "
+       "etiketleri yer almaktadır; en üstteki 146,44 tepeli satır çarpışma olayıdır.")
+
+h(3, "10.7.1. Veri yolu ve ayrı yürütücü zorunluluğu")
+p("Pano tarafındaki `AnomalyCollector` sınıfı dedektör düğümünün üç konusuna abone "
+  "olur: `/ur10e_anomaly_detector/detail` (karar başına tam kayıt), `.../detected` "
+  "(ikili alarm) ve `.../score`. Toplanan örnekler 60 saniyelik bir halka tamponda "
+  "tutulur ve 5 Hz'de `anomaly_update` olayı olarak tarayıcıya itilir; 240 noktadan "
+  "uzun seriler itilmeden önce seyreltilir.")
+note("Ölçülen tuzak — paylaşılan küresel yürütücü", [
+    "İlk sürümde her iki toplayıcı da `rclpy.spin_once(node)` kullanıyordu. Bu çağrı "
+    "düğümü **küresel** yürütücüye ekler ve sahipliği bir daha geri vermez. İki "
+    "toplayıcı aynı küresel yürütücüye düştüğünde iki iş parçacığı aynı bekleme kümesi "
+    "üzerinde yarışmakta, düğüm ROS grafiğinden kaybolmakta, abonelikler hiç veri "
+    "almamakta ve **hiçbir hata basılmamaktadır**.",
+    "Belirti: `ros2 node list` çıktısında `dashboard_anomaly_listener` görünmüyor, "
+    "abonelik sayısı sıfır, arayüz sessizce boş kalıyor.",
+    "Çözüm: her toplayıcıya kendi `SingleThreadedExecutor` örneği verilmiş, "
+    "`rclpy.init()` çağrısı korumaya alınmış (ikinci çağrı "
+    "\"rcl_init called while already initialized\" ile düşüyordu) ve ikinci "
+    "toplayıcıdaki `rclpy.shutdown()` kaldırılmıştır — bağlam artık paylaşılmaktadır.",
+])
+
+h(3, "10.7.2. Görselleştirme kararları")
+p("Arayüzdeki her tasarım kararı bu bölümdeki ölçümlerden türetilmiştir; hiçbiri "
+  "estetik tercih değildir.")
+table(
+    ["Karar", "Gerekçe (ölçüm)"],
+    [
+        ["Sayısal birleşik skor **gösterilmiyor**",
+         "Yuva 5 Hz'de beslenirken dedektör 20 Hz'de karar vermektedir. Tek bir "
+         "örneklenmiş değer gerçek sinyalin gerisinde kalmakta ve grafiğin yanında "
+         "açıkça yanlış okunmaktadır. Tam seriyi grafik taşır, örnek başına kesin "
+         "değeri ipucu kutusu verir."],
+        ["Doğrusal 0–30 eksen, gerektiğinde büyüyen",
+         "Normal çalışma ~1,3, eşik 18'dedir; bu aralık ikisini de ekranda tutar. "
+         "Tepe 30'u aştığında eksen yuvarlak adımlarla (10 / 50 / 100) büyütülür, "
+         "böylece kırpma da olmaz, eksen her karede nefes alıp vermez. Önceki "
+         "logaritmik eksen, eşiğin üstündeki bölgeyi görsel olarak ezdiği için "
+         "bırakılmıştır."],
+        ["İşaretçi yalnız eşiğin üstünde",
+         "Kırmızı nokta yalnızca birleşik skoru θ'yı aşan örneklere konur. İncelenmeye "
+         "değer örnekler bunlardır ve bir bakışta bulunabilir kalırlar."],
+        ["İpucu kutusu tam karar kaydını taşır",
+         "Operatörün bir tepeyi grafikten ayrılmadan yargılayabilmesi için alt "
+         "skorlar (kendi eşikleriyle), tetiklenen kurallar, hareket durumu ve |q̇| "
+         "tepesi gösterilir."],
+        ["Alarm kenar olarak mandallanıyor (≥ 5 s)",
+         "Kayıttaki en net gerçek olay (pick and place çarpışması, tepe 146,4) yalnız "
+         "**0,25 saniye** sürmüştür — beş karar. 5 Hz'de seviye örneklemesi bu olayı "
+         "tamamen kaçırmaktadır. Sahte 0,25 s'lik alarmlarla yapılan ölçümde kenar "
+         "yakalama dört olayın dördünü, seviye örnekleme yalnız ikisini görmüştür."],
+        ["Yuva dinleyicisi sekmeden bağımsız",
+         "Operatör başka sekmedeyken tetiklenen alarmın da mandala ve olay tablosuna "
+         "ulaşması gerekmektedir; dinleyici sekme açılmasını beklemeden bağlanır."],
+    ],
+    caption="Tablo 10.4. Arayüz tasarım kararları ve dayandıkları ölçümler.",
+    widths=(5.2, 11.0), num_from=1,
+)
+p("Durum bandı dört durum alır: bağlantı yokken **WAITING**, normal çalışmada "
+  "**NORMAL**, alarm sürerken **ANOMALY** ve mandal penceresi devam ederken "
+  "**ANOMALY (ended)**. Son duruma geçildiği anda olay tablosu bir kez yenilenir "
+  "(en fazla üç saniyede bir), böylece operatör olayı kapanır kapanmaz "
+  "etiketleyebilmektedir.")
+
+h(3, "10.7.3. Olay tablosu ve operatör etiketlemesi")
+p("Tablo, dedektörün yazdığı `olaylar_*.jsonl` dosyalarını okuyan `/api/anomaly/events` "
+  "uç noktasından beslenir. Uç nokta `anomali_basladi` ve `anomali_bitti` kayıtlarını "
+  "sıra numarası üzerinden eşleştirir; **tepe değeri yalnız bitiş kaydında bulunduğu "
+  "için bu eşleştirme zorunludur**. Kapanmamış bir olayda tepe yerine giriş değeri "
+  "gösterilir ve satır sürüyor olarak işaretlenir.")
+p("Tablodaki birincil sütun **tepe** değeridir; giriş değeri ikincil gösterilir. Bu "
+  "sıralama doğrudan 21 Ağustos ölçümünden gelmektedir: giriş değerine (8,5) bakıp "
+  "tepeyi (90,55) görmemek olayın yanlış yorumlanmasına yol açmıştır. Tepesi "
+  "**31,98**'in — doğrulanmış en zayıf gerçek olayın — üstünde kalan satırlar ayrıca "
+  "vurgulanır.")
+p("Her satırda `True` / `False` / `?` düğmeleri bulunmaktadır. Etiketler dedektörün "
+  "kayıtlarına hiç dokunmadan ayrı bir dosyaya (`~/anomali_kayit/etiketler.json`) "
+  "atomik olarak yazılır ve başlıktaki sayaç etiketlenmiş/etiketlenmemiş dağılımını "
+  "canlı gösterir. Biriken bu küme, Bölüm 11.4'te açık bırakılan model uyarlaması "
+  "işinin girdisidir.")
+note("Dil ayrımı — arayüz İngilizce, disk Türkçe", [
+    "Operatörün gördüğü her metin İngilizcedir. Buna karşılık disk üzerindeki JSON "
+    "anahtarları (`zaman`, `tepe`, `giris`, `etiket`, `gercek` / `yanlis`) Türkçe "
+    "kalmıştır: bunlar dedektör düğümünün yazdığı **tel biçimidir**, arayüz metni "
+    "değil. Yeniden adlandırılmaları hem mevcut kayıt dosyalarını hem de "
+    "`etiketler.json` içindeki birikmiş etiketleri geçersiz kılardı.",
+])
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1522,6 +1722,23 @@ code("# gerçek robot için ölçülmüş varsayılanlarla (θ = 18,0, uyarlanab
      "\n"
      "# kaydı kapatmak için:\n"
      "ros2 launch anomaly_detection detector.launch.py log_dir:=\"\'\'\"")
+p("Dedektör ayrıca hücrenin ana başlatma dosyasına gömülmüştür; ayrıca elle "
+  "başlatılması gerekmez:")
+code("# hücre ayağa kalktıktan 30 s sonra dedektör de başlar (varsayılan):\n"
+     "ros2 launch my_robot_cell_control hil_test_whole_unified.launch.py\n"
+     "\n"
+     "# yalnız hücre, dedektör olmadan:\n"
+     "ros2 launch my_robot_cell_control hil_test_whole_unified.launch.py \\\n"
+     "     use_anomaly_detection:=false")
+note("Sahte donanımda dedektör bilerek başlatılmaz", [
+    "`use_fake_hardware:=true` iken `use_anomaly_detection` değeri ne olursa olsun "
+    "dedektör başlatılmaz; bunun yerine başlatma dosyası nedenini açıklayan bir "
+    "günlük satırı basar.",
+    "Gerekçe ölçülmüştür: kalıntı ayrıştırmasının tamamı `effort` alanının **gerçek "
+    "motor akımı** olmasına dayanır (Bölüm 10.1). Sahte donanım sürücüsü bu alanı "
+    "komut değerinden türetir, dolayısıyla τ_ölçülen − τ̂_model farkı fiziksel bir "
+    "anlam taşımaz ve üretilen skorlar yorumlanamaz.",
+])
 p("Gömülü eşik `fusion_v2/fusion_config.json` içindeki `fused_threshold` alanındadır. "
   "FMU'dan gelen özgün değer aynı dosyada `fused_threshold_fmu` olarak, seçim gerekçesi "
   "ise `fused_threshold_not` alanında saklanmaktadır.")
@@ -1549,6 +1766,28 @@ table(
             "depo dışında tutulmaktadır; kurulan ROS 2 paketi 1.050 satır kod ile "
             "model, kalibrasyon ve çözücü varlıklarından oluşan 13 MB'lık bir "
             "dağıtımdır.",
+    widths=[7.4, 1.8, 6.2], num_from=1)
+p("Rapordaki bütün şekiller `docs/sekil_uret.py` ile üretilmektedir; betik "
+  "Bölüm 6 şekillerini `fusion_v2/scores.npz` dosyasından, Bölüm 10 şekillerini "
+  "`~/anomali_kayit` altındaki ham kayıtlardan okur, dolayısıyla hiçbir sayı elle "
+  "girilmemiştir:")
+code("python3 docs/sekil_uret.py     # -> docs/figures/*.png\n"
+     "python3 docs/rapor_uret.py     # -> docs/UR10e_...Rapor.docx")
+p("Renkler bir veri görselleştirme referans paletinin ilk üç kategorik yuvasından "
+  "alınmıştır; bu üçlü, renk körlüğü ayırt edilebilirliği için tüm-çift sınamasını "
+  "geçmektedir. Kesinlik/duyarlılık gibi farklı birimli iki ölçüt hiçbir şekilde tek "
+  "eksende üst üste bindirilmemiş, ayrı panellere ayrılmıştır (Şekil 10.3).")
+
+table(
+    ["Dosya (`user_interface`)", "Satır", "İşlev"],
+    [["`app.py` (579–819)", "241", "`AnomalyCollector`, `/api/anomaly/events`, "
+                                   "`/api/anomaly/label`"],
+     ["`static/js/anomaly.js`", "464", "canlı grafik, ipucu kutusu, mandal, olay tablosu"],
+     ["`static/css/anomaly.css`", "161", "sekmenin biçemi"],
+     ["`templates/index.html`", "—", "üçüncü sekme ve `#view-anomaly` görünümü"]],
+    caption="Tablo 13.2. Operatör arayüzü tarafı (Bölüm 10.7). Bu dosyalar "
+            "`anomaly_detection` paketine değil, laboratuvarın mevcut kontrol panosuna "
+            "aittir; dedektör düğümü arayüz olmadan da tam işlevlidir.",
     widths=[7.4, 1.8, 6.2], num_from=1)
 p("Paket, geliştirme sırasında kullanılan `ur10e_anomaly_detection` ile birleştirilmiş "
   "ve tek bir `anomaly_detection` ament_python paketine indirgenmiştir. Model, "
