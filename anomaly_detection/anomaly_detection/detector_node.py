@@ -77,6 +77,12 @@ class AnomalyDetectorNode(Node):
         p("fusion_config", f"{DEFAULT_BASE}/fusion_v2/fusion_config.json")
         p("current_to_torque", f"{DEFAULT_BASE}/current_to_torque.json")
         p("residual_calibration", f"{DEFAULT_BASE}/residual_calibration_clean.json")
+        # Boş bırakılırsa sürtünme terimi UYGULANMAZ. Modeller sürtünme çıkarılmış
+        # kalıntıyla eğitildiyse bu parametre doldurulmalıdır.
+        p("friction_model", "")
+        # Boş/-1 = fusion_config.json ne diyorsa. Saha dağıtımında rejim eşiği
+        # önerilir; gerekçesi detector.py'de ölçümleriyle birlikte.
+        p("regime_threshold", "auto")
         p("solver_resources", f"{DEFAULT_BASE}/resources")
         p("joint_states_topic", "/joint_states")
         p("wrench_topic", "/force_torque_sensor_broadcaster/wrench")
@@ -130,6 +136,9 @@ class AnomalyDetectorNode(Node):
             fusion_config=g("fusion_config"),
             current_to_torque=g("current_to_torque"),
             residual_calibration=g("residual_calibration"),
+            friction_model=(str(g("friction_model")) or None),
+            regime_threshold=({"auto": None, "true": True, "false": False}
+                              .get(str(g("regime_threshold")).lower(), None)),
             solver=ur10_solver_py.InverseDynamicsSolverUR10(),
             stride=int(g("stride")),
             fts_frame=str(g("fts_frame")),
@@ -239,9 +248,86 @@ class AnomalyDetectorNode(Node):
                 "t_ros,s_kal,s_ham,z_kal,z_ham,birlesik,thr_mutlak,thr_uyarlanabilir,"
                 "hit_mutlak,hit_uyarlanabilir,hit_kal,hit_ham,hareket,qd_tepe,"
                 "taban_n,donmus,alarm\n")
+        self._write_run_meta(d, ts)
         self.get_logger().info(
             f"Kayıt: {d}/olaylar_{ts}.jsonl"
             + (f" + skorlar_{ts}.csv" if want_scores else " (skor CSV kapalı)"))
+
+    def _write_run_meta(self, d: Path, ts: str) -> None:
+        """
+        Oturumun KÖKENİNİ yazar: hangi modeller, hangi eşikler, sürtünme var mı.
+
+        Bu dosya olmadan bir kayıt altı ay sonra çözümlenemez. Diskte artık birden
+        çok model kuşağı ve iki eşik kuralı duruyor; hangisinin koştuğunu yalnız
+        parametre yolundan çıkarmak güvenilmez, çünkü yollar taşınır ve dizinler
+        üzerine yazılır. Makalenin gerçek hücre bölümündeki model uyuşmazlığı tam
+        olarak bu boşluktan doğmuştu: ölçüm alındı, hangi modelle alındığı sonradan
+        ancak dolaylı olarak çıkarılabildi.
+        Bu yüzden yapılandırma yolla DEĞİL, içerik ve karma olarak saklanır.
+        """
+        import hashlib
+        import subprocess
+
+        def digest(path) -> dict:
+            try:
+                p_ = Path(path)
+                if p_.is_dir():
+                    p_ = p_ / "model.onnx"
+                h = hashlib.sha256(p_.read_bytes()).hexdigest()[:16]
+                return {"path": str(path), "sha256_16": h, "bytes": p_.stat().st_size}
+            except Exception as e:                       # kayıt asla düşürmemeli
+                return {"path": str(path), "error": str(e)}
+
+        det = self.det
+        g = lambda k: self.get_parameter(k).value       # noqa: E731
+        meta = {
+            "timestamp": ts,
+            "node": "detector_node",
+            "residual_model": digest(g("residual_model_dir")),
+            "raw_model": digest(g("raw_model_dir")),
+            "fusion_config_path": str(g("fusion_config")),
+            "current_to_torque": digest(g("current_to_torque")),
+            "residual_calibration": digest(g("residual_calibration")),
+            "friction_model": digest(g("friction_model")) if g("friction_model") else None,
+            "friction_applied": det.friction is not None,
+            "w_res": det.w_res, "w_raw": det.w_raw,
+            "regime_threshold": det.regime_threshold,
+            "threshold_global": det.thr_fused,
+            "threshold_by_regime": (None if det.thr_regime is None else
+                                    {"static": det.thr_regime[0],
+                                     "moving": det.thr_regime[1]}),
+            "motion_qd_min": det.motion_qd_min,
+            "residual_theta": det.ae_res.threshold,
+            "raw_theta": det.ae_raw.threshold,
+            "stride": det.stride,
+            "adaptive": det.adaptive, "adaptive_k": det.adaptive_k,
+            "adaptive_window": det.adaptive_window,
+            "freeze_timeout": det.freeze_timeout,
+            "providers": [det.ae_res.provider, det.ae_raw.provider],
+            "joint_states_topic": str(g("joint_states_topic")),
+            "wrench_topic": str(g("wrench_topic")),
+        }
+        # Yapılandırmanın kendisi gömülür: dosya sonradan değişirse kayıt yine okunur.
+        try:
+            meta["fusion_config"] = json.loads(
+                Path(str(g("fusion_config"))).read_text(encoding="utf-8"))
+        except Exception as e:
+            meta["fusion_config"] = {"error": str(e)}
+        try:
+            meta["git_commit"] = subprocess.run(
+                ["git", "-C", str(Path(__file__).resolve().parent), "rev-parse", "HEAD"],
+                capture_output=True, text=True, timeout=5).stdout.strip() or None
+        except Exception:
+            meta["git_commit"] = None
+        try:
+            (d / f"kosu_{ts}.json").write_text(
+                json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+            self.get_logger().info(
+                f"Köken: {d}/kosu_{ts}.json  "
+                f"(w={det.w_res:.2f}, sürtünme={'var' if det.friction else 'yok'}, "
+                f"eşik={'rejim' if det.regime_threshold else 'global'})")
+        except Exception as e:
+            self.get_logger().error(f"kosu_{ts}.json yazılamadı: {e}")
 
     def _event(self, kind: str, **kw) -> None:
         if self.f_events is None:

@@ -15,7 +15,8 @@ Hesap zinciri (245.pdf Denklem 1–3)
     τ_ölç   = i [A] · nm_per_amp            ← akım→tork (quasi-statik yerçekimi kalibrasyonu)
     q̈       = SG türevi (merkezli, 51/3)     ← 25 örnek gecikme yaratır, bilerek
     τ_model = FMU ters dinamik (q, q̇, q̈)
-    r_top   = τ_ölç − τ_model − b
+    τ_f     = Fc·tanh(q̇/eps) + Fv·q̇        ← sürtünme, ÇÖZÜCÜNÜN DIŞINDA
+    r_top   = τ_ölç − τ_model − b − τ_f
     r_dis   = J(q)ᵀ · (R₀₆(q) · F_KTS)       ← wrench tool0'dan tabana döndürülür
     r_ic    = r_top − r_dis
 
@@ -79,10 +80,17 @@ class OnlineFeatureExtractor:
     nm_per_amp   : (6,) akım→tork katsayıları [Nm/A]  — current_to_torque.json
     offset_b     : (6,) τ_ölç − τ_model sabit sapması [Nm] — residual_calibration*.json
     fts_frame    : "tool" (UR sürücüsünün yayınladığı, doğru olan) veya "base"
+    friction     : friction_model.json içeriği veya None. Ters dinamik çözücüde
+                   sürtünme modeli YOK (500 pozda sürtünme vektörü birebir sıfır
+                   ölçüldü). FMU gerçek robotla doğrulandığı için ona DOKUNULMUYOR;
+                   terim kalıntı tanımının dışına ekleniyor. Katsayılar yalnız
+                   eğitim koşularından uydurulur (generate_residuals.py --friction fit)
+                   ve burada BİREBİR aynı formülle uygulanır — aksi hâlde model
+                   canlıda eğitimde görmediği bir kalıntı görür.
     """
 
     def __init__(self, solver, nm_per_amp, offset_b=None, dt=0.002,
-                 sg_window=51, sg_poly=3, fts_frame="tool"):
+                 sg_window=51, sg_poly=3, fts_frame="tool", friction=None):
         if sg_window % 2 == 0:
             raise ValueError("sg_window tek sayı olmalı")
         self.solver = solver
@@ -96,6 +104,18 @@ class OnlineFeatureExtractor:
         # Merkezli SG türev çekirdeği: q̈ = coeffs · q̇[pencere]  (doğrudan iç çarpım)
         self.sg = savgol_coeffs(sg_window, sg_poly, deriv=1, delta=dt, use="dot")
         self._buf: deque = deque(maxlen=self.sg_window)
+        # Sürtünme: çevrimdışı hattaki generate_residuals.py ile AYNI ifade.
+        # tanh(q̇/eps), keskin sign(q̇) yerine bilerek kullanılıyor — işaret
+        # fonksiyonu sıfır geçişinde süreksiz ve bu robot düşük hızda çok zaman
+        # geçiriyor; keskin sign her yön değişiminde kalıntıya bir basamak, yani
+        # tam da anomali sandığımız şeyi enjekte ederdi.
+        if friction is None:
+            self.fric_fc = self.fric_fv = None
+            self.fric_eps = None
+        else:
+            self.fric_fc = np.asarray(friction["Fc"], dtype=np.float64).reshape(6)
+            self.fric_fv = np.asarray(friction["Fv"], dtype=np.float64).reshape(6)
+            self.fric_eps = float(friction["eps"])
 
     # ── durum ──
     @property
@@ -142,11 +162,14 @@ class OnlineFeatureExtractor:
             w[:3] = R06 @ wr[:3]
             w[3:] = R06 @ wr[3:]
         r_ext = J.T @ w
-        r_tot = tau - tau_model - self.b
+        tau_fric = (np.zeros(6) if self.fric_fc is None
+                    else np.tanh(qd / self.fric_eps) * self.fric_fc + qd * self.fric_fv)
+        r_tot = tau - tau_model - self.b - tau_fric
         r_int = r_tot - r_ext
 
         return {
             "q": q, "qd": qd, "qdd": qdd, "tau": tau, "tau_model": tau_model,
+            "tau_fric": tau_fric,
             "wrench": wr, "r_total": r_tot, "r_ext": r_ext, "r_int": r_int,
             # Model girdileri — models.py'deki RESIDUAL_COLS / RAW_COLS sırasıyla
             "residual_vec": np.concatenate([r_int, r_ext]),           # 12

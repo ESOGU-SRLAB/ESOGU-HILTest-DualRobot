@@ -61,6 +61,7 @@ class OnnxAE:
         self.n_feat = int(meta["features"])
         self.threshold = float(meta["threshold"])
         self.name = model_dir.name
+        self.meta = meta
         self.provider = self.sess.get_providers()[0]
 
     def score(self, window: np.ndarray) -> float:
@@ -82,19 +83,45 @@ class FusionDetector:
 
     def __init__(self, residual_model_dir, raw_model_dir, fusion_config,
                  current_to_torque, residual_calibration, solver,
+                 friction_model: str | None = None,
                  stride: int = 25, fts_frame: str = "tool",
                  providers: list[str] | None = None,
+                 regime_threshold: bool | None = None,
                  adaptive: bool = True, adaptive_window: int = 600,
                  adaptive_k: float = 8.0, adaptive_warmup: int = 200,
                  freeze_timeout: float = 3.0, motion_qd_min: float = 0.02):
         ctt = json.loads(Path(current_to_torque).read_text(encoding="utf-8"))
         rc = json.loads(Path(residual_calibration).read_text(encoding="utf-8"))
         self.trusted = list(ctt["trusted"])
+        # Sürtünme katsayıları çevrimdışı hattan gelir ve BURADA aynı formülle
+        # uygulanır. Model sürtünmesi çıkarılmış kalıntıyla eğitildiyse ve düğüm
+        # çıkarmazsa, aradaki fark sabit bir yanlılık olarak her karara girer;
+        # bu yüzden eğitim parquet'i ile bu dosya birlikte taşınmalıdır.
+        fric = None
+        if friction_model:
+            fp = Path(friction_model)
+            if fp.exists():
+                fric = json.loads(fp.read_text(encoding="utf-8"))
+            else:
+                raise FileNotFoundError(
+                    f"friction_model={friction_model} bulunamadı. Modeller sürtünme "
+                    f"çıkarılmış kalıntıyla eğitildiyse bu dosya ŞART.")
+        self.friction = fric
         self.extractor = OnlineFeatureExtractor(
-            solver, ctt["nm_per_amp"], offset_b=rc["b"], fts_frame=fts_frame)
+            solver, ctt["nm_per_amp"], offset_b=rc["b"], fts_frame=fts_frame,
+            friction=fric)
 
         self.ae_res = OnnxAE(residual_model_dir, RESIDUAL_COLS, providers)
         self.ae_raw = OnnxAE(raw_model_dir, RAW_COLS, providers)
+        # Sürtünme uyuşmazlığı sessiz bir hatadır: model sürtünme çıkarılmış
+        # kalıntıyla eğitilip düğüm çıkarmazsa (ya da tersi) fark her karara
+        # sabit bir yanlılık olarak girer ve hiçbir yerde hata gibi görünmez.
+        want = bool(self.ae_res.meta.get("friction_applied"))
+        if want != (fric is not None):
+            raise ValueError(
+                f"sürtünme uyuşmazlığı: model friction_applied={want}, "
+                f"düğüme verilen friction_model={'var' if fric else 'yok'}. "
+                f"Eğitim ve çıkarım aynı kalıntı tanımını kullanmalı.")
         if self.ae_res.window != self.ae_raw.window:
             raise ValueError("İki modelin pencere boyutu farklı — birleşim yapılamaz.")
         self.window = self.ae_res.window
@@ -112,6 +139,28 @@ class FusionDetector:
                 f"  evaluate_fusion.py'yi yeniden çalıştırıp güncel config'i üret.")
         self.w_res, self.w_raw = float(fc["w_kal"]), float(fc["w_ham"])
         self.thr_fused = float(fc["fused_threshold"])
+        # ── Rejim-koşullu eşik ─────────────────────────────────────────────
+        # Temiz birleşik skor hareket rejimine göre bimodaldır: doğrulamada duran
+        # pencerelerin medyanı 0,0012, hareketlilerinki 0,1784. Doğrulama kümesinin
+        # %86'sı duran pencere olduğu için TEK global P97, esasen duran robotun
+        # gürültüsünün 97. persentilidir. Gerçek hücrede muayene çevrimi ağırlıklı
+        # hareketli olduğu için o eşik yedi kat düşük kaldı (2026-08-21 kaydı).
+        #
+        # Ölçüldü (5 tohum, test kümesi hareketli payı %14→%90 taranarak):
+        #   global : yanlış alarm %1,9 → %5,7,  F1 0,824 → 0,708
+        #   rejim  : yanlış alarm %4,8 → %1,6,  F1 0,772 → 0,782  (düz)
+        # Eşleşen döngüde global daha iyi; döngü kayınca rejim öngörülebilir.
+        # Saha için rejim, offline tablo için global. Varsayılan: config ne diyorsa.
+        reg = fc.get("threshold_by_regime")
+        self.thr_regime = (None if not reg else
+                           (float(reg["static"]), float(reg["moving"])))
+        if regime_threshold is None:
+            regime_threshold = bool(fc.get("regime_threshold", False))
+        if regime_threshold and self.thr_regime is None:
+            raise ValueError(
+                f"{fusion_config}: regime_threshold istendi ama dosyada "
+                f"'threshold_by_regime' yok. evaluate_v3.py'yi yeniden çalıştır.")
+        self.regime_threshold = bool(regime_threshold)
         self.expected = fc.get("expected", {})
         # Her nedensel ölçek bir AFFİN dönüşüm:  z = (S − lo)/span.
         #   theta      : lo = 0,   span = θ           → z = 1 "modelin kendi eşiğinde"
@@ -211,7 +260,10 @@ class FusionDetector:
         z_raw = (s_raw - self.raw_lo) / self.raw_span
         fused = self.w_res * z_res + self.w_raw * z_raw
 
-        hit_abs = bool(fused > self.thr_fused)
+        thr_abs = self.thr_fused
+        if self.regime_threshold:
+            thr_abs = self.thr_regime[1] if moving else self.thr_regime[0]
+        hit_abs = bool(fused > thr_abs)
         thr_ad = float("inf")
         hit_ad = False
         if self.adaptive and len(self._hist) >= self.adaptive_warmup:
@@ -238,7 +290,9 @@ class FusionDetector:
             "baseline_n": len(self._hist),
             "s_residual": s_res, "s_raw": s_raw,
             "z_residual": z_res, "z_raw": z_raw,
-            "fused": fused, "threshold": self.thr_fused,
+            "fused": fused, "threshold": thr_abs,
+            "threshold_regime": ("moving" if moving else "static"
+                                 ) if self.regime_threshold else "global",
             "adaptive_threshold": thr_ad,
             "detected": detected,
             "hit_absolute": hit_abs, "hit_adaptive": hit_ad,
