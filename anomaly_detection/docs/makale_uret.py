@@ -14,6 +14,7 @@ Output: docs/ESOGU_MMF_Makale.docx
 Figures come from docs/figures/ and are produced by makale_figurler.py.
 """
 import copy
+import os
 from pathlib import Path
 
 from docx import Document
@@ -25,7 +26,35 @@ from docx.shared import Cm, Pt, RGBColor
 
 HERE = Path(__file__).resolve().parent
 PKG = HERE.parent
-TEMPLATE = PKG / "backup_anomaly_detection" / "Dosya.docx"
+
+
+def find_backup():
+    """`backup_anomaly_detection` dizinini bul.
+
+    Yedek 28.08.2026'da paketin dışına alındı; paketin çalışma zamanı ona
+    bağlı DEĞİL, ama makale üreteçleri bağlı (dergi şablonu, çevrimdışı
+    skorlar, bildiri PDF'i). Konumu sabitlemek yerine aranıyor; taşınırsa
+    `AD_BACKUP` ile gösterilebilir.
+    """
+    env = os.environ.get("AD_BACKUP")
+    adaylar = ([Path(env).expanduser()] if env else []) + [
+        PKG / "backup_anomaly_detection",              # eski yer (paket içi)
+        Path.home() / "Desktop" / "backup_anomaly_detection",
+        Path.home() / "backup_anomaly_detection",
+        PKG.parent / "backup_anomaly_detection",       # colcon_ws/src/ altında
+    ]
+    for c in adaylar:
+        if (c / "Dosya.docx").is_file():
+            return c
+    raise SystemExit(
+        "backup_anomaly_detection bulunamadı. Bakılan yerler:\n  "
+        + "\n  ".join(str(c) for c in adaylar)
+        + "\nDoğru yeri AD_BACKUP ile verin, ör.:\n"
+          "  AD_BACKUP=~/Desktop/backup_anomaly_detection python3 makale_uret.py")
+
+
+BACKUP = find_backup()
+TEMPLATE = BACKUP / "Dosya.docx"
 FIG = HERE / "figures"
 OUT = HERE / "ESOGU_MMF_Makale.docx"
 

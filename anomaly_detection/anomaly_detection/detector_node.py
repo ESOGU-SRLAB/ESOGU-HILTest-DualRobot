@@ -82,18 +82,46 @@ def _default_base() -> str:
 DEFAULT_BASE = _default_base()
 
 
+def _cell_or_offline_config():
+    """Dağıtım varsayılanı: gerçek hücrede kalibre edilmiş birleşim config'i.
+
+    Çevrimdışı türetilen eşik bu donanıma taşınmıyor — bu çalışmanın merkezî
+    bulgusu (21.08.2026 v2: 0,6436 → 18,0; 26.08.2026 v3: 0,8553 ile kararların
+    %58'i alarm). Bu yüzden hücre config'i VARSA o seçilir; yoksa çevrimdışı
+    karşılığına düşülür ve durum gürültülü biçimde bildirilir, çünkü o dosyayla
+    alınan bir ölçüm saha ölçümü değildir.
+    """
+    base = Path(DEFAULT_BASE) / "fusion_v3"
+    cell = base / "fusion_config_cell.json"
+    if cell.is_file():
+        return cell
+    print("\n" + "!" * 72 +
+          f"\nHÜCRE KALİBRASYONU YOK: {cell}\n"
+          "  Çevrimdışı türetilen eşiğe düşülüyor. O eşik bu donanıma\n"
+          "  TAŞINMIYOR — 26.08.2026'da kararların %58'i alarm oldu.\n"
+          "  calibrate_cell.py ile temiz bir hücre koşusundan üretin.\n"
+          + "!" * 72 + "\n", file=sys.stderr)
+    return base / "fusion_config.json"
+
+
 class AnomalyDetectorNode(Node):
 
     def __init__(self):
         super().__init__("ur10e_anomaly_detector")
 
         p = self.declare_parameter
-        # VARSAYILAN: v3. Koşu-ayrık bölme, sürtünme düzeltmeli kalıntı,
-        # rejim-koşullu eşik. v2 artefaktları pakette duruyor ama yalnız
-        # bildirinin erratum yeniden üretimi içindir; dağıtımda kullanılmaz.
+        # v3 TEK KUŞAK. Koşu-ayrık bölme, sürtünme düzeltmeli kalıntı,
+        # rejim-koşullu eşik. v2 artefaktları 28.08.2026'da pakettten çıkarıldı
+        # (backup_anomaly_detection/); aşağıdaki fusion_v2 yoklaması yalnız o
+        # tarihten ESKİ bir kurulumu yakalamak için duruyor.
         p("residual_model_dir", f"{DEFAULT_BASE}/residual_ae_v3")
         p("raw_model_dir", f"{DEFAULT_BASE}/raw_ae_v3")
-        p("fusion_config", f"{DEFAULT_BASE}/fusion_v3/fusion_config.json")
+        # Varsayılan, launch dosyasıyla AYNI olmalı: gerçek hücrede kalibre
+        # edilmiş config. `ros2 run ... detector` ile doğrudan çalıştıran biri
+        # aksi hâlde sessizce çevrimdışı eşiği alır — o eşikle 26.08.2026'da
+        # kararların %58'i alarm oldu. Çevrimdışı karşılığı istemek için
+        # açıkça fusion_config.json verilmeli (launch: cell_calibrated:=false).
+        p("fusion_config", str(_cell_or_offline_config()))
         p("current_to_torque", f"{DEFAULT_BASE}/current_to_torque.json")
         p("residual_calibration", f"{DEFAULT_BASE}/residual_calibration_fric.json")
         # Boş bırakılırsa sürtünme terimi UYGULANMAZ. Modeller sürtünme çıkarılmış

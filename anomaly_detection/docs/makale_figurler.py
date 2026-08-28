@@ -3,15 +3,19 @@
 """
 Figures for the ESOGÜ MMF journal article (English).
 
-Output: docs/figures/fig1..fig6.png  (300 dpi, sized for a 180 mm text width)
+Output: docs/figures/fig1..fig4.png  (300 dpi, sized for a 180 mm text width)
+        fig5_collision.png is cropped by hand from a UI screenshot, not here.
 
 Data sources
 ------------
-Offline  : backup_anomaly_detection/anomaly_detection/fusion_v2/scores.npz
-           + anomaly_detection/fusion_v2/fusion_config.json
+Offline  : backup_anomaly_detection/anomaly_detection/fusion_v3_s1/scores.npz
+           (seed 1 = deployed seed; see fusion_v3/KOKEN.md)
 Real cell: ~/anomali_kayit/**/skorlar_*.csv, olaylar_*.jsonl
 Photo    : extracted from the reference conference paper (belgeler/245.pdf, Fig. 1)
-Screenshot: docs/figures/real_system.png (cropped here, chrome removed)
+Screenshot: docs/figures/_arsiv/real_system.png (cropped here, chrome removed)
+
+NOT: fig_unseen(), fig_real_cell() ve fig_interface() bir önceki sürümün
+şekilleridir; makalenin 5 şekli main() tarafından üretilenlerdir.
 
 No number in these figures is hand-entered; every value is recomputed from the
 sources above. The three categorical hues are the first three slots of the
@@ -33,7 +37,10 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 HERE = Path(__file__).resolve().parent
 FIG = HERE / "figures"
 PKG = HERE.parent
-BACKUP = PKG / "backup_anomaly_detection" / "anomaly_detection"
+# Yedek 28.08.2026'da paketin dışına alındı; yeri sabit değil, aranıyor.
+# Taşınırsa AD_BACKUP ile gösterilir (bkz. makale_uret.find_backup).
+from makale_uret import find_backup                                   # noqa: E402
+BACKUP = find_backup() / "anomaly_detection"
 NPZ = BACKUP / "fusion_v3_s1" / "scores.npz"      # koşu-ayrık test kümesi
 RESULTS = BACKUP / "fusion_v3_s1" / "results.json"
 BILDIRI = BACKUP / "belgeler" / "245.pdf"
@@ -464,7 +471,8 @@ def fig_real_cell():
     if trial is None or lock is None or moving is None:
         return
 
-    cfg = json.load(open(PKG / "fusion_v2" / "fusion_config.json", encoding="utf-8"))
+    cfg = json.load(open(BACKUP / "fusion_v2" / "fusion_config_paket.json",
+                        encoding="utf-8"))
     th_fmu = cfg["fused_threshold_fmu"]
     th_real = cfg["fused_threshold"]
 
@@ -556,7 +564,7 @@ def fig_real_cell():
 # Figure 6 — operator interface
 # ═════════════════════════════════════════════════════════════════════
 def fig_interface():
-    src = FIG / "real_system.png"
+    src = FIG / "_arsiv" / "real_system.png"
     if not src.exists():
         print("  !! missing real_system.png", file=sys.stderr)
         return
@@ -572,7 +580,7 @@ def fig_interface():
     ax.set_axis_off()
     for side in ax.spines.values():
         side.set_visible(False)
-    save(fig, "fig7_interface.png")
+    save(fig, "_arsiv/fig7_interface.png")  # makalede kullanilmiyor
 
 
 def main():

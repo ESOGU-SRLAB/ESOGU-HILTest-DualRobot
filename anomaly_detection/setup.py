@@ -28,17 +28,16 @@ setup(
         assets("residual_ae_v3"),
         assets("raw_ae_v3"),
         assets("fusion_v3"),
-        # v2 — bildirinin erratum yeniden üretimi için KALIYOR, dağıtımda kullanılmaz.
-        assets("residual_ae_v2"),
-        assets("raw_ae_v2"),
-        assets("fusion_v2"),
+        # v2 artefaktları 28.08.2026'da pakettten çıkarıldı; bildirinin erratum
+        # yeniden üretimi backup_anomaly_detection/anomaly_detection/ altında
+        # durur (raw_ae_v2/, residual_ae_v2/, fusion_v2/, reproduce_erratum.sh).
         assets("resources"),
         assets("resources/schemas"),
         # Modeller sürtünme çıkarılmış kalıntıyla eğitildi; friction_model.json
         # kurulmazsa düğüm başlamaz (detector.py sürtünme uyuşmazlığında hata verir).
         ("share/" + package_name,
-         ["current_to_torque.json", "residual_calibration_clean.json",
-          "residual_calibration_fric.json", "friction_model.json"]),
+         ["current_to_torque.json", "residual_calibration_fric.json",
+          "friction_model.json"]),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
