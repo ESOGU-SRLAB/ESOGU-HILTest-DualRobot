@@ -89,7 +89,8 @@ class FusionDetector:
                  regime_threshold: bool | None = None,
                  adaptive: bool = True, adaptive_window: int = 600,
                  adaptive_k: float = 8.0, adaptive_warmup: int = 200,
-                 freeze_timeout: float = 3.0, motion_qd_min: float = 0.02):
+                 freeze_timeout: float = 3.0, motion_qd_min: float = 0.02,
+                 regime_qd_min: float | None = None):
         ctt = json.loads(Path(current_to_torque).read_text(encoding="utf-8"))
         rc = json.loads(Path(residual_calibration).read_text(encoding="utf-8"))
         self.trusted = list(ctt["trusted"])
@@ -211,6 +212,15 @@ class FusionDetector:
         # medyan 0,0037, hareketli medyan 1,4866). Karar üretimi hareketten BAĞIMSIZ
         # sürer -- sıkışma anında robot yavaşlıyor, orada kör kalınamaz.
         self.motion_qd_min = float(motion_qd_min)
+        # AYRI eşik: uyarlanabilir taban çizgisinin kapısı ile REJİM seçimi farklı
+        # kavramlar ve varsayılanları çakışıyordu. Taban çizgisi kapısı düğümde
+        # bilerek -1 (yani hep açık) olabiliyor; rejim eşiği ise çevrimdışı
+        # değerlendirmedeki 0,02 ile BİREBİR aynı olmak zorunda, yoksa canlıda
+        # her pencere "hareketli" sayılır ve duran kol hiç kullanılmaz.
+        # Değer öncelikle fusion_config.json'dan gelir (evaluate_v3.py oraya yazar).
+        self.regime_qd_min = float(
+            regime_qd_min if regime_qd_min is not None
+            else fc.get("motion_qd_min", 0.02))
         self._qd_peak = 0.0                   # karar penceresi içindeki maks |q̇|
 
     @property
@@ -252,7 +262,8 @@ class FusionDetector:
             return None
         self._since = 0
         qd_peak, self._qd_peak = self._qd_peak, 0.0
-        moving = qd_peak > self.motion_qd_min
+        moving = qd_peak > self.motion_qd_min          # uyarlanabilir taban kapısı
+        in_motion = qd_peak > self.regime_qd_min       # eşik rejimi (çevrimdışıyla aynı)
 
         s_res = self.ae_res.score(np.stack(self.res_buf))
         s_raw = self.ae_raw.score(np.stack(self.raw_buf))
@@ -262,7 +273,7 @@ class FusionDetector:
 
         thr_abs = self.thr_fused
         if self.regime_threshold:
-            thr_abs = self.thr_regime[1] if moving else self.thr_regime[0]
+            thr_abs = self.thr_regime[1] if in_motion else self.thr_regime[0]
         hit_abs = bool(fused > thr_abs)
         thr_ad = float("inf")
         hit_ad = False
@@ -286,12 +297,12 @@ class FusionDetector:
             self._hist.append(fused)
 
         return {
-            "moving": moving, "qd_peak": qd_peak, "frozen": frozen,
+            "moving": in_motion, "qd_peak": qd_peak, "frozen": frozen,
             "baseline_n": len(self._hist),
             "s_residual": s_res, "s_raw": s_raw,
             "z_residual": z_res, "z_raw": z_raw,
             "fused": fused, "threshold": thr_abs,
-            "threshold_regime": ("moving" if moving else "static"
+            "threshold_regime": ("moving" if in_motion else "static"
                                  ) if self.regime_threshold else "global",
             "adaptive_threshold": thr_ad,
             "detected": detected,

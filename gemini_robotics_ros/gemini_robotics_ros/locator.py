@@ -33,6 +33,7 @@ from sensor_msgs.msg import CameraInfo, Image, PointCloud2
 import tf2_ros
 
 from . import depth_render
+from . import telemetry
 from .er_client import Detection, ERClientBase
 from .geometry import point_from_cloud, point_from_depth, rotate_vector, transform_point
 from .grasp import (
@@ -138,6 +139,8 @@ class GeminiLocator:
         self._patch_min_points = int(patch_min_points)
 
         self._lock = threading.Lock()
+        # Model çağrısı sayacı: kaydedilen kareyi sonuç satırıyla eşler.
+        self._query_seq = 0
         self._image: Optional[Image] = None
         self._cloud: Optional[PointCloud2] = None
         self._depth: Optional[Image] = None
@@ -370,7 +373,8 @@ class GeminiLocator:
                 detection.u, detection.v, er_shape, cloud.width, cloud.height
             )
             surface = self._surface_at(cloud, u_c, v_c, source_frame,
-                                       measure_payload=measure_payload)
+                                       measure_payload=measure_payload,
+                                       label=detection.label)
             if surface is not None:
                 result["surface"] = surface
 
@@ -392,7 +396,7 @@ class GeminiLocator:
 
     def _surface_at(
         self, cloud: PointCloud2, u: int, v: int, source_frame: str,
-        measure_payload: bool = True,
+        measure_payload: bool = True, label: str = "",
     ) -> Optional[Dict[str, Any]]:
         """(u, v) çevresine düzlem oturtup world frame'inde normal ve kavrama pozu üretir."""
         points = gather_patch_points(cloud, u, v, self._patch_radius_px)
@@ -467,6 +471,35 @@ class GeminiLocator:
 
         payload = self._measure_payload(cloud, u, v, patch, source_frame,
                                         enabled=measure_payload)
+
+        # ÖLÇÜM KAYDI: buradaki sayılar zaten hesaplanıyor ama şimdiye kadar
+        # yalnız log satırlarında kalıyordu. Yamanın kaç noktayla başlayıp
+        # bantta kaça düştüğü, artığın kaç mm olduğu ve normalin oturtulup
+        # oturtulmadığı, makalede doğrudan raporlanan büyüklüklerdir.
+        telemetry.emit(
+            "surface",
+            label=str(label),
+            u=int(u), v=int(v),
+            patch_points=int(getattr(patch, "patch_points", 0)),
+            band_points=int(patch.inliers),
+            rms_residual_mm=round(patch.rms_residual * 1000.0, 3),
+            extent_mm=round(patch.extent * 1000.0, 1),
+            normal_measured=[normal_world[0], normal_world[1], normal_world[2]],
+            normal_used=[snapped[0], snapped[1], snapped[2]],
+            normal_deviation_deg=round(float(deviation), 3),
+            snapped=bool(self._normal_snap_deg > 0.0
+                         and deviation <= self._normal_snap_deg),
+            snap_tolerance_deg=float(self._normal_snap_deg),
+            # payload None ise ölçüm reddedilmiş, config'teki boyuta
+            # düşülmüştür; kayıtta bu ayrım korunur, yoksa ölçülen ile
+            # varsayılan boyut sonradan birbirinden ayrılamaz.
+            payload_size=([round(v * 1000.0, 1) for v in payload["size_measured"]]
+                          if isinstance(payload, dict)
+                          and payload.get("size_measured") else None),
+            payload_pixels=(payload.get("pixels")
+                            if isinstance(payload, dict) else None),
+            payload_source=("measured" if isinstance(payload, dict) else "config"),
+        )
 
         return {
             "payload": payload,
@@ -585,11 +618,19 @@ class GeminiLocator:
             )
             return []
 
+        self._begin_query("point", query)
         try:
             detections = self._er.point(image_bgr, query, max_items=max_items)
         except Exception as exc:
             self._node.get_logger().error(f"ER sorgusu başarısız ({query!r}): {exc}")
+            self._emit_query("point", query, image_bgr, None, error=str(exc))
             return []
+
+        # Kayıt, tespit 3B'ye çevrilMEDEN önce yapılır: modelin ham çıktısı ile
+        # zincirin sonucu ayrı sorulardır ve ikisi ayrı ayrı raporlanmalıdır.
+        # Boş sonuç da kaydedilir; "model hiçbir şey bulamadı" bu çalışmada
+        # ölçülen bir olaydır (kayıtlı koşuda bırakma hedefinde yaşandı).
+        self._emit_query("point", query, image_bgr, detections)
 
         if not detections:
             self._node.get_logger().info(f"ER hiçbir şey bulamadı: {query!r}")
@@ -618,8 +659,75 @@ class GeminiLocator:
         if image_bgr is None:
             self._node.get_logger().warn("ER görüntüsü üretilemedi.")
             return None
+        self._begin_query("plan", command)
         try:
-            return self._er.plan(image_bgr, command)
+            plan = self._er.plan(image_bgr, command)
         except Exception as exc:
             self._node.get_logger().error(f"ER planlaması başarısız ({command!r}): {exc}")
+            self._emit_query("plan", command, image_bgr, None, error=str(exc))
             return None
+        self._emit_query("plan", command, image_bgr, None, plan=plan)
+        return plan
+
+    def _begin_query(self, call: str, query: str) -> None:
+        """Çağrıdan HEMEN ÖNCE: kayıt düğümü o anki kareleri diske yazsın.
+
+        Kareler sonuç geldiğinde yazılamaz. Model çağrısı saniyeler sürüyor ve
+        bu sürede derinlik akışı ilerliyor; sonuçla birlikte kaydedilen kare,
+        modele gerçekten gönderilen kare olmazdı. Çevrimdışı ablasyonun anlamı
+        da tam olarak buna bağlı.
+        """
+        self._query_seq += 1
+        # Render parametreleri de gider: kayıt düğümü AYNI kareden başka
+        # render biçimlerini üretip yan yana saklıyor (görüntü karşılaştırması).
+        # Parametreler tarama pozuna göre değişiyor (yükseklik penceresi), yani
+        # kayıt tarafında sabit varsayılamaz.
+        telemetry.emit("er_query_begin", call=call, seq=self._query_seq,
+                       query=str(query), render_mode=self._render_mode,
+                       er_image_source=self._er_image_source,
+                       render_min_m=self._render_min_m,
+                       render_max_m=self._render_max_m,
+                       render_height_lo_m=self._render_height_lo_m,
+                       render_height_hi_m=self._render_height_hi_m,
+                       depth_scale_m=self._depth_scale_m,
+                       depth_is_radial=self._depth_is_radial)
+
+    def _emit_query(self, call: str, query: str, image_bgr, detections,
+                    error: str = "", plan=None) -> None:
+        """Model çağrısını ölçüm veri yoluna yazar.
+
+        Gecikme istemciden okunur (`last_latency_s`): burada yeniden ölçmek
+        render süresini de içine katardı ve makalede bildirilen "model çağrısı
+        gecikmesi" ile aynı şey olmazdı.
+        """
+        try:
+            height, width = image_bgr.shape[:2]
+        except Exception:  # noqa: BLE001
+            height = width = None
+        items = []
+        for det in (detections or []):
+            raw = getattr(det, "raw", None)
+            items.append({
+                "label": getattr(det, "label", ""),
+                "u": getattr(det, "u", None),
+                "v": getattr(det, "v", None),
+                # Modelin KENDİ çıktısı (0-1000 normalize); piksel değeri
+                # görüntü boyutuna bağlı olduğu için tek başına yeniden
+                # kullanılamaz, ham nokta ise kullanılabilir.
+                "point": (raw or {}).get("point") if isinstance(raw, dict) else None,
+            })
+        latency = getattr(self._er, "last_latency_s", None)
+        telemetry.emit(
+            "er_query",
+            call=call,
+            seq=self._query_seq,
+            query=str(query),
+            latency_s=round(latency, 3) if isinstance(latency, (int, float)) else None,
+            n_detections=(len(detections) if detections is not None else 0),
+            image_w=width, image_h=height,
+            render_mode=self._render_mode,
+            er_image_source=self._er_image_source,
+            detections=items,
+            plan=plan,
+            error=error,
+        )

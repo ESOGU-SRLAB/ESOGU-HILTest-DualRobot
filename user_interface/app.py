@@ -597,9 +597,16 @@ class AnomalyCollector:
        window.
     """
 
-    THR_FUSED = 18.0        # value baked into fusion_config.json
-    THR_RESIDUAL = 1.6008
-    THR_RAW = 3.4461
+    # Fallbacks only. The live thresholds arrive with every decision on
+    # ~/detail (fused threshold at index 5) and are adopted as soon as the
+    # first message lands. Hard-coding them was a real defect: the fused
+    # threshold moved 18.0 -> 1.4 when the detector was recalibrated on the
+    # cell, and the residual/raw thresholds moved 1.6008/3.4461 -> 1.3723/0.3934
+    # with the v3 models. A UI that keeps the old constants draws the alarm
+    # line in the wrong place and mislabels which model drove a decision.
+    THR_FUSED = 1.4
+    THR_RESIDUAL = 1.3723
+    THR_RAW = 0.3934
 
     def __init__(self, socketio_instance, buffer_seconds=60):
         self.socketio = socketio_instance
@@ -645,6 +652,12 @@ class AnomalyCollector:
                 if len(d) >= 15:
                     rec["moving"] = bool(d[11])
                     rec["qd_peak"] = d[12]
+                # Adopt the live threshold. It is regime-dependent on the
+                # detector side (a static and a moving value), so the constant
+                # above can never be right for both; whatever the node applied
+                # to THIS decision is the only correct alarm line to draw.
+                if rec["thr"] > 0:
+                    self.THR_FUSED = rec["thr"]
                 with self._lock:
                     self.samples.append(rec)
                     self._n_msgs += 1

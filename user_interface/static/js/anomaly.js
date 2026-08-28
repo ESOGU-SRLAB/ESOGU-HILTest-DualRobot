@@ -17,11 +17,14 @@
 // hold it for at least this window.
 const AN_LATCH_MS = 5000;
 
-// Fixed y-axis frame. Normal operation sits near ~1.3 and the absolute threshold
-// at 18, so 0-30 keeps both on screen with the alarm line in view and stops the
-// axis from breathing on every frame. Spikes above it grow the axis (see
-// anAxisMax) instead of being clipped.
-const AN_Y_BASE = 30;
+// The y-axis frame is derived from the LIVE threshold, not fixed. It used to be
+// a constant 30, chosen when normal operation sat near 1.3 and the threshold at
+// 18. Recalibrating the detector on the cell moved the threshold to 1.4 and
+// normal operation to ~0.13; on a 0-30 axis the whole trace collapses onto the
+// bottom edge and the chart shows nothing. Framing on the threshold keeps the
+// alarm line at a fixed height on screen whatever the score scale happens to be.
+const AN_Y_FACTOR = 1.7;      // threshold sits at ~59% of the frame height
+const AN_Y_FALLBACK = 30;     // only until the first threshold arrives
 
 let anChart = null;
 let anBuilt = false;
@@ -30,7 +33,10 @@ let anLastEventFetch = 0;
 
 // Last thresholds seen on the socket; the tooltip and the point styling need
 // them outside of onAnomalyUpdate.
-let anThr = { fused: 18.0, residual: 1.6008, raw: 3.4461 };
+// Fallbacks only; replaced by the values the server sends with every update.
+// These moved when the detector was recalibrated (fused 18.0 -> 1.4) and when
+// the v3 models landed (residual 1.6008 -> 1.3723, raw 3.4461 -> 0.3934).
+let anThr = { fused: 1.4, residual: 1.3723, raw: 0.3934 };
 
 // Last event list fetched from /api/anomaly/events, used to enrich the tooltip
 // of a hovered spike with the logged event behind it.
@@ -38,12 +44,23 @@ let anEvents = [];
 
 // ----------------------------------------------------------------- chart ----
 
-// Grow the axis past AN_Y_BASE only when a sample needs it, snapping to round
-// steps so a spike scrolling through the window does not make it twitch.
+// Base frame: tall enough to show the alarm line with headroom above it.
+function anAxisBase() {
+    const t = (anThr && isFinite(anThr.fused) && anThr.fused > 0)
+        ? anThr.fused : null;
+    return t ? t * AN_Y_FACTOR : AN_Y_FALLBACK;
+}
+
+// Grow the axis past the base only when a sample needs it, snapping to round
+// steps so a spike scrolling through the window does not make it twitch. The
+// step is scaled to the threshold, otherwise a 10-unit step is invisible on a
+// 1.4-unit axis and enormous on an 18-unit one.
 function anAxisMax(peak) {
-    if (!isFinite(peak) || peak <= AN_Y_BASE) return AN_Y_BASE;
+    const base = anAxisBase();
+    if (!isFinite(peak) || peak <= base) return base;
     const target = peak * 1.1;
-    const step = target <= 100 ? 10 : target <= 500 ? 50 : 100;
+    const mag = Math.pow(10, Math.floor(Math.log10(target)));
+    const step = target / mag > 5 ? mag : mag / 2;
     return Math.ceil(target / step) * step;
 }
 
@@ -97,7 +114,7 @@ function buildAnomalyChart() {
                 y: {
                     type: "linear",
                     min: 0,
-                    max: AN_Y_BASE,
+                    max: anAxisBase(),
                     title: { display: true, text: "fused score", color: "#64748b" },
                     ticks: { color: "#64748b", maxTicksLimit: 7 },
                     grid: { color: "rgba(255,255,255,0.04)" },
@@ -148,9 +165,9 @@ function anTipDetails(items) {
     if (!rec) return [];
 
     const lines = [
-        `threshold:  ${anThr.fused.toFixed(2)}`,
-        `residual:   ${fmtNum(rec.s_kal)}  (θ ${anThr.residual.toFixed(2)})`,
-        `raw:        ${fmtNum(rec.s_ham)}  (θ ${anThr.raw.toFixed(2)})`,
+        `threshold:  ${fmtNum(anThr.fused)}`,
+        `residual:   ${fmtNum(rec.s_kal, anThr.residual)}  (θ ${fmtNum(anThr.residual, anThr.residual)})`,
+        `raw:        ${fmtNum(rec.s_ham, anThr.raw)}  (θ ${fmtNum(anThr.raw, anThr.raw)})`,
     ];
 
     const rules = [];
@@ -209,13 +226,17 @@ function onAnomalyUpdate(msg) {
     }
 
     anThr = {
-        fused: (msg.thresholds && msg.thresholds.fused) || 18.0,
-        residual: (msg.thresholds && msg.thresholds.residual) || 1.6008,
-        raw: (msg.thresholds && msg.thresholds.raw) || 3.4461,
+        // Sunucu eşikleri her güncellemede gönderiyor; buradaki yedekler yalnız
+        // ilk mesaj gelmeden önce geçerli ve modülün başındaki değerlerle AYNI
+        // olmalı — ayrı yerlerde iki farklı yedek tutmak, biri güncellenip
+        // diğeri unutulduğunda alarm çizgisini sessizce yanlış yere koyar.
+        fused: (msg.thresholds && msg.thresholds.fused) || anThr.fused,
+        residual: (msg.thresholds && msg.thresholds.residual) || anThr.residual,
+        raw: (msg.thresholds && msg.thresholds.raw) || anThr.raw,
     };
     const thr = anThr.fused;
-    setText("an-thr", thr.toFixed(2));
-    setText("an-thr-head", String(thr));
+    setText("an-thr", fmtNum(thr));
+    setText("an-thr-head", fmtNum(thr));
     setText("an-hz", msg.decision_hz ? msg.decision_hz.toFixed(1) + " Hz" : "—");
 
     // No numeric fused-score readout here on purpose. The socket pushes at 5 Hz
@@ -226,6 +247,11 @@ function onAnomalyUpdate(msg) {
     if (cur && msg.connected) {
         updateBar("res", cur.s_kal, anThr.residual);
         updateBar("raw", cur.s_ham, anThr.raw);
+        // Model eşikleri şablonda SABİT metin olarak duruyordu (1.60 / 3.45 —
+        // v2 değerleri). v3'te 1.3723 / 0.3934 oldu ve ekran görüntüleri yanlış
+        // eşikle çıktı. Artık sunucunun gönderdiği değerden yazılıyor.
+        setText("an-thr-res", fmtNum(anThr.residual, anThr.residual));
+        setText("an-thr-raw", fmtNum(anThr.raw, anThr.raw));
     } else {
         clearBar("res");
         clearBar("raw");
@@ -287,7 +313,7 @@ function updateBar(which, val, thr) {
     const ratio = val / thr;
     fill.style.width = Math.min(ratio * 100, 100).toFixed(1) + "%";
     fill.classList.toggle("over", ratio > 1);
-    out.textContent = val.toFixed(2);
+    out.textContent = fmtNum(val);
 }
 
 // ----------------------------------------------------------- event table ----
@@ -328,8 +354,8 @@ function renderEvents(events) {
     }
 
     body.innerHTML = events.map((e) => {
-        const peak = e.tepe == null ? "—" : Number(e.tepe).toFixed(2);
-        const entry = e.giris == null ? "—" : Number(e.giris).toFixed(2);
+        const peak = fmtNum(e.tepe);
+        const entry = fmtNum(e.giris);
         const duration = e.sure_s == null
             ? (e.devam ? "ongoing" : "—")
             : Number(e.sure_s).toFixed(2) + " s";
@@ -389,8 +415,19 @@ function labelText(etiket) {
          : etiket === "yanlis" ? "false alarm" : "unlabelled";
 }
 
-function fmtNum(v) {
-    return v == null ? "—" : Number(v).toFixed(2);
+// Decimal places scaled to the score magnitude. Two places was fine when the
+// fused threshold was 18 and normal operation sat near 1.3, but the detector
+// was recalibrated on the cell: the threshold is now 1.4 and normal operation
+// ~0.13, where "0.05" and "0.13" throw away most of the resolution the operator
+// needs to see a trend.
+function anPrec(ref) {
+    const r = (isFinite(ref) && ref > 0) ? ref : 1;
+    return r >= 10 ? 2 : r >= 1 ? 3 : 4;
+}
+
+function fmtNum(v, ref) {
+    return v == null ? "—"
+        : Number(v).toFixed(anPrec(ref === undefined ? anThr.fused : ref));
 }
 
 // "2026-08-21T12:12:43" -> "21/08/2026 12:12:43". Parsed with a regex rather

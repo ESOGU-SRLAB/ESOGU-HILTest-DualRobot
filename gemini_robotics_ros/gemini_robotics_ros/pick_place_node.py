@@ -42,6 +42,7 @@ from rclpy.node import Node
 from rclpy.time import Time
 from std_msgs.msg import String
 
+from . import telemetry
 from .er_client import make_er_client
 from .grasp import (
     approach_quaternion, is_graspable, quaternion_to_matrix,
@@ -475,6 +476,9 @@ class GeminiPickPlaceNode(Node):
         ) if self.validate_targets else None
 
         self.status_pub = self.create_publisher(String, "/gemini/status", 10)
+        # Ölçüm veri yolu. Kayıt düğümü ayakta değilse de zararsızdır: yayın
+        # yapılır, dinleyen olmaz. Görev akışına hiçbir noktada bağlı değildir.
+        telemetry.install(self)
 
         # pymoveit2'nin bayrakları name-mangled: MoveIt2.__is_executing ->
         # _MoveIt2__is_executing. _wait_motion() bunları yokluyor (bkz. aşağısı).
@@ -539,6 +543,34 @@ class GeminiPickPlaceNode(Node):
             f"kavrayıcı={self.gripper_type} | uç={end_effector} | "
             f"ER görüntüsü={er_source}"
             + (f"/{render_mode}" if er_source == "render" else "")
+        )
+
+        # KOŞU KÜNYESİ. Kayıt düğümü bu olayla iki şey öğrenir: (1) kap ucunu
+        # hangi TF çerçevesinden izleyeceğini - önek çözümlendiği için bunu
+        # kendi başına bilemez; (2) o koşuda hangi eşiklerin geçerli olduğunu.
+        # İkincisi olmadan, parametreleri sonradan değiştirilmiş bir depodan
+        # eski bir kaydın hangi ayarlarla alındığı bir daha bulunamaz.
+        telemetry.emit(
+            "config",
+            mode=mode,
+            er_client=er_client.name,
+            moveit_backend=self.moveit_backend,
+            gripper=self.gripper_type,
+            end_effector=self.end_effector,
+            world_frame=self.world_frame,
+            er_image_source=er_source,
+            render_mode=render_mode,
+            tool_tip_offset=[float(v) for v in self.tool_tip_offset],
+            tool_approach_vector=[float(v) for v in self.tool_approach_vector],
+            approach_candidates=list(self.approach_candidates),
+            place_approach_candidates=list(self.place_approach_candidates),
+            place_clearance=self.place_clearance,
+            lift_distance=self.lift_distance,
+            touch_offset=self.touch_offset,
+            waypoint_settle_sec=self.waypoint_settle_sec,
+            scan_settle_sec=self.scan_settle_sec,
+            scan_poses=[p.get("name", "") for p in self.scan_poses],
+            dry_run=self.dry_run,
         )
 
     # --- durum yayını -----------------------------------------------------
@@ -727,6 +759,25 @@ class GeminiPickPlaceNode(Node):
                     f"{err[2]*1000:+.0f}) mm")
         if len(parts) > 1:
             self.get_logger().info(" ".join(parts))
+
+        # ÖLÇÜM KAYDI. Bu sayı, kolun kendisine verilen poza ne kadar oturduğunu
+        # verir - yani İZLEME doğruluğunu, mutlak doğruluğu değil. Şimdiye kadar
+        # yalnız yukarıdaki log satırında duruyordu ve ancak terminal kaydından
+        # gözle okunabiliyordu.
+        error_mm = None
+        if tip is not None and expected_tip is not None:
+            delta = (tip - np.asarray(expected_tip, dtype=np.float64)) * 1000.0
+            error_mm = [round(float(v), 2) for v in delta]
+        telemetry.emit(
+            "arrival",
+            label=label,
+            target=([round(float(v), 5) for v in np.asarray(expected_tip,
+                                                            dtype=np.float64)]
+                    if expected_tip is not None else None),
+            tf=[round(float(v), 5) for v in tip] if tip is not None else None,
+            error_mm=error_mm,
+            rail=round(float(rail), 5) if rail is not None else None,
+        )
 
     def _frame_position_for_tip(
         self, tip_position: Point3, quat_xyzw: Sequence[float]
@@ -1098,16 +1149,30 @@ class GeminiPickPlaceNode(Node):
                     self.get_logger().warn(
                         f"SCAN[{pose['name']}] pozuna gidilemedi, atlanıyor."
                     )
+                    telemetry.emit("scan_pose", index=index,
+                                   name=pose.get("name", ""), reached=False,
+                                   role=label, query=str(query))
                     continue
+            # Hangi tarama pozunda sorulduğu, sonuçtan ayrı bir bulgudur:
+            # kayıtlı koşuda bırakma hedefi ilk pozda BULUNAMAMIŞ, ikinci
+            # pozda tek seferde bulunmuştu. Bu ayrım yalnız buradan çıkar.
+            telemetry.emit("scan_pose", index=index, name=pose.get("name", ""),
+                           reached=True, role=label, query=str(query))
             detection = self._select_target(query, need_grasp=need_grasp)
             if detection is not None:
                 self.get_logger().info(
                     f"{label}: '{query}' -> SCAN[{pose['name']}] pozunda bulundu"
                 )
+                telemetry.emit("scan_result", index=index,
+                               name=pose.get("name", ""), role=label,
+                               query=str(query), found=True)
                 return detection
             self.get_logger().info(
                 f"{label}: '{query}' SCAN[{pose['name']}] pozunda yok"
             )
+            telemetry.emit("scan_result", index=index,
+                           name=pose.get("name", ""), role=label,
+                           query=str(query), found=False)
         return None
 
     def _in_workspace(self, position: Point3) -> bool:

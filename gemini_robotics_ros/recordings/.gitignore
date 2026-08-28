@@ -1,0 +1,5 @@
+# Koşu kayıtları depoya girmez: her koşu onlarca MB ham derinlik ve PNG üretir.
+# Klasörün kendisi dursun ki kayıt düğümü ilk çalışmada yol aramasın.
+*
+!.gitignore
+!README.md

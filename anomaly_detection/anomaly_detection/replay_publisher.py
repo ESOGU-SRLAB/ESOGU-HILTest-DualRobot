@@ -37,7 +37,23 @@ from sensor_msgs.msg import JointState
 
 from .features import JOINT_SUFFIX
 
-BASE = "/home/cem/colcon_ws/src/anomaly_detection"
+def _base() -> str:
+    """
+    Varsayılan dosyaların kök dizini — kurulu share, yoksa kaynak ağacı.
+
+    Sabit mutlak yol bırakılmaz: paket başka bir kullanıcıya/makineye
+    kopyalandığında (cem → ifarlab) tek satır bile düzenlenmemeli.
+    detector_node'dan import ETMİYORUZ, çünkü o onnxruntime'ı da yükler ve
+    bu düğümün ona ihtiyacı yok.
+    """
+    try:
+        from ament_index_python.packages import get_package_share_directory
+        return get_package_share_directory("anomaly_detection")
+    except Exception:
+        return str(Path(__file__).resolve().parent.parent)
+
+
+BASE = _base()
 
 
 class ReplayPublisher(Node):

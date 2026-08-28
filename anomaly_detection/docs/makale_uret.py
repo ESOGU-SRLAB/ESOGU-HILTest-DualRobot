@@ -102,6 +102,12 @@ def set_cols(paragraph, num):
 # building blocks
 # ═════════════════════════════════════════════════════════════════════
 class Builder:
+    # Şekil ve tablo başlıklarının dil etiketi. Türkçe sürüm bunları
+    # "Şekil"/"Tablo" olarak geçersiz kılar; böylece yerleşim kodu tek yerde
+    # kalır ve iki sürüm arasında biçim farkı oluşmaz.
+    FIG_LABEL = "Figure"
+    TAB_LABEL = "Table"
+
     def __init__(self, doc, anchor):
         self.doc = doc
         self.anchor = anchor          # section-0 closing paragraph
@@ -214,8 +220,17 @@ class Builder:
                          space_before=6, space_after=0)
 
     # -- equations -----------------------------------------------------
-    def equation(self, text):
-        self.eq_no += 1
+    def equation(self, text, label=None):
+        """
+        `label` verilirse numara sayaçtan ALINMAZ ve sayaç ilerlemez.
+
+        Ana denklemler arasına ek bir denklem sokmak gerektiğinde (ör. kalıntı
+        tanımının sürtünmeli hâli) "2a"/"2b" gibi bir etiket kullanılır; aksi
+        hâlde sonraki bütün denklem numaraları kayar ve metindeki her atıf
+        sessizce yanlışa döner.
+        """
+        if label is None:
+            self.eq_no += 1
         self.para("", style="Normal", space_before=0, space_after=0)
         p = self.para(style="Eşitlik", space_before=0, space_after=0)
         pf = p.paragraph_format
@@ -226,9 +241,9 @@ class Builder:
         style_run(p.add_run("\t" if text.startswith("\t") else ""), BODY_PT)
         self.rich(p, text, size=BODY_PT, italic=True)
         style_run(p.add_run("\t"), BODY_PT)
-        style_run(p.add_run(f"({self.eq_no})"), BODY_PT)
+        style_run(p.add_run(f"({label or self.eq_no})"), BODY_PT)
         self.para("", style="Normal", space_before=0, space_after=0)
-        return self.eq_no
+        return label or self.eq_no
 
     # -- figures -------------------------------------------------------
     def figure(self, filename, caption, wide=True, width_cm=None):
@@ -249,7 +264,7 @@ class Builder:
         cap = self.para("", style="Normal", align=WD_ALIGN_PARAGRAPH.CENTER,
                         space_before=0, space_after=6, keep_wide=True)
         name, _, extra = caption.partition("|")
-        self.rich(cap, f"**Figure {self.fig_no}.** {name.strip()}",
+        self.rich(cap, f"**{self.FIG_LABEL} {self.fig_no}.** {name.strip()}",
                   size=SMALL_PT)
         if extra.strip():
             self.rich(cap, "  " + extra.strip(), size=SMALL_PT - 0.5,
@@ -270,7 +285,8 @@ class Builder:
         cap = self.para("", style="Normal", align=WD_ALIGN_PARAGRAPH.LEFT,
                         space_before=8, space_after=3, keep_with_next=True,
                         keep_wide=True)
-        self.rich(cap, f"**Table {self.tab_no}.** {caption}", size=SMALL_PT)
+        self.rich(cap, f"**{self.TAB_LABEL} {self.tab_no}.** {caption}",
+                  size=SMALL_PT)
 
         ncol = len(header)
         tbl = self.doc.add_table(rows=1 + len(rows), cols=ncol)
@@ -381,53 +397,52 @@ KEYWORDS_TR = ["Anomali tespiti", "İşbirlikçi robotlar", "LSTM özkodlayıcı
 ABSTRACT_EN = (
     "Early detection of anomalies in collaborative robots matters for operator "
     "safety and production continuity. Previous work introduced a score-level "
-    "fusion of a physics-informed residual autoencoder and a data-driven raw signal "
-    "autoencoder, evaluated entirely offline. This paper reports the path from "
-    "that result to a detector running on a physical UR10e cell. The pipeline "
-    "was rebuilt and audited at measurement level; seven findings are documented, "
-    "the decisive one being that the driver writes motor current, not torque, into "
-    "the effort field, so the previously published figures came from a mixed-unit "
-    "pipeline. That arrangement is reproduced explicitly and a corrected pipeline "
-    "is rebuilt on 600 continuous runs. Under the original protocol fusion still "
-    "outperforms both single models "
-    "(F1 0.792 against 0.613 and 0.579) and the fault-type asymmetry motivating "
-    "it is preserved. Reporting the evaluation split separately, however, shows "
-    "that four fifths of the evaluation windows were also training windows, and "
-    "that on windows never seen in training the two models exchange roles. The "
-    "detector was then implemented as a 500 Hz ROS 2 node and commissioned on the "
-    "robot over a two-hour session covering two production use cases with manually "
-    "provoked anomalies. The threshold derived from offline data proved seven times "
-    "too low, because the residual is pose dependent and spans three orders of "
-    "magnitude across operating regimes, and the adaptive alarm rule that helped "
-    "offline caught no verified event. The threshold was re-measured from "
-    "all logged decisions, after which the detector raises no false alarm in 37 "
-    "minutes of autonomous operation."
+    "fusion of a physics-informed residual autoencoder and a data-driven raw "
+    "signal autoencoder for a UR10e cobot, evaluated entirely offline. This "
+    "paper takes that framework as its starting point, extends it in four "
+    "directions and delivers it as a detector running on the physical cell. The "
+    "residual definition is completed with a friction term fitted outside the "
+    "validated inverse-dynamics solver, removing 87 % and 92 % of the residual "
+    "spread at the wrist joints. The evaluation is placed on a run-disjoint "
+    "footing with five training seeds, on which the fusion retains its "
+    "advantage over both single models (F1 0.791 against 0.627 and 0.614). A "
+    "physically consistent injection protocol, in which faults perturb only the "
+    "measured channels and the residual is recomputed, reduces the fusion "
+    "margin from +0.189 to -0.003 PR-AUC in every seed; the complementarity is "
+    "traced to one injected amplitude fifty-one times smaller than its physical "
+    "propagation. The detector was implemented as a 500 Hz ROS 2 node whose "
+    "feature engine matches the offline pipeline to floating-point rounding. On "
+    "hardware the offline-derived threshold did not transfer, because both "
+    "models operate far outside their training distribution and a five-per- "
+    "cent-weighted model supplied 29 % of the fused score. After recalibration "
+    "on the cell the detector caught three operator-confirmed collisions with "
+    "no false alarm, while a low-amplitude contact remained below normal "
+    "motion."
 )
 
 ABSTRACT_TR = (
-    "İşbirlikçi robotlarda anomalilerin erken tespiti operatör güvenliği ve üretim "
-    "sürekliliği açısından kritiktir. Önceki çalışmada, fizik tabanlı bir kalıntı "
-    "özkodlayıcısı ile veri güdümlü bir ham sinyal özkodlayıcısının skor düzeyinde "
-    "birleşimi sunulmuş ve yalnızca çevrimdışı değerlendirilmişti. Bu makale, o "
-    "sonuçtan gerçek bir UR10e hücresinde çalışan dedektöre uzanan sürecin tamamını "
-    "aktarmaktadır. Hat yeniden kurulmuş ve ölçüm düzeyinde denetlenmiştir; yedi "
-    "bulgu belgelenmiş olup belirleyici olanı, robot sürücüsünün effort alanına "
-    "tork değil motor akımı yazmasıdır — daha önce yayımlanan sayılar birimleri "
-    "karışık bir hattan gelmektedir. Bu düzen açıkça yeniden üretilmiş, düzeltilmiş "
-    "ve sızıntısız hat 600 kesintisiz koşu üzerinde kurulmuştur. Özgün "
-    "değerlendirme protokolü altında birleşim iki tekil modeli de geçmekte "
-    "(F1 0,792'ye karşılık 0,613 ve 0,579) ve arıza tipi asimetrisi korunmaktadır. "
-    "Buna karşılık bölünme ayrı raporlandığında, değerlendirme pencerelerinin beşte "
-    "dördünün aynı zamanda eğitim penceresi olduğu ve hiç görülmemiş pencerelerde "
-    "iki modelin rollerini değiştirdiği görülmektedir. Dedektör ardından 500 Hz'lik "
-    "bir ROS 2 düğümü olarak gerçeklenmiş ve iki üretim senaryosunun elle "
-    "kışkırtılan anomalilerle koşturulduğu iki saatlik bir oturumda devreye "
-    "alınmıştır. Çevrimdışı veriden türetilen eşik gerçek donanımda yedi kat düşük "
-    "kalmıştır; sebebi kalıntının poza bağlı olması ve rejimler arasında üç "
-    "büyüklük mertebesi değişmesidir. Çevrimdışı ortamda yardımcı olan uyarlanabilir "
-    "kural doğrulanmış hiçbir olayı yakalamamıştır. Eşik tüm karar kayıtlarından "
-    "yeniden ölçülmüş, sonrasında dedektör 37 dakikalık otonom çalışmada tek bir "
-    "yanlış alarm üretmemiştir."
+    "İşbirlikçi robotlarda anomalilerin erken tespiti operatör güvenliği ve "
+    "üretim sürekliliği açısından kritiktir. Önceki çalışmada, bir UR10e kobot "
+    "için fizik tabanlı kalıntı özkodlayıcısı ile veri güdümlü ham sinyal "
+    "özkodlayıcısının skor düzeyinde birleşimi sunulmuş ve yalnızca çevrimdışı "
+    "değerlendirilmişti. Bu makale o çerçeveyi başlangıç noktası alarak dört "
+    "yönde genişletmekte ve gerçek hücrede çalışan bir dedektör olarak teslim "
+    "etmektedir. Kalıntı tanımı, doğrulanmış ters dinamik çözücünün içermediği "
+    "sürtünme terimiyle tamamlanmış, bilek eklemlerinde kalıntı yayılımı %87 ve "
+    "%92 azalmıştır. Değerlendirme koşu-ayrık bölme ve beş eğitim tohumu "
+    "üzerine oturtulmuş, bu koşulda birleşim iki tekil modeli de geçmiştir (F1 "
+    "0,791'e karşılık 0,627 ve 0,614). Arızaların yalnız ölçülen kanallara "
+    "uygulandığı ve kalıntının yeniden hesaplandığı fiziksel olarak tutarlı bir "
+    "enjeksiyon protokolü ise birleşim marjını her tohumda +0,189'dan -0,003 "
+    "PR-AUC'ye indirmektedir; tamamlayıcılığın kaynağı, fiziksel yayılımından "
+    "elli bir kat küçük seçilmiş tek bir enjeksiyon genliğidir. Dedektör, "
+    "öznitelik motoru çevrimdışı hatla kayan nokta düzeyinde örtüşen 500 Hz'lik "
+    "bir ROS 2 düğümü olarak gerçeklenmiştir. Donanımda çevrimdışı türetilen "
+    "eşik taşınmamış; sebebi her iki modelin de eğitim dağılımının çok dışında "
+    "çalışması ve %5 ağırlıklı modelin birleşik skorun %29'unu sürüklemesidir. "
+    "Hücrede yeniden kalibrasyondan sonra dedektör, operatörce doğrulanmış üç "
+    "çarpışmayı yanlış alarm üretmeden yakalamış, düşük genlikli bir temas ise "
+    "normal hareketin altında kalmıştır."
 )
 
 
@@ -541,14 +556,17 @@ def body(b):
         "simultaneously with the robot."
     )
     b.p(
-        "This paper closes that item and presents a comprehensive empirical analysis "
-        "of the costs incurred by the transfer. The pipeline was rebuilt from "
-        "scratch, audited against the original at "
-        "measurement level rather than at claim level, corrected where the audit "
-        "found defects, implemented as a real-time Robot Operating System 2 (ROS 2) "
-        "node, and commissioned on a physical UR10e cell. Every stage produced "
-        "measurements that do not appear in the offline literature, and some of them "
-        "invert conclusions that the offline evaluation had supported."
+        "This paper closes that item. The framework of that study is taken as the "
+        "starting point and extended in four directions, and the result is delivered "
+        "as a detector running on the physical cell. The residual definition is "
+        "completed with the friction term the validated inverse-dynamics solver does "
+        "not contain; the evaluation is placed on a run-disjoint footing with five "
+        "training seeds so that every number carries an uncertainty; the fault "
+        "injection is made physically consistent, which turns out to change what the "
+        "fusion is worth; and the normalisation and threshold are given a form that "
+        "can be estimated without seeing the future, then re-estimated on the cell "
+        "when the offline values prove not to transfer. The detector was then "
+        "commissioned and validated against provoked collisions."
     )
     b.p(
         "The gap this study fills is therefore not a new architecture. Fusion "
@@ -556,26 +574,36 @@ def body(b):
         "evaluated on recorded data with injected faults. What is rarely reported is "
         "which parts of such a framework survive contact with hardware: whether the "
         "operating threshold transfers, whether the normalisation is even causal, "
-        "whether the auxiliary decision rules still help, and what the residual "
-        "actually does when the arm changes pose. This paper reports those "
-        "measurements for one complete system."
+        "whether the measured fusion advantage depends on how the faults were "
+        "injected, and what the detector can and cannot see once it is running. "
+        "This paper reports those measurements for one complete system, and states "
+        "the resulting working envelope from both sides."
     )
     b.p("The contributions are:")
     for item in (
-        "an audit of an independently rebuilt pipeline against the reference study, "
-        "documenting seven measurable findings, of which five were corrected, one "
-        "was deliberately accepted and one is a typesetting inconsistency;",
-        "an explicit reproduction of the data path from which the previously "
-        "published figures originate, together with a corrected, physically "
-        "consistent and leakage-free pipeline and its re-evaluation;",
-        "a causal formulation of the fusion normalisation and an operating "
-        "threshold for the fused score, neither of which the offline method defines;",
+        "a residual definition completed with a Coulomb-plus-viscous friction term "
+        "fitted outside the validated solver, which removes 87 % and 92 % of the "
+        "residual spread at the two wrist joints where the inverse dynamics "
+        "previously contributed almost nothing;",
+        "a run-disjoint re-evaluation with five training seeds, so that the fusion "
+        "advantage is reported with an uncertainty rather than as a single number;",
+        "a physically consistent fault-injection protocol, and the measurement that "
+        "the fusion advantage reported under the inherited protocol disappears under "
+        "it — traced to a single injected amplitude fifty-one times smaller than its "
+        "physical propagation;",
+        "a causal formulation of the fusion normalisation and an operating threshold "
+        "for the fused score, neither of which the offline method defines, together "
+        "with the procedure that re-estimates both on the cell;",
         "a real-time ROS 2 implementation whose feature engine is numerically "
-        "identical to the offline pipeline, with a measured latency budget;",
-        "a commissioning report from a physical UR10e cell in which the "
-        "simulation-derived threshold is shown to be seven times too low, the "
-        "residual is shown to be pose dependent over three orders of magnitude, and "
-        "the adaptive alarm rule is shown to invert its usefulness.",
+        "identical to the offline pipeline, friction term included, with a measured "
+        "latency budget;",
+        "a commissioning report in which the offline-derived threshold is shown not "
+        "to transfer, the cause is traced to a normaliser rather than to the models, "
+        "and the deployed detector is validated against operator-confirmed "
+        "collisions with the sensitivity floor stated explicitly;",
+        "an audit of the data path carried out before the extension, whose findings "
+        "are corrected here and whose effect on the previously published figures is "
+        "documented in Section 4.5.",
     ):
         p = b.para("", style="Paragraf", align=WD_ALIGN_PARAGRAPH.JUSTIFY,
                    space_before=3, space_after=0)
@@ -583,10 +611,10 @@ def body(b):
         b.rich(p, "•  " + item)
     b.p(
         "The remainder of the paper is organised as follows. Section 2 reviews the "
-        "related literature. Section 3 describes the platform, the data, the audit "
-        "and the corrected pipeline, and the online implementation. Section 4 "
-        "presents the offline and the real-cell findings. Section 5 discusses them "
-        "and states the limitations, and Section 6 concludes."
+        "related literature. Section 3 describes the platform and the data, the "
+        "extended pipeline and the online implementation. Section 4 presents the "
+        "offline and the real-cell findings. Section 5 discusses them and states "
+        "the working envelope and the limitations, and Section 6 concludes."
     )
 
     # ──────────────────────────────────── 2. Literature review ───────
@@ -720,7 +748,7 @@ def body(b):
          ["Prepared samples", "342,480  (685 s of robot time)"],
          ["Interpolated samples", "5.02 %"],
          ["Run length (median / min / max)", "227 / 155 / 35,860"]],
-        widths=[4.9, 3.65], align_right=[1])
+        widths=[4.8, 3.55], align_right=[1])
 
     b.h2("3.3. Current-To-Torque Calibration")
     b.p(
@@ -821,16 +849,60 @@ def body(b):
         "the online engine through the same code path."
     )
     b.p(
-        "One property of the solver was measured and deliberately not corrected. "
+        "Two properties of the solver were measured and are not corrected inside it. "
         "Over 500 random joint poses the inertia matrix is asymmetric in every pose "
         "and its symmetric part is not positive definite, the friction vector is "
         "identically zero and no payload model is present. The solver had been "
-        "validated against the physical robot and was treated as fixed, so its cost "
-        "is reported instead of repaired: on wrist_2 and wrist_3 the standard "
+        "validated against the physical robot and is treated as fixed. Its cost is "
+        "therefore measured rather than hidden: on wrist_2 and wrist_3 the standard "
         "deviation of the model torque is only 10 % and 2 % of the measured torque "
-        "(0.095 and 0.030 Nm against 0.959 and 1.246 Nm). In those two channels the "
-        "residual is effectively the raw measurement and carries no model "
-        "information."
+        "(0.095 and 0.030 Nm against 0.959 and 1.246 Nm), so in those two channels "
+        "Equation (2) reduces to the measurement itself."
+    )
+    b.p(
+        "The absent friction term is added outside the solver rather than inside it, "
+        "which leaves the validated model untouched while restoring a component that "
+        "is large in a geared manipulator. Equation (2) becomes"
+    )
+    b.equation("r_total  =  τ_meas − τ̂_model − τ̂_f(q̇)", "2a")
+    b.p("with a two-parameter Coulomb-plus-viscous term per joint,")
+    b.equation("τ̂_f  =  F_c · tanh(q̇ / ε) + F_v · q̇", "2b")
+    b.p(
+        "where tanh replaces the sign function because sign(q̇) is discontinuous at "
+        "zero crossings and this robot spends most of its time at low speed; a sharp "
+        "sign injects a step into the residual at every reversal, which is precisely "
+        "the shape a detector is meant to flag. The smoothing width is ε = 0.02 rad/s. "
+        "Coefficients are fitted by robust least squares (three iterations of 3σ "
+        "clipping) on moving samples only and, decisively for the evaluation, "
+        "exclusively on the training runs of the split defined in Section 3.7. "
+        "Fitting them on all data would make the correction itself a leakage channel. "
+        "Table 3 lists the result."
+    )
+    b.table(
+        "Friction Coefficients, Fitted On Training Runs Only.",
+        ["Joint", "F_c [Nm]", "F_v [Nm·s/rad]", "R²", "σ(r) before", "σ(r) after", "Δ"],
+        [["shoulder_pan", "7.65", "35.76", "0.764", "13.20", "6.09", "−54 %"],
+         ["shoulder_lift", "8.78", "26.19", "0.799", "11.91", "4.98", "−58 %"],
+         ["elbow", "5.53", "19.97", "0.896", "7.66", "2.46", "−68 %"],
+         ["wrist_1", "0.95", "1.29", "0.379", "1.41", "0.75", "−47 %"],
+         ["wrist_2", "1.51", "1.58", "0.947", "1.53", "0.20", "−87 %"],
+         ["wrist_3", "1.38", "2.05", "0.974", "1.90", "0.15", "−92 %"]],
+        widths=[3.0, 2.1, 2.9, 1.9, 2.5, 2.4, 1.9], wide=True,
+        align_right=[1, 2, 3, 4, 5, 6],
+        note="σ(r) is the standard deviation of the total residual on moving samples "
+             "(|q̇| > 0.02 rad/s) before and after the term is subtracted. The "
+             "regression absorbs any velocity-correlated model error, not friction "
+             "alone; these are not claimed to be the true tribological coefficients. "
+             "The effect is largest exactly where the inverse dynamics contributes "
+             "least: on wrist_2 and wrist_3 the residual loses 87 % and 92 % of its "
+             "spread, so the admission above — that those channels carry no model "
+             "information — no longer holds once the term is included. Whether that "
+             "improves detection is a separate question, answered in Section 4.4."
+    )
+    b.p(
+        "The online feature engine applies the identical expression from the same "
+        "coefficient file, and the equivalence test of Section 3.9 is run with the "
+        "term active."
     )
 
     b.h2("3.5. Dual LSTM Autoencoders")
@@ -848,30 +920,42 @@ def body(b):
     b.p(
         "Windowing uses a stride of 25 samples, that is 75 % overlap. Two rules are "
         "enforced jointly: no window may span two runs, and windows containing "
-        "samples invalidated by the derivative edge margin are dropped. The "
-        "train/validation split is made at 80 %, but the cut is aligned to the "
-        "nearest run boundary. Without that alignment, overlapping windows of the "
-        "same run fall into both sets and the validation loss is systematically "
-        "optimistic. Table 3 reports the architectures and the training outcome."
+        "samples invalidated by the derivative edge margin are dropped. Training and "
+        "validation windows come from disjoint sets of physical runs (Section 3.7), "
+        "so no sample is shared between them. Each model is trained five times with "
+        "different seeds; every offline figure in this paper is reported as a mean "
+        "over those five runs with its standard deviation, because a single training "
+        "run cannot separate a difference between methods from the noise of "
+        "initialisation. Table 4 reports the architectures and the training outcome."
     )
     b.table(
-        "Model Architectures And Training Outcome On The Corrected Pipeline.",
+        "Model Architectures And Training Outcome (five seeds, mean ± s.d.).",
         ["", "Residual AE", "Raw AE"],
         [["Input channels", "12", "24"],
          ["Hidden / latent", "128 / 32", "256 / 64"],
          ["Parameters", "478,892", "1,907,032"],
-         ["Train / validation windows", "8,294 / 2,128", "8,294 / 2,128"],
-         ["Best epoch (early stop)", "21  (46)", "22  (47)"],
-         ["Best validation loss", "0.582", "0.930"],
-         ["Threshold θ (validation P97)", "1.6008", "3.4461"]],
-        widths=[3.75, 2.5, 2.3], align_right=[1, 2],
+         ["Train / val. windows", "6,756 / 2,162", "6,756 / 2,162"],
+         ["Best epoch", "86 ± 41", "83 ± 42"],
+         ["Best validation loss", "0.092 ± 0.016", "0.036 ± 0.005"],
+         ["Threshold θ (P97)", "0.887 ± 0.412", "0.412 ± 0.038"]],
+        widths=[2.95, 2.7, 2.7], align_right=[1, 2],
         note="Optimiser Adam (lr = 10⁻³, β = 0.9/0.999), batch size 256, gradient "
              "clipping at 1.0, ReduceLROnPlateau (factor 0.5, patience 8), early "
-             "stopping with patience 25 over at most 300 epochs; both models were "
-             "trained once, with a fixed seed, in under five minutes each on the "
-             "RTX 4060 laptop. The thresholds exceed those of the reference study "
-             "(0.420 and 0.854) because the residuals are now on a true "
-             "newton-metre scale.")
+             "stopping with patience 25 over at most 300 epochs; each model trains "
+             "in under a minute on the RTX 4060 laptop. Both validation losses are "
+             "far below those of the reference study (0.181 and 0.320), and the "
+             "reason is the composition of the validation set rather than a better "
+             "model: the sixteen validation runs were chosen to lie inside the "
+             "training joint range (Section 3.7), so validation resembles training "
+             "more closely than an index cut does. The friction term does not "
+             "explain it — the raw model never sees the residual channels and its "
+             "loss is 0.036 with and without the term, while the residual model's "
+             "loss is 0.092 with it against 0.062 without. A validation set that "
+             "resembles training gives a narrow distribution, and θ is a percentile "
+             "of that distribution; Section 4.7 measures what this costs on "
+             "hardware. Across seeds the residual threshold varies by 46 % of its "
+             "mean, the raw one by 9 %. Values here are five-seed means; Section 4.7 "
+             "quotes the deployed seed, whose thresholds are 1.3723 and 0.3934.")
 
     b.h2("3.6. Score-Level Fusion And Causal Normalisation")
     b.p(
@@ -879,13 +963,19 @@ def body(b):
     )
     b.equation("S_fused  =  w_res · z_res  +  w_raw · z_raw")
     b.p(
-        "with w_res + w_raw = 1 and the weight w_res swept over [0, 1] in steps of "
-        "0.05. The reference "
+        "with w_res + w_raw = 1. The weight is not tuned here: w_res = 0.95 is "
+        "adopted a priori from the reference study and no evaluation set is "
+        "consulted to choose it. This matters because the reference study selected "
+        "that value as the argmax of Best F1 over its own test set; fixing it "
+        "removes the selection entirely rather than moving it to another set. The "
+        "sweep over [0, 1] in steps of 0.05 is still run, but Section 4.3 reports it "
+        "as a sensitivity analysis, not as a search. The reference "
         "study normalises each score by a min–max transform whose bounds come from "
         "the fault-injected test set. That is not usable online for two reasons: the "
         "bounds contain future maxima, and those maxima are never seen in normal "
-        "operation. Measured consequence: because the test-set maxima are 4341 and "
-        "7752, the entire normal operating range compresses to the order of 10⁻⁴, "
+        "operation. Measured on that study's own test set, where the maxima are "
+        "4341 and 7752, the entire normal operating range compresses to the order "
+        "of 10⁻⁴, "
         "the fused threshold becomes stricter than either single threshold, and "
         "motor drift and encoder glitches are never detected at all."
     )
@@ -895,25 +985,63 @@ def body(b):
     )
     b.equation("z  =  (S − lo) / span")
     b.p(
-        "and two causal candidates for (lo, span) were measured against each other: "
-        "the scale z = S/θ, and the reference study's own min–max formula with the "
-        "bounds taken from clean validation windows rather than from the test set. "
-        "The two are practically equal (F1 0.791 against 0.792) and the second was "
-        "chosen, because it keeps the published formula and reduces the deviation "
-        "from the reference method to a change of bounding set only. The fused "
-        "operating threshold is then obtained by extending the study's own rule to "
-        "the fused score: it is the 97th percentile of the fused score on clean "
-        "validation windows, which on the offline data gives θ = 0.6436 and the "
-        "expected 3 % false-alarm rate."
+        "and the bounds are taken from clean validation windows rather than from the "
+        "test set. This keeps the published formula and reduces the deviation from "
+        "the reference method to a change of bounding set only. The fused operating "
+        "threshold extends the study's own rule to the fused score: the 97th "
+        "percentile on clean validation windows. Offline this gives the expected "
+        "3 % false-alarm rate. Section 4.7 shows that neither the bounds nor the "
+        "threshold survive the move to hardware, and Section 3.11 gives the "
+        "procedure that replaces them there."
     )
 
-    b.h2("3.7. Fault Injection And Evaluation Protocol")
+    b.h2("3.7. Data Split, Fault Injection And Evaluation Protocol")
+    b.p(
+        "The 600 physical runs are partitioned once, and every consumer reads the "
+        "same partition: the friction fit of Section 3.4, the autoencoder training "
+        "of Section 3.5, and the evaluation below. The partition is by run, not by "
+        "row index. The reference study cut the recording at a fixed fraction and "
+        "then built its test set from every window of the recording; because "
+        "training used only the first part, four fifths of its evaluation windows "
+        "were windows the models had already reconstructed. Measured on that "
+        "arrangement, the reconstruction error of clean windows inside the training "
+        "range was 0.007 against 0.486 outside it, a factor of seventy for both "
+        "models alike."
+    )
+    b.p(
+        "The run lengths make a naive split unusable: 521 of the 600 runs are "
+        "shorter than one second, while the 32 longest carry 54 % of the samples and "
+        "the single longest carries 10.5 %. Runs are therefore allocated in two "
+        "passes. Runs long enough to host a fault are distributed by count so that "
+        "each split receives its own independent fault events; the remaining short "
+        "runs then fill the sample quota. Table 5 gives the outcome. Joint-range "
+        "coverage was checked afterwards: validation and test lie inside the "
+        "training range on all six joints."
+    )
+    b.table(
+        "Run-Disjoint Split.",
+        ["Split", "Runs", "Samples", "Share", "Windows", "Fault hosts"],
+        [["Train", "489", "235,657", "68.8 %", "6,756", "74"],
+         ["Validation", "16", "56,244", "16.4 %", "2,162", "16"],
+         ["Test", "95", "50,579", "14.8 %", "1,504", "16"]],
+        widths=[3.2, 2.4, 3.2, 2.6, 2.9, 3.6], wide=True,
+        align_right=[1, 2, 3, 4, 5],
+        note="Verified after allocation: zero samples are shared between any two "
+             "splits once window overlap is accounted for, and no window reaches "
+             "into a run belonging to another split. The clean-window score ratio "
+             "between test and training falls from the seventy of the reference "
+             "arrangement to 0.48.")
     b.p(
         "Ground-truth labels do not exist, so four synthetic fault scenarios are "
-        "injected in measurement space, listed in Table 4. Joint 3 (elbow) and joint "
-        "5 (wrist 2) are chosen because they carry the largest gravity load and the "
-        "widest motion range. A window is labelled anomalous when at least 10 % of "
-        "its samples overlap the fault mask."
+        "injected, listed in Table 6. Joint 3 (elbow) and joint 5 (wrist 2) are "
+        "chosen because they carry the largest gravity load and the widest motion "
+        "range. Faults are injected into every fault-hosting run of the target "
+        "split separately, so each scenario contributes 16 independent events to the "
+        "test set. Under the reference protocol the mask was a single contiguous "
+        "block over the concatenated recording, which gave one event per scenario "
+        "and, worse, tied each scenario to a fixed position in the recording. A "
+        "window is labelled anomalous when at least 10 % of its samples overlap the "
+        "fault mask."
     )
     b.table(
         "Synthetic Fault Scenarios.",
@@ -924,18 +1052,30 @@ def body(b):
          ["Encoder glitch", "Joint 5 position, step", "1.5 rad", "from 92 %"],
          ["Sensor noise", "All FTS channels, Gaussian noise", "3.5 N",
           "15–23 %"]],
-        widths=[2.05, 3.55, 1.5, 1.45],
-        note="Sensor noise is deliberately kept at a low amplitude so that it "
-             "affects the raw signal only; it is the scenario that tests "
-             "complementarity. In the corrected pipeline the amplitudes are "
-             "converted into measurement space through the calibration file, "
-             "because the channels are genuinely in newton metres.")
-
-    b.h2("3.8. Reproducing The Reference Pipeline")
+        widths=[2.0, 3.45, 1.5, 1.4],
+        note="Extent is expressed as a fraction of the run the fault is injected "
+             "into. The amplitudes above are those of the reference study and apply "
+             "to the measured channels.")
     b.p(
-        "Taken separately the audit findings are defects; taken together they form a "
-        "consistent pattern, and that pattern is testable. The hypothesis is that "
-        "the previously published numbers come from a pipeline with mixed units: "
+        "Two injection protocols are evaluated. The inherited protocol perturbs each "
+        "representation space separately with its own amplitude, so the residual "
+        "model receives a hand-chosen perturbation rather than one derived from the "
+        "measurement. The physical protocol perturbs only the measured channels and "
+        "recomputes the residual through the pipeline itself, so the disturbance in "
+        "the residual is whatever the inverse dynamics and the Jacobian transfer "
+        "produce. The calibration offset is frozen from the clean pipeline when the "
+        "residual is recomputed; refitting it on injected data shifts the residual "
+        "of untouched runs as well. Section 4.4 reports both protocols, because they "
+        "do not agree."
+    )
+
+    b.h2("3.8. Verifying Where The Earlier Figures Came From")
+    b.p(
+        "Before extending a result it is worth establishing what the earlier "
+        "numbers measured. The measurement-level checks of Sections 3.2 to 3.4 "
+        "point at a consistent arrangement, and that arrangement is testable. The "
+        "hypothesis is that the previously published figures come from a pipeline "
+        "with mixed units: "
         "τ_meas in amperes, τ̂_model in newton metres, r_ext in newton metres and "
         "computed with an unrotated wrench, the three subtracted directly, and fault "
         "amplitudes specified in newton metres added as bare numbers to ampere "
@@ -1043,127 +1183,178 @@ def body(b):
         "seconds, because the clearest verified real event of the campaign lasted "
         "0.25 s — five decisions — and level sampling at 5 Hz misses it entirely; in "
         "a controlled test with synthetic 0.25 s alarms, edge capture saw four "
-        "events out of four and level sampling only two. The vertical axis is linear "
-        "from 0 to 30 and grows in round steps when a peak exceeds it, because "
-        "normal operation sits near 1.3 while the threshold is at 18 and a "
-        "logarithmic axis visually flattens the region above the threshold, which is "
-        "the only region that matters. In the event table the peak score is the "
-        "primary column and the entry score is secondary, because reading an entry "
-        "value of 8.5 without seeing the peak of 90.55 led to a misjudged event "
-        "during commissioning. Operator labels are written atomically to a separate "
-        "file that the detector never touches, and they accumulate the retraining "
-        "set that Section 5 identifies as the next step."
+        "events out of four and level sampling only two. The vertical axis is "
+        "linear and framed on the live threshold rather than on a fixed range, "
+        "because the score scale changes when the detector is recalibrated and a "
+        "fixed frame leaves the whole trace flat against one edge; a logarithmic "
+        "axis was rejected because it visually flattens the region above the "
+        "threshold, which is the only region that matters. In the event table the "
+        "peak score is the primary column and the entry score is secondary, "
+        "because an entry value read without its peak led to a misjudged event "
+        "during commissioning — event 3 of Table 14 enters at 13.75 and peaks at "
+        "25.04."
+        "file that the detector never touches, and they accumulate the labelled set "
+        "on which Section 4.7 rests. Both the axis and the displayed per-model "
+        "thresholds are read from the live decision stream rather than compiled "
+        "in, so a recalibration cannot leave the display describing a "
+        "configuration that is no longer running."
+    )
+
+    b.h2("3.11. Threshold Calibration On The Cell")
+    b.p(
+        "The offline procedure of Section 3.6 fixes (lo, span) and θ from clean "
+        "validation windows. Section 4.7 shows that these do not transfer: the "
+        "models are far outside their training distribution during ordinary "
+        "operation of the real cell, so a threshold placed at the 97th percentile of "
+        "an offline distribution sits below the cell's normal range. The deployed "
+        "system therefore re-measures the same three quantities on the cell, using "
+        "the same formula and changing only the set they are estimated from — clean "
+        "decisions logged on the robot instead of clean validation windows."
+    )
+    b.p(
+        "Two details are forced by measurement. First, the scale is the 97th "
+        "percentile of each model's own clean scores, not the min–max range of the "
+        "reference formula: on the cell the min–max range is set by the payload "
+        "plateau of Section 4.7, which inflates the residual span to 30.8 and makes "
+        "an event of ordinary magnitude invisible. Second, the calibration run must "
+        "cover every task the cell performs. A calibration taken on the inspection "
+        "cycle alone left the pick-and-place task outside its range and the detector "
+        "alarmed on normal transport. The deployed configuration is calibrated on "
+        "15,627 clean decisions spanning both tasks."
     )
 
     # ──────────────────────────────────────────── 4. Findings ────────
     b.h1("4. Findings")
 
-    b.h2("4.1. Offline Performance Of The Corrected Pipeline")
+    b.h2("4.1. Offline Performance Of The Extended Pipeline")
     b.p(
-        "The corrected pipeline was evaluated on 41,688 test windows of which 3,623 "
-        "(8.7 %) are anomalous, a class balance consistent with the 8.0 % of the "
-        "reference study. Table 5 places the two side by side and Figure 3 shows the "
+        "The extended pipeline is evaluated on 6,016 test windows of which 553 "
+        "(9.2 %) are anomalous, drawn from 95 runs that contributed nothing to "
+        "training, to the friction fit, or to the choice of any threshold. Every "
+        "figure below is a mean over five training seeds with its standard "
+        "deviation. Table 7 gives the result and Figure 3 shows the "
         "corresponding curves."
     )
     b.table(
-        "Overall Performance Of The Corrected Pipeline, With The Reference Study "
-        "For Comparison.",
-        ["Model", "AUC", "ref.", "PR-AUC", "ref.", "Best F1", "ref."],
-        [["Residual LSTM AE", "0.812", "0.908", "0.553", "0.695", "0.584", "0.692"],
-         ["Raw LSTM AE", "0.837", "0.952", "0.627", "0.761", "0.647", "0.698"],
-         ["**Fusion (0.95/0.05)**", "**0.939**", "0.980", "**0.780**", "0.905",
-          "**0.800**", "0.859"],
-         ["Fusion MAX", "0.930", "0.976", "0.803", "0.889", "0.792", "0.824"],
-         ["Residual norm threshold", "0.646", "0.849", "0.383", "0.805", "0.398",
-          "0.707"],
-         ["Isolation Forest", "0.652", "0.688", "0.130", "0.459", "0.241", "0.547"],
-         ["One-Class SVM", "0.734", "0.815", "0.534", "0.816", "0.596", "0.760"]],
-        widths=[4.3, 1.5, 1.5, 1.6, 1.5, 1.6, 1.5], wide=True,
-        align_right=[1, 2, 3, 4, 5, 6],
-        note="The reference study also lists an OR row, with values identical to "
-             "its MAX row in all three metrics. OR is a decision-level combination: "
-             "it produces a binary outcome, not a ranking, so AUC, PR-AUC and Best "
-             "F1 are not defined for it, and the row in fact reports the MAX score. "
-             "The row is therefore omitted here; the operating-point behaviour of "
-             "the OR rule is reported in Section 4.2 instead, where its recall of "
-             "0.757 is meaningful. Best F1 is listed only for comparability with "
-             "the reference study: it is the maximum over all thresholds and so "
-             "requires the labels it is meant to predict, which is why Section 3.6 "
-             "derives a causal operating threshold instead. The baselines are "
-             "trained on the residual features.")
+        "Overall Performance On The Run-Disjoint Test Set (five seeds, mean ± s.d.).",
+        ["Model", "AUC", "PR-AUC", "Best F1"],
+        [["Residual LSTM AE", "0.878 ± 0.005", "0.653 ± 0.009", "0.628 ± 0.007"],
+         ["Raw LSTM AE", "0.870 ± 0.008", "0.668 ± 0.009", "0.697 ± 0.001"],
+         ["**Fusion (0.95/0.05)**", "**0.969 ± 0.004**", "**0.857 ± 0.009**",
+          "**0.821 ± 0.006**"],
+         ["Fusion MAX", "0.966 ± 0.004", "0.853 ± 0.010", "0.784 ± 0.012"],
+         ["Residual norm threshold", "0.758 ± 0.000", "0.485 ± 0.000",
+          "0.495 ± 0.000"],
+         ["Isolation Forest", "0.753 ± 0.008", "0.418 ± 0.008", "0.415 ± 0.008"],
+         ["One-Class SVM", "0.844 ± 0.001", "0.618 ± 0.001", "0.676 ± 0.000"]],
+        widths=[2.9, 1.9, 1.9, 1.65],
+        align_right=[1, 2, 3],
+        note="Figures from the earlier study are not tabulated beside these, "
+             "because that evaluation used a different and much larger window set "
+             "under a protocol whose evaluation windows overlapped its training "
+             "windows; Section 4.5 covers the comparison in one place. That study "
+             "also lists an OR row with values identical to its MAX row. OR "
+             "is a decision-level combination: it produces a binary outcome, not a "
+             "ranking, so AUC, PR-AUC and Best F1 are undefined for it and the row "
+             "in fact reports the MAX score. Its operating-point behaviour appears "
+             "in Section 4.2 instead. Best F1 is the maximum over all thresholds "
+             "and therefore requires the labels it is meant to predict; it is "
+             "listed only for comparability, which is why Section 3.6 defines a "
+             "causal operating threshold. Baselines are fitted on the clean "
+             "training runs.")
     b.figure(
         "fig3_pr_roc.png",
-        "Precision–Recall And ROC Curves Of The Corrected Pipeline | 41,688 test "
-        "windows, 8.7 % anomalous. Fusion dominates both single models on both "
-        "curves; the margin is larger on the precision–recall panel because ROC is "
-        "optimistic under class imbalance.")
+        "Precision–Recall And ROC Curves On The Run-Disjoint Test Set | 6,016 test "
+        "windows, 9.2 % anomalous, seed 1 of 5. Fusion dominates both single models "
+        "on both curves; the margin is larger on the precision–recall panel because "
+        "ROC is optimistic under class imbalance.")
     b.p(
-        "At the causal operating point θ = 0.6436 the fused detector produces 2,731 "
-        "true positives, 546 false positives, 892 false negatives and 37,519 true "
-        "negatives, that is precision 0.833, recall 0.754, F1 0.792 and specificity "
-        "0.986. The false-alarm rate on clean validation data is 3.0 %, as the "
-        "97th-percentile rule intends."
+        "At the causal operating point the fused detector reaches precision "
+        "0.764 ± 0.086, recall 0.831 ± 0.055 and F1 0.791 ± 0.023, against "
+        "F1 0.627 ± 0.006 for the raw model alone and 0.614 ± 0.016 for the residual "
+        "model alone. The gain over the better single model is ΔF1 = +0.164. The "
+        "clean-window score ratio between test and training runs is 0.48 for both "
+        "models, against the factor of seventy that the reference split produced; "
+        "the optimism that the earlier arrangement introduced is gone."
     )
     b.p(
-        "The absolute values are below those of the reference study, and this is an "
-        "expected consequence of the corrections rather than a regression. Three "
-        "measurable reasons are given in Section 5.1. The property that both "
-        "pipelines share is structural: in each of them the fusion exceeds both "
-        "single models and every baseline by a clear margin."
+        "The precision spread of ±0.086 is not noise in the models but in the "
+        "threshold. Its value across the five seeds varies by 46 % of its mean, "
+        "because it is the 97th percentile of a validation distribution that the "
+        "validation distribution narrowed by the split design of Section 3.7. The "
+        "ranking metrics, which do not depend on a threshold, vary by less than "
+        "0.01."
     )
 
     b.h2("4.2. Fault-Type Asymmetry And Complementarity")
     b.p(
-        "Figure 4(b) breaks the result down by fault type and shows the asymmetry "
-        "that justifies fusion in the first place. On the encoder glitch the "
-        "physical model reflects the joint position deviation as a large residual "
-        "and the residual autoencoder dominates (AUC 0.988 against 0.491). On sensor "
-        "noise the situation inverts exactly: the low-amplitude wrench noise is "
-        "filtered out by the inverse dynamics model, so the residual autoencoder is "
-        "blind (0.296) while the raw autoencoder is perfect (1.000). The fused score "
-        "follows the stronger of the two in both columns. The two models' blind "
-        "spots do not overlap, which is precisely the reason to combine them."
-    )
-    b.figure(
-        "fig4_fusion_value.png",
-        "Value Of The Fusion | (a) sweep of the residual weight; the inset "
-        "expands the interval in which the contribution of the raw model "
-        "disappears. (b) detection by fault type; the two models cover each "
-        "other's blind spots.")
-    b.p(
-        "At window level, with each model using its own 97th-percentile threshold, "
-        "24.3 % of the 3,623 anomalous windows are detected by the residual model "
-        "only and 28.7 % by the raw model only, against 24.1 % and 25.9 % in the "
-        "reference study. The recall of the OR combination is 0.757, well above "
-        "either single model (0.470 and 0.514). Table 6 adds the decision-level "
-        "ablation at the selected operating point."
+        "Table 8 breaks the result down by fault type, and reports AUC and Best F1 "
+        "separately because they are not the same quantity and the distinction "
+        "changes the reading: on motor drift the residual model has AUC 0.912 but "
+        "Best F1 0.669, and quoting the second as if it were the first understates "
+        "the ranking quality by a wide margin."
     )
     b.table(
-        "Complementarity And Decision-Level Ablation On 41,688 Windows.",
+        "Detection By Fault Type Under Both Injection Protocols (AUC, five seeds).",
+        ["Scenario", "Inherited: residual", "Inherited: raw",
+         "Physical: residual", "Physical: raw"],
+        [["Motor drift", "0.912 ± 0.013", "0.652 ± 0.014", "0.846 ± 0.021",
+          "0.652 ± 0.014"],
+         ["Collision", "1.000 ± 0.000", "1.000 ± 0.000", "1.000 ± 0.000",
+          "1.000 ± 0.000"],
+         ["Encoder glitch", "1.000 ± 0.000", "0.832 ± 0.041", "0.783 ± 0.052",
+          "0.832 ± 0.041"],
+         ["Sensor noise", "0.682 ± 0.006", "1.000 ± 0.000", "1.000 ± 0.000",
+          "1.000 ± 0.000"]],
+        widths=[2.7, 3.1, 2.9, 3.1, 2.9], wide=True,
+        align_right=[1, 2, 3, 4],
+        note="The raw columns are identical between the two protocols because the "
+             "raw model reads the measured channels, which both protocols perturb "
+             "the same way. Only the residual columns move, and they move a great "
+             "deal — the interpretation is in Section 4.4.")
+    b.figure(
+        "fig4_fusion_value.png",
+        "Value Of The Fusion | (a) ranking quality against the residual weight, which "
+        "is fixed a priori at 0.95 rather than selected. (b) detection "
+        "by fault type under the inherited injection protocol.")
+    b.p(
+        "Under the inherited protocol the asymmetry that motivates the fusion is "
+        "present and clean. On the encoder glitch the residual autoencoder is "
+        "perfect and the raw model reaches 0.832; on sensor noise the roles invert, "
+        "the residual model falling to 0.682 while the raw model is perfect. At "
+        "window level, with each model using its own 97th-percentile threshold, "
+        "27.6 % of anomalous windows are detected by the residual model only and "
+        "28.0 % by the raw model only, against 24.1 % and 25.9 % in the reference "
+        "study; 15.9 % are caught by neither. The recall of the OR combination is "
+        "0.841. Table 9 gives the decision-level ablation."
+    )
+    b.table(
+        "Decision-Level Ablation At The Operating Point (five seeds, mean ± s.d.).",
         ["Configuration", "Precision", "Recall", "F1"],
-        [["Raw only  (w_res = 0.00)", "0.759", "0.514", "0.613"],
-         ["Residual only  (w_res = 1.00)", "0.756", "0.470", "0.579"],
-         ["**Fusion  (w_res = 0.95)**", "**0.833**", "**0.754**", "**0.792**"]],
-        widths=[3.35, 1.85, 1.6, 1.55], align_right=[1, 2, 3],
-        note="Removing the five per cent weight of the raw model lowers recall from "
-             "0.754 to 0.470. The gain over the better single model is ΔF1 = +0.178; "
-             "the reference study reports +0.161 at a different absolute level.")
+        [["Raw only  (w_res = 0.00)", "0.704 ± 0.015", "0.565 ± 0.002",
+          "0.627 ± 0.006"],
+         ["Residual only  (w_res = 1.00)", "0.697 ± 0.111", "0.562 ± 0.058",
+          "0.614 ± 0.016"],
+         ["OR  (decision level)", "0.701 ± 0.047", "0.841 ± 0.058",
+          "0.762 ± 0.013"],
+         ["**Fusion  (w_res = 0.95)**", "**0.764 ± 0.086**", "**0.831 ± 0.055**",
+          "**0.791 ± 0.023**"]],
+        widths=[3.05, 1.95, 1.75, 1.6], align_right=[1, 2, 3],
+        note="Inherited injection protocol. The gain over the better single model "
+             "is ΔF1 = +0.164; the reference study reports +0.161 at a different "
+             "absolute level and under a protocol with overlapping windows.")
 
     b.h2("4.3. Sensitivity To The Fusion Weight")
     b.p(
-        "The weight was swept from 0.00 to 1.00, with the fused threshold taken at "
-        "every point from clean validation windows only, so that the test set never "
-        "sees the threshold. Figure 4(a) shows a broad plateau: between 0.25 and "
-        "0.95 the performance is stable, which reproduces the stable region reported "
-        "by the reference study. The informative part is the edge. At w_res = 0.95 "
-        "the PR-AUC is 0.780; at 0.98 it is 0.718, at 0.99 it is 0.621 and at 1.00 "
-        "it collapses to 0.553. A weight of five per cent on the raw model is "
-        "therefore associated with a gain of +0.227 PR-AUC relative to the pure "
-        "residual detector. This is the strongest numerical evidence that the "
-        "fusion is functional rather than nominal, and it accounts for the position "
-        "of the selected weight on the shoulder immediately preceding the drop: the "
-        "contribution of the raw model is admitted at a small weight but is not "
-        "eliminated."
+        "The weight is fixed a priori at w_res = 0.95 (Section 3.6), so the sweep "
+        "below measures sensitivity rather than selecting anything. Figure 4(a) "
+        "shows a broad plateau over roughly [0.25, 0.95], reproducing the stable "
+        "region reported by the reference study, with a sharp fall as the raw model "
+        "is eliminated entirely. Under the inherited protocol the fused PR-AUC at "
+        "w_res = 0.95 is 0.857 ± 0.009 against 0.653 ± 0.009 for the pure residual "
+        "detector, so a five per cent weight on the raw model is associated with "
+        "+0.204 PR-AUC. The margin over the better single model, "
+        "+0.189 ± 0.009, is positive in every one of the five seeds."
     )
     b.p(
         "Two independent checks confirm that both models really run. Structurally, "
@@ -1174,79 +1365,87 @@ def body(b):
         "cached or skipped."
     )
 
-    b.h2("4.4. Evaluation On Windows Not Seen In Training")
+    b.h2("4.4. What The Fusion Margin Depends On")
     b.p(
-        "The evaluation protocol inherited from the reference study builds the test "
-        "set by injecting each of the four scenarios into every window of the "
-        "recording, which is how 41,688 test windows arise from 10,422 windows. The "
-        "autoencoders, however, were trained on the first 8,294 of those windows. "
-        "Consequently 79.6 % of the evaluation windows are windows the models had "
-        "already seen, in their clean form, during training. The protocol is kept "
-        "here so that the comparison with the reference study remains valid, but "
-        "the split is reported rather than left implicit, because the two halves "
-        "behave very differently."
+        "The margin reported above is a property of the inherited injection "
+        "protocol, not of the two representation spaces. The protocol perturbs the "
+        "residual channels directly with an amplitude chosen by hand, and one of "
+        "those choices carries the entire complementarity result. For sensor noise "
+        "the reference study adds 3.5 N to the wrench and, separately, 0.08 Nm to "
+        "the extrinsic residual, describing the second as deliberately small so that "
+        "the scenario 'affects the raw signal only'. Physically, a 3.5 N wrench "
+        "disturbance propagates into the residual through r_ext = J(q)ᵀF; measured "
+        "on this robot it produces a standard deviation of 4.1 Nm in the residual "
+        "channels, fifty-one times the amplitude that was injected by hand. The "
+        "inverse dynamics does not filter the wrench, it transforms it."
     )
-    b.figure(
-        "fig5_unseen.png",
-        "Effect Of The Train/Test Overlap | PR-AUC on all evaluation windows, on "
-        "those the autoencoders were trained on, and on the 8,512 windows they "
-        "never saw. On unseen data the two models exchange roles and the fusion "
-        "gains nothing over the residual model alone.",
-        wide=False)
     b.p(
-        "On the 8,512 windows outside the training range the ranking quality "
-        "inverts completely. The residual autoencoder rises to PR-AUC 0.995 and "
-        "Best F1 0.959, while the raw autoencoder falls to PR-AUC 0.222 and Best F1 "
-        "0.336; the fusion reaches 0.995 and 0.961, that is, it matches the "
-        "residual model and gains nothing from the raw one. Table 7 gives the "
-        "corresponding areas under the ROC curve."
+        "The comparison is not one-sided. For the collision scenario the "
+        "hand-chosen residual amplitude of 40 Nm agrees with the physical "
+        "propagation, whose peak is 80.5 Nm — the same order. Sensor noise is the "
+        "one scenario where the two disagree, and it is the scenario the reference "
+        "study names as the test of complementarity."
+    )
+    b.p(
+        "Table 10 crosses the two injection protocols with the presence of the "
+        "friction term, five seeds each. The result is unambiguous: the fusion "
+        "margin exists under the inherited protocol in both friction conditions and "
+        "vanishes under the physical protocol in both."
     )
     b.table(
-        "Ranking Quality On The Two Halves Of The Evaluation Set (AUC).",
-        ["Subset", "Windows", "Residual", "Raw", "Fusion"],
-        [["All (as reported)", "41,688", "0.812", "0.837", "0.939"],
-         ["Used in training", "33,176", "0.829", "0.866", "0.947"],
-         ["**Never seen**", "**8,512**", "**0.999**", "**0.687**", "**0.999**"]],
-        widths=[2.35, 1.55, 1.6, 1.25, 1.6], align_right=[1, 2, 3, 4],
-        note="The unseen windows are the clean validation set, from which the "
-             "normalisation bounds and the 97th-percentile thresholds are also "
-             "taken, so they are not an untouched test set either. AUC, PR-AUC and "
-             "Best F1 are invariant to the monotone per-model scaling, so the "
-             "residual and raw columns are unaffected by that dependence; the "
-             "fusion column is not, because the relative scale of the two scores "
-             "is fitted on these windows.")
+        "Fusion Margin Under Two Injection Protocols And Two Residual Definitions "
+        "(PR-AUC, five seeds, mean ± s.d.).",
+        ["Configuration", "Residual", "Raw", "Fusion", "Margin"],
+        [["Inherited / no friction", "0.620 ± 0.007", "0.668 ± 0.009",
+          "0.829 ± 0.007", "**+0.161 ± 0.005**"],
+         ["Inherited / friction", "0.653 ± 0.009", "0.668 ± 0.009",
+          "0.857 ± 0.009", "**+0.189 ± 0.009**"],
+         ["Physical / no friction", "**0.750 ± 0.017**", "0.668 ± 0.009",
+          "0.747 ± 0.016", "−0.003 ± 0.001"],
+         ["Physical / friction", "0.730 ± 0.014", "0.668 ± 0.009",
+          "0.727 ± 0.014", "−0.003 ± 0.001"]],
+        widths=[3.6, 2.6, 2.6, 2.6, 3.0], wide=True,
+        align_right=[1, 2, 3, 4],
+        note="Margin is the fused PR-AUC minus the better of the two single models. "
+             "The raw column is constant by construction, which is also a check "
+             "that the ablation is controlled. Under the inherited protocol the "
+             "margin is positive in all five seeds of both rows; under the physical "
+             "protocol it is −0.003 in all five seeds of both rows, that is, the "
+             "five per cent raw weight costs a little and returns nothing. "
+             "Complementarity at window level collapses in the same direction: "
+             "residual-only detections fall from 27.6 % to 4.8 % and raw-only from "
+             "28.0 % to 0.1 %.")
     b.p(
-        "Two conclusions follow. First, the margin of +0.178 reported in Table 6 is "
-        "measured under the reference protocol and is inflated by the overlap: the "
-        "raw autoencoder is strong on the windows it was trained on (PR-AUC 0.705) "
-        "and weak outside them (0.222), which is the signature of memorisation "
-        "rather than generalisation. The claim that the fusion beats the better "
-        "single model therefore holds under the reference protocol but not on the "
-        "unseen segment, where the residual model alone is equally good. Second, "
-        "the complementarity claim itself survives, and in a sharper form: each "
-        "model dominates in a different regime, and the regimes are separated here "
-        "not by fault type but by position in the recording."
+        "The same table answers a second question. Adding the friction term improves "
+        "the residual model under the inherited protocol by +0.034 ± 0.009 PR-AUC, "
+        "in the same direction in all five seeds, but under the physical protocol "
+        "the change is −0.020 ± 0.027, which is not significant and points the other "
+        "way. The friction term's demonstrable benefit is therefore physical "
+        "fidelity — the 87 % and 92 % reduction of wrist residual spread in Table 3, "
+        "and fault amplitudes that remain interpretable in newton metres — not "
+        "detection of these four synthetic faults. It also carries a measured cost: "
+        "the seed-to-seed spread of the operating threshold rises from 17 % to 46 % "
+        "of its mean in both protocols."
     )
     b.p(
-        "The second conclusion matters beyond the offline evaluation. A shift large "
-        "enough to move the raw model's PR-AUC from 0.705 to 0.222 occurs inside a "
-        "single recording of one robot performing one task family. It is the same "
-        "out-of-distribution effect that dominates the real-cell results in "
-        "Section 4.7, observed here two hours of robot operation earlier and on "
-        "simulated faults. A run-disjoint retraining, in which no window of an "
-        "evaluation run contributes to training, is the proper remedy and is left "
-        "as the immediate next step."
+        "None of this says the raw model is useless. It says that these four "
+        "synthetic scenarios, once injected consistently, do not discriminate "
+        "between the two representation spaces. Section 4.7 reports what the two "
+        "models did during real events on hardware, which is the only evidence here "
+        "that bears on real faults."
     )
 
-    b.h2("4.5. Origin Of The Previously Published Figures")
+    b.h2("4.5. Where The Earlier Figures Came From")
     b.p(
-        "Rebuilt in the mixed-unit configuration of Section 3.8, the pipeline "
-        "reproduces the reference study point by point. Table 8 lists the "
-        "comparison."
+        "This subsection collects, in one place, the comparison with the study "
+        "this work extends. Rebuilt in the mixed-unit configuration of Section 3.8, "
+        "the pipeline reproduces the earlier figures point by point (Table 11), "
+        "which identifies the arrangement they were produced under and therefore "
+        "the physical scale on which they should be read."
     )
     b.table(
-        "Reproduction Of The Reference Pipeline.",
-        ["Quantity", "Rebuild", "Reference", "Δ"],
+        "Reproduction Of The Earlier Pipeline.",
+        ["Quantity", "Rebuild", "Ref.", "Δ"],
         [["Test windows", "179,888", "179,896", "8"],
          ["Fault windows", "14,401 (8.01 %)", "14,402 (8.0 %)", "1"],
          ["Residual-only share", "23.9 %", "24.1 %", "0.2 pt"],
@@ -1264,13 +1463,15 @@ def body(b):
              "in 179,896 confirms that the same raw dataset is being split the same "
              "way.")
     b.p(
-        "The conclusion is not that the reference study's claim is wrong. The "
-        "complementarity of the two representation spaces is measured on both "
-        "pipelines — 23.9 % residual-only on the reproduction and 24.3 % on the "
-        "corrected pipeline — and the fusion margin survives on both. What was wrong "
-        "is the physical scale of the reported numbers. The corrected pipeline is "
-        "therefore the main result of this paper, and the reproduction is an "
-        "appendix that documents where the earlier figures came from."
+        "The structural claim of the earlier study is unaffected. Complementarity "
+        "under its own injection protocol is measured on both pipelines — 23.9 % "
+        "residual-only on the reproduction and 27.6 % on the extended one — and the "
+        "fusion margin survives on both. What changes is the physical scale on which "
+        "the numbers should be read, and, separately, what happens to that margin "
+        "once the faults are injected physically (Section 4.4). Establishing the "
+        "scale is what made the rest of this work possible: fault amplitudes in "
+        "newton metres, a friction term with meaningful coefficients, and a residual "
+        "whose magnitude can be compared with a real contact force all require it."
     )
 
     b.h2("4.6. Latency And Compute Budget")
@@ -1288,35 +1489,40 @@ def body(b):
     )
     b.p(
         "An end-to-end replay of the prepared data through the deployed class, over "
-        "6 runs and 113,722 samples, gives a false-alarm rate of 0.0 % on clean data "
-        "and detects 6 of 6 runs for collision and sensor noise, 5 of 6 for the "
-        "encoder glitch and 4 of 6 for motor drift. Median latency is about 70 ms "
-        "for the abrupt faults and 1,677 ms for the slow ramp, a split that is "
-        "structural: within a 200 ms window a slow ramp is almost a constant offset, "
-        "and an autoencoder reconstructs a constant offset without difficulty."
+        "the five test runs long enough to carry a fault (27,135 samples, 0.9 "
+        "minutes of robot time), gives a false-alarm rate of 0.1 % on clean data. "
+        "Collision and sensor noise are detected in 5 of 5 runs with median "
+        "latencies of 60 ms and 70 ms; motor drift in 2 of 5 at 2,905 ms; the "
+        "encoder glitch in none. The latency split is structural — within a 200 ms "
+        "window a slow ramp is almost a constant offset, and an autoencoder "
+        "reconstructs a constant offset without difficulty — but the encoder-glitch "
+        "result is not a latency effect. It is the physical-injection outcome of "
+        "Table 8 seen at the decision level: a 1.5 rad step on joint 5 propagates "
+        "into the residual through the Jacobian rather than as the hand-chosen "
+        "8 Nm of the inherited protocol, and the propagated disturbance does not "
+        "cross the threshold. The sample is small and is reported as such: five "
+        "runs is what the run-disjoint test split contains at that length."
     )
 
     b.h2("4.7. Commissioning On The Real Robot")
     b.p(
         "All results up to this point were obtained on the recorded dataset. The "
-        "system was then commissioned on the physical UR10e cell in a session that "
-        "ran from 10:14 to 12:13 on 21 August 2026, just under two hours. The "
-        "session covered the two production use cases of the platform — the "
-        "autonomous visual inspection cycle and a pick-and-place scenario — "
-        "together with dedicated fault-trial runs in which anomalies were provoked "
-        "by hand so that the detector could be exercised against events whose "
-        "ground truth is known to the operator. Across eight runs the detector "
-        "logged 50.4 minutes of decisions, roughly sixty thousand decisions in "
-        "total, with every decision written to disk and every alarm block written "
-        "to an event log. Table 9 summarises how the online system had to deviate "
-        "from the reference method, and how much of that was forced."
+        "detector was then commissioned on the physical UR10e cell, covering the two "
+        "production use cases of the platform — the autonomous visual inspection "
+        "cycle and a pick-and-place scenario — together with runs in which "
+        "anomalies were provoked deliberately. Every decision was written to disk, every alarm "
+        "block to an event log, and every session to a provenance record naming the "
+        "model checksums, the thresholds and the residual definition in force. That "
+        "record is not bookkeeping: a first attempt ran with superseded models "
+        "because the software package shipped them as defaults, and nothing else "
+        "would have revealed it. Table 12 summarises how the online system "
+        "deviates from the reference method."
     )
     b.table(
         "Deviations Of The Online System From The Reference Method.",
         ["Deviation", "Status", "Reason"],
-        [["D1  Normalisation bounds from clean validation instead of the test set",
-          "forced", "the published bounds are not causal and compress the live "
-          "range to ~10⁻⁴"],
+        [["D1  Normalisation bounds and threshold measured on the cell",
+          "forced", "offline values do not transfer; measured below"],
          ["D2  Operating threshold for the fused score",
           "forced", "the reference method reports Best F1 only, which needs the "
           "labels it predicts"],
@@ -1327,364 +1533,440 @@ def body(b):
         widths=[6.3, 2.4, 5.6], wide=True,
         note="D3 and D4 are switched off by a single parameter each, which restores "
              "the reference behaviour exactly. D1 keeps the published min–max "
-             "formula and changes only the set the bounds are taken from.")
+             "structure and changes only the set the quantities are estimated from.")
+
     b.p(
-        "The first measurement invalidated the operating threshold. On a clean run "
-        "the median fused score is 4.27 while the threshold derived from the offline "
-        "validation set is 0.6436; 97 % of all decisions are therefore declared "
-        "alarms. The threshold is seven times too low."
+        "**The offline threshold does not transfer.** The fused threshold derived "
+        "from clean validation windows by the rule of Section 3.6 is θ = 0.855, "
+        "while the median fused score of a clean run on the cell is 0.97: 58.2 % of "
+        "all decisions crossed it. The scores are not anomalous in scale — under "
+        "the cell-calibrated configuration of Table 13 the same clean operation "
+        "sits between 1.7 and 35.3 times below the threshold — so the failure is "
+        "located unambiguously in where the threshold comes from, not in the "
+        "models."
     )
     b.p(
-        "The cause was measured, and it is not the threshold. The residual is pose "
-        "dependent. Figure 6(b) shows the fused score in four operating regimes of "
-        "the same robot with the same models: 0.0037 in the folded park pose, 0.32 "
-        "during a protective stop, 1.57 in normal motion and 4.41 in a "
-        "gravity-loaded static pose — three orders of magnitude. The current-to-torque "
-        "coefficient could be measured on only two of six joints and the calibration "
-        "offset is a constant, which cannot compensate a pose-dependent error. A "
-        "single global threshold is therefore inherently fragile. The limitation "
-        "originates in model fidelity rather than in the choice of threshold."
-    )
-    b.figure(
-        "fig6_real_cell.png",
-        "Behaviour On The Physical Cell | (a) fused score over a fault-trial run "
-        "with the three operator-confirmed events marked. (b) score distribution by "
-        "operating regime; the threshold derived from offline data passes through "
-        "the middle of three of the four regimes.")
-    b.p(
-        "A second offline conclusion inverted. In the first run the node was started "
-        "while the robot stood still; the adaptive baseline was learned from motionless "
-        "noise and settled at 0.0103, the score jumped to 0.34 as soon as the robot "
-        "moved, the alarm latched, and because the baseline freezes while an alarm "
-        "lasts it could never update again. The result was a single alarm block of "
-        "564 s in a 620 s run — 91 % of the recording — which also hid a genuine "
-        "event: a hand caught between links drove the robot into a protective stop "
-        "and the fused score to the highest value of the run, 10.27, but no new event "
-        "record was produced because the system was already alarming. The 3 s freeze "
-        "timeout was added for this reason. On the labelled set the adaptive rule was "
-        "then re-swept over k ∈ [8, 30]; no value caught a verified event and every "
-        "value added false blocks to clean data, because the rule's baseline absorbs "
-        "the peaks of normal motion, the MAD inflates and the adaptive threshold "
-        "climbs above the real events. On the physical robot the component that "
-        "catches events is the absolute threshold — the exact opposite of the offline "
-        "finding."
+        "The cause is that the models are far outside their training distribution "
+        "during ordinary operation. Measured against the mean reconstruction error "
+        "of the offline validation set, the residual model runs at eleven times that "
+        "value on the cell and the raw model at eighty-six times. Expressed against "
+        "each model's own P97 threshold the asymmetry is sharper: the residual model "
+        "sits at 0.93 of its threshold, which is well calibrated, while the raw "
+        "model sits at 7.28. The consequence is a distortion of the fusion itself. "
+        "With w_raw = 0.05 the raw model was contributing 29 % of the fused score at "
+        "the median and dominating it at peaks, because its normalising constant was "
+        "twenty-five times too small for the cell. Re-estimating both scales on the "
+        "cell (Section 3.11) returns its share to 8–15 %, in line with its weight."
     )
     b.p(
-        "The threshold was therefore re-measured by an exhaustive recount rather "
-        "than selected. Every alarm block the detector would have raised was "
-        "recounted "
-        "directly from the logged decisions of all eight runs, for each candidate "
-        "threshold and under the same two-consecutive-decision rule the node "
-        "applies; each block was then classified against the five events the "
-        "operator had confirmed while standing at the cell. The recount reproduces "
-        "the event logs exactly where they overlap — at the threshold of 8.0 that "
-        "was active during the inspection run it returns the same sixteen blocks "
-        "with the same peaks — so the sweep of Table 10 covers the whole 50.4 "
-        "minutes rather than only the runs that happened to be labelled."
+        "One further correction was forced by measurement. The min–max form of the "
+        "reference formula, applied to real-cell data, locks the residual span to "
+        "30.8 because the calibration run contains a payload-carrying phase — an "
+        "85-second plateau of fused score whose interior barely moves (median 14.20, "
+        "p90 14.39, maximum 14.5). The inverse dynamics has no payload model, so "
+        "carrying anything produces a sustained bias, and a min–max scale fitted "
+        "over it makes ordinary events invisible. The 97th percentile of each "
+        "model's clean scores is used instead."
+    )
+    b.p(
+        "With the cell-calibrated configuration — residual span 25.92, raw span "
+        "22.37, θ = 5.0, estimated from 15,627 clean decisions spanning both tasks — "
+        "the detector produced no alarm across 14.3 minutes of ordinary operation "
+        "(Table 13)."
     )
     b.table(
-        "Threshold Sweep Recounted From All 50.4 Minutes Of Logged Decisions.",
-        ["Threshold", "Real caught", "FA", "FA / hour", "Alarm duty"],
-        [["0.6436  (offline)", "5 / 5", "335", "398.7", "74.4 %"],
-         ["8.0  (first deployed)", "5 / 5", "29", "34.5", "7.1 %"],
-         ["12.0", "4 / 5", "25", "29.8", "4.7 %"],
-         ["**18.0  (selected)**", "**4 / 5**", "**12**", "**14.3**", "**2.9 %**"],
-         ["26.0", "4 / 5", "5", "6.0", "1.8 %"],
-         ["33.0", "3 / 5", "1", "1.2", "1.0 %"],
-         ["91.0", "2 / 5", "0", "0.0", "0.6 %"]],
-        widths=[2.70, 1.55, 1.00, 1.50, 1.60], align_right=[1, 2, 3, 4],
-        note="Alarm duty is the share of logged time spent in an alarm state. The "
-             "value first deployed, 8.0, was carried over from an initial estimate "
-             "and is shown for reference.")
+        "Clean Operation Under The Cell-Calibrated Configuration.",
+        ["Run", "Duration", "Median", "Maximum", "Margin to θ", "Alarms"],
+        [["Inspection cycle", "6.2 min", "0.055", "1.28", "3.9×", "**0**"],
+         ["Provoked hand contact", "1.3 min", "0.023", "0.14", "35.3×", "0"],
+         ["Pick and place", "6.9 min", "0.075", "2.92", "1.7×", "**0**"]],
+        widths=[4.0, 2.6, 2.4, 2.6, 3.0, 2.4], wide=True,
+        align_right=[1, 2, 3, 4, 5],
+        note="Margin is θ divided by the run's peak. The second row is a provoked "
+             "anomaly that the detector did not register; it is discussed below and "
+             "is the working limit of the system.")
+
     b.p(
-        "The selection is an interval, not a point. Its lower bound is the ceiling "
-        "of the autonomous inspection cycle, measured at 17.43: any threshold above "
-        "that value silences all sixteen of the cycle's periodic excursions at "
-        "once, and any threshold below it lets all sixteen through. Its upper bound "
-        "is the weakest operator-confirmed event, 31.98. Within the resulting "
-        "interval [17.43, 31.98] the value 18.0 is the conservative end, chosen to "
-        "keep the largest possible margin for events weaker than the ones observed; "
-        "a purely false-alarm-minimising choice inside the same interval would be "
-        "about 26, at the cost of that margin. The single missed event at either "
-        "value is the first jam, peak 10.27, which the robot's own protective stop "
-        "had already interrupted."
+        "**Collisions are detected.** In a session of three runs totalling 10.0 "
+        "minutes, two collisions were provoked against the vacuum gripper. Three "
+        "alarm blocks were raised; the operator labelled all three as genuine "
+        "through the interface, and no unlabelled block occurred. Table 14 lists "
+        "them and Figure 5 shows the operator interface immediately after the "
+        "strongest one."
+    )
+    b.table(
+        "Provoked Collisions On The Physical Cell, All Operator-Confirmed.",
+        ["Event", "Duration", "Peak", "Entry", "Trigger", "Residual", "Raw"],
+        [["1", "3.65 s", "**11.30**", "6.63", "both", "170.1  (124×θ)",
+          "175.9  (447×θ)"],
+         ["2", "0.25 s", "**16.13**", "14.60", "both", "369.8  (270×θ)",
+          "466.5  (1186×θ)"],
+         ["3", "44.95 s", "**25.04**", "13.75", "both", "348.9  (254×θ)",
+          "427.7  (1087×θ)"]],
+        widths=[1.4, 2.0, 2.0, 1.8, 1.7, 4.4, 4.6], wide=True,
+        align_right=[1, 2, 3, 5, 6],
+        note="Residual and raw columns give the model's own reconstruction error "
+             "and its ratio to that model's P97 threshold. Both models crossed "
+             "their own thresholds on all three events, and all three were raised "
+             "by the absolute rule with the adaptive rule disabled. Events 2 and 3 "
+             "occur seven seconds apart at almost the same pose; the 44.95-second "
+             "duration of the third is the robot remaining in contact, not a "
+             "detection that failed to clear.")
+    b.figure(
+        "fig5_collision.png",
+        "Operator Interface After A Provoked Collision | the 44.95-second block of "
+        "event 3 is the wide plateau at 25; the narrow spike to its left is event 2, "
+        "seven seconds earlier. The threshold line sits at 5. The breakdown panel "
+        "gives each model's reconstruction error against its own threshold, and the "
+        "event table shows all three blocks confirmed by the operator with no "
+        "unlabelled block. Replayed from the logged decisions of the session.")
+    b.p(
+        "The separation is genuine rather than a threshold artefact. The weakest "
+        "confirmed event peaks at 11.30 while the highest excursion in any clean run "
+        "of that day reaches 4.14, so any threshold in the interval (4.14, 11.30) "
+        "gives three detections and no false alarm. The deployed value of 5.0 sits "
+        "at the lower end of that interval, deliberately, to leave margin for events "
+        "weaker than those observed. Table 15 shows how the interval closes."
+    )
+    b.table(
+        "Threshold Sweep Recounted From All Logged Decisions.",
+        ["Threshold", "Clean blocks / min", "Confirmed events caught"],
+        [["3.0", "0.00", "3 / 3  (fragmented)"],
+         ["**5.0**  (deployed)", "**0.00**", "**3 / 3**"],
+         ["8.0", "0.00", "3 / 3"],
+         ["11.3", "0.00", "2 / 3"],
+         ["16.0", "0.00", "1 / 3"],
+         ["26.0", "0.00", "0 / 3"]],
+        widths=[2.55, 2.9, 2.9], align_right=[1, 2],
+        note="Recounted over 14.3 minutes of clean operation and 10.0 minutes "
+             "containing the confirmed events, under the same two-consecutive-"
+             "decision rule the node applies.")
+
+    b.p(
+        "**A low-amplitude contact is not detected, and no threshold recovers it.** "
+        "The hand contact provoked in the second row of Table 13 raised the fused "
+        "score to 6.8 times that run's own median, while the clean inspection cycle "
+        "routinely reaches 26.7 times its own median. Expressed on the common scale, "
+        "the peak of the provoked contact falls at the 75.6th percentile of ordinary "
+        "inspection motion: it is smaller than three quarters of what the robot does "
+        "normally. Four decision rules were evaluated against this event on the "
+        "logged decisions — an absolute threshold on two different normalisations, "
+        "the adaptive median + k·MAD rule swept over k ∈ [4, 32], and subtraction of "
+        "a rolling median over windows of 10, 30 and 60 seconds. In every case the "
+        "clean inspection run produced at least as many blocks as the run containing "
+        "the event. The signal required to separate them is not present in these two "
+        "scores."
     )
     b.p(
-        "The distribution of the residual false alarms over the runs is as "
-        "informative as their number. At θ = 18 the six runs of ordinary "
-        "operation — 37.4 minutes, covering five complete cycles of the "
-        "autonomous inspection task — produce no false alarm; by the rule of "
-        "three this bounds the false-alarm rate of that configuration at 4.8 per "
-        "hour with 95 % confidence. All twelve alarms occur in the two runs in "
-        "which a person interacted physically with the robot or the workpiece: "
-        "ten in pick-and-place and two in a fault-trial run. The detector is "
-        "therefore silent while the cell operates autonomously and active while a "
-        "human is inside the workspace, which is the inverse of the intended "
-        "behaviour of a safety function and is attributable to the same cause as "
-        "the remaining findings of this section."
-    )
-    b.p(
-        "The remaining false alarms are not stochastic; they are structured and "
-        "locked to the trajectory. In the inspection cycle the intervals between "
-        "alarm onsets are 60, 38, 59, 32, 60, 32, 59, 32 and 60 seconds, and each "
-        "92-second cycle repeats the same triplet: 6.2 s with a peak near 17, then "
-        "3.0 s with a peak near 10.3, then 0.15 s near 8.4. The pattern was "
-        "identical in all five cycles observed. This determinism has a "
-        "methodological consequence: the natural unit of observation for this "
-        "false-alarm process is the task cycle rather than elapsed time, since "
-        "repeating the same trajectory reproduces the same excursions. It is also "
-        "direct evidence that the models do not recognise the real trajectories: "
-        "for autoencoders trained on the recorded dataset, the actual inspection "
-        "scan is out of distribution."
-    )
-    b.p(
-        "A discriminating feature other than amplitude was sought and not found. "
-        "Block sharpness, defined as peak over within-block median, is 1.08–1.99 for "
-        "the real events and 1.00–4.83 for the false alarms, so the sharpest block "
-        "in the campaign is a false alarm; rise time does not separate the classes "
-        "either. The peak distributions overlap genuinely: the confirmed real events "
-        "peak at 10.27, 31.98, 79.86, 146.44 and 195.83, while the confirmed false "
-        "alarms range from 8.28 to 90.55 with a median of 10.42. One false alarm "
-        "therefore peaks higher than three of the five real events. That case cannot "
-        "be removed by any choice of threshold."
-    )
-    b.p(
-        "Detection latency on the physical cell is the sum of the 50 ms filter delay, "
-        "the 50 ms decision period at 495 Hz and one further decision period for the "
-        "two-consecutive rule, about 150 ms in total, with an inference time of "
-        "8.5 ms as reported in Section 4.6. The clearest verified event — the collision at "
-        "the end of the pick-and-place scenario, peak 146.44 — lasted only 0.25 s, "
-        "which forces every consumer of the alarm to treat it as an edge rather than "
-        "as a level."
+        "The working envelope of the deployed system is therefore explicit: events "
+        "of collision magnitude are detected reliably, with peaks of 11 to 25 against "
+        "a threshold of 5 and a separation factor of 3.9 over ordinary operation; "
+        "slow low-amplitude contact is not."
     )
 
-    b.h2("4.8. Operator Interface")
+    b.h2("4.8. Operator Labelling")
     b.p(
-        "Figure 7 shows the interface connected to the running robot. The status "
-        "banner reads NORMAL, the decision rate is 20.0 Hz and the operating "
-        "threshold is 18.00. The peak of about 14 visible in the live chart stayed "
-        "below the threshold and therefore produced no alarm. The breakdown panel "
-        "shows that the raw model was driving the decision at that moment (raw "
-        "5.60 / 3.45 = 1.62 times its own threshold, residual 1.57 / 1.60 = 0.98 "
-        "times). The event table below lists the pick-and-place run, with the "
-        "collision of peak 146.44 in the top row."
+        "The three events of Table 14 were classified through the interface of "
+        "Figure 5 while the operator stood at the cell, and the classification is "
+        "what makes the false-alarm count of Section 4.7 a measurement rather than "
+        "an impression: the interface reports three events, three confirmed, zero "
+        "false alarms and zero unlabelled. Labels are written atomically to a file "
+        "the detector never reads, so a label can never influence a decision. "
+        "Together with the per-session provenance record they make a logged session "
+        "re-analysable months later, which is what allowed the threshold failure of "
+        "Section 4.7 to be attributed to configuration rather than to the models."
     )
-    b.figure(
-        "fig7_interface.png",
-        "Operator Interface Connected To The Physical UR10e | the labels recorded "
-        "in the event table form the retraining set identified in Section 5.")
+    b.p(
+        "The breakdown panel in Figure 5 also records which model drove each "
+        "decision. On all three confirmed collisions both models exceeded their own "
+        "thresholds, the residual model by factors of 124 to 270 and the raw model "
+        "by 447 to 1186. Together with the undetected hand contact of Section 4.7 "
+        "this is the only evidence here on how the two spaces behave during "
+        "genuine faults, and it does not resolve the question raised in Section "
+        "4.4: events this large saturate both models, so they cannot discriminate "
+        "between them, and the one event small enough to discriminate was seen by "
+        "neither."
+    )
 
     # ────────────────────────────────────────── 5. Discussion ────────
     b.h1("5. Discussion")
 
-    b.h2("5.1. Why The Absolute Values Fell")
+    b.h2("5.1. What The Extension Changed Offline")
     b.p(
-        "The corrected pipeline scores below the reference study on every absolute "
-        "metric, for three measurable reasons. First, fault amplitudes are now on "
-        "the true physical scale. On the mixed-unit pipeline a ramp specified as "
-        "15 Nm was added as a bare number to a channel expressed in amperes, which "
-        "is a perturbation roughly ten times larger than its physical counterpart; "
-        "the corrected pipeline injects a genuine 15 Nm, so the problem is harder. "
-        "Second, the dataset was cleared of discontinuities, and those "
-        "discontinuities did not merely add noise — they created artificial jumps "
-        "that a reconstruction model reads as anomalous, so removing them shrinks "
-        "the apparent distance between normal and anomalous to its true value. "
-        "Third, the evaluation is now leakage-free, with the split aligned to run "
-        "boundaries and windows respecting them."
+        "The extended pipeline scores below the earlier study on the absolute "
+        "metrics, and the reasons are measurable rather than mysterious. Fault "
+        "amplitudes are now on the true physical scale, so a ramp specified as "
+        "15 Nm is injected as 15 Nm rather than added as a bare number to a channel "
+        "expressed in amperes. The dataset was cleared of discontinuities that a "
+        "reconstruction model reads as anomalous. And the split is run-disjoint, so "
+        "the evaluation no longer measures partly on windows the models had already "
+        "reconstructed: the clean-window score ratio between test and training runs "
+        "is 0.48, against the factor of seventy that the earlier arrangement "
+        "produced."
     )
     b.p(
-        "What should be compared between the two pipelines is therefore not the "
-        "absolute number but the structure, and the structure is preserved in every "
-        "respect: the two models complement each other in the same proportions, the "
-        "weight sweep is broad and stable in the same region, the fusion margin over "
-        "the better single model is of the same order (+0.178 against +0.161), and "
-        "the fault-type asymmetry that motivates the whole design is reproduced "
-        "almost exactly. Both pipelines, however, share the evaluation protocol "
-        "audited in Section 4.4, so both margins are measured largely on windows "
-        "the models were trained on, and neither should be read as a "
-        "generalisation estimate."
+        "What survives the extension is the structure. The fusion still exceeds "
+        "both single models and every baseline; the weight sweep is still broad "
+        "and flat over the same interval; the complementarity ratios remain close "
+        "to those of the earlier study, 27.6 % against 24.1 % residual-only and "
+        "28.0 % against 25.9 % raw-only. Reporting five seeds rather than one also "
+        "shows where the remaining uncertainty lives: the ranking metrics vary by "
+        "less than 0.01 across seeds, while the operating-point precision varies "
+        "by ±0.086, because the threshold is a percentile of a validation "
+        "distribution narrowed by the split design rather than by the models."
     )
 
-    b.h2("5.2. Why Motor Drift Stays Hard")
+    b.h2("5.2. The Fusion Margin Is A Property Of The Injection Protocol")
     b.p(
-        "Motor drift is the weakest scenario for both single models and for the "
-        "fusion (AUC 0.443; the reference study reports 0.588 and also records a "
-        "marginal loss from fusion in this scenario). This is a structural limit of "
-        "a windowed autoencoder rather than an implementation defect: inside a "
-        "100-sample window a slow linear ramp is almost a constant offset, and a "
-        "constant offset is reconstructed without difficulty. Online, the adaptive "
-        "rule partly covers this gap because its baseline follows the last 30 "
-        "seconds, so a slowly growing score can raise an alarm without ever crossing "
-        "the absolute threshold; in replay, motor drift was caught in 4 of 6 runs "
-        "with a median delay of 1,677 ms. The correct long-term answer is not to "
-        "force a windowed autoencoder but to add a second, long-horizon indicator "
-        "such as the slope of a moving-average residual."
+        "The central offline finding of this paper is negative, and it concerns the "
+        "framework's own evaluation rather than its architecture. Under the "
+        "inherited injection protocol the fusion gains +0.189 ± 0.009 PR-AUC over "
+        "the better single model, positive in every seed. Under a protocol in which "
+        "the fault is applied only to the measured channels and the residual is "
+        "recomputed by the pipeline, the same gain is −0.003 ± 0.001, also in every "
+        "seed. Adding or removing the friction term does not change this in either "
+        "direction (Table 10)."
+    )
+    b.p(
+        "The mechanism is a single amplitude. The inherited protocol perturbs the "
+        "residual space with a hand-chosen number, and for sensor noise that number "
+        "is 0.08 Nm, described in the reference study as deliberately small so that "
+        "the scenario affects the raw signal only. But the extrinsic residual is "
+        "r_ext = J(q)ᵀF, a linear map of the wrench; it does not attenuate wrench "
+        "noise, it transforms it. Propagated physically, 3.5 N of wrench noise "
+        "produces 4.1 Nm of residual disturbance — fifty-one times the injected "
+        "amplitude — and the residual model detects it perfectly. The complementarity "
+        "that motivates the fusion was not tested by that scenario; it was defined "
+        "by it."
+    )
+    b.p(
+        "This should be read narrowly. The collision scenario's hand-chosen residual "
+        "amplitude of 40 Nm agrees with the physical propagation, whose peak is "
+        "80.5 Nm, so the reference study's choices are not uniformly arbitrary. And "
+        "the finding does not show that a raw-signal model is useless — it shows "
+        "that four analytic perturbations, once applied consistently, do not "
+        "discriminate between these two representation spaces. The evidence that "
+        "bears on real faults is in Section 4.7, where both models crossed their own "
+        "thresholds on all three confirmed collisions."
     )
 
-    b.h2("5.3. What The Transfer To Hardware Changed")
+    b.h2("5.3. Why The Offline Threshold Does Not Transfer")
     b.p(
-        "Two conclusions supported by the offline data were inverted by the physical "
-        "cell, and this is the central finding of the paper. The operating threshold "
-        "had to be raised by a factor of seven, because the residual is pose "
-        "dependent while the threshold is a single global constant. The adaptive "
-        "alarm rule — the component that rescued the single models offline, and "
-        "whose justification came from the reference method's own blind spot "
-        "argument — caught no verified event on hardware and only added false blocks; "
-        "it is disabled by default."
+        "A threshold placed at the 97th percentile of an offline validation "
+        "distribution declared most decisions on hardware to be alarms. The scores "
+        "themselves are on an ordinary scale — under the cell-calibrated "
+        "configuration the same clean operation sits between 1.7 and 35.3 times "
+        "below the threshold (Table 13) — so the fault is in the estimator, not in "
+        "the models."
     )
     b.p(
-        "Both inversions have the same root. The autoencoders were trained on a "
-        "recorded dataset that does not contain the real inspection trajectories, so "
-        "on hardware those trajectories are out of distribution. The evidence is "
-        "direct rather than inferential: the false alarms repeat with the cycle of "
-        "the trajectory, to the second, and the same motion produces the same "
-        "excursion every time. Under that condition no threshold rule can succeed, "
-        "because the score is not measuring abnormality but unfamiliarity. This is "
-        "the anomaly-detection counterpart of the reality gap described for control "
-        "policies by Zhao et al. (2020), and it suggests that reporting a detection "
-        "threshold without stating the operating regime it was measured in is of "
-        "limited value."
+        "The measurement that explains it is the distance of the models from their "
+        "training distribution during ordinary operation: eleven times the "
+        "validation mean error for the residual model and eighty-six times for the "
+        "raw model. A percentile of a distribution the deployment never occupies "
+        "carries no information about the deployment. The asymmetry between the two "
+        "models is the practically important part. The residual model, whose input "
+        "has had the trajectory-dependent dynamics removed by the physical model, "
+        "sits at 0.93 of its own threshold on the cell — well calibrated. The raw "
+        "model, reading the signals directly, sits at 7.28. With a five per cent "
+        "weight it was nevertheless contributing 29 % of the fused score, because a "
+        "normalising constant twenty-five times too small turns a small weight into "
+        "a large influence. This is a general trap in score-level fusion: the weights "
+        "mean what they say only while the normalisers are valid."
     )
     b.p(
-        "The offline result of Section 4.4 is the same phenomenon at a smaller "
-        "scale, and it is what makes the hardware outcome predictable in "
-        "hindsight. Moving from the first four fifths of one recording to the last "
-        "fifth already moves the raw model's PR-AUC from 0.705 to 0.222 while the "
-        "residual model rises from 0.486 to 0.995. If a segment boundary inside a "
-        "single recording can do that, a change of task profile on real hardware "
-        "certainly can. The two models are not equally exposed: the residual model "
-        "sees a physically normalised quantity and degrades gracefully, whereas the "
-        "raw model sees the signals themselves and degrades sharply. That "
-        "asymmetry, rather than the size of the fusion margin, is the transferable "
-        "finding of this study."
+        "The split design itself contributes, and this is the trade-off at the "
+        "centre of the extension. To keep validation and test inside the training "
+        "joint range — necessary, or a high score on the cell would mean 'unseen "
+        "pose' rather than 'anomaly' — the sixteen validation runs were selected for "
+        "similarity to training. Validation loss falls accordingly, to 0.036 for the "
+        "raw model against 0.320 in the reference study, and with it the width of "
+        "the distribution θ is drawn from. The same choice that removed the leakage "
+        "therefore produced a threshold too narrow for the cell. This is not a "
+        "defect of the models: their loss is identical with and without the friction "
+        "term, so it cannot be attributed to the residual definition either. It is a "
+        "property of estimating an operating point on data selected to resemble "
+        "training."
     )
     b.p(
-        "The practical consequence is a design rule. An operating threshold must be "
-        "measured on the deployment hardware, over at least one full task cycle, and "
-        "it must be revisited whenever the task profile changes. The system stores "
-        "the offline value alongside the deployed one and records the justification "
-        "for the deployed one, so that the difference between the two remains "
-        "visible rather than being quietly overwritten."
-    )
-
-    b.h2("5.4. Effect Of The Measured Solver Limitations")
-    b.p(
-        "The solver contains no friction model and its inertia matrix fails the "
-        "symmetry and positive-definiteness tests, so the theoretical advantage of "
-        "the residual space is not realised at the wrist joints, where the model "
-        "torque is a small fraction of the measured torque. The lower single-model "
-        "performance of the residual autoencoder relative to the reference study "
-        "(AUC 0.812 against 0.908) is consistent with this effect. The survival of "
-        "the fusion margin under this limitation is itself diagnostic: the raw "
-        "model carries the information directly in exactly those channels, which is "
-        "the intended function of the fusion."
+        "The remedy used here keeps the published formula and changes only the set "
+        "the quantities are estimated from: clean decisions logged on the cell, "
+        "spanning every task the cell performs, with a robust percentile in place of "
+        "the min–max range. The last detail is not cosmetic. Applied to real-cell "
+        "data the min–max range is set by an unmodelled payload — the inverse "
+        "dynamics has no payload term, so carrying a workpiece produces a sustained "
+        "residual bias, an 85-second plateau whose interior varies by 0.3 — and a "
+        "span fitted over it makes ordinary events invisible."
     )
 
-    b.h2("5.5. Limitations")
-    for item in (
+    b.h2("5.4. What The Friction Term Bought")
+    b.p(
+        "Adding a Coulomb-plus-viscous term outside the solver removes 87 % and 92 % "
+        "of the residual spread on wrist_2 and wrist_3, the two channels where the "
+        "inverse dynamics previously contributed almost nothing and the residual was "
+        "in practice the raw measurement. That is a real gain in physical fidelity "
+        "and it makes fault amplitudes interpretable in newton metres on all six "
+        "joints."
+    )
+    b.p(
+        "It is not a detection gain. Under the inherited protocol the residual model "
+        "improves by +0.034 ± 0.009 PR-AUC, consistent across seeds; under the "
+        "physical protocol the change is −0.020 ± 0.027, not significant. It also "
+        "costs threshold stability: the seed-to-seed spread of the operating "
+        "threshold rises from 17 % to 46 % of its mean. The honest summary is that "
+        "the term corrects the model, and that correcting the model does not by "
+        "itself improve the detection of these particular synthetic faults. It is "
+        "retained in the deployed configuration because real faults are not these "
+        "four, and because a residual that means what it says is easier to reason "
+        "about when something unexpected happens."
+    )
+
+    b.h2("5.5. The Working Envelope")
+    b.p(
+        "The deployed detector catches collisions and does not catch slow "
+        "low-amplitude contact, and both halves of that sentence are measured. "
+        "Three operator-confirmed collisions peaked between 11.30 and 25.04 against "
+        "a threshold of 5.0, with no unlabelled alarm block in ten minutes and no "
+        "alarm at all in fourteen minutes of ordinary operation; any threshold "
+        "between 4.14 and 11.30 gives the same result. A deliberately provoked hand "
+        "contact, by contrast, raised the fused score to 6.8 times that run's median "
+        "while ordinary inspection motion routinely reaches 26.7 times its own — the "
+        "provoked event sits at the 75.6th percentile of normal operation. Four "
+        "decision rules were evaluated against it and none separated it."
+    )
+    b.p(
+        "The limit is therefore not the threshold but the representation. An event "
+        "smaller than the variation that normal motion already produces cannot be "
+        "isolated by any monotone rule on these two scores. Closing that gap needs "
+        "either a model trained on the cell's own trajectories, so that normal "
+        "operation stops being out-of-distribution, or an additional channel that "
+        "responds to contact rather than to dynamics. Stating the envelope is more "
+        "useful than a single headline number: a safety function whose sensitivity "
+        "floor is unknown is harder to deploy than one whose floor is published."
+    )
+
+    b.h2("5.6. Limitations")
+    for t in [
         "A single robot (UR10e) and a single task profile; no validation on other "
         "robot types has been performed.",
-        "Synthetic faults may not reflect the full dynamics of real faults; in "
-        "particular the collision pulse is distributed equally over the wrench "
-        "channels instead of being propagated from a real contact point through the "
-        "Jacobian.",
-        "The current-to-torque coefficient could be measured directly on only two "
-        "of six joints; the other four are derived by assumption, which affects the "
+        "Synthetic faults, even injected physically, remain analytic perturbations. "
+        "The collision pulse is distributed over the wrench channels rather than "
+        "propagated from a real contact point, and the four scenarios were shown in "
+        "Section 4.4 not to discriminate between the two representation spaces once "
+        "injected consistently.",
+        "The current-to-torque coefficient could be measured directly on only two of "
+        "six joints; the other four are derived by assumption, which affects the "
         "physical interpretation rather than the detection.",
-        "Four fifths of the offline evaluation windows are also training windows, "
-        "because the evaluation protocol of the reference study is retained for "
-        "comparability. Section 4.4 reports the split separately, but a "
-        "run-disjoint retraining is required before the offline margins can be "
-        "read as generalisation.",
-        "The operating threshold is selected on the same commissioning campaign on "
-        "which its false-alarm rate is reported, and the campaign yields only five "
-        "operator-confirmed events. The threshold should be validated on a "
-        "campaign it was not fitted to.",
-        "The observation covers five complete cycles of the inspection task. "
-        "Because the false-alarm process is deterministic and cycle-locked, "
-        "additional repetitions of the same trajectory would add little "
-        "information about it; what a longer campaign would add is the variation "
-        "the two-hour window cannot contain, namely thermal drift of the drives, "
-        "part-to-part and payload variation, mechanical wear and operator "
-        "differences. The results reported here are therefore a commissioning-scale "
-        "proof of concept with respect to those factors.",
-        "Online measurements were taken on CPU; they should be repeated with the "
-        "GPU provider on the deployment workstation.",
-    ):
-        p = b.para("", style="Paragraf", align=WD_ALIGN_PARAGRAPH.JUSTIFY,
-                   space_before=3, space_after=0)
-        p.paragraph_format.left_indent = Cm(0.4)
-        b.rich(p, "•  " + item)
+        "The friction coefficients are fitted by a regression that absorbs any "
+        "velocity-correlated model error, not friction alone. No independent "
+        "tribological validation was performed.",
+        "The inverse dynamics has no payload model. Carrying a workpiece produces a "
+        "sustained residual bias that the deployed threshold sits above but does not "
+        "explain away.",
+        "The operating threshold is measured on the cell, which is necessary, but it "
+        "is measured on a calibration run of 15,627 decisions and validated on "
+        "twenty-four minutes of operation. The envelope it defines is a "
+        "commissioning-scale result with respect to thermal drift, wear, "
+        "part-to-part variation and operator differences.",
+        "Only three confirmed anomalous events were available for the deployed "
+        "configuration. The threshold interval (4.14, 11.30) is bounded below by "
+        "observed clean operation and above by the weakest of those three events; a "
+        "weaker real event would narrow it.",
+        "Online measurements were taken on CPU; they should be repeated with the GPU "
+        "provider on the deployment workstation.",
+    ]:
+        pp = b.para("", style="Paragraf", align=WD_ALIGN_PARAGRAPH.JUSTIFY,
+                    space_before=3, space_after=0)
+        pp.paragraph_format.left_indent = Cm(0.4)
+        b.rich(pp, "•  " + t)
+    b.p("")
 
-    # ──────────────────────────────────────── 6. Conclusions ─────────
     b.h1("6. Conclusions")
     b.p(
-        "This paper followed a score-level fusion framework for cobot anomaly "
-        "detection from a published offline result all the way to a detector running "
-        "on a physical UR10e cell, and reported every measurement taken on the way, "
-        "including the ones that were unfavourable."
+        "This paper took a published score-level fusion framework for cobot anomaly "
+        "detection, extended it, and delivered it as a detector running on a "
+        "physical UR10e cell. Every measurement taken on the way is reported, "
+        "including the ones that are unfavourable to the framework."
     )
     b.p(
-        "The method of the reference study was rebuilt independently and its "
-        "architectural and procedural components were shown to match exactly. Seven "
-        "findings were measured in the data path; five were corrected, one — the "
-        "measured limitations of the inverse dynamics solver — was deliberately "
-        "accepted under a fixed constraint, and one is a typesetting inconsistency. "
-        "The previously published figures were traced to a mixed-unit pipeline, and "
-        "that pipeline was reproduced explicitly so that the origin of the numbers "
-        "is documented rather than merely asserted."
+        "The starting framework was rebuilt independently and its architectural and "
+        "procedural components match exactly. Establishing the physical scale of the "
+        "signals was a precondition for everything that follows: the driver writes "
+        "motor current, not torque, into the effort field, so the earlier figures "
+        "were produced on a mixed-unit pipeline. That pipeline was reproduced to "
+        "within 0.013 on every quantity, which fixes the scale on which the earlier "
+        "numbers should be read and makes fault amplitudes, friction coefficients "
+        "and residual magnitudes physically meaningful for the extension."
     )
     b.p(
-        "On the corrected pipeline, and under the reference study's own evaluation "
-        "protocol, the value of the fusion is preserved: F1 0.792 against 0.613 for "
-        "the raw model and 0.579 for the residual model, a gain of +0.178 over the "
-        "better single model, with complementarity ratios matching the reference "
-        "study. Removing the five per cent raw weight collapses PR-AUC from 0.780 "
-        "to 0.553, which shows that the fusion is functional rather than cosmetic."
+        "On that basis the pipeline was extended. A friction term absent from the "
+        "validated solver was added outside it, removing 87 % and 92 % of the "
+        "residual spread on the two wrist joints where the inverse dynamics had "
+        "previously contributed almost nothing, and the evaluation was placed on a "
+        "run-disjoint split with five training seeds. Under the inherited injection "
+        "protocol the fusion retains its advantage: F1 0.791 ± 0.023 against 0.627 ± 0.006 and "
+        "0.614 ± 0.016 for the single models, a gain of +0.164, with complementarity "
+        "ratios close to those of the earlier study (27.6 % against 24.1 %)."
     )
     b.p(
-        "That protocol was also audited. Four fifths of its evaluation windows are "
-        "windows the autoencoders were trained on, and on the remaining fifth the "
-        "two models exchange roles: the residual model reaches PR-AUC 0.995 while "
-        "the raw model falls to 0.222, and the fusion gains nothing over the "
-        "residual model alone. The complementarity claim survives this test in a "
-        "sharper form — each model dominates a different regime — but the size of "
-        "the fusion margin does not, and is reported here as protocol-dependent "
-        "rather than as a generalisation estimate."
+        "The injection protocol itself was then examined, and this is the paper's "
+        "principal negative result. When the same four faults are injected only into "
+        "the measured "
+        "channels and the residual is recomputed by the pipeline, the fusion margin "
+        "falls from +0.189 ± 0.009 to −0.003 ± 0.001 PR-AUC, in every seed and "
+        "irrespective of the friction term. The mechanism is a single amplitude: the "
+        "reference protocol perturbs the residual space for the sensor-noise "
+        "scenario with 0.08 Nm, chosen so that the scenario affects the raw signal "
+        "only, whereas the physical propagation of the same 3.5 N wrench disturbance "
+        "through r_ext = J(q)ᵀF produces 4.1 Nm. The scenario the reference study "
+        "names as the test of complementarity does not test it. The complementarity "
+        "of the two representation spaces is therefore reported here as a property "
+        "of the evaluation protocol, not of the models."
     )
     b.p(
         "The system was implemented as a ROS 2 node running at 500 Hz whose feature "
         "engine is numerically identical to the offline pipeline to floating-point "
-        "rounding, in which both models run on every decision, and whose inference "
-        "consumes 12 % of the decision budget."
+        "rounding, friction term included, in which both models run on every "
+        "decision and whose inference consumes 12 % of the decision budget."
     )
     b.p(
-        "The measurements on the physical robot inverted two offline conclusions: "
-        "the operating threshold had to be raised sevenfold, and the adaptive alarm "
-        "rule had to be disabled. Both follow from the same root cause, which was "
-        "measured and not assumed — the real trajectories are out of distribution "
-        "for models trained on the recorded dataset. The replacement threshold is "
-        "not a free parameter: recounting every alarm block over the full 50.4 "
-        "minutes of logged decisions from a two-hour commissioning session bounds "
-        "it from below by the ceiling of the autonomous inspection cycle (17.43) "
-        "and from above by the weakest confirmed event (31.98), and at the selected "
-        "value of 18.0 the detector is silent through 37.4 minutes of autonomous "
-        "operation. The remaining limit cannot be removed by any threshold, since "
-        "one confirmed false alarm peaks higher than three of the five confirmed "
-        "real events."
+        "On hardware the offline-derived threshold did not transfer, declaring 58 % "
+        "of decisions to be alarms. The cause was measured rather than assumed: during ordinary "
+        "operation the residual model runs at eleven times its validation mean error "
+        "and the raw model at eighty-six times, so a percentile of the validation "
+        "distribution carries no information about the deployment. The asymmetry is "
+        "the practically useful part — the residual model sits at 0.93 of its own "
+        "threshold on the cell while the raw model sits at 7.28, which let a "
+        "five-per-cent-weighted model supply 29 % of the fused score. Re-estimating "
+        "both scales and the threshold on clean cell decisions, with a robust "
+        "percentile in place of the min–max range, restores the intended weighting."
     )
     b.p(
-        "The next step follows directly from that limit and is already instrumented: "
-        "the operator interface accumulates verified labels, and those labels form "
-        "the set on which the two autoencoders should be retrained on real robot "
-        "data, under a run-disjoint split in which no window of an evaluation run "
-        "contributes to training. Two further directions are a long-horizon "
-        "indicator to cover the slow drift scenario, and a pose-conditioned rather "
-        "than global threshold, since the score was measured to vary over three "
-        "orders of magnitude with the pose of the arm."
+        "With that configuration the detector was validated against provoked "
+        "collisions. Three operator-confirmed events were caught with peaks of "
+        "11.30, 16.13 and 25.04 against a threshold of 5.0, with no unlabelled alarm "
+        "block in ten minutes of event-bearing operation and no alarm at all in "
+        "fourteen minutes of ordinary operation; any threshold in (4.14, 11.30) "
+        "gives the same result. The working envelope is bounded on the other side "
+        "too: a deliberately provoked low-amplitude hand contact reached only 6.8 "
+        "times its own run median while ordinary inspection motion reaches 26.7 "
+        "times, placing it at the 75.6th percentile of normal operation. Four "
+        "decision rules were evaluated against that event and none separated it."
+    )
+    b.p(
+        "Two directions follow. The sensitivity floor is a property of the "
+        "representation, not of the threshold, so closing it requires models trained "
+        "on the cell's own trajectories — which would also remove the "
+        "out-of-distribution condition behind the threshold-transfer failure — or an "
+        "additional channel that responds to contact rather than to dynamics. The "
+        "second is a payload term outside the solver, following the same pattern as "
+        "the friction term, since the unmodelled payload is what forces the "
+        "normalising scale up during transport. Both are supported by the "
+        "instrumentation already in place: every decision, every alarm block, the "
+        "operator's label and the provenance of the configuration that produced them "
+        "are written to disk."
     )
 
-    # ─────────────────────────────────────────── back matter ─────────
     b.h1("Acknowledgement")
     b.p(
         "The project is supported by the KDT Joint Undertaking (101140216) and its "

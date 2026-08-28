@@ -23,13 +23,22 @@ setup(
         # ── çalışma zamanı varlıkları ──
         # Düğüm bunları kurulu share dizininden okur; böylece depoyu klonlayan
         # herkeste mutlak yol düzenlemesi gerekmeden çalışır.
+        # v3 — DAĞITIM VARSAYILANI. Koşu-ayrık bölme, sürtünme düzeltmeli kalıntı,
+        # rejim-koşullu eşik. Düğümün varsayılan parametreleri bunları gösterir.
+        assets("residual_ae_v3"),
+        assets("raw_ae_v3"),
+        assets("fusion_v3"),
+        # v2 — bildirinin erratum yeniden üretimi için KALIYOR, dağıtımda kullanılmaz.
         assets("residual_ae_v2"),
         assets("raw_ae_v2"),
         assets("fusion_v2"),
         assets("resources"),
         assets("resources/schemas"),
+        # Modeller sürtünme çıkarılmış kalıntıyla eğitildi; friction_model.json
+        # kurulmazsa düğüm başlamaz (detector.py sürtünme uyuşmazlığında hata verir).
         ("share/" + package_name,
-         ["current_to_torque.json", "residual_calibration_clean.json"]),
+         ["current_to_torque.json", "residual_calibration_clean.json",
+          "residual_calibration_fric.json", "friction_model.json"]),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -42,6 +51,8 @@ setup(
         "console_scripts": [
             "detector = anomaly_detection.detector_node:main",
             "replay_publisher = anomaly_detection.replay_publisher:main",
+            # Kaydedilmiş bir oturumu arayüze geri yayınlar (robot/dedektör gerekmez).
+            "replay_scores = anomaly_detection.replay_scores:main",
         ],
     },
 )

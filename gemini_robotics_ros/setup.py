@@ -26,6 +26,7 @@ setup(
         "console_scripts": [
             "perception_node = gemini_robotics_ros.perception_node:main",
             "pick_place_node = gemini_robotics_ros.pick_place_node:main",
+            "recorder_node = gemini_robotics_ros.recorder_node:main",
             "er_probe = gemini_robotics_ros.er_probe:main",
             "measure_tcp = gemini_robotics_ros.tool_geometry:main",
         ],

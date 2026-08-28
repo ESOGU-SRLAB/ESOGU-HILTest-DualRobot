@@ -34,7 +34,8 @@ HERE = Path(__file__).resolve().parent
 FIG = HERE / "figures"
 PKG = HERE.parent
 BACKUP = PKG / "backup_anomaly_detection" / "anomaly_detection"
-NPZ = BACKUP / "fusion_v2" / "scores.npz"
+NPZ = BACKUP / "fusion_v3_s1" / "scores.npz"      # koşu-ayrık test kümesi
+RESULTS = BACKUP / "fusion_v3_s1" / "results.json"
 BILDIRI = BACKUP / "belgeler" / "245.pdf"
 KAYIT = Path(os.path.expanduser("~/anomali_kayit"))
 FIG.mkdir(parents=True, exist_ok=True)
@@ -111,60 +112,67 @@ def save(fig, name):
 # ═════════════════════════════════════════════════════════════════════
 # offline data
 # ═════════════════════════════════════════════════════════════════════
+def pr_curve(y, s):
+    """
+    Precision–recall eğrisi ve ortalama kesinlik (sklearn'süz, elle).
+
+    Skorlar büyükten küçüğe sıralanır; her eşikte kümülatif TP/FP sayılır.
+    Ortalama kesinlik, geri çağırma artışlarıyla ağırlıklı kesinlik toplamıdır
+    (sklearn'ün average_precision_score tanımı).
+    """
+    o = np.argsort(-np.asarray(s, dtype=float))
+    yy = np.asarray(y, dtype=bool)[o]
+    tp = np.cumsum(yy)
+    fp = np.cumsum(~yy)
+    P = max(int(yy.sum()), 1)
+    prec = tp / np.maximum(tp + fp, 1)
+    rec = tp / P
+    ap = float(np.sum(np.diff(np.concatenate([[0.0], rec])) * prec))
+    return rec, prec, ap
+
+
+def roc_curve(y, s):
+    """ROC eğrisi ve eğri altı alan (yamuk kuralı)."""
+    o = np.argsort(-np.asarray(s, dtype=float))
+    yy = np.asarray(y, dtype=bool)[o]
+    tp = np.cumsum(yy)
+    fp = np.cumsum(~yy)
+    P = max(int(yy.sum()), 1)
+    N = max(int((~yy).sum()), 1)
+    tpr = np.concatenate([[0.0], tp / P])
+    fpr = np.concatenate([[0.0], fp / N])
+    return fpr, tpr, float(np.trapezoid(tpr, fpr))
+
+
 def load_offline():
+    """
+    Koşu-ayrık test kümesinin skorları (tohum 1) ve dondurulmuş yapılandırma.
+
+    Ölçek ve ağırlık `results.json`'daki DONDURULMUŞ değerlerden gelir; npz'deki
+    z_* alanları başka bir normalleştirmeye ait ve kullanılmaz.
+    """
     if not NPZ.exists():
         print(f"  !! missing {NPZ}", file=sys.stderr)
         return None
     z = np.load(NPZ)
-    cfg = json.load(open(PKG / "fusion_v2" / "fusion_config.json", encoding="utf-8"))
+    r = json.load(open(RESULTS, encoding="utf-8"))
+    cfg = json.load(open(BACKUP / "fusion_v3_s1" / "fusion_config.json",
+                         encoding="utf-8"))
     sc = cfg["scale"]
-    # the npz z_* fields carry a different normalisation; recompute from the
-    # scale block that the deployed detector actually uses.
+    w = r["frozen"]["w_res"]
     zr = (z["s_residual"] - sc["residual"]["lo"]) / sc["residual"]["span"]
     zw = (z["s_raw"] - sc["raw"]["lo"]) / sc["raw"]["span"]
+    thr = r["frozen"]["threshold"]
     return {
         "y": z["y"].astype(bool),
         "res": z["s_residual"], "raw": z["s_raw"],
         "zr": zr, "zw": zw,
-        "fused": cfg["w_kal"] * zr + cfg["w_ham"] * zw,
-        "thr": cfg["fused_threshold_fmu"],
-        "cfg": cfg,
-        "n_train_windows": train_windows(),
+        "fused": w * zr + (1 - w) * zw,
+        "thr": thr["global"] if isinstance(thr, dict) else thr,
+        "w": w, "cfg": cfg, "results": r,
     }
 
 
-def train_windows(default=8294):
-    """How many windows the autoencoders actually saw during training."""
-    meta = PKG / "residual_ae_v2" / "metadata.json"
-    if meta.exists():
-        return int(json.load(open(meta))["n_train_windows"])
-    return default
-
-
-def pr_curve(y, s):
-    """Precision-recall curve + average precision, computed directly."""
-    order = np.argsort(-s)
-    ys = y[order]
-    tp = np.cumsum(ys)
-    fp = np.cumsum(~ys)
-    precision = tp / np.maximum(tp + fp, 1)
-    recall = tp / ys.sum()
-    ap = float(np.sum(np.diff(np.r_[0.0, recall]) * precision))
-    return recall, precision, ap
-
-
-def roc_curve(y, s):
-    order = np.argsort(-s)
-    ys = y[order]
-    tpr = np.cumsum(ys) / ys.sum()
-    fpr = np.cumsum(~ys) / (~ys).sum()
-    trap = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
-    return fpr, tpr, float(trap(tpr, fpr))
-
-
-# ═════════════════════════════════════════════════════════════════════
-# Figure 1 — experimental platform
-# ═════════════════════════════════════════════════════════════════════
 def fig_platform():
     src = FIG / "platform.png"
     if not src.exists():
@@ -363,10 +371,14 @@ def fig_fusion_value(D):
                   fontsize=7.8, color=INK2, fontweight="normal", pad=3)
 
     # (b) per-fault-type ----------------------------------------------
+    # Beş tohumun ORTALAMA AUC'si, miras enjeksiyon protokolü.
+    # Eski sürümde bu diziler BestF1 taşıyordu ama eksen "AUC" diyordu; ikisi
+    # aynı sayı değil (motor kaymasında 0,912'ye karşı 0,669) ve fark modelin
+    # sıralama kalitesini olduğundan kötü gösteriyordu.
     faults = ["Motor drift", "Collision", "Encoder glitch", "Sensor noise"]
-    res = [0.451, 0.995, 0.988, 0.296]
-    raw = [0.256, 0.999, 0.491, 1.000]
-    fus = [0.443, 0.996, 0.989, 0.996]
+    res = [0.912, 1.000, 1.000, 0.682]
+    raw = [0.652, 1.000, 0.832, 1.000]
+    fus = [0.910, 1.000, 1.000, 1.000]
     y = np.arange(len(faults))[::-1]
     g = 0.26
 
@@ -383,7 +395,7 @@ def fig_fusion_value(D):
     ax.set_yticks(y, faults)
     ax.set_xlim(0, 1.20)
     ax.set_xticks([0, 0.5, 1.0])
-    ax.set_xlabel("AUC")
+    ax.set_xlabel("AUC  (five-seed mean)")
     ax.set_title("(b)  Detection by fault type", loc="left", pad=20)
     h, l = ax.get_legend_handles_labels()
     ax.legend(h[::-1], l[::-1], loc="lower left", ncol=3, handlelength=1.3,
@@ -573,8 +585,6 @@ def main():
               f"{int(D['y'].sum())} anomalous ({D['y'].mean()*100:.1f} %)")
         fig_pr_roc(D)
         fig_fusion_value(D)
-        fig_unseen(D)
-    fig_real_cell()
     fig_interface()
 
 

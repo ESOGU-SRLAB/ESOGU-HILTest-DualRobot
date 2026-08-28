@@ -265,6 +265,7 @@ Bu yüzden sonuç `payload_margin_m` kadar şişirilir ve ölçüm başarısız 
 | `/gemini/er_image` | `sensor_msgs/Image` | çıkış — ER 2'nin gördüğü kare |
 | `/gemini/markers` | `visualization_msgs/MarkerArray` | çıkış — küre + etiket + normal oku |
 | `/gemini/status` | `std_msgs/String` (JSON) | çıkış — görev durumu |
+| `/gemini/record` | `std_msgs/String` (JSON) | çıkış — ölçüm olayları (kayıt) |
 | `/OnRobotVGOutput` | `vgc10_msgs/OnRobotVGOutput` | çıkış — vakum komutu |
 
 ### Sim → gerçek topic geçişi
@@ -280,6 +281,46 @@ intensity_topic:   "/intensity"          # "/intensity"
 image_topic:       "/sim/image"          # YOK - RGB yok, er_image_source
                                          #       "render" kalmalı
 ```
+
+## Koşu kaydı
+
+Launch, görev düğümleriyle birlikte pasif bir kayıt düğümü de başlatır. Kayıt
+düğümü yalnız dinler; hiçbir şey komutlamaz.
+
+```bash
+ros2 launch gemini_robotics_ros gemini_pick_place.launch.py mode:=real \
+    run_name:=kabartma_01 note:="kucuk kutu, bandin sonunda"
+```
+
+Her koşu `recordings/<YYYYmmdd_HHMMSS>[_<run_name>]/` altına yazılır. Kapatmak
+için `record:=false`.
+
+| dosya | ne var |
+|---|---|
+| `config.json` | o koşuda geçerli olan uç eleman, eşikler, yaklaşma adayları, bekleme süreleri |
+| `meta.json` | koşu kimliği, not, git commit'i ve kirli olup olmadığı |
+| `events.jsonl` | `/gemini/status` + `/gemini/record` ham akışı |
+| `timeline.csv` | durum geçişleri ve her aşamanın süresi |
+| `arrivals.csv` | komut edilen konum, TF'ten okunan kap ucu, sapma (mm), ray |
+| `surfaces.csv` | yama/bant nokta sayısı, RMS artık, normal, oturtma sapması, ölçülen parça boyu |
+| `er_queries.csv` | model çağrısı: sorgu, **gecikme**, dönen ham noktalar, kare dosyası |
+| `scan_poses.csv` | hangi tarama pozunda arandı, bulundu mu |
+| `vacuum.csv` | VGC10'un bildirdiği bağıl vakum zaman serisi |
+| `joint_states.csv`, `tcp_track.csv` | eklem konumları ve kap ucunun TF izi |
+| `frames/` | her model çağrısı ANINDA: `_er.png` (modele giden kare), `_alt_<mod>.png` (aynı kareden diğer render biçimleri), `_depth.npy` (ham), `_depth_mm.png`, `_intensity.png`, `_caminfo.json` |
+
+İki nokta üzerinde durmak gerekir.
+
+**`arrivals.csv` içindeki sapma İZLEME doğruluğudur.** TF'ten okunan kap ucu ile
+o harekete KOMUT EDİLEN konumun farkıdır; bağımsız bir metroloji sistemine karşı
+mutlak doğruluk değildir.
+
+**`frames/` çevrimdışı ablasyon içindir.** Ham derinlik ölçeklenmeden `.npy`
+olarak saklanır; `_caminfo.json` ile birlikte render'ı sonradan yeniden üretmeye
+yeter. Ayrıca `record_compare_modes` ile alternatif render biçimleri koşu
+sırasında, aynı kareden ve aynı parametrelerle üretilip yanına yazılır — yani
+"kabartma yerine normal gölgeleme verseydik" karşılaştırması için robota ikinci
+kez dokunmak gerekmez.
 
 ## Ayarlanması gereken parametreler
 

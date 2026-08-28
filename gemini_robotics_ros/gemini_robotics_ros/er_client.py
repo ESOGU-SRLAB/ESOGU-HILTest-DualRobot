@@ -23,6 +23,7 @@ import base64
 import json
 import os
 import re
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -230,6 +231,12 @@ def _extract_json(text: str) -> Any:
 class ERClientBase:
     """Ortak sözleşme. point() ve plan() alt sınıflarda uygulanır."""
 
+    # Ölçüm alanları taban sınıfta tanımlıdır ki kaydı yapan taraf istemci
+    # türünü bilmek zorunda kalmasın: gerçek istemcide dolar, uygulamayan bir
+    # istemcide None kalır; iki durumda da okunması güvenlidir.
+    last_latency_s: Optional[float] = None
+    last_response_text: Optional[str] = None
+
     def point(self, image_bgr: np.ndarray, query: str, max_items: int = 10) -> List[Detection]:
         raise NotImplementedError
 
@@ -304,6 +311,11 @@ class GeminiERClient(ERClientBase):
         return base64.b64encode(buf.tobytes()).decode("utf-8")
 
     def _ask(self, image_bgr: np.ndarray, prompt: str) -> str:
+        # Çağrı gecikmesi ölçülüp saklanır: modelin görev süresindeki payı,
+        # sistemin kullanım zarfını belirleyen tek sayıdır ve sonradan
+        # hesaplanamaz. `last_latency_s` çağrıdan hemen sonra okunur
+        # (locator.locate/plan), bu yüzden örnek başına tek değer yeter.
+        started = time.perf_counter()
         response = self._client.interactions.create(
             model=self._model,
             input=[
@@ -316,6 +328,8 @@ class GeminiERClient(ERClientBase):
             ],
             generation_config={"thinking_level": self._thinking_level},
         )
+        self.last_latency_s = time.perf_counter() - started
+        self.last_response_text = response.output_text
         return response.output_text
 
     def point(self, image_bgr: np.ndarray, query: str, max_items: int = 10) -> List[Detection]:

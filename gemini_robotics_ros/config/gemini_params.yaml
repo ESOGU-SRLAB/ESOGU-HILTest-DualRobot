@@ -608,3 +608,32 @@
 
     # true iken tüm algı çalışır ama robot hareket etmez (ilk denemeler için)
     dry_run: false
+
+    # ─────────────────────────────────────────────────────────────────
+    # koşu kaydı (recorder_node)
+    # ─────────────────────────────────────────────────────────────────
+    # Kayıt düğümü PASİFTİR: yalnız dinler. Kapatmak için launch'a
+    # record:=false verin, buradaki ayarları değiştirmeye gerek yok.
+
+    # Boş = paket kaynağındaki recordings/. install/ altındaki kopyaya
+    # yazmanın anlamı yok, colcon build onu siliyor.
+    record_root: ""
+    # Klasör adına eklenecek etiket; launch'taki run_name argümanı bunu ezer.
+    record_run_name: ""
+    record_note: ""
+
+    # Model çağrısı anındaki kareleri (render + ham derinlik + genlik + iç
+    # parametreler) diske al. Çevrimdışı ablasyonun tek koşulu budur:
+    # kapatılırsa render biçimi deneyi robot olmadan tekrarlanamaz.
+    record_frames: true
+    # Ham derinlik .npy olarak da yazılsın mı. PNG'ye çevrilmiş 16-bit
+    # kopya her hâlükârda yazılır ama o göz denetimi içindir; ablasyonda
+    # ölçeklenmemiş float gerekir.
+    record_depth_npy: true
+
+    # Kap ucunun TF izini bu sıklıkta örnekle (Hz). 0 = kapalı.
+    # Varış sapmaları bundan BAĞIMSIZ olarak her waypoint'te yazılır;
+    # bu iz yalnız hareket profilini çıkarmak için.
+    record_tcp_hz: 5.0
+    # /joint_states 100-500 Hz gelir; her N'inci mesaj yazılır.
+    record_joint_decimate: 10

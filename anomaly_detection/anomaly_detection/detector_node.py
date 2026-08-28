@@ -52,15 +52,31 @@ def _default_base() -> str:
     Öncelik kurulu `share/anomaly_detection` dizinindedir; böylece depoyu klonlayan
     herkeste mutlak yol düzenlemesi gerekmez. Varlıklar orada yoksa (ör. paket
     kurulmadan doğrudan kaynak ağacından çalıştırılıyorsa) kaynak dizinine düşülür.
+
+    Yoklama v3 üzerinden yapılır — v2 üzerinden DEĞİL. Aksi hâlde eski bir kurulum
+    "geçerli" sayılır ve düğüm sessizce v2 varsayılanlarına düşer. 26.08.2026
+    oturumu tam olarak böyle kaybedildi: kod güncelken kurulu share dizini yalnız
+    v2 taşıyordu, ölçüm eski modellerle alındı ve bu ancak köken dosyasından
+    anlaşıldı. Kurulum bayatsa artık gürültülü biçimde uyarılıyor.
     """
+    src = str(Path(__file__).resolve().parent.parent)
     try:
         from ament_index_python.packages import get_package_share_directory
         share = Path(get_package_share_directory("anomaly_detection"))
-        if (share / "fusion_v2" / "fusion_config.json").is_file():
+        if (share / "fusion_v3" / "fusion_config.json").is_file():
             return str(share)
+        if (share / "fusion_v2" / "fusion_config.json").is_file():
+            print(
+                "\n" + "!" * 72 +
+                f"\nBAYAT KURULUM: {share}\n"
+                "  Kurulu paket v3 varlıklarını taşımıyor (yalnız v2 var).\n"
+                "  `colcon build --packages-select anomaly_detection` çalıştırın,\n"
+                "  yoksa ölçüm ESKİ modellerle alınır.\n"
+                f"  Şimdilik kaynak ağacına düşülüyor: {src}\n"
+                + "!" * 72 + "\n", file=sys.stderr)
     except Exception:
         pass
-    return str(Path(__file__).resolve().parent.parent)
+    return src
 
 
 DEFAULT_BASE = _default_base()
@@ -72,14 +88,17 @@ class AnomalyDetectorNode(Node):
         super().__init__("ur10e_anomaly_detector")
 
         p = self.declare_parameter
-        p("residual_model_dir", f"{DEFAULT_BASE}/residual_ae_v2")
-        p("raw_model_dir", f"{DEFAULT_BASE}/raw_ae_v2")
-        p("fusion_config", f"{DEFAULT_BASE}/fusion_v2/fusion_config.json")
+        # VARSAYILAN: v3. Koşu-ayrık bölme, sürtünme düzeltmeli kalıntı,
+        # rejim-koşullu eşik. v2 artefaktları pakette duruyor ama yalnız
+        # bildirinin erratum yeniden üretimi içindir; dağıtımda kullanılmaz.
+        p("residual_model_dir", f"{DEFAULT_BASE}/residual_ae_v3")
+        p("raw_model_dir", f"{DEFAULT_BASE}/raw_ae_v3")
+        p("fusion_config", f"{DEFAULT_BASE}/fusion_v3/fusion_config.json")
         p("current_to_torque", f"{DEFAULT_BASE}/current_to_torque.json")
-        p("residual_calibration", f"{DEFAULT_BASE}/residual_calibration_clean.json")
+        p("residual_calibration", f"{DEFAULT_BASE}/residual_calibration_fric.json")
         # Boş bırakılırsa sürtünme terimi UYGULANMAZ. Modeller sürtünme çıkarılmış
         # kalıntıyla eğitildiyse bu parametre doldurulmalıdır.
-        p("friction_model", "")
+        p("friction_model", f"{DEFAULT_BASE}/friction_model.json")
         # Boş/-1 = fusion_config.json ne diyorsa. Saha dağıtımında rejim eşiği
         # önerilir; gerekçesi detector.py'de ölçümleriyle birlikte.
         p("regime_threshold", "auto")
@@ -109,7 +128,10 @@ class AnomalyDetectorNode(Node):
         # yani uyarlanabilir kural ölüyor. Varsayım ("dururken skor düşük") yanlış
         # çıktı: skor poza bağlı, yerçekimi yüklü duruşta 4,30, harekette 1,58.
         # Bu yüzden varsayılan KAPALI. Kilidi kıran dondurma sınırıydı, kapı değil.
-        p("motion_qd_min", -1.0)      # rad/s; negatif = kapı kapalı
+        p("motion_qd_min", -1.0)      # uyarlanabilir taban kapısı; negatif = hep açık
+        # Eşik REJİMİ ayrı bir eşik kullanır ve çevrimdışı değerlendirmeyle
+        # birebir aynı olmalıdır. -1 = fusion_config.json ne diyorsa (0,02).
+        p("regime_qd_min", -1.0)
         # fusion_config.json'daki θ FMU verisinden geliyor ve gerçek robotta 7 kat
         # düşük (temiz koşu medyanı 4,27, θ 0,6436 -> kararların %97'si alarm).
         # Pozitif verilirse config'deki değerin yerine geçer.
@@ -137,6 +159,8 @@ class AnomalyDetectorNode(Node):
             current_to_torque=g("current_to_torque"),
             residual_calibration=g("residual_calibration"),
             friction_model=(str(g("friction_model")) or None),
+            regime_qd_min=(None if float(g("regime_qd_min")) < 0
+                           else float(g("regime_qd_min"))),
             regime_threshold=({"auto": None, "true": True, "false": False}
                               .get(str(g("regime_threshold")).lower(), None)),
             solver=ur10_solver_py.InverseDynamicsSolverUR10(),
@@ -160,9 +184,26 @@ class AnomalyDetectorNode(Node):
             f"  kalıntı: {d.ae_res.n_feat} kanal θ={d.ae_res.threshold:.4f} ({d.ae_res.provider})")
         self.get_logger().info(
             f"  ham    : {d.ae_raw.n_feat} kanal θ={d.ae_raw.threshold:.4f} ({d.ae_raw.provider})")
+        # Rejim eşiği devredeyken global θ HİÇ kullanılmaz; onu tek başına basmak
+        # operatöre hiç uygulanmayacak bir sayı gösterir. Gerçekten uygulanan
+        # eşikler yazılıyor, global olan yalnız karşılaştırma için parantezde.
+        if d.regime_threshold and abs(d.thr_regime[0] - d.thr_regime[1]) < 1e-9:
+            # İki rejim aynı değeri taşıyorsa ayrım fiilen kapalıdır; iki sayı
+            # basmak operatöre olmayan bir ayrım varmış izlenimi verir.
+            self.get_logger().info(
+                f"  birleşim: w_kal={d.w_res:.2f} w_ham={d.w_raw:.2f} "
+                f"θ={d.thr_regime[0]:.5f} (tek eşik; duran ve hareketli aynı)")
+        elif d.regime_threshold:
+            self.get_logger().info(
+                f"  birleşim: w_kal={d.w_res:.2f} w_ham={d.w_raw:.2f} "
+                f"θ_duran={d.thr_regime[0]:.5f} θ_hareketli={d.thr_regime[1]:.5f} "
+                f"(|q̇|>{d.regime_qd_min:g} rad/s ile seçilir)")
+        else:
+            self.get_logger().info(
+                f"  birleşim: w_kal={d.w_res:.2f} w_ham={d.w_raw:.2f} "
+                f"θ_mutlak={d.thr_fused:.5f} (rejim eşiği KAPALI)")
         self.get_logger().info(
-            f"  birleşim: w_kal={d.w_res:.2f} w_ham={d.w_raw:.2f} θ_mutlak={d.thr_fused:.5f} "
-            f"ölçek={d.norm} (kalıntı z=(S−{d.res_lo:.4g})/{d.res_span:.4g}, "
+            f"  ölçek={d.norm} (kalıntı z=(S−{d.res_lo:.4g})/{d.res_span:.4g}, "
             f"ham z=(S−{d.raw_lo:.4g})/{d.raw_span:.4g})")
         if d.adaptive:
             self.get_logger().info(
@@ -297,6 +338,7 @@ class AnomalyDetectorNode(Node):
                                     {"static": det.thr_regime[0],
                                      "moving": det.thr_regime[1]}),
             "motion_qd_min": det.motion_qd_min,
+            "regime_qd_min": det.regime_qd_min,
             "residual_theta": det.ae_res.threshold,
             "raw_theta": det.ae_raw.threshold,
             "stride": det.stride,

@@ -39,8 +39,12 @@ class SurfacePatch:
     centroid: Vec3          # yama merkezi (bulutun frame'inde)
     normal: Vec3            # birim normal, kameraya doğru yönlendirilmiş
     rms_residual: float     # düzlemsellik artığı (m); küçük = düz
-    inliers: int            # düzlem oturtmada kullanılan nokta sayısı
+    inliers: int            # BANTTA kalan, düzlem oturtmada kullanılan nokta
     extent: float           # yamanın yaklaşık yarıçapı (m)
+    # Banda GİREN toplam nokta. inliers ile birlikte bandın ne kadarını
+    # eledigini verir; bu oran olmadan "bant çalıştı mı" sorusu ölçülemez,
+    # yalnız normalin sonucundan dolaylı olarak tahmin edilebilirdi.
+    patch_points: int = 0
 
 
 def _field_offsets(cloud: PointCloud2) -> Optional[Tuple[int, int, int]]:
@@ -179,6 +183,7 @@ def fit_surface(
         rms_residual=rms,
         inliers=int(len(band)),
         extent=extent,
+        patch_points=int(len(points)),
     )
 
 

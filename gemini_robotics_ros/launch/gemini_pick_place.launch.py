@@ -29,6 +29,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 
@@ -55,6 +56,22 @@ def generate_launch_description():
             description="Kamera kaynağı: sim (Gazebo köprüsü) | real (SICK sürücüsü). "
                         "MoveIt her iki modda da gerçek /move_action'ı kullanır.",
         ),
+        DeclareLaunchArgument(
+            "record", default_value="true", choices=["true", "false"],
+            description="Koşuyu recordings/<zaman damgası>/ altına kaydet. "
+                        "Kayıt düğümü pasiftir: yalnız dinler, hiçbir şey "
+                        "komutlamaz; kapatmak için record:=false.",
+        ),
+        DeclareLaunchArgument(
+            "run_name", default_value="",
+            description="Kayıt klasörünün adına eklenecek etiket "
+                        "(ör. run_name:=ablasyon_normal).",
+        ),
+        DeclareLaunchArgument(
+            "note", default_value="",
+            description="Koşu notu; meta.json içine yazılır "
+                        "(ör. note:='küçük kutu, bandın sonunda').",
+        ),
 
         Node(
             package="gemini_robotics_ros",
@@ -69,5 +86,19 @@ def generate_launch_description():
             name="gemini_pick_place",
             output="screen",
             parameters=parameters,
+        ),
+        # Kayıt düğümü. Görev düğümleriyle AYNI parametre dosyalarını alır;
+        # `/**:` joker'i sayesinde kamera topic'leri ve mode overlay'i burada
+        # da geçerli olur, yani sim/real ayrımı ikinci kez yazılmaz.
+        Node(
+            package="gemini_robotics_ros",
+            executable="recorder_node",
+            name="gemini_recorder",
+            output="screen",
+            condition=IfCondition(LaunchConfiguration("record")),
+            parameters=parameters + [{
+                "record_run_name": LaunchConfiguration("run_name"),
+                "record_note": LaunchConfiguration("note"),
+            }],
         ),
     ])

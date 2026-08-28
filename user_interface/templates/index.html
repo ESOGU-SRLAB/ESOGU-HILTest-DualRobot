@@ -320,7 +320,7 @@
     <header class="analytics-header">
         <div class="analytics-title">
             <h1>🚨 Anomaly Detection</h1>
-            <p>UR10e — residual + raw autoencoder fusion (Eq. 4), θ<sub>abs</sub> = <span id="an-thr-head">18.0</span></p>
+            <p>UR10e — residual + raw autoencoder fusion (Eq. 4), θ<sub>abs</sub> = <span id="an-thr-head">—</span></p>
         </div>
         <div class="analytics-toolbar">
             <span class="an-conn" id="an-conn">● NO CONNECTION</span>
@@ -333,7 +333,7 @@
         <div class="an-banner-metrics">
             <div class="an-metric">
                 <span class="an-metric-label">threshold</span>
-                <span class="an-metric-value" id="an-thr">18.00</span>
+                <span class="an-metric-value" id="an-thr">—</span>
             </div>
             <div class="an-metric">
                 <span class="an-metric-label">since last alarm</span>
@@ -358,18 +358,19 @@
         <section class="an-card">
             <h3>Model Breakdown</h3>
             <div class="an-bar-row">
-                <div class="an-bar-label">RESIDUAL <small>θ = 1.60</small></div>
+                <div class="an-bar-label">RESIDUAL <small>θ = <span id="an-thr-res">—</span></small></div>
                 <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-res"></div></div>
                 <div class="an-bar-val" id="an-val-res">—</div>
             </div>
             <div class="an-bar-row">
-                <div class="an-bar-label">RAW <small>θ = 3.45</small></div>
+                <div class="an-bar-label">RAW <small>θ = <span id="an-thr-raw">—</span></small></div>
                 <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-raw"></div></div>
                 <div class="an-bar-val" id="an-val-raw">—</div>
             </div>
-            <p class="an-note">Each bar shows the model’s score as a ratio of its own
-               threshold. The alarm decision is made by the fused score alone; this
-               breakdown only tells you which model is driving it.</p>
+            <p class="an-note">The number is the model’s raw reconstruction error;
+               the bar fills in proportion to its own threshold and turns red past it.
+               The alarm decision is made by the fused score alone — this breakdown
+               only tells you which model is driving it.</p>
         </section>
     </div>
 
