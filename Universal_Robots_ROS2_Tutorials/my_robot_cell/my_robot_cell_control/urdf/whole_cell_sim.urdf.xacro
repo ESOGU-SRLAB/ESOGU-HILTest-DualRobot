@@ -61,6 +61,11 @@
   <xacro:arg name="sim_ignition" default="true"/>
   <xacro:arg name="simulation_controllers" default=""/>
   <xacro:arg name="tf_prefix" default="sim_"/>
+  <!-- Gripper: link/joint'ler ZATEN bu arg ile üretiliyordu (simrobot_ur_macro.xacro),
+       ama makro çağrısına geçirilmediği için ros2_control komut/durum arayüzleri
+       oluşmuyordu; sim_gripper_controller de bu yüzden configure olamıyordu.
+       Varsayılan false, yani ENV_USE_GRIPPER verilmedikçe hiçbir şey değişmez. -->
+  <xacro:arg name="use_gripper" default="$(optenv ENV_USE_GRIPPER false)"/>
 
   <!-- Kawasaki argümanları -->
   <xacro:arg name="kawasaki_name" default="rs005l"/>
@@ -135,6 +140,7 @@
     visual_parameters_file="$(arg visual_parameters_file)"
     sim_ignition="$(arg sim_ignition)"
     tf_prefix="$(arg tf_prefix)ur10e_"
+    use_gripper="$(arg use_gripper)"
     >
       <origin xyz="0.0 0 0" rpy="0 0 0" />
   </xacro:simrobot_my_robot_cell>

@@ -5,6 +5,8 @@ Vidalama aleti (screwdriver) pick & place için Planning Scene attach/detach mek
 """
 
 from threading import Thread
+import os
+import re
 import time
 import math  # Radyan dönüşümleri için eklendi
 
@@ -15,6 +17,9 @@ from rclpy.node import Node
 from control_msgs.action import FollowJointTrajectory
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from builtin_interfaces.msg import Duration
+from ur_msgs.srv import SetIO
+from ur_msgs.msg import IOStates
+from rcl_interfaces.srv import GetParameters
 
 from pymoveit2_real import MoveIt2 as MoveIt2_Real
 from pymoveit2_real import MoveIt2State
@@ -38,20 +43,46 @@ class CollisionAwareRobotController(Node):
             callback_group=callback_group,
         )
         
-        # Planner ayarları - Daha iyi planlayıcılar
-        self.moveit2.planner_id = "RRTstarkConfigDefault"
+        # --- Planlayıcı ayarları ---------------------------------------
+        # DİKKAT: MoveIt2 nesnesinin özellik adları 'allowed_planning_time' ve
+        # 'num_planning_attempts'. Eskiden burada 'planning_time' /
+        # 'planning_attempts' yazılıyordu; böyle bir özellik olmadığı için
+        # ayarlar MoveIt'e HİÇ ulaşmıyor, her plan pymoveit2'nin 0.5 sn
+        # varsayılanıyla koşuyordu. RRTstar bir OPTİMİZE EDİCİ planlayıcıdır ve
+        # verilen sürenin tamamını kullanır; 0.5 sn ile 7 eklemli bu grupta
+        # sürekli "Planning failed! Error code: FAILURE" veriyordu.
+        self.declare_parameter("planner_id", "RRTConnectkConfigDefault")
+        self.declare_parameter("planning_time", 5.0)
+        self.declare_parameter("planning_attempts", 10)
 
-        # Güvenlik için daha düşük hızlar
-        self.moveit2.max_velocity = 0.1
-        self.moveit2.max_acceleration = 0.1
+        # --- Hızlar (MoveIt ölçekleme çarpanları, 0.0-1.0) ------------
+        # travel_speed : noktalar arası normal seyir
+        # screw_speed  : xTop <-> xOpt geçişleri; vidalama sırasında robot
+        #                belirgin biçimde daha yavaş hareket etmeli
+        self.declare_parameter("travel_speed", 0.1)
+        self.declare_parameter("screw_speed", 0.01)
+
+        self.travel_speed = float(self.get_parameter("travel_speed").value)
+        self.screw_speed = float(self.get_parameter("screw_speed").value)
+
+        self.moveit2.max_velocity = self.travel_speed
+        self.moveit2.max_acceleration = self.travel_speed
         
         # ÖNEMLI: Çarpışma önleme ayarları
         self.moveit2.cartesian_avoid_collisions = True
         self.moveit2.cartesian_jump_threshold = 2.0
         
-        # Planlama denemeleri ve zaman limiti
-        self.planning_attempts = 10
-        self.planning_time = 10.0
+        self.planning_time = float(self.get_parameter("planning_time").value)
+        self.planning_attempts = int(self.get_parameter("planning_attempts").value)
+
+        self.moveit2.planner_id = str(self.get_parameter("planner_id").value)
+        self.moveit2.allowed_planning_time = self.planning_time
+        self.moveit2.num_planning_attempts = self.planning_attempts
+        self.get_logger().info(
+            f"Planlayıcı: {self.moveit2.planner_id}, "
+            f"süre: {self.moveit2.allowed_planning_time}s, "
+            f"deneme: {self.moveit2.num_planning_attempts}"
+        )
 
         # Gripper için doğrudan kontrolcü action client'i (MoveIt atlaniyor)
         self._gripper_action_client = ActionClient(
@@ -63,6 +94,89 @@ class CollisionAwareRobotController(Node):
 
         # Screwdriver Planning Scene durumu
         self._screwdriver_attached = False
+
+        # =================================================================
+        # UR GPIO ARAYÜZÜ  (pendant'taki "GPIO" sekmesinin ROS 2 karşılığı)
+        #   Çıkış yazma : /io_and_status_controller/set_io    (ur_msgs/srv/SetIO)
+        #   Giriş okuma : /io_and_status_controller/io_states (ur_msgs/msg/IOStates)
+        #
+        # Pin numaralandırması (SetIO ve IOStates aynı indeksi kullanır):
+        #    0 -  7  -> standard digital output / input
+        #    8 - 15  -> configurable output / input
+        #   16 - 17  -> tool digital output / input
+        #
+        # NOT: Bu komutlar RTDE üzerinden gider; External Control programı
+        #      koşmasa bile IO yazılır/okunur (hareket için ise program şart).
+        # =================================================================
+        # --- IFARLAB hücresinde ölçülen pin haritası (find_io_pins.py ile tespit edildi) ---
+        #   ÇIKIŞ  standard_digital_out[0] -> vidalama SIKMA      <-- burada kullanılıyor
+        #   ÇIKIŞ  standard_digital_out[1] -> vidalama SÖKME      (şimdilik kullanılmıyor)
+        #   GİRİŞ  standard_digital_in[7]  -> YEŞİL buton         <-- burada kullanılıyor
+        #   GİRİŞ  standard_digital_in[6]  -> KIRMIZI buton       (şimdilik kullanılmıyor)
+        #   GİRİŞ  standard_digital_in[5]  -> BEYAZ buton         (şimdilik kullanılmıyor)
+        self.declare_parameter("screwdriver_pin", 0)          # vidalama SIKMA çıkışı (DOUT0)
+        self.declare_parameter("screwdriver_reverse_pin", 1)  # vidalama SÖKME çıkışı (DOUT1) - rezerve
+        self.declare_parameter("green_button_pin", 7)         # operatörün yeşil butonu (DIN7)
+        self.declare_parameter("red_button_pin", 6)           # kırmızı buton (DIN6) - rezerve
+        self.declare_parameter("white_button_pin", 5)         # beyaz buton (DIN5) - rezerve
+        self.declare_parameter("green_button_active_high", True)  # buton NC ise False yapın
+        self.declare_parameter("green_button_timeout", 0.0)   # 0.0 = sonsuza kadar bekle
+
+        # GPIO yalnızca GERÇEK robotta anlamlı: use_fake_hardware:=true iken
+        # mock_components dijital girişleri hep 0 döndürür, yani yeşil buton
+        # beklemesi sonsuza kadar takılır. Bu yüzden sim/fake modda GPIO
+        # tamamen devre dışı bırakılır.
+        #   auto      -> use_fake_hardware / ENV_USE_FAKE_HARDWARE'e ve io_states
+        #                yayınının varlığına bakarak kendisi karar verir
+        #   force_on  -> zorla açık,  force_off -> zorla kapalı
+        #
+        # DİKKAT: değerler bilerek "force_on/force_off"; çıplak "on"/"off"
+        # komut satırında YAML kuralı gereği BOOLEAN olarak ayrıştırılır ve
+        # string parametreye atanamayıp node'u düşürür. Yine de launch'tan
+        # string olarak gelirlerse aşağıda normalize ediliyorlar.
+        self.declare_parameter("gpio_mode", "auto")
+        # use_fake_hardware'ı elle vermek zorunda değilsiniz: auto modda
+        # robot_description'daki donanım eklentisine bakarak kendisi anlar.
+        # Bu parametre sadece o tespiti geçersiz kılmak isterseniz var.
+        self.declare_parameter("use_fake_hardware", False)
+        self.declare_parameter("description_node", "/robot_state_publisher")
+        self.declare_parameter("fake_button_delay", 0.0)  # GPIO kapalıyken buton yerine beklenecek süre
+
+        self.screwdriver_pin = int(self.get_parameter("screwdriver_pin").value)
+        self.screwdriver_reverse_pin = int(self.get_parameter("screwdriver_reverse_pin").value)
+        self.green_button_pin = int(self.get_parameter("green_button_pin").value)
+        self.red_button_pin = int(self.get_parameter("red_button_pin").value)
+        self.white_button_pin = int(self.get_parameter("white_button_pin").value)
+        self.green_button_active_high = bool(self.get_parameter("green_button_active_high").value)
+        self.green_button_timeout = float(self.get_parameter("green_button_timeout").value)
+        self.gpio_mode = self._normalize_gpio_mode(self.get_parameter("gpio_mode").value)
+        self.use_fake_hardware = bool(self.get_parameter("use_fake_hardware").value)
+        self.description_node = str(self.get_parameter("description_node").value)
+        self.fake_button_delay = float(self.get_parameter("fake_button_delay").value)
+        # resolve_gpio_availability() çağrılana kadar GPIO kullanılmaz
+        self.io_enabled = False
+        self.io_states_topic = "/io_and_status_controller/io_states"
+
+        self._set_io_client = self.create_client(
+            SetIO, "/io_and_status_controller/set_io", callback_group=callback_group
+        )
+        self._digital_inputs = {}
+        self._io_states_seen = False
+        self._screwdriver_running = False
+        self.create_subscription(
+            IOStates,
+            self.io_states_topic,
+            self._io_states_callback,
+            10,
+            callback_group=callback_group,
+        )
+
+        self.get_logger().info(
+            f"GPIO ayarları -> vidalama SIKMA: DOUT{self.screwdriver_pin}, "
+            f"SÖKME: DOUT{self.screwdriver_reverse_pin}, "
+            f"yeşil buton: DIN{self.green_button_pin} "
+            f"(active_high={self.green_button_active_high}, gpio_mode={self.gpio_mode})"
+        )
 
         self.get_logger().info("Çarpışma önleyici robot kontrolcüsü başlatıldı")
         
@@ -88,15 +202,15 @@ class CollisionAwareRobotController(Node):
             f"Planlama ayarları - Denemeler: {planning_attempts}, Süre: {planning_time}s, Cartesian: {cartesian}"
         )
         
-        original_attempts = getattr(self.moveit2, 'planning_attempts', 5)
-        original_time = getattr(self.moveit2, 'planning_time', 5.0)
-        
+        # Doğru özellik adları: allowed_planning_time / num_planning_attempts
+        original_attempts = self.moveit2.num_planning_attempts
+        original_time = self.moveit2.allowed_planning_time
+
         try:
-            if hasattr(self.moveit2, 'planning_attempts'):
-                self.moveit2.planning_attempts = planning_attempts
-            if hasattr(self.moveit2, 'planning_time'):
-                self.moveit2.planning_time = planning_time
-                
+            self.moveit2.num_planning_attempts = planning_attempts
+            self.moveit2.allowed_planning_time = planning_time
+
+
             self.moveit2.move_to_pose(
                 position=position,
                 quat_xyzw=orientation,
@@ -117,21 +231,33 @@ class CollisionAwareRobotController(Node):
         except Exception as e:
             self.get_logger().error(f"Hareket hatası: {str(e)}")
         finally:
-            if hasattr(self.moveit2, 'planning_attempts'):
-                self.moveit2.planning_attempts = original_attempts
-            if hasattr(self.moveit2, 'planning_time'):
-                self.moveit2.planning_time = original_time
+            self.moveit2.num_planning_attempts = original_attempts
+            self.moveit2.allowed_planning_time = original_time
     
-    def move_to_joint_angles(self, joint_positions, synchronous=True):
+    def move_to_joint_angles(self, joint_positions, synchronous=True, speed=None):
         """
         Robotu belirli eklem açılarına (radyan cinsinden) güvenli bir şekilde hareket ettirir.
-        
+
         Args:
-            joint_positions (list): Hedef eklem açıları (radyan cinsinden). 
+            joint_positions (list): Hedef eklem açıları (radyan cinsinden).
                                      Listenin uzunluğu robotun eklem sayısına eşit olmalıdır.
             synchronous (bool): Hareketin bitmesini bekle (senkron)
+            speed (float|None): Bu harekete özel MoveIt hız/ivme ölçekleme çarpanı
+                                (0.0-1.0). None ise travel_speed kullanılır.
+                                Hareket bitince önceki değer geri yüklenir.
         """
-        self.get_logger().info(f"Güvenli JOINT hareketi başlatılıyor: {joint_positions}")
+        original_velocity = self.moveit2.max_velocity
+        original_acceleration = self.moveit2.max_acceleration
+
+        if speed is not None:
+            speed = max(0.001, min(1.0, float(speed)))
+            self.moveit2.max_velocity = speed
+            self.moveit2.max_acceleration = speed
+            self.get_logger().info(
+                f"Güvenli JOINT hareketi başlatılıyor (hız ölçeği {speed}): {joint_positions}"
+            )
+        else:
+            self.get_logger().info(f"Güvenli JOINT hareketi başlatılıyor: {joint_positions}")
 
         try:
             # move_to_configuration metodu ile eklem hedeflerine git
@@ -152,6 +278,26 @@ class CollisionAwareRobotController(Node):
         except Exception as e:
             self.get_logger().error(f"Joint hareket hatası: {str(e)}")
             return False
+        finally:
+            # Hıza özel ayarı her durumda geri al ki sonraki hareketler
+            # yanlışlıkla yavaş kalmasın.
+            self.moveit2.max_velocity = original_velocity
+            self.moveit2.max_acceleration = original_acceleration
+
+    def _wait_for_future(self, future, timeout):
+        """
+        Bir future'ın tamamlanmasını bekler.
+
+        rclpy.spin_until_future_complete(self, ...) BİLEREK kullanılmıyor: node
+        zaten main()'deki MultiThreadedExecutor tarafından spin ediliyor ve o
+        çağrı geçici bir SingleThreadedExecutor açıp node.executor'ü ona
+        devrediyor, geri vermiyor. Sonuç: node arka plan executor'ünde sessizce
+        sağır kalıyor (ve wait-set çakışmasından RCLError ile düşebiliyor).
+        """
+        deadline = time.time() + timeout
+        while not future.done() and time.time() < deadline and rclpy.ok():
+            time.sleep(0.01)
+        return future.done()
 
     def move_gripper(self, position, synchronous=True):
         """
@@ -178,7 +324,9 @@ class CollisionAwareRobotController(Node):
                 return False
 
             future = self._gripper_action_client.send_goal_async(goal)
-            rclpy.spin_until_future_complete(self, future, timeout_sec=10.0)
+            if not self._wait_for_future(future, 10.0):
+                self.get_logger().error("Gripper goal isteğine yanıt gelmedi (timeout)!")
+                return False
 
             goal_handle = future.result()
             if not goal_handle or not goal_handle.accepted:
@@ -187,7 +335,9 @@ class CollisionAwareRobotController(Node):
 
             if synchronous:
                 result_future = goal_handle.get_result_async()
-                rclpy.spin_until_future_complete(self, result_future, timeout_sec=10.0)
+                if not self._wait_for_future(result_future, 10.0):
+                    self.get_logger().error("Gripper hareketi zaman aşımına uğradı!")
+                    return False
                 self.get_logger().info("Gripper hareketi başarıyla tamamlandı!")
                 return True
             else:
@@ -196,6 +346,271 @@ class CollisionAwareRobotController(Node):
         except Exception as e:
             self.get_logger().error(f"Gripper hareket hatası: {str(e)}")
             return False
+
+    # =================================================================================
+    # GPIO: DİJİTAL ÇIKIŞ YAZMA / DİJİTAL GİRİŞ OKUMA
+    # =================================================================================
+    def _detect_fake_hardware_from_description(self, timeout=5.0):
+        """
+        robot_description'ı okuyup UR10e'nin hangi donanım eklentisiyle
+        yüklendiğine bakar. Böylece use_fake_hardware'ı elle vermeye gerek kalmaz.
+
+        Döner: True (fake/sim), False (gerçek), None (karar verilemedi).
+        """
+        service = f"{self.description_node}/get_parameters"
+        client = self.create_client(GetParameters, service)
+        try:
+            if not client.wait_for_service(timeout_sec=timeout):
+                self.get_logger().warn(f"'{service}' bulunamadı; robot_description okunamadı.")
+                return None
+
+            request = GetParameters.Request()
+            request.names = ["robot_description"]
+            future = client.call_async(request)
+            if not self._wait_for_future(future, timeout):
+                self.get_logger().warn("robot_description isteği yanıtlanmadı.")
+                return None
+
+            values = future.result().values
+            if not values or not values[0].string_value:
+                self.get_logger().warn("robot_description boş döndü.")
+                return None
+            description = values[0].string_value
+        finally:
+            self.destroy_client(client)
+
+        # Bu senaryo GERÇEK kolu (ur10e_ öneki, sim_ur10e_ değil) sürüyor.
+        # O kolun ros2_control bloğunu bulup eklentisine bakıyoruz.
+        arm_joint = f"{robot.prefix}shoulder_pan_joint"
+        for block in re.findall(r"<ros2_control\b.*?</ros2_control>", description, re.S):
+            if f'"{arm_joint}"' not in block:
+                continue
+            plugin_match = re.search(r"<plugin>\s*([^<\s]+)\s*</plugin>", block)
+            plugin = plugin_match.group(1) if plugin_match else "?"
+            fake_markers = ("mock_components", "fake_components",
+                            "gz_ros2_control", "ign_ros2_control", "gazebo_ros2_control")
+            is_fake = any(marker in plugin for marker in fake_markers)
+            self.get_logger().info(
+                f"robot_description: '{arm_joint}' eklentisi -> {plugin} "
+                f"({'SİM/FAKE' if is_fake else 'GERÇEK donanım'})"
+            )
+            return is_fake
+
+        self.get_logger().warn(
+            f"robot_description içinde '{arm_joint}' taşıyan ros2_control bloğu yok."
+        )
+        return None
+
+    @staticmethod
+    def _normalize_gpio_mode(value):
+        """'on'/'off'/'true'/'false' gibi yazımları kanonik biçime çevirir."""
+        text = str(value).strip().lower()
+        if text in ("force_on", "on", "true", "1", "enabled", "yes"):
+            return "force_on"
+        if text in ("force_off", "off", "false", "0", "disabled", "no"):
+            return "force_off"
+        return "auto"
+
+    def resolve_gpio_availability(self, probe_timeout=5.0):
+        """
+        GPIO'nun bu çalıştırmada kullanılıp kullanılmayacağına karar verir.
+        main() içinde, executor dönmeye başladıktan SONRA çağrılmalıdır
+        (ROS grafiğinin keşfedilmesi gerekiyor).
+        """
+        if self.gpio_mode == "force_off":
+            self.io_enabled = False
+            self.get_logger().warn(
+                "gpio_mode=force_off -> vidalama ve yeşil buton DEVRE DIŞI. "
+                "Vidalama adımları atlanacak, buton beklenmeyecek."
+            )
+            return False
+
+        if self.gpio_mode == "auto":
+            env_fake = os.environ.get("ENV_USE_FAKE_HARDWARE", "").strip().lower()
+            fake = self.use_fake_hardware or env_fake in ("true", "1", "yes")
+            if not fake:
+                # Asıl kaynak: robot_description'daki donanım eklentisi.
+                detected = self._detect_fake_hardware_from_description()
+                if detected is not None:
+                    fake = detected
+            if fake:
+                self.io_enabled = False
+                self.get_logger().warn(
+                    "Sim/fake donanım tespit edildi -> GPIO DEVRE DIŞI.\n"
+                    "  mock_components dijital girişleri hep 0 döndürdüğü için "
+                    "yeşil buton beklemesi sonsuza kadar takılırdı.\n"
+                    "  Vidalama adımları atlanacak, buton beklenmeyecek. "
+                    "Gerçek robotta gpio_mode=auto kendiliğinden açılır."
+                )
+                return False
+
+        # Gerçek donanım bekleniyor: io_and_status_controller gerçekten var mı?
+        deadline = time.time() + probe_timeout
+        while time.time() < deadline and rclpy.ok():
+            if self.count_publishers(self.io_states_topic) > 0 and self._set_io_client.service_is_ready():
+                self.io_enabled = True
+                self.get_logger().info("GPIO AKTİF: io_and_status_controller bulundu.")
+                return True
+            time.sleep(0.2)
+
+        if self.gpio_mode == "force_on":
+            self.io_enabled = True
+            self.get_logger().error(
+                "gpio_mode=force_on ama io_and_status_controller bulunamadı! "
+                "GPIO çağrıları büyük ihtimalle başarısız olacak."
+            )
+            return True
+
+        self.io_enabled = False
+        self.get_logger().error(
+            f"'{self.io_states_topic}' yayını ve set_io servisi bulunamadı -> GPIO DEVRE DIŞI.\n"
+            "  Sürücü ayakta mı? 'ros2 control list_controllers' ile "
+            "io_and_status_controller'ın 'active' olduğunu doğrulayın.\n"
+            "  Zorlamak için: gpio_mode:=force_on"
+        )
+        return False
+
+    def _io_states_callback(self, msg: IOStates):
+        """io_and_status_controller'dan gelen dijital giriş durumlarını sakla."""
+        for digital in msg.digital_in_states:
+            self._digital_inputs[digital.pin] = digital.state
+        self._io_states_seen = True
+
+    def set_digital_output(self, pin, state, timeout=5.0):
+        """
+        UR kontrolcüsündeki bir dijital çıkışı set/reset eder.
+        Pendant'taki `set_digital_out(pin, True/False)` ile aynı işi yapar.
+        """
+        if not self.io_enabled:
+            self.get_logger().warn(f"[GPIO KAPALI] DOUT{pin}={int(bool(state))} atlandı.")
+            return True
+
+        if not self._set_io_client.wait_for_service(timeout_sec=timeout):
+            self.get_logger().error(
+                "set_io servisi bulunamadı! io_and_status_controller aktif mi? "
+                "(ros2 control list_controllers ile kontrol edin)"
+            )
+            return False
+
+        request = SetIO.Request()
+        request.fun = SetIO.Request.FUN_SET_DIGITAL_OUT
+        request.pin = int(pin)
+        request.state = float(SetIO.Request.STATE_ON if state else SetIO.Request.STATE_OFF)
+
+        future = self._set_io_client.call_async(request)
+        # Node zaten arka plandaki executor tarafından spin ediliyor; burada
+        # sadece future'ın tamamlanmasını bekliyoruz (spin_until_future_complete
+        # node'un sahipliğini çalacağı için kullanılmıyor).
+        deadline = time.time() + timeout
+        while not future.done() and time.time() < deadline and rclpy.ok():
+            time.sleep(0.01)
+
+        if not future.done():
+            self.get_logger().error(f"set_io yanıt vermedi (pin={pin}, state={state})")
+            return False
+
+        success = bool(future.result().success)
+        if success:
+            self.get_logger().info(f"DOUT{pin} -> {'ON' if state else 'OFF'}")
+        else:
+            self.get_logger().warn(f"DOUT{pin} ayarlanamadı (state={state})")
+        return success
+
+    def screwdriver(self, on: bool, reverse: bool = False):
+        """
+        Vidalama aletini çalıştırır / durdurur (dijital çıkış üzerinden).
+
+        reverse=False -> DOUT0 (sıkma), reverse=True -> DOUT1 (sökme).
+        Kapatırken her iki çıkış da düşürülür; ikisi aynı anda HIGH kalmasın.
+        """
+        pin = self.screwdriver_reverse_pin if reverse else self.screwdriver_pin
+        direction = "SÖKME" if reverse else "SIKMA"
+
+        if not on:
+            self.get_logger().info("=== VİDALAMA DURDURULUYOR ===")
+            ok_forward = self.set_digital_output(self.screwdriver_pin, False)
+            ok_reverse = self.set_digital_output(self.screwdriver_reverse_pin, False)
+            success = ok_forward and ok_reverse
+            if success:
+                self._screwdriver_running = False
+            return success
+
+        self.get_logger().info(f"=== VİDALAMA BAŞLATILIYOR ({direction}) ===")
+        success = self.set_digital_output(pin, True)
+        if success:
+            self._screwdriver_running = True
+        return success
+
+    def get_digital_input(self, pin):
+        """Son alınan dijital giriş değerini döndürür (henüz veri yoksa None)."""
+        return self._digital_inputs.get(int(pin))
+
+    def wait_for_green_button(self, timeout=None, poll_period=0.05, require_release=True):
+        """
+        Operatörün yeşil butona basmasını bekler (dijital giriş üzerinde YÜKSELEN KENAR).
+
+        Args:
+            timeout: saniye; None ise parametredeki green_button_timeout kullanılır,
+                     0.0 ise süresiz bekler.
+            require_release: buton çağrı anında zaten basılıysa önce bırakılmasını
+                     bekler; böylece tek basış iki vidalamayı tetiklemez.
+        """
+        pin = self.green_button_pin
+
+        if not self.io_enabled:
+            if self.fake_button_delay > 0.0:
+                self.get_logger().warn(
+                    f"[GPIO KAPALI] Yeşil buton yerine {self.fake_button_delay:.1f} sn bekleniyor."
+                )
+                time.sleep(self.fake_button_delay)
+            else:
+                self.get_logger().warn("[GPIO KAPALI] Yeşil buton beklenmiyor, devam ediliyor.")
+            return True
+
+        if timeout is None:
+            timeout = self.green_button_timeout
+        deadline = None if timeout <= 0.0 else time.time() + timeout
+
+        # io_states akışının başlamasını bekle
+        wait_start = time.time()
+        while not self._io_states_seen and rclpy.ok():
+            if time.time() - wait_start > 5.0:
+                self.get_logger().error(
+                    "/io_and_status_controller/io_states yayını yok! "
+                    "io_and_status_controller aktif mi?"
+                )
+                return False
+            time.sleep(0.05)
+
+        def pressed():
+            raw = self._digital_inputs.get(pin)
+            if raw is None:
+                return None
+            return raw if self.green_button_active_high else (not raw)
+
+        if require_release and pressed():
+            self.get_logger().warn(f"DIN{pin} zaten basılı durumda, bırakılması bekleniyor...")
+            while rclpy.ok() and pressed():
+                if deadline is not None and time.time() > deadline:
+                    self.get_logger().error("Yeşil buton bırakılmadı (timeout).")
+                    return False
+                time.sleep(poll_period)
+
+        self.get_logger().info(f">>> OPERATÖR BEKLENİYOR: yeşil butona basın (DIN{pin}) <<<")
+        last_log = time.time()
+        while rclpy.ok():
+            if pressed():
+                self.get_logger().info("Yeşil butona basıldı, devam ediliyor.")
+                return True
+            if deadline is not None and time.time() > deadline:
+                self.get_logger().error("Yeşil buton beklenirken zaman aşımı!")
+                return False
+            if time.time() - last_log > 10.0:
+                self.get_logger().info(f"... hâlâ yeşil buton bekleniyor (DIN{pin})")
+                last_log = time.time()
+            time.sleep(poll_period)
+
+        return False
 
     def attach_screwdriver(self):
         """
@@ -314,7 +729,13 @@ class CollisionAwareRobotController(Node):
         for i, joint_angles in enumerate(list_of_joint_angles):
             self.get_logger().info(f"Sıradaki hedefe gidiliyor: {i+1}/{len(list_of_joint_angles)}")
 
-            # Dict komutu kontrolü (gripper, attach, detach)
+            # Hıza özel hareket: {"joints": [...], "speed": 0.01}
+            move_speed = None
+            if isinstance(joint_angles, dict) and "joints" in joint_angles:
+                move_speed = joint_angles.get("speed")
+                joint_angles = joint_angles["joints"]
+
+            # Dict komutu kontrolü (gripper, attach, detach, gpio)
             if isinstance(joint_angles, dict):
                 if "gripper_position" in joint_angles:
                     self.move_gripper(joint_angles["gripper_position"], synchronous=True)
@@ -322,6 +743,16 @@ class CollisionAwareRobotController(Node):
                     self.attach_screwdriver()
                 elif "detach_screwdriver" in joint_angles:
                     self.detach_screwdriver()
+                elif "screwdriver" in joint_angles:
+                    self.screwdriver(
+                        bool(joint_angles["screwdriver"]),
+                        reverse=bool(joint_angles.get("reverse", False)),
+                    )
+                elif "wait_green_button" in joint_angles:
+                    self.wait_for_green_button(timeout=joint_angles.get("timeout"))
+                elif "wait" in joint_angles:
+                    self.get_logger().info(f"{joint_angles['wait']} saniye bekleniyor...")
+                    time.sleep(float(joint_angles["wait"]))
                 
                 if i < len(list_of_joint_angles) - 1:
                     self.get_logger().info(f"Sonraki hareket için {wait_time} saniye bekleniyor...")
@@ -333,7 +764,9 @@ class CollisionAwareRobotController(Node):
                 self.get_logger().info(f"  -> Deneme {attempt + 1}/{max_retries}...")
                 
                 # Hareketi dene
-                success = self.move_to_joint_angles(joint_angles, synchronous=True)
+                success = self.move_to_joint_angles(
+                    joint_angles, synchronous=True, speed=move_speed
+                )
                 
                 if success:
                     self.get_logger().info(f"  -> Hareket başarılı!")
@@ -389,6 +822,9 @@ def main():
     robot_controller.create_rate(1.0).sleep()
     
     robot_controller.check_planning_scene()
+
+    # GPIO gerçek robotta mı, sim/fake modda mı? Hareket başlamadan karar ver.
+    robot_controller.resolve_gpio_availability()
     
     # --- WAYPOINT'LER (teach pendant fotoğraflarından alınan joint açıları) ---
     # Format: [ilk_eksen(rad sabit), radians(Base), radians(Shoulder),
@@ -426,7 +862,10 @@ def main():
     # holdScrewer = [FIRST, math.radians(24.07), math.radians(-58.80), math.radians(40.81), math.radians(-86.14), math.radians(-61.16), math.radians(29.50)]  # duplicate
     # frontOfScrewer = [FIRST, math.radians(16.25), math.radians(-67.48), math.radians(52.93), math.radians(-85.25), math.radians(-59.51), math.radians(20.70)]  # duplicate
 
-    # Sıralı hareket için waypoint listesi (1 -> 26)
+    # Vidalama geçişlerinde kullanılacak hız ölçeği (screw_speed parametresi)
+    SCREW_SPEED = robot_controller.screw_speed
+
+    # Sıralı hareket için waypoint listesi
     safe_joint_configurations = [
     frontOfScrewer,
     aboveScrewer,
@@ -440,17 +879,41 @@ def main():
     outTookScrew,
     safeWaypoint,
     firstTop,
-    firstOpt,
-    firstTop,
+    # --- 1. VİDA: operatör yeşil butona basınca vidalama başlar ---
+    {"wait_green_button": True},   # pendant: yeşil buton (dijital giriş) beklenir
+    {"screwdriver": True},         # pendant: set_digital_out(screwdriver_pin, True)
+    # Vidalama geçişleri YAVAŞ: screw_speed (varsayılan 0.01) ölçeğiyle
+    {"joints": firstOpt, "speed": SCREW_SPEED},   # vidayı sıkarken yavaşça aşağı in
+    {"wait": 1.5},                 # vidanın oturması için bekle
+    {"screwdriver": False},        # firstTop'a dönmeden önce vidalamayı kapat
+    {"joints": firstTop, "speed": SCREW_SPEED},   # yavaşça geri çık
     secondTop,
-    secondOpt,
-    secondTop,
+    # --- 2. VİDA: operatör yeşil butona basınca vidalama başlar ---
+    {"wait_green_button": True},   # pendant: yeşil buton (dijital giriş) beklenir
+    {"screwdriver": True},         # pendant: set_digital_out(screwdriver_pin, True)
+    # Vidalama geçişleri YAVAŞ: screw_speed (varsayılan 0.01) ölçeğiyle
+    {"joints": secondOpt, "speed": SCREW_SPEED},   # vidayı sıkarken yavaşça aşağı in
+    {"wait": 1.5},                 # vidanın oturması için bekle
+    {"screwdriver": False},        # secondTop'a dönmeden önce vidalamayı kapat
+    {"joints": secondTop, "speed": SCREW_SPEED},   # yavaşça geri çık
     thirdTop,
-    thirdOpt,
-    thirdTop,
+    # --- 3. VİDA: operatör yeşil butona basınca vidalama başlar ---
+    {"wait_green_button": True},   # pendant: yeşil buton (dijital giriş) beklenir
+    {"screwdriver": True},         # pendant: set_digital_out(screwdriver_pin, True)
+    # Vidalama geçişleri YAVAŞ: screw_speed (varsayılan 0.01) ölçeğiyle
+    {"joints": thirdOpt, "speed": SCREW_SPEED},   # vidayı sıkarken yavaşça aşağı in
+    {"wait": 1.5},                 # vidanın oturması için bekle
+    {"screwdriver": False},        # thirdTop'a dönmeden önce vidalamayı kapat
+    {"joints": thirdTop, "speed": SCREW_SPEED},   # yavaşça geri çık
     fourthTop,
-    fourthOpt,
-    fourthTop,
+    # --- 4. VİDA: operatör yeşil butona basınca vidalama başlar ---
+    {"wait_green_button": True},   # pendant: yeşil buton (dijital giriş) beklenir
+    {"screwdriver": True},         # pendant: set_digital_out(screwdriver_pin, True)
+    # Vidalama geçişleri YAVAŞ: screw_speed (varsayılan 0.01) ölçeğiyle
+    {"joints": fourthOpt, "speed": SCREW_SPEED},   # vidayı sıkarken yavaşça aşağı in
+    {"wait": 1.5},                 # vidanın oturması için bekle
+    {"screwdriver": False},        # fourthTop'a dönmeden önce vidalamayı kapat
+    {"joints": fourthTop, "speed": SCREW_SPEED},   # yavaşça geri çık
     Waypoint1,
     frontOfScrewer,
     aboveScrewer,
@@ -487,6 +950,11 @@ def main():
     
     finally:
         robot_controller.get_logger().info("Güvenli kapatılıyor...")
+        # Her durumda vidalama motorunu kapat (çıkış açık kalmasın)
+        try:
+            robot_controller.screwdriver(False)
+        except Exception as e:
+            robot_controller.get_logger().error(f"Vidalama kapatılamadı: {str(e)}")
         robot_controller.move_to_joint_angles(home_joints, synchronous=True)
         rclpy.shutdown()
         executor_thread.join()

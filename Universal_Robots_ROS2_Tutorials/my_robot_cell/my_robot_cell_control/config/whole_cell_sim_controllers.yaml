@@ -145,20 +145,26 @@
       - sim_ur10e_wrist_3_joint
 
 # Gripper Controller
-# /sim/sim_gripper_controller:
-#   ros__parameters:
-#     joints:
-#       - sim_ur10e_gripper_joint
-#     command_interfaces:
-#       - position
-#     state_interfaces:
-#       - position
-#       - velocity
-#     gains:
-#       sim_ur10e_gripper_joint:
-#         p: 1000.0
-#         i: 10.0
-#         d: 50.0
+# NOT: Bu blok yorumdayken sim_gripper_controller configure olamıyordu
+# ('joints' / 'command_interfaces' parameter is empty). URDF tarafında da
+# arayüzler oluşmuyordu; whole_cell_sim.urdf.xacro artık use_gripper'ı
+# makroya geçiriyor. Kontrolcü yalnızca use_gripper:=true iken spawn edilir.
+/sim/sim_gripper_controller:
+  ros__parameters:
+    joints:
+      - sim_ur10e_gripper_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 100.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: true
+    constraints:
+      stopped_velocity_tolerance: 0.2
+      goal_time: 0.0
+      sim_ur10e_gripper_joint: { trajectory: 0.2, goal: 0.04 }
 
 # ==============================================================================
 # Kawasaki RS005L Controller Parametreleri
