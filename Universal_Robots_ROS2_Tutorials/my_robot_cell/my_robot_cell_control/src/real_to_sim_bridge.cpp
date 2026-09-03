@@ -65,6 +65,20 @@ public:
     // İlk senkronizasyon süresi: sim robot mevcut pozisyonundan gerçek robot
     // pozisyonuna bu sürede gider. Büyük değer = daha yumuşak geçiş.
     initial_sync_time_ = this->declare_parameter<double>("initial_sync_time", 3.0);
+    // SANITY LIMIT ON THE INCOMING VELOCITIES. Everything on /joint_states is forwarded
+    // verbatim into the sim controllers, so a single bad sample from ANY driver is
+    // enough to wreck the mirror: joint_trajectory_controller splines from the current
+    // state to (position, velocity) over trajectory_time_, so a velocity of 1e215
+    // puts the DESIRED position at ~1e213 and gz then integrates that into a joint
+    // that never recovers. The symptom is a flood of
+    //     [tolerances] Position Error: <200-digit number>, Position Tolerance: 0.2
+    //     Holding position due to state tolerance violation
+    // from the sim controller. That is exactly what an uninitialised velocity in the
+    // OnRobot 2FG7 driver used to produce on ur10e_gripper_joint. That driver is fixed,
+    // but a mirroring node must not be able to detonate the sim on one bad sample, so
+    // non-finite values are dropped here and the rest is clamped.
+    // No real joint on this cell exceeds 10 rad/s or 10 m/s (URDF velocity limits).
+    max_joint_velocity_ = this->declare_parameter<double>("max_joint_velocity", 10.0);
     
     // ==================== UR10E CONFIGURATION ====================
     // Joint name mapping: real -> sim
@@ -226,7 +240,16 @@ private:
     // would take the whole bridge down.
     const size_t n_pos = std::min(msg->name.size(), msg->position.size());
     for (size_t i = 0; i < n_pos; ++i) {
-      latest_positions_[msg->name[i]] = msg->position[i];
+      const double position = msg->position[i];
+      if (!std::isfinite(position)) {
+        // Keep the previous cached value: mirroring a stale pose beats mirroring NaN.
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                             "Joint '%s' reported a non-finite position; ignoring the "
+                             "sample and holding the last known value.",
+                             msg->name[i].c_str());
+        continue;
+      }
+      latest_positions_[msg->name[i]] = position;
     }
     if (msg->position.size() < msg->name.size()) {
       RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 10000,
@@ -240,7 +263,21 @@ private:
     if (pass_through_velocities_) {
       const size_t n_vel = std::min(msg->name.size(), msg->velocity.size());
       for (size_t i = 0; i < n_vel; ++i) {
-        latest_velocities_[msg->name[i]] = msg->velocity[i];
+        double velocity = msg->velocity[i];
+        if (!std::isfinite(velocity)) {
+          RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                               "Joint '%s' reported a non-finite velocity; commanding "
+                               "the sim waypoint at rest instead.", msg->name[i].c_str());
+          velocity = 0.0;
+        } else if (std::abs(velocity) > max_joint_velocity_) {
+          RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000,
+                               "Joint '%s' reported %.3g as its velocity, beyond the "
+                               "%.1f limit; clamping. Forwarding it as-is makes the sim "
+                               "controller diverge.", msg->name[i].c_str(), velocity,
+                               max_joint_velocity_);
+          velocity = std::copysign(max_joint_velocity_, velocity);
+        }
+        latest_velocities_[msg->name[i]] = velocity;
       }
       if (msg->velocity.empty()) {
         RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 10000,
@@ -495,6 +532,7 @@ private:
   double update_rate_;
   double trajectory_time_;
   double initial_sync_time_;
+  double max_joint_velocity_;
   bool pass_through_velocities_;
   
   // Shared

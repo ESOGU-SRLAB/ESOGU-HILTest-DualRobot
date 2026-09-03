@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Touchlab Limited. All Rights Reserved
 // Unauthorized copying or modifications of this file, via any medium is strictly prohibited.
 
+#include <cmath>
+
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -165,9 +167,25 @@ hardware_interface::return_type Onrobot2FG7PositionHardwareInterface::read(const
   double joint_position = position_max_ - raw_position;
   double joint_velocity = -measured_velocity * 0.5;
 
+  // Bu degerler joint_state_broadcaster uzerinden /joint_states'e, oradan da
+  // real_to_sim_bridge gibi tuketicilere gidiyor. Sonlu olmayan tek bir ornek
+  // asagi akista (ornegin Gazebo'daki sim_gripper_controller'da) devasa
+  // pozisyon hatalarina yol aciyor; burada durdur.
+  if (!std::isfinite(joint_position))
+  {
+    joint_position = hw_states_position_[0];
+  }
+  if (!std::isfinite(joint_velocity))
+  {
+    joint_velocity = 0.0;
+  }
+
   // low-pass filtering
   hw_states_position_[0] = hw_states_position_[0] * (1.0 - alpha_) + joint_position * alpha_;
   hw_states_velocity_[0] = hw_states_velocity_[0] * (1.0 - beta_) + joint_velocity * beta_;
+  // Kuvvet durum arayuzu export ediliyor ama hic yazilmiyordu: /joint_states
+  // gripper icin sonsuza kadar NaN effort yayinliyordu.
+  hw_states_force_[0] = std::isfinite(measured_force) ? measured_force : 0.0;
 
   return hardware_interface::return_type::OK;
 }

@@ -51,22 +51,29 @@ public:
   std::mutex set_mutex_;
 
   std::condition_variable data_condition_;
-  bool data_available_;
-  bool is_running_;
-  double command_;
-  double position_;
-  double velocity_;
-  double last_command_;
-  double force_;
-  double force_measured_;
+  // DIKKAT: bu uyelerin HEPSI acikca initialize edilmeli. Eskiden yalnizca
+  // force_ constructor'da atanıyordu; geri kalani belirsiz (cop) degerle
+  // basliyordu. read_state() ilk cagrisinda
+  //     velocity_ = velocity_ * 0.95 + 0.05 * ((width - position_) / dt)
+  // hesabi bu cop degerleri kullanip astronomik bir hiz uretiyordu; bu deger
+  // /joint_states uzerinden disari yayiliyordu.
+  bool data_available_ = false;
+  bool is_running_ = false;
+  bool first_read_ = true;
+  double command_ = 0.0;
+  double position_ = 0.0;
+  double velocity_ = 0.0;
+  double last_command_ = 0.0;
+  double force_ = 10.0;
+  double force_measured_ = 0.0;
 
-  bool grip_;
-  double width_internal_;
-  double width_external_;
-  double width_min_internal_;
-  double width_max_internal_;
-  double width_min_external_;
-  double width_max_external_;
+  bool grip_ = false;
+  double width_internal_ = 0.0;
+  double width_external_ = 0.0;
+  double width_min_internal_ = 0.0;
+  double width_max_internal_ = 0.0;
+  double width_min_external_ = 0.0;
+  double width_max_external_ = 0.0;
 
   std::string serial_number_;
   std::string firmware_;

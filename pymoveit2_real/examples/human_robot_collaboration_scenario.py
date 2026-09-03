@@ -65,6 +65,28 @@ class CollisionAwareRobotController(Node):
         self.travel_speed = float(self.get_parameter("travel_speed").value)
         self.screw_speed = float(self.get_parameter("screw_speed").value)
 
+        # --- Gripper konumlari (ur10e_gripper_joint, prismatic) -------
+        # URDF konvansiyonu: joint = 0.0  -> TAM ACIK
+        #                    joint buyudukce tirnaklar kapanir (nominal ust sinir 0.025)
+        # gripper_open_position   : her turun basinda gidilecek "tam acik" konum
+        # gripper_release_position: vidalama aletini birakirken kullanilan konum
+        # gripper_closed_position : vidalama aletini tutarken kullanilan konum
+        #   0.026, URDF'teki ust limit (nominal 0.025 strok + 0.001 pay), yani
+        #   "donanimin izin verdigi kadar kapali". Surucu bu degeri gercek
+        #   mekanik sinira (position_max_ - position_min_) kirpiyor.
+        self.declare_parameter("gripper_open_position", 0.0)
+        self.declare_parameter("gripper_release_position", 0.003)
+        self.declare_parameter("gripper_closed_position", 0.026)
+        # Gripper kendi ic kontrolcusuyle hareket ediyor; trajectory action'i
+        # bitse bile tirnaklar birkac yuz ms daha yol aliyor. Bir sonraki kol
+        # hareketine gecmeden once bu kadar bekle.
+        self.declare_parameter("gripper_settle_time", 0.7)
+
+        self.gripper_open_position = float(self.get_parameter("gripper_open_position").value)
+        self.gripper_release_position = float(self.get_parameter("gripper_release_position").value)
+        self.gripper_closed_position = float(self.get_parameter("gripper_closed_position").value)
+        self.gripper_settle_time = float(self.get_parameter("gripper_settle_time").value)
+
         self.moveit2.max_velocity = self.travel_speed
         self.moveit2.max_acceleration = self.travel_speed
         
@@ -162,6 +184,12 @@ class CollisionAwareRobotController(Node):
         )
         self._digital_inputs = {}
         self._io_states_seen = False
+        # io_states'in EN SON ne zaman guncellendigi. Callback'ler durursa
+        # _digital_inputs sessizce donar; bu damga onu gorunur kilar.
+        self._io_states_stamp = 0.0
+        # main()'deki arka plan executor'u. pymoveit2 node'u kopardiginda
+        # (asagidaki _ensure_executor aciklamasi) geri baglamak icin lazim.
+        self._background_executor = None
         self._screwdriver_running = False
         self.create_subscription(
             IOStates,
@@ -284,6 +312,42 @@ class CollisionAwareRobotController(Node):
             self.moveit2.max_velocity = original_velocity
             self.moveit2.max_acceleration = original_acceleration
 
+    def _ensure_executor(self):
+        """
+        Node'u arka plandaki executor'e geri baglar.
+
+        NEDEN GEREKLI: pymoveit2_real/moveit2.py icinde `rclpy.spin_once(self._node)`
+        cagrilari var (ornegin wait_until_executed(), satir 793). rclpy'nin
+        spin_once'i once `executor.add_node(node)` yapiyor; Node.executor setter'i
+        de bunun icin `current_executor.remove_node(self)` cagirip node'u bizim
+        MultiThreadedExecutor'umuzden KOPARIYOR. Ardindan spin_once'in
+        `finally: executor.remove_node(node)` satiri global executor'den de
+        cikariyor. Net sonuc: node HICBIR executor'e bagli degil.
+
+        O andan itibaren arka plan thread'i bos bir executor dondurur ve
+        node'un abonelik callback'leri (io_states dahil) hic calismaz:
+        _digital_inputs donar, yesil buton sonsuza kadar goremeyiz; ayni sekilde
+        servis future'lari da (set_io) tamamlanmaz.
+
+        DIKKAT - `self.executor is None` kontrolu ISE YARAMAZ: rclpy'nin
+        Executor.remove_node()'u node'u yalnizca kendi _nodes kumesinden cikarir,
+        Node.__executor_weakref'i TEMIZLEMEZ. Yani spin_once'tan sonra
+        node.executor hala global executor'u dondurur (None degildir), oysa node
+        hicbir executor'un _nodes kumesinde degildir ve kimse onu spin etmez.
+        Dogru olcut: arka plan executor'unun node listesinde miyiz?
+        """
+        ex = self._background_executor
+        if ex is None:
+            return
+        try:
+            if self not in ex.get_nodes():
+                ex.add_node(self)
+                self.get_logger().warn(
+                    "Node executor'den kopmustu (pymoveit2 spin_once), geri baglandi."
+                )
+        except Exception as e:
+            self.get_logger().warn(f"Executor'e yeniden baglanilamadi: {e}")
+
     def _wait_for_future(self, future, timeout):
         """
         Bir future'ın tamamlanmasını bekler.
@@ -294,16 +358,32 @@ class CollisionAwareRobotController(Node):
         devrediyor, geri vermiyor. Sonuç: node arka plan executor'ünde sessizce
         sağır kalıyor (ve wait-set çakışmasından RCLError ile düşebiliyor).
         """
+        self._ensure_executor()
         deadline = time.time() + timeout
         while not future.done() and time.time() < deadline and rclpy.ok():
             time.sleep(0.01)
         return future.done()
 
+    def open_gripper(self, synchronous=True):
+        """
+        Gripper'ı TAM AÇIK konuma getirir (gripper_open_position, varsayılan 0.0).
+
+        Senaryonun her turunun başında çağrılır: bir önceki tur yarıda kesilmiş
+        veya gripper elle kapalı bırakılmış olabilir; tırnaklar kapalıyken
+        `holdScrewer` noktasına gitmek vidalama aletine çarpar.
+        """
+        self.get_logger().info("Gripper başlangıç konumuna (TAM AÇIK) getiriliyor...")
+        return self.move_gripper(self.gripper_open_position, synchronous=synchronous)
+
     def move_gripper(self, position, synchronous=True):
         """
-        Gripper eklemini doğrudan kontrolcüyé gönderir (MoveIt atlaniyor).
-          - position=0.024 -> gripper kapanır (vida tutar)
-          - position=0.003 -> gripper açılır (vidayı bırakır)
+        Gripper eklemini doğrudan kontrolcüye gönderir (MoveIt atlaniyor).
+
+        ur10e_gripper_joint prismatic ve URDF'te 0.0 = TAM AÇIK olacak şekilde
+        tanımlı; değer büyüdükçe tırnaklar kapanır (nominal üst sınır 0.025):
+          - position=0.0   -> tam açık   (tur başlangıcı)
+          - position=0.003 -> açık/bırak (vidalama aletini bırakır)
+          - position=0.026 -> tam kapalı (vidalama aletini tutar)
         """
         self.get_logger().info(f"Gripper hareketi başlatılıyor: position={position}")
         try:
@@ -338,6 +418,10 @@ class CollisionAwareRobotController(Node):
                 if not self._wait_for_future(result_future, 10.0):
                     self.get_logger().error("Gripper hareketi zaman aşımına uğradı!")
                     return False
+                # Trajectory action'i bitti; ancak gripper'in kendi ic
+                # kontrolcusu tirnaklari hala hareket ettiriyor olabilir.
+                if self.gripper_settle_time > 0.0:
+                    time.sleep(self.gripper_settle_time)
                 self.get_logger().info("Gripper hareketi başarıyla tamamlandı!")
                 return True
             else:
@@ -475,6 +559,7 @@ class CollisionAwareRobotController(Node):
         for digital in msg.digital_in_states:
             self._digital_inputs[digital.pin] = digital.state
         self._io_states_seen = True
+        self._io_states_stamp = time.time()
 
     def set_digital_output(self, pin, state, timeout=5.0):
         """
@@ -572,6 +657,7 @@ class CollisionAwareRobotController(Node):
         deadline = None if timeout <= 0.0 else time.time() + timeout
 
         # io_states akışının başlamasını bekle
+        self._ensure_executor()
         wait_start = time.time()
         while not self._io_states_seen and rclpy.ok():
             if time.time() - wait_start > 5.0:
@@ -585,6 +671,8 @@ class CollisionAwareRobotController(Node):
         def pressed():
             raw = self._digital_inputs.get(pin)
             if raw is None:
+                # Sessizce False donmek bu fonksiyonu sonsuz beklemeye sokar;
+                # cagiran taraf bunu ayirt edebilsin diye None donuyoruz.
                 return None
             return raw if self.green_button_active_high else (not raw)
 
@@ -599,15 +687,39 @@ class CollisionAwareRobotController(Node):
         self.get_logger().info(f">>> OPERATÖR BEKLENİYOR: yeşil butona basın (DIN{pin}) <<<")
         last_log = time.time()
         while rclpy.ok():
-            if pressed():
+            # pymoveit2 bir onceki hareket sirasinda node'u executor'den koparmis
+            # olabilir; koparilmissa io_states callback'i hic calismaz ve
+            # _digital_inputs donar. Her turda bagi kontrol et.
+            self._ensure_executor()
+
+            state = pressed()
+            if state:
                 self.get_logger().info("Yeşil butona basıldı, devam ediliyor.")
                 return True
-            if deadline is not None and time.time() > deadline:
+
+            now = time.time()
+            if deadline is not None and now > deadline:
                 self.get_logger().error("Yeşil buton beklenirken zaman aşımı!")
                 return False
-            if time.time() - last_log > 10.0:
-                self.get_logger().info(f"... hâlâ yeşil buton bekleniyor (DIN{pin})")
-                last_log = time.time()
+
+            if now - last_log > 10.0:
+                if state is None:
+                    self.get_logger().error(
+                        f"DIN{pin} io_states mesajlarinda HIC yok! Buton baska bir "
+                        f"pine bagli olabilir (green_button_pin parametresi) veya "
+                        f"io_and_status_controller bu girisi yayinlamiyor."
+                    )
+                elif now - self._io_states_stamp > 2.0:
+                    # Sessiz kilitlenmenin tipik sebebi: node executor'den kopmus.
+                    self.get_logger().error(
+                        f"io_states {now - self._io_states_stamp:.1f} sn'dir "
+                        f"guncellenmiyor; dijital girisler BAYAT. Buton basilsa bile "
+                        f"gorulmez."
+                    )
+                else:
+                    self.get_logger().info(f"... hâlâ yeşil buton bekleniyor (DIN{pin})")
+                last_log = now
+
             time.sleep(poll_period)
 
         return False
@@ -817,6 +929,9 @@ def main():
     
     executor = rclpy.executors.MultiThreadedExecutor(2)
     executor.add_node(robot_controller)
+    # pymoveit2 icindeki rclpy.spin_once() cagrilari node'u bu executor'den
+    # koparabiliyor; _ensure_executor() geri baglayabilsin diye referansi ver.
+    robot_controller._background_executor = executor
     executor_thread = Thread(target=executor.spin, daemon=True, args=())
     executor_thread.start()
     robot_controller.create_rate(1.0).sleep()
@@ -838,7 +953,6 @@ def main():
     frontOfScrewer = [FIRST, math.radians(16.25), math.radians(-67.48), math.radians(52.93), math.radians(-85.25), math.radians(-59.51), math.radians(20.70)]
     aboveScrewer = [FIRST, math.radians(24.08), math.radians(-48.58), math.radians(11.42), math.radians(-66.93), math.radians(-61.23), math.radians(29.44)]
     holdScrewer = [FIRST, math.radians(24.07), math.radians(-58.80), math.radians(40.81), math.radians(-86.14), math.radians(-61.16), math.radians(29.50)]
-    # aboveScrewer = [FIRST, math.radians(24.08), math.radians(-48.58), math.radians(11.42), math.radians(-66.93), math.radians(-61.23), math.radians(29.44)]  # duplicate
     safeWaypoint2 = [FIRST, math.radians(30.46), math.radians(-75.20), math.radians(54.07), math.radians(-86.23), math.radians(-62.88), math.radians(36.44)]
     safeWaypoint1 = [FIRST, math.radians(66.70), math.radians(-67.28), math.radians(59.74), math.radians(-103.15), math.radians(-117.25), math.radians(144.90)]
     tookScrew = [FIRST, math.radians(66.69), math.radians(-61.31), math.radians(88.26), math.radians(-137.56), math.radians(-117.30), math.radians(145.05)]
@@ -846,31 +960,35 @@ def main():
     safeWaypoint = [FIRST, math.radians(57.68), math.radians(-91.49), math.radians(128.21), math.radians(-151.36), math.radians(-113.78), math.radians(135.83)]
     firstTop = [FIRST, math.radians(50.19), math.radians(-78.53), math.radians(101.51), math.radians(-129.41), math.radians(-115.90), math.radians(145.14)]
     firstOpt = [FIRST, math.radians(50.19), math.radians(-75.75), math.radians(105.28), math.radians(-135.95), math.radians(-115.92), math.radians(145.16)]
-    # firstTop = [FIRST, math.radians(50.19), math.radians(-78.53), math.radians(101.51), math.radians(-129.41), math.radians(-115.90), math.radians(145.14)]  # duplicate
     secondTop = [FIRST, math.radians(30.72), math.radians(-87.84), math.radians(114.97), math.radians(-141.86), math.radians(-105.69), math.radians(124.08)]
     secondOpt = [FIRST, math.radians(30.72), math.radians(-85.54), math.radians(117.64), math.radians(-146.82), math.radians(-105.71), math.radians(124.09)]
-    # secondTop = [FIRST, math.radians(30.72), math.radians(-87.84), math.radians(114.97), math.radians(-141.86), math.radians(-105.69), math.radians(124.08)]  # duplicate
-    thirdTop = [FIRST, math.radians(36.94), math.radians(-44.64), math.radians(43.53), math.radians(-74.54), math.radians(-110.77), math.radians(216.65)]
-    thirdOpt = [FIRST, math.radians(36.94), math.radians(-44.54), math.radians(47.62), math.radians(-78.72), math.radians(-110.76), math.radians(216.67)]
-    # thirdTop = [FIRST, math.radians(36.94), math.radians(-44.64), math.radians(43.53), math.radians(-74.54), math.radians(-110.77), math.radians(216.65)]  # duplicate
+    thirdTop = [1.8420303208638846, 0.6366738326549317, -0.7821781689244712,
+                0.7426429613881561, -1.29837890700152, -1.9427011974646786,
+                3.766707435569096]
+    thirdOpt = [1.8420157451813972, 0.6364952750453047, -0.7821448608379735,
+                0.833901430926128, -1.3709123037217756, -1.9426966327044723,
+                3.7666595437667088]
     fourthTop = [FIRST, math.radians(23.20), math.radians(-45.32), math.radians(45.23), math.radians(-77.45), math.radians(-112.13), math.radians(213.10)]
     fourthOpt = [FIRST, math.radians(23.20), math.radians(-45.17), math.radians(48.68), math.radians(-81.04), math.radians(-112.13), math.radians(213.11)]
-    # fourthTop = [FIRST, math.radians(23.20), math.radians(-45.32), math.radians(45.23), math.radians(-77.45), math.radians(-112.13), math.radians(213.10)]  # duplicate
     Waypoint1 = [FIRST, math.radians(23.20), math.radians(-45.32), math.radians(45.23), math.radians(-77.45), math.radians(-112.13), math.radians(152.03)]
-    # frontOfScrewer = [FIRST, math.radians(16.25), math.radians(-67.48), math.radians(52.93), math.radians(-85.25), math.radians(-59.51), math.radians(20.70)]  # duplicate
-    # aboveScrewer = [FIRST, math.radians(24.08), math.radians(-48.58), math.radians(11.42), math.radians(-66.93), math.radians(-61.23), math.radians(29.44)]  # duplicate
-    # holdScrewer = [FIRST, math.radians(24.07), math.radians(-58.80), math.radians(40.81), math.radians(-86.14), math.radians(-61.16), math.radians(29.50)]  # duplicate
-    # frontOfScrewer = [FIRST, math.radians(16.25), math.radians(-67.48), math.radians(52.93), math.radians(-85.25), math.radians(-59.51), math.radians(20.70)]  # duplicate
-
+   
     # Vidalama geçişlerinde kullanılacak hız ölçeği (screw_speed parametresi)
     SCREW_SPEED = robot_controller.screw_speed
 
+    # Gripper konumları (parametrelerden; URDF: 0.0 = TAM AÇIK)
+    GRIPPER_OPEN = robot_controller.gripper_open_position       # tur başı: tam açık
+    GRIPPER_RELEASE = robot_controller.gripper_release_position  # aleti bırak
+    GRIPPER_CLOSED = robot_controller.gripper_closed_position    # aleti tut
+
     # Sıralı hareket için waypoint listesi
     safe_joint_configurations = [
+    # --- TUR BAŞLANGICI: gripper'ın hangi konumda kaldığı bilinmiyor;
+    #     kola dokunmadan önce tırnakları TAM AÇIK konuma getir ---
+    {"gripper_position": GRIPPER_OPEN},
     frontOfScrewer,
     aboveScrewer,
     holdScrewer,
-    {"gripper_position": 0.02},  # Gripper kapat -> vida tut
+    {"gripper_position": GRIPPER_CLOSED},  # Gripper kapat -> vida tut
     {"attach_screwdriver": True},  # Screwdriver'ı robotun planlamasına dahil et
     aboveScrewer,
     safeWaypoint2,
@@ -919,7 +1037,7 @@ def main():
     aboveScrewer,
     holdScrewer,
     {"detach_screwdriver": True},  # Screwdriver'ı robottan ayır
-    {"gripper_position": 0.003},  # Gripper aç -> vidayı bırak
+    {"gripper_position": GRIPPER_RELEASE},  # Gripper aç -> vidayı bırak
     frontOfScrewer,
     ]
     
@@ -929,6 +1047,11 @@ def main():
         robot_controller.get_logger().info("=== EKLEM HEDEFLİ SONSUZ DÖNGÜ BAŞLATILIYOR ===")
         robot_controller.get_logger().info("Durdurmak için Ctrl+C tuşlayın")
         
+        # Program açılışında gripper'ın konumu bilinmiyor (önceki çalıştırma
+        # yarıda kesilmiş, tırnaklar kapalı kalmış olabilir). Kol hareket
+        # etmeden ÖNCE tam açık konuma getir.
+        robot_controller.open_gripper(synchronous=True)
+
         robot_controller.get_logger().info("Başlangıç için `home_joints` pozisyonuna gidiliyor...")
         # robot_controller.move_to_joint_angles(home_joints, synchronous=True)
         time.sleep(2.0)

@@ -4,6 +4,10 @@ Basic Python interface for MoveIt 2 built on top of ROS 2 actions and services.
 
 > Note: The official Python library for MoveIt 2 `moveit_py` is now available. Check the announcement [here](https://picknik.ai/moveit/ros/python/google/2023/04/28/GSOC-MoveIt-2-Python-Bindings.html)!
 
+> Hücreye özel belgeler: [UR10e Dijital I/O pin haritası](docs/UR_DIGITAL_IO.md)
+> — vidalama çıkışları ve operatör butonlarının pin numaraları, `set_io` / `io_states`
+> kullanımı ve sim'de GPIO'nun neden devre dışı kaldığı.
+
 > This is a local fork (`pymoveit2_real`) with cell-specific additions on top of upstream.
 > The one behaviour change that is **on by default** is documented in
 > [2π Joint-Goal Unwinding](#2π-joint-goal-unwinding-local-addition) below — read it before

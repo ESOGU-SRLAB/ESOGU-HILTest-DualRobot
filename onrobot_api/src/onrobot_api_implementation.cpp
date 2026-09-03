@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Touchlab Limited. All Rights Reserved
 // Unauthorized copying or modifications of this file, via any medium is strictly prohibited.
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <condition_variable>
@@ -9,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <thread>
 #include <vector>
@@ -23,8 +25,9 @@ using namespace std::chrono_literals;
 namespace onrobot
 {
 
-Robot2FG7::Implementation::Implementation() : force_(10.0)
+Robot2FG7::Implementation::Implementation()
 {
+  // Tum uyeler artik header'da in-class initializer ile sifirlaniyor.
 }
 
 Robot2FG7::Implementation::~Implementation()
@@ -94,9 +97,33 @@ void Robot2FG7::Implementation::read_state(const uint16_t* read_buffer, double d
   width_min_external_ = static_cast<double>(read_buffer[5]) * 1e-4;
   width_max_external_ = static_cast<double>(read_buffer[6]) * 1e-4;
   force_measured_ = static_cast<double>(static_cast<int16_t>(read_buffer[7]));
-  double alpha = 0.05;
-  velocity_ = velocity_ * (1.0 - alpha) + alpha * ((width_internal_ - position_) / dt);
-  position_ = width_internal_;
+
+  if (first_read_)
+  {
+    // Ilk okumada gecmis yok: turev alinacak onceki konum da yok. Hizi 0
+    // kabul et, konumu olculen genislikle tohumla. Aksi halde ilk ornekte
+    // (width - position_) farki tamamen anlamsiz olur.
+    position_ = width_internal_;
+    velocity_ = 0.0;
+    first_read_ = false;
+  }
+  else
+  {
+    // dt'yi tabanla: cok kucuk dt turevi patlatiyor (eskiden main_loop hiz
+    // siniri olmadigi icin dt mikrosaniye mertebesine inebiliyordu).
+    const double safe_dt = std::max(dt, 1e-3);
+    const double alpha = 0.05;
+    velocity_ = velocity_ * (1.0 - alpha) + alpha * ((width_internal_ - position_) / safe_dt);
+    position_ = width_internal_;
+  }
+
+  // Sayisal bir bozulma disari sizmasin: /joint_states'e giden hiz, asagi
+  // akistaki her tuketiciye (ornegin real_to_sim_bridge) aynen iletiliyor.
+  if (!std::isfinite(velocity_))
+  {
+    velocity_ = 0.0;
+  }
+
   data_available_ = true;
   data_condition_.notify_all();
   get_guard.unlock();
@@ -212,37 +239,110 @@ std::string Robot2FG7::Implementation::get_firmware()
 #define NUM_WRITE 4
 #define NUM_READ 8
 
+// --- Komut tazeleme politikasi (OLCUMLE belirlendi, 2026-09-03) -------------
+// Olcum 1: JTC reference 10 s boyunca sabit 0.0127 m iken gripper fiziksel
+//          olarak 66.0 <-> 85.8 mm arasinda salindi. Salinimi ROS emretmiyor;
+//          komut blogunu HER dongude control=1 ile yeniden yazmak cihazda
+//          hareketi tekrar tekrar tetikliyor.
+// Olcum 2: Komutu sadece hedef degisince bir kez yazmak da yetmiyor; o zaman
+//          hareket yarida kaliyor (111.3 mm komut edilmisken gripper 91 mm'de
+//          durdu ve bir daha kimildamadi).
+//
+// Dogru politika ikisinin arasi: hedef degistiginde yazmaya baslanir ve gripper
+// DURANA kadar tazelenir; durduktan sonra yazma kesilir. Boylece hem hareket
+// tamamlanir hem de yerlesince yeniden tetiklenmez. "Durdu" olcusu olculen
+// genisligin degismemesidir -- bu hem hedefe varmayi (bosa kapanma) hem de bir
+// cisme tutunmayi (kavrama, hedefe hic varilmaz) doğru kapsar.
+static constexpr auto LOOP_PERIOD = std::chrono::milliseconds(10);  // 100 Hz
+static constexpr double SETTLE_EPS = 1e-4;   // 0.1 mm = cihaz cozunurlugu
+static constexpr int SETTLE_TICKS = 20;      // 20 x 10 ms = 200 ms hareketsizlik
+// 2FG7 hiz komutu yuzde cinsinden, gecerli aralik 10-100. Eskiden bu register
+// 10 + |(command-last_command)/dt| * 1e3 ile hesaplaniyordu; dt mikrosaniye
+// mertebesine indiginde deger 25000'lere ciktigi icin cihaza gecersiz hiz
+// gidiyordu. Sabit deger hem gecerli hem de tekrarlanan yazimlari ayni yapiyor.
+static constexpr double SPEED_PERCENT = 50.0;
+
 void Robot2FG7::Implementation::main_loop()
 {
   uint16_t write_buffer[NUM_WRITE];
   uint16_t read_buffer[NUM_READ];
   auto t0 = std::chrono::steady_clock::now();
+
+  double asserted_command = std::numeric_limits<double>::quiet_NaN();
+  double last_width = std::numeric_limits<double>::quiet_NaN();
+  int settle_ticks = 0;
+  bool settled = false;
+
   while (is_running_)
   {
+    const auto loop_start = std::chrono::steady_clock::now();
     try
     {
       std::unique_lock<std::mutex> set_guard(set_mutex_);
-      auto t1 = std::chrono::steady_clock::now();
-      double dt =  static_cast<std::chrono::duration<double>>(t1 - t0).count();
+      const auto t1 = std::chrono::steady_clock::now();
+      const double dt = static_cast<std::chrono::duration<double>>(t1 - t0).count();
       t0 = t1;
-      double velocity = (command_ - last_command_) / dt;
-      last_command_ = command_;
-      write_buffer[0] = static_cast<uint16_t>(std::fabs(command_) * 1e4);  // Position
-      write_buffer[1] = static_cast<uint16_t>(std::fabs(force_));  // Force
-      write_buffer[2] = static_cast<uint16_t>(10 + std::fabs(velocity) * 1e3);  // Velocity
-      write_buffer[3] = 1;  // Enable control
+      const double command = command_;
+      const double force = force_;
+      last_command_ = command;
       set_guard.unlock();
 
-      int ret = modbus_write_and_read_registers(modbus_.get(),
-        0, NUM_WRITE, write_buffer,
-        256, NUM_READ, read_buffer);
+      // Hedef degistiyse yeniden tazelemeye basla.
+      if (!(std::fabs(command - asserted_command) < SETTLE_EPS))
+      {
+        asserted_command = command;
+        settled = false;
+        settle_ticks = 0;
+      }
 
-      read_state(read_buffer, dt);
+      int ret;
+      if (!settled)
+      {
+        write_buffer[0] = static_cast<uint16_t>(std::fabs(command) * 1e4);  // Position
+        write_buffer[1] = static_cast<uint16_t>(std::fabs(force));          // Force
+        write_buffer[2] = static_cast<uint16_t>(SPEED_PERCENT);             // Velocity
+        write_buffer[3] = 1;                                                // Enable control
+        ret = modbus_write_and_read_registers(modbus_.get(),
+          0, NUM_WRITE, write_buffer,
+          256, NUM_READ, read_buffer);
+      }
+      else
+      {
+        // Yerlesti: komut registerlarina DOKUNMA, sadece durumu oku.
+        ret = modbus_read_registers(modbus_.get(), 256, NUM_READ, read_buffer);
+      }
+
+      if (ret > 0)
+      {
+        read_state(read_buffer, dt);
+
+        double width;
+        {
+          std::lock_guard<std::mutex> get_guard(get_mutex_);
+          width = position_;
+        }
+        if (!settled)
+        {
+          if (std::isfinite(last_width) && std::fabs(width - last_width) < SETTLE_EPS)
+          {
+            if (++settle_ticks >= SETTLE_TICKS)
+            {
+              settled = true;
+            }
+          }
+          else
+          {
+            settle_ticks = 0;
+          }
+        }
+        last_width = width;
+      }
     }
     catch (const std::exception & e)
     {
       WARNING(e.what());
     }
+    std::this_thread::sleep_until(loop_start + LOOP_PERIOD);
   }
   is_running_ = false;
 }
