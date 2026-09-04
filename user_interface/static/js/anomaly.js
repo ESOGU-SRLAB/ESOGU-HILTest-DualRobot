@@ -186,7 +186,7 @@ function anTipDetails(items) {
     if (ev) {
         lines.push("");
         lines.push(`── logged event #${ev.sira} ──`);
-        lines.push(`source:     ${ev.tetikleyen || "unknown"}`);
+        lines.push(`source:     ${triggerText(ev.tetikleyen, "unknown")}`);
         lines.push(`started:    ${fmtTime(ev.zaman)}`);
         lines.push(`peak:       ${fmtNum(ev.tepe)}   entry: ${fmtNum(ev.giris)}`);
         lines.push(`duration:   ${ev.sure_s == null
@@ -236,7 +236,6 @@ function onAnomalyUpdate(msg) {
     };
     const thr = anThr.fused;
     setText("an-thr", fmtNum(thr));
-    setText("an-thr-head", fmtNum(thr));
     setText("an-hz", msg.decision_hz ? msg.decision_hz.toFixed(1) + " Hz" : "—");
 
     // No numeric fused-score readout here on purpose. The socket pushes at 5 Hz
@@ -368,7 +367,7 @@ function renderEvents(events) {
             <td>${duration}</td>
             <td class="an-peak${big}">${peak}</td>
             <td class="an-entry">${entry}</td>
-            <td>${escapeHtml(e.tetikleyen || "—")}</td>
+            <td>${escapeHtml(triggerText(e.tetikleyen))}</td>
             <td class="an-entry">${escapeHtml(e.kosu || "—")}</td>
             <td>${labelButtons(e)}</td>
         </tr>`;
@@ -413,6 +412,18 @@ function setText(id, txt) {
 function labelText(etiket) {
     return etiket === "gercek" ? "true anomaly"
          : etiket === "yanlis" ? "false alarm" : "unlabelled";
+}
+
+// The detector writes "kalıntı" (residual) / "ham" (raw) / "kalıntı+ham" /
+// "yalnız birleşim" (fused-only -- neither model crossed its own threshold,
+// only the fused score did) straight to disk in Turkish; only the display
+// gets translated, same policy as labelText() above.
+const AN_TRIGGER_LABELS = { "kalıntı": "residual", "ham": "raw" };
+
+function triggerText(tetikleyen, fallback) {
+    if (!tetikleyen) return fallback !== undefined ? fallback : "—";
+    if (tetikleyen === "yalnız birleşim") return "fused only";
+    return tetikleyen.split("+").map((t) => AN_TRIGGER_LABELS[t] || t).join("+");
 }
 
 // Decimal places scaled to the score magnitude. Two places was fine when the

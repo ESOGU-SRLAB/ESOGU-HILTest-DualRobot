@@ -1033,6 +1033,17 @@ def launch_setup(context, *args, **kwargs):
 
         # 9. Point Cloud Transformer (gerçek donanım, 15 sn gecikme)
         pointcloud_transformer_delayed,
+
+        # 10. Data Acquisition (ROS2 → Kafka köprüsü, data_acquisition:=true iken)
+        # double_ros2_km_bridge.py bu anahtardan bağımsız, ayrı bir akış -
+        # ona burada dokunulmuyor.
+        Node(
+            package="ros2_kafka_bridge",
+            executable="double_ros2_kafka_bridge",
+            name="double_ros2_kafka_bridge_node",
+            output="screen",
+            condition=IfCondition(LaunchConfiguration("data_acquisition")),
+        ),
     ]
 
     if gripper_controller_spawner:
@@ -1307,6 +1318,17 @@ def generate_launch_description():
                         "use_fake_hardware:=true iken bu değere bakılmaksızın "
                         "başlatılmaz (sahte donanımda effort alanı gerçek motor "
                         "akımı değildir).",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "data_acquisition",
+            default_value="false",
+            description="true ise ros2_kafka_bridge paketinin "
+                        "double_ros2_kafka_bridge düğümü başlatılır ve hücreden "
+                        "veri toplanır. false ise (varsayılan) veri toplama "
+                        "yapılmaz.",
         )
     )
 

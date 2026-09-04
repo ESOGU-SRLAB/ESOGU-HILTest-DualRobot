@@ -17,7 +17,7 @@ from visualization_msgs.msg import InteractiveMarkerUpdate
 from moveit_msgs.msg import PlanningScene
 from ur_msgs.msg import ToolDataMsg
 from geometry_msgs.msg import WrenchStamped, PoseStamped
-from rclpy.qos import QoSProfile, QoSReliabilityPolicy
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSDurabilityPolicy
 from control_msgs.msg import JointTrajectoryControllerState
 
 # ------------------------------------------------------------
@@ -26,11 +26,37 @@ from control_msgs.msg import JointTrajectoryControllerState
 qos = QoSProfile(depth=10)
 qos.reliability = QoSReliabilityPolicy.RELIABLE
 
+# ------------------------------------------------------------
+# Use-case tagging
+# ------------------------------------------------------------
+# The dashboard (user_interface/app.py) publishes the name of the scenario that
+# is currently running on a LATCHED topic. Every document this bridge forwards
+# to Kafka is stamped with it, so the collected data can be filtered by use case
+# downstream (Elasticsearch / the Data Analytics tab).
+#
+# TRANSIENT_LOCAL is mandatory on BOTH ends. This bridge is long-lived and may be
+# restarted at any point during a run; with the default VOLATILE durability it
+# would never receive a value published before it subscribed and would tag the
+# whole run as IDLE.
+USE_CASE_TOPIC = "/testbed/use_case"
+USE_CASE_IDLE = "IDLE"
+USE_CASE_FIELD = "use_case"
+
+latched_qos = QoSProfile(depth=1)
+latched_qos.durability = QoSDurabilityPolicy.TRANSIENT_LOCAL
+latched_qos.reliability = QoSReliabilityPolicy.RELIABLE
+
 
 class double_ros2_kafka_bridge:
     def __init__(self, args=None):
         rclpy.init(args=args)
         self.node = rclpy.create_node("double_ros2_kafka_bridge_real_time")
+
+        # ------------------------------------------------------------
+        # Active use case (latched) — stamped onto every outgoing document
+        # ------------------------------------------------------------
+        self.use_case = USE_CASE_IDLE
+        self.node.create_subscription(String, USE_CASE_TOPIC, self.use_case_callback, latched_qos)
 
         # ------------------------------------------------------------
         # ROS → Kafka Subscriptions
@@ -120,8 +146,22 @@ class double_ros2_kafka_bridge:
                     print(f"[Kafka Flusher Error] {e}")
         threading.Thread(target=flusher, daemon=True).start()
 
+    def use_case_callback(self, msg):
+        """Adopt the use case the dashboard is broadcasting."""
+        name = (msg.data or "").strip() or USE_CASE_IDLE
+        if name != self.use_case:
+            self.use_case = name
+            self.node.get_logger().info(f"🏷️  USE_CASE = {name}")
+
     def safe_publish(self, topic, data):
-        """Non-blocking enqueue to Kafka"""
+        """Non-blocking enqueue to Kafka.
+
+        The use-case stamp is applied HERE rather than in each callback: this is
+        the single choke point every topic passes through, so one line tags
+        joint states, TCP poses, wrenches, controller state and images alike.
+        The dicts are built fresh in each callback, so mutating is safe.
+        """
+        data[USE_CASE_FIELD] = self.use_case
         try:
             self.kafka_queue.put_nowait((topic, data))
         except:

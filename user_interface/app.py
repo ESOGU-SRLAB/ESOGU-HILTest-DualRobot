@@ -39,6 +39,121 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 WORKSPACE_SETUP = os.path.join(WORKSPACE_ROOT, "install", "setup.bash")
 
+
+# ==============================================================================
+# Use-Case Broadcaster (ROS2)
+# ==============================================================================
+# The dashboard is the only process that knows which scenario is running; the
+# ROS2 → Kafka bridge is the only process that writes into the data pipeline.
+# This node is the link between them. It publishes the active use-case name,
+# and the bridge stamps every document it forwards with whatever it last heard
+# (see ros2_kafka_bridge/src/double_ros2_kafka_bridge.py::safe_publish).
+#
+# TRANSIENT_LOCAL durability is NOT optional. The bridge is a long-lived process
+# that can be (re)started at any moment, including in the middle of a run. With
+# the default VOLATILE durability it would never see a value published before it
+# subscribed, and would silently tag a whole run as IDLE.
+
+USE_CASE_TOPIC = "/testbed/use_case"
+USE_CASE_IDLE = "IDLE"
+
+
+class UseCaseBroadcaster:
+    """Publishes the active use-case name on a latched ROS2 topic."""
+
+    def __init__(self):
+        self._pub = None
+        self._msg_cls = None
+        self._running = False
+        self._current = USE_CASE_IDLE
+        self._lock = threading.Lock()
+
+    def start(self):
+        self._running = True
+        threading.Thread(target=self._ros_spin, daemon=True).start()
+
+    def stop(self):
+        self._running = False
+
+    def _ros_spin(self):
+        try:
+            import rclpy
+            from rclpy.executors import SingleThreadedExecutor
+            from rclpy.node import Node as RosNode
+            from rclpy.qos import (QoSProfile, QoSDurabilityPolicy,
+                                   QoSReliabilityPolicy)
+            from std_msgs.msg import String as RosString
+
+            # Guarded like the other collectors: whoever gets here first
+            # initialises the shared context.
+            if not rclpy.ok():
+                rclpy.init()
+            node = RosNode("dashboard_use_case_publisher")
+
+            qos = QoSProfile(depth=1)
+            qos.durability = QoSDurabilityPolicy.TRANSIENT_LOCAL
+            qos.reliability = QoSReliabilityPolicy.RELIABLE
+
+            with self._lock:
+                self._msg_cls = RosString
+                self._pub = node.create_publisher(RosString, USE_CASE_TOPIC, qos)
+                pending = self._current
+
+            # Publish immediately: set() may have been called before the node
+            # existed (the page accepts clicks from the moment it loads).
+            self._publish_now(pending)
+            node.get_logger().info(
+                f"Use-case broadcaster up on {USE_CASE_TOPIC} (latched), "
+                f"current = {pending}")
+
+            # A DEDICATED executor, for the same reason as AnomalyCollector:
+            # sharing the global one makes nodes vanish from the graph silently.
+            executor = SingleThreadedExecutor()
+            executor.add_node(node)
+            try:
+                while self._running and rclpy.ok():
+                    executor.spin_once(timeout_sec=0.2)
+            finally:
+                executor.remove_node(node)
+                node.destroy_node()
+
+        except Exception as e:
+            print(f"[UseCaseBroadcaster] ROS2 error: {e}")
+            print("[UseCaseBroadcaster] Collected data will NOT be tagged.")
+
+    def _publish_now(self, name):
+        with self._lock:
+            pub, cls = self._pub, self._msg_cls
+        if pub is None or cls is None:
+            return False
+        try:
+            pub.publish(cls(data=name))
+            return True
+        except Exception as e:
+            print(f"[UseCaseBroadcaster] publish failed: {e}")
+            return False
+
+    def set(self, name):
+        """Set the active use case.
+
+        Safe to call before the ROS node exists: the value is remembered and
+        published as soon as the publisher comes up.
+        """
+        name = (str(name or "").strip() or USE_CASE_IDLE)
+        with self._lock:
+            self._current = name
+        if self._publish_now(name):
+            print(f"[UseCaseBroadcaster] USE_CASE = {name}")
+
+    @property
+    def current(self):
+        with self._lock:
+            return self._current
+
+
+use_case_pub = UseCaseBroadcaster()
+
+
 class ScenarioManager:
     """Manages ROS2 launch process lifecycle."""
 
@@ -46,6 +161,8 @@ class ScenarioManager:
     SCENARIOS = {
         "multi_robot_inspection": {
             "label": "Multi-Robot Inspection Scenario",
+            # Stamped onto every document the ROS2 → Kafka bridge forwards.
+            "use_case": "MULTIROBOT_INSPECTION",
             "hil_params": "",
             "scenario_cmd": "ros2 launch multirobot_viewpoint_planner multirobot_inspection.launch.py",
             # use_fake_hardware açıkken only_sim:=true, gerçek robot bağlıyken only_sim:=false
@@ -53,12 +170,16 @@ class ScenarioManager:
         },
         "ur10e_inspection": {
             "label": "UR10e Inspection Scenario",
+            # Stamped onto every document the ROS2 → Kafka bridge forwards.
+            "use_case": "UR10E_INSPECTION",
             "hil_params": "",
             "scenario_cmd": "ros2 launch viewpoint_planner inspection_execution.launch.py",
             "sim_flag": "only_sim",
         },
         "pick_and_place": {
             "label": "Pick & Place Scenario",
+            # Stamped onto every document the ROS2 → Kafka bridge forwards.
+            "use_case": "PICKPLACE",
             "hil_params": "use_vacuum_gripper:=true",
             "scenario_cmd": "ros2 launch gemini_robotics_ros gemini_pick_place.launch.py",
             # gemini_pick_place'in TEK argümanı mode ve değeri sim|real - yani
@@ -71,6 +192,8 @@ class ScenarioManager:
         },
         "human_robot_collaboration": {
             "label": "Human-Robot Collaboration Scenario",
+            # Stamped onto every document the ROS2 → Kafka bridge forwards.
+            "use_case": "HRC",
             "hil_params": "use_gripper:=true",
             "scenario_cmd": "ros2 launch pymoveit2_real human_robot_collaboration_scenario.launch.py",
         },
@@ -236,11 +359,14 @@ class ScenarioManager:
             self.current_scenario = None
             self.use_fake_hardware = False
             self.robot_confirmed = False
+            # Nothing is running any more: stop tagging collected data with the
+            # scenario that just ended.
+            use_case_pub.set(USE_CASE_IDLE)
 
             self._emit_status()
             self._emit_log("SYSTEM", "✅ All processes stopped.")
 
-    def start_scenario(self, scenario_key, use_fake_hardware=False):
+    def start_scenario(self, scenario_key, use_fake_hardware=False, data_acquisition=False):
         """Start a scenario: stop existing → start HIL → wait for confirm → start scenario."""
         if scenario_key not in self.SCENARIOS:
             self._emit_log("SYSTEM", f"❌ Unknown scenario: {scenario_key}")
@@ -269,6 +395,10 @@ class ScenarioManager:
                     time.sleep(2)  # Brief pause between stop and start
 
                 # 2. Start HIL
+                # Deliberately IDLE, not scenario["use_case"]: HIL bring-up takes
+                # 30-60 s of controller spawning and homing that is not part of
+                # the scenario. Tagging it would prepend that noise to every run.
+                use_case_pub.set(USE_CASE_IDLE)
                 self.current_scenario = scenario_key
                 self.use_fake_hardware = use_fake_hardware
                 self.robot_confirmed = False
@@ -280,6 +410,11 @@ class ScenarioManager:
                     hil_cmd += f" {scenario['hil_params']}"
                 if use_fake_hardware:
                     hil_cmd += " use_fake_hardware:=true use_mock_hardware:=true fake_sensor_commands:=true"
+                # data_acquisition:=false is the launch file's own default, so it
+                # is only appended when the toggle is ON — same convention as
+                # use_fake_hardware above.
+                if data_acquisition:
+                    hil_cmd += " data_acquisition:=true"
 
                 self.hil_process = self._start_process(hil_cmd, "HIL")
                 self.hil_status = "running"
@@ -327,6 +462,11 @@ class ScenarioManager:
 
                 scenario_cmd = self.build_scenario_cmd(
                     scenario, self.use_fake_hardware)
+
+                # Tag BEFORE launching, so the first documents of the run are
+                # already stamped. The topic is latched, so the bridge picks the
+                # value up even if it happens to restart mid-run.
+                use_case_pub.set(scenario.get("use_case", USE_CASE_IDLE))
 
                 self.scenario_process = self._start_process(scenario_cmd, "SENARYO")
                 self.scenario_status = "running"
@@ -452,6 +592,8 @@ class ScenarioManager:
             "robot_confirmed": self.robot_confirmed,
             # Bu senaryo serbest metin komut alıyor mu (Send Command butonu)
             "command_prompt": bool(scenario.get("command_prompt")),
+            # Toplanan veriye şu an basılan etiket
+            "use_case": use_case_pub.current,
         }
 
 
@@ -1088,11 +1230,28 @@ def api_health():
 # ==============================================================================
 # Elasticsearch Proxy (read-only) — powers the Data Analytics tab
 # ==============================================================================
-# These routes ONLY issue read queries (_search) against the local Elasticsearch.
-# Nothing is ever written, updated, deleted, or remapped — the existing
-# ROS2 → Kafka → Elasticsearch → MariaDB → Grafana pipeline is untouched.
+# These routes ONLY issue read queries (_search, _mapping, _cat) against the
+# local Elasticsearch. Nothing is ever written, updated, deleted, or remapped —
+# the existing ROS2 → Kafka → Elasticsearch → MariaDB → Grafana pipeline is
+# untouched.
 
 ES_BASE_URL = os.environ.get("ES_URL", "http://localhost:9200")
+
+# 2000-01-01 in epoch milliseconds.
+#
+# The sim joint-state stream carries Gazebo sim-clock stamps that restart at 0
+# on every launch, so those documents land in 1970. Left unfiltered they stretch
+# the @timestamp span to ~56 years, which forces the date_histogram into huge
+# buckets and flattens every chart into a handful of averaged points. Filtering
+# them at query time (read-only) restores the detail without touching stored
+# data.
+TIME_FLOOR_MS = 946684800000
+
+# The four scenarios the dashboard can tag data with, plus IDLE. Used as the
+# fallback for the use-case filter when Elasticsearch is unreachable or the
+# index has no tagged documents yet.
+KNOWN_USE_CASES = [s["use_case"] for s in ScenarioManager.SCENARIOS.values()
+                   if s.get("use_case")] + [USE_CASE_IDLE]
 
 
 def _es_search(index, body, timeout=20):
@@ -1108,16 +1267,287 @@ def _es_search(index, body, timeout=20):
         return json.loads(resp.read().decode("utf-8"))
 
 
+def _es_get(path, timeout=20):
+    """Issue a read-only GET against Elasticsearch and return parsed JSON."""
+    req = urllib.request.Request(f"{ES_BASE_URL}/{path}", method="GET")
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+ES_ERRORS = (urllib.error.URLError, urllib.error.HTTPError, ValueError, KeyError)
+
+
+def _es_fail(e):
+    """Uniform 502 body for an Elasticsearch failure."""
+    return jsonify({"error": f"{type(e).__name__}: {e}"}), 502
+
+
 def _parse_time_param(value):
-    """Accept epoch milliseconds, epoch seconds, or an ISO string. Return as-is
-    for ES (which understands ISO + epoch_millis). Numbers are treated as ms."""
+    """Accept epoch milliseconds, epoch seconds, or an ISO string. Numbers are
+    treated as epoch millis; strings are passed through for ES to parse."""
     if value is None or value == "":
         return None
     try:
-        # Pure number → epoch millis
         return int(float(value))
     except (TypeError, ValueError):
         return value  # ISO string, let ES parse it
+
+
+# ------------------------------------------------------------------------------
+# Field mapping
+# ------------------------------------------------------------------------------
+
+_MAPPING_CACHE = {}          # index → (fetched_at, [{path, type}])
+_MAPPING_TTL = 60.0
+
+
+def _flatten_mapping(props, prefix=""):
+    """Flatten an ES mapping tree into a list of {path, type} entries."""
+    out = []
+    for name, spec in (props or {}).items():
+        path = prefix + name
+        if "properties" in spec:
+            out.extend(_flatten_mapping(spec["properties"], path + "."))
+            continue
+        out.append({"path": path, "type": spec.get("type", "object")})
+        # Multi-fields: a dynamically mapped string is `text` with a `.keyword`
+        # subfield, and only the subfield is aggregatable.
+        for sub, sspec in (spec.get("fields") or {}).items():
+            out.append({"path": f"{path}.{sub}", "type": sspec.get("type", "keyword")})
+    return out
+
+
+def _index_fields(index):
+    """Return (and cache) the flattened field list for an index pattern."""
+    now = time.time()
+    hit = _MAPPING_CACHE.get(index)
+    if hit and now - hit[0] < _MAPPING_TTL:
+        return hit[1]
+    try:
+        res = _es_get(f"{index}/_mapping")
+    except ES_ERRORS:
+        return hit[1] if hit else []
+    fields = {}
+    # An index pattern can resolve to several indices; merge their mappings.
+    for spec in res.values():
+        for f in _flatten_mapping(spec.get("mappings", {}).get("properties", {})):
+            fields[f["path"]] = f["type"]
+    flat = sorted(({"path": p, "type": t} for p, t in fields.items()),
+                  key=lambda f: f["path"])
+    _MAPPING_CACHE[index] = (now, flat)
+    return flat
+
+
+def _aggregatable(index, field):
+    """Return the form of `field` usable in a term/terms query or aggregation.
+
+    A dynamically mapped string lands as `text` with a `.keyword` subfield, and
+    aggregating or term-matching on the `text` form silently returns nothing (or
+    errors out, fielddata being disabled). This resolves `use_case` to
+    `use_case.keyword` automatically, so callers never have to know how the
+    field happened to be mapped.
+    """
+    if not field:
+        return field
+    types = {f["path"]: f["type"] for f in _index_fields(index)}
+    if types.get(field) == "text" and f"{field}.keyword" in types:
+        return f"{field}.keyword"
+    return field
+
+
+# ------------------------------------------------------------------------------
+# Query building — shared by every endpoint below
+# ------------------------------------------------------------------------------
+
+def _time_range_clause(time_field, frm, to, time_unit="ms"):
+    """Range clause on the time field, in the unit that field is stored in.
+
+    `header.sec` holds epoch SECONDS while `@timestamp` is a date field; the UI
+    always sends epoch milliseconds, so numeric bounds are converted here.
+    """
+    div = 1000.0 if time_unit == "s" else 1.0
+
+    def conv(v):
+        return v / div if isinstance(v, (int, float)) else v
+
+    rng = {"gte": conv(frm) if frm is not None else conv(TIME_FLOOR_MS)}
+    if to is not None:
+        rng["lte"] = conv(to)
+    return {"range": {time_field: rng}}
+
+
+def _filter_clause(index, f):
+    """Translate one UI filter into (es_clause, negate).
+
+    Filters arrive as {"field": ..., "op": ..., "value": ...}; `op` is one of
+    is / is_not / one_of / not_one_of / gt / gte / lt / lte / between /
+    exists / missing / contains.
+    """
+    field = (f or {}).get("field")
+    if not field:
+        return None
+    op = (f.get("op") or "is").strip()
+    val = f.get("value")
+
+    if op == "exists":
+        return ({"exists": {"field": field}}, False)
+    if op == "missing":
+        return ({"exists": {"field": field}}, True)
+    if op in ("is", "is_not"):
+        return ({"term": {_aggregatable(index, field): val}}, op == "is_not")
+    if op in ("one_of", "not_one_of"):
+        vals = val if isinstance(val, list) else [val]
+        vals = [v for v in vals if v is not None and v != ""]
+        if not vals:
+            return None
+        return ({"terms": {_aggregatable(index, field): vals}}, op == "not_one_of")
+    if op in ("gt", "gte", "lt", "lte"):
+        if val is None or val == "":
+            return None
+        return ({"range": {field: {op: val}}}, False)
+    if op == "between":
+        lo, hi = (list(val) + [None, None])[:2] if isinstance(val, (list, tuple)) \
+            else (None, None)
+        rng = {}
+        if lo is not None and lo != "":
+            rng["gte"] = lo
+        if hi is not None and hi != "":
+            rng["lte"] = hi
+        return ({"range": {field: rng}}, False) if rng else None
+    if op == "contains":
+        return ({"match_phrase": {field: val}}, False)
+    return None
+
+
+def _request_filters():
+    """Parse the `filters` query parameter (URL-encoded JSON array)."""
+    raw = request.args.get("filters", "")
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+    except ValueError:
+        return []
+    return parsed if isinstance(parsed, list) else []
+
+
+def _build_query(index, time_field, frm, to, filters, time_unit="ms"):
+    """Assemble the bool query every endpoint shares: time range + UI filters."""
+    must = [_time_range_clause(time_field, frm, to, time_unit)]
+    must_not = []
+    for f in filters or []:
+        parsed = _filter_clause(index, f)
+        if not parsed:
+            continue
+        clause, negate = parsed
+        (must_not if negate else must).append(clause)
+    bool_q = {"filter": must}
+    if must_not:
+        bool_q["must_not"] = must_not
+    return {"bool": bool_q}
+
+
+def _common_params(default_index="", default_time_field="@timestamp"):
+    """Pull the parameters every endpoint accepts off the request."""
+    index = request.args.get("index", default_index)
+    time_field = request.args.get("time_field", default_time_field)
+    time_unit = request.args.get("time_unit", "ms")
+    frm = _parse_time_param(request.args.get("from"))
+    to = _parse_time_param(request.args.get("to"))
+    filters = _request_filters()
+    query = _build_query(index, time_field, frm, to, filters, time_unit)
+    return index, time_field, time_unit, frm, to, query
+
+
+def _dig(src, path):
+    """Read a dotted path out of a nested _source dict."""
+    cur = src
+    for part in path.split("."):
+        if isinstance(cur, dict) and part in cur:
+            cur = cur[part]
+        else:
+            return None
+    return cur
+
+
+# ------------------------------------------------------------------------------
+# Discovery endpoints — let the UI build filters and panels without hardcoding
+# ------------------------------------------------------------------------------
+
+@app.route("/api/es/indices")
+def es_indices():
+    """List the ros-* indices, so the panel builder can offer real choices."""
+    pattern = request.args.get("pattern", "ros-*")
+    try:
+        rows = _es_get(f"_cat/indices/{pattern}?format=json&h=index,docs.count")
+    except ES_ERRORS as e:
+        return _es_fail(e)
+    out = [{"index": r.get("index"), "docs": int(r.get("docs.count") or 0)}
+           for r in rows if not (r.get("index") or "").startswith(".")]
+    out.sort(key=lambda r: r["index"])
+    return jsonify({"indices": out})
+
+
+@app.route("/api/es/fields")
+def es_fields():
+    """Flattened field list for an index, with types (drives autocomplete)."""
+    index = request.args.get("index", "")
+    if not index:
+        return jsonify({"error": "index required"}), 400
+    fields = _index_fields(index)
+    numeric = {"long", "integer", "short", "byte", "double", "float",
+               "half_float", "scaled_float"}
+    return jsonify({
+        "fields": fields,
+        "numeric": [f["path"] for f in fields if f["type"] in numeric],
+        "keyword": [f["path"] for f in fields if f["type"] == "keyword"],
+        "date": [f["path"] for f in fields if f["type"] == "date"],
+    })
+
+
+@app.route("/api/es/terms")
+def es_terms():
+    """Distinct values of a field with their counts — populates the dropdowns.
+
+    Used for the use-case picker: `field=use_case` resolves to `use_case.keyword`
+    automatically when the index mapped it dynamically as text.
+    """
+    index, time_field, time_unit, frm, to, query = _common_params()
+    field = request.args.get("field", "use_case")
+    size = max(1, min(500, int(request.args.get("size", 50))))
+    if not index:
+        return jsonify({"error": "index required"}), 400
+
+    body = {
+        "size": 0,
+        "query": query,
+        "aggs": {
+            "vals": {"terms": {"field": _aggregatable(index, field),
+                               "size": size, "order": {"_count": "desc"}}},
+            # Documents collected before use-case tagging existed have no such
+            # field. Report them so the UI can offer "untagged (legacy data)"
+            # rather than pretending they are not there.
+            "missing": {"missing": {"field": _aggregatable(index, field)}},
+        },
+    }
+    try:
+        res = _es_search(index, body)
+    except ES_ERRORS as e:
+        return _es_fail(e)
+
+    agg = res.get("aggregations", {})
+    buckets = [{"value": b["key"], "count": b["doc_count"]}
+               for b in agg.get("vals", {}).get("buckets", [])]
+    return jsonify({
+        "values": buckets,
+        "missing": agg.get("missing", {}).get("doc_count", 0),
+    })
+
+
+@app.route("/api/es/use_cases")
+def es_use_cases():
+    """Use-case names the dashboard knows about (static, always available)."""
+    return jsonify({"use_cases": KNOWN_USE_CASES, "active": use_case_pub.current})
 
 
 @app.route("/api/es/range")
@@ -1127,8 +1557,13 @@ def es_range():
     time_field = request.args.get("time_field", "@timestamp")
     if not index:
         return jsonify({"error": "index required"}), 400
+    filters = _request_filters()
+    # Floor applied here too, else the 1970 sim-clock documents win the min.
+    query = _build_query(index, time_field, None, None, filters,
+                         request.args.get("time_unit", "ms"))
     body = {
         "size": 0,
+        "query": query,
         "aggs": {
             "mn": {"min": {"field": time_field}},
             "mx": {"max": {"field": time_field}},
@@ -1143,174 +1578,459 @@ def es_range():
             "min_str": agg.get("mn", {}).get("value_as_string"),
             "max_str": agg.get("mx", {}).get("value_as_string"),
         })
-    except (urllib.error.URLError, urllib.error.HTTPError, ValueError) as e:
-        return jsonify({"error": str(e)}), 502
+    except ES_ERRORS as e:
+        return _es_fail(e)
+
+
+# ------------------------------------------------------------------------------
+# Visualization endpoints
+# ------------------------------------------------------------------------------
+
+def _span_ms(index, time_field, frm, to, query):
+    """Milliseconds covered by the current selection, for bucket sizing."""
+    if isinstance(frm, int) and isinstance(to, int):
+        return max(1, to - frm)
+    res = _es_search(index, {
+        "size": 0, "query": query,
+        "aggs": {"mn": {"min": {"field": time_field}},
+                 "mx": {"max": {"field": time_field}}},
+    })
+    agg = res.get("aggregations", {})
+    mn, mx = agg.get("mn", {}).get("value"), agg.get("mx", {}).get("value")
+    if mn is None or mx is None:
+        return None
+    return max(1, int(mx - mn))
 
 
 @app.route("/api/es/timeseries")
 def es_timeseries():
-    """Downsampled time-series via a date_histogram with per-field averages.
+    """Downsampled time-series via a date_histogram.
 
-    Query params:
-      index       ES index name
-      fields      comma-separated numeric field paths (e.g. ur10e_elbow_joint.position)
-      time_field  date field to bucket on (default @timestamp)
-      from, to    range bounds (epoch ms or ISO); omit for all data
-      points      target number of buckets (default 500)
+    Query params (on top of index/time_field/from/to/filters):
+      fields    comma-separated numeric field paths
+      points    target number of buckets (default 500)
+      stat      avg (default) | min | max | envelope
+                `envelope` returns avg AND min AND max per field. Averaging
+                alone hides spikes: at 500 points over a long run each bucket
+                covers seconds, and a 0.25 s collision peak disappears into the
+                mean. The envelope is what makes such events visible.
+      split_by  keyword field to break each series down by (e.g. use_case).
+                Series are then keyed "<field>||<split value>".
     """
-    index = request.args.get("index", "")
+    index, time_field, time_unit, frm, to, query = _common_params()
     fields = [f for f in request.args.get("fields", "").split(",") if f]
-    time_field = request.args.get("time_field", "@timestamp")
-    # Upper bound stays under Elasticsearch's default search.max_buckets (65536)
-    # so the date_histogram can't blow the bucket limit and error out.
+    # Upper bound stays under Elasticsearch's default search.max_buckets (65536).
     points = max(10, min(60000, int(request.args.get("points", 500))))
-    frm = _parse_time_param(request.args.get("from"))
-    to = _parse_time_param(request.args.get("to"))
+    stat = request.args.get("stat", "avg")
+    split_by = request.args.get("split_by", "").strip()
 
     if not index or not fields:
         return jsonify({"error": "index and fields required"}), 400
 
-    # Build the range filter. We always apply a lower floor (TIME_FLOOR) to drop
-    # implausible pre-2000 timestamps. The sim joint-state stream carries Gazebo
-    # sim-clock stamps that start at 0 on each launch, so those docs land in 1970.
-    # Left unfiltered they stretch the @timestamp span to ~56 years, which forces
-    # the date_histogram into huge buckets and flattens the whole chart into a few
-    # averaged points. Filtering them here (read-only, query-time) restores detail
-    # without touching any stored data.
-    TIME_FLOOR = "2000-01-01"
-    rng = {"gte": frm if frm is not None else TIME_FLOOR}
-    if to is not None:
-        rng["lte"] = to
-    query = {"range": {time_field: rng}}
-
-    # Determine the bucket interval. If we have explicit numeric ms bounds use
-    # them; otherwise ask ES for the actual min/max so buckets fit the data.
-    try:
-        if isinstance(frm, int) and isinstance(to, int):
-            span_ms = max(1, to - frm)
-        else:
-            r = _es_search(index, {
-                "size": 0,
-                "query": query,
-                "aggs": {
-                    "mn": {"min": {"field": time_field}},
-                    "mx": {"max": {"field": time_field}},
-                },
-            })
-            agg = r.get("aggregations", {})
-            mn = agg.get("mn", {}).get("value")
-            mx = agg.get("mx", {}).get("value")
-            if mn is None or mx is None:
-                return jsonify({"time": [], "series": {}})
-            span_ms = max(1, int(mx - mn))
-    except (urllib.error.URLError, urllib.error.HTTPError, ValueError) as e:
-        return jsonify({"error": str(e)}), 502
-
-    interval_ms = max(1, span_ms // points)
-
-    body = {
-        "size": 0,
-        "query": query,
-        "aggs": {
-            "ts": {
-                "date_histogram": {
-                    "field": time_field,
-                    "fixed_interval": f"{interval_ms}ms",
-                    "min_doc_count": 1,
-                },
-                "aggs": {
-                    f"f{i}": {"avg": {"field": f}}
-                    for i, f in enumerate(fields)
-                },
-            }
-        },
-    }
+    stats = ["avg", "min", "max"] if stat == "envelope" else \
+        [stat if stat in ("avg", "min", "max") else "avg"]
 
     try:
-        res = _es_search(index, body)
-    except (urllib.error.URLError, urllib.error.HTTPError, ValueError) as e:
-        return jsonify({"error": str(e)}), 502
+        span = _span_ms(index, time_field, frm, to, query)
+    except ES_ERRORS as e:
+        return _es_fail(e)
+    if span is None:
+        return jsonify({"time": [], "series": {}, "stats": stats})
+
+    # header.sec is stored in seconds, so the span comes back in seconds too.
+    if time_unit == "s":
+        span *= 1000
+    interval_ms = max(1, span // points)
+
+    metrics = {}
+    for i, f in enumerate(fields):
+        for st in stats:
+            metrics[f"{st}{i}"] = {st: {"field": f}}
+
+    if split_by:
+        split_field = _aggregatable(index, split_by)
+        inner = {"split": {"terms": {"field": split_field, "size": 20},
+                           "aggs": metrics}}
+    else:
+        inner = metrics
+
+    if time_unit == "s":
+        hist = {"histogram": {"field": time_field,
+                              "interval": max(0.001, interval_ms / 1000.0),
+                              "min_doc_count": 1}}
+    else:
+        hist = {"date_histogram": {"field": time_field,
+                                   "fixed_interval": f"{interval_ms}ms",
+                                   "min_doc_count": 1}}
+    hist["aggs"] = inner
+
+    try:
+        res = _es_search(index, {"size": 0, "query": query, "aggs": {"ts": hist}})
+    except ES_ERRORS as e:
+        return _es_fail(e)
 
     buckets = res.get("aggregations", {}).get("ts", {}).get("buckets", [])
     out_time = []
-    out_series = {f: [] for f in fields}
-    for b in buckets:
-        out_time.append(b["key"])  # epoch millis
-        for i, f in enumerate(fields):
-            val = b.get(f"f{i}", {}).get("value")
-            out_series[f].append(val)
+    out_series = {}
+    groups = []
 
-    return jsonify({"time": out_time, "series": out_series})
+    def key_of(field, st, group=None):
+        base = f"{field}::{st}"
+        return f"{base}||{group}" if group is not None else base
+
+    if split_by:
+        # Collect the group names first so every series has the same length.
+        for b in buckets:
+            for sb in b.get("split", {}).get("buckets", []):
+                if sb["key"] not in groups:
+                    groups.append(sb["key"])
+        for f in fields:
+            for st in stats:
+                for g in groups:
+                    out_series[key_of(f, st, g)] = []
+        for b in buckets:
+            out_time.append(b["key"])
+            present = {sb["key"]: sb for sb in b.get("split", {}).get("buckets", [])}
+            for i, f in enumerate(fields):
+                for st in stats:
+                    for g in groups:
+                        sb = present.get(g)
+                        val = sb.get(f"{st}{i}", {}).get("value") if sb else None
+                        out_series[key_of(f, st, g)].append(val)
+    else:
+        for f in fields:
+            for st in stats:
+                out_series[key_of(f, st)] = []
+        for b in buckets:
+            out_time.append(b["key"])
+            for i, f in enumerate(fields):
+                for st in stats:
+                    out_series[key_of(f, st)].append(
+                        b.get(f"{st}{i}", {}).get("value"))
+
+    # header.sec buckets come back in seconds; the UI plots epoch millis.
+    if time_unit == "s":
+        out_time = [t * 1000 for t in out_time]
+
+    return jsonify({"time": out_time, "series": out_series,
+                    "stats": stats, "groups": groups})
 
 
-@app.route("/api/es/scatter3d")
-def es_scatter3d():
-    """Return up to `limit` raw x/y/z points for 3D scatter (e.g. TCP path).
+@app.route("/api/es/histogram")
+def es_histogram():
+    """Value distribution of a numeric field.
 
-    Query params:
-      index            ES index name (default ros-tcp-pose-topic)
-      x, y, z          field paths (default pose.position.{x,y,z})
-      time_field       field used for range filter + ordering (default header.sec)
-      time_unit        's' or 'ms' — unit of time_field values (default 's')
-      from, to         range bounds in epoch ms; converted to time_unit
-      limit            max points (default 3000)
+    Answers "how is effort distributed", and with split_by=use_case, "how does
+    that distribution differ between the four scenarios".
     """
-    index = request.args.get("index", "ros-tcp-pose-topic")
+    index, time_field, time_unit, frm, to, query = _common_params()
+    field = request.args.get("field", "")
+    bins = max(5, min(200, int(request.args.get("bins", 40))))
+    split_by = request.args.get("split_by", "").strip()
+    interval = request.args.get("interval")
+
+    if not index or not field:
+        return jsonify({"error": "index and field required"}), 400
+
+    try:
+        if interval:
+            step = float(interval)
+        else:
+            res = _es_search(index, {"size": 0, "query": query,
+                                     "aggs": {"st": {"stats": {"field": field}}}})
+            st = res.get("aggregations", {}).get("st", {})
+            lo, hi = st.get("min"), st.get("max")
+            if lo is None or hi is None:
+                return jsonify({"bins": [], "series": {}, "groups": []})
+            step = (hi - lo) / bins if hi > lo else 1.0
+            if step <= 0:
+                step = 1.0
+    except ES_ERRORS as e:
+        return _es_fail(e)
+
+    hist = {"histogram": {"field": field, "interval": step, "min_doc_count": 0}}
+    if split_by:
+        aggs = {"split": {"terms": {"field": _aggregatable(index, split_by),
+                                    "size": 20},
+                          "aggs": {"h": hist}}}
+    else:
+        aggs = {"h": hist}
+
+    try:
+        res = _es_search(index, {"size": 0, "query": query, "aggs": aggs})
+    except ES_ERRORS as e:
+        return _es_fail(e)
+
+    agg = res.get("aggregations", {})
+    if split_by:
+        groups, per_group = [], {}
+        for sb in agg.get("split", {}).get("buckets", []):
+            groups.append(sb["key"])
+            per_group[sb["key"]] = {b["key"]: b["doc_count"]
+                                    for b in sb.get("h", {}).get("buckets", [])}
+        edges = sorted({k for g in per_group.values() for k in g})
+        series = {g: [per_group[g].get(e, 0) for e in edges] for g in groups}
+    else:
+        buckets = agg.get("h", {}).get("buckets", [])
+        edges = [b["key"] for b in buckets]
+        series = {"all": [b["doc_count"] for b in buckets]}
+        groups = ["all"]
+
+    return jsonify({"bins": edges, "series": series,
+                    "groups": groups, "interval": step})
+
+
+@app.route("/api/es/percentiles")
+def es_percentiles():
+    """Percentiles per field, optionally split by a keyword field.
+
+    Feeds the box plots: with split_by=use_case this is the single chart that
+    shows how the four scenarios load the robot differently.
+    """
+    index, time_field, time_unit, frm, to, query = _common_params()
+    fields = [f for f in request.args.get("fields", "").split(",") if f]
+    split_by = request.args.get("split_by", "").strip()
+    percents = [float(p) for p in
+                request.args.get("percents", "5,25,50,75,95").split(",") if p]
+
+    if not index or not fields:
+        return jsonify({"error": "index and fields required"}), 400
+
+    metrics = {f"p{i}": {"percentiles": {"field": f, "percents": percents}}
+               for i, f in enumerate(fields)}
+    if split_by:
+        aggs = {"split": {"terms": {"field": _aggregatable(index, split_by),
+                                    "size": 20},
+                          "aggs": metrics}}
+    else:
+        aggs = metrics
+
+    try:
+        res = _es_search(index, {"size": 0, "query": query, "aggs": aggs})
+    except ES_ERRORS as e:
+        return _es_fail(e)
+
+    agg = res.get("aggregations", {})
+
+    def extract(container):
+        out = {}
+        for i, f in enumerate(fields):
+            vals = container.get(f"p{i}", {}).get("values", {})
+            # ES keys percentile results as stringified floats ("50.0").
+            out[f] = {str(p): vals.get(str(float(p))) for p in percents}
+        return out
+
+    if split_by:
+        groups, series = [], {}
+        for sb in agg.get("split", {}).get("buckets", []):
+            groups.append(sb["key"])
+            series[sb["key"]] = extract(sb)
+    else:
+        groups = ["all"]
+        series = {"all": extract(agg)}
+
+    return jsonify({"groups": groups, "series": series,
+                    "fields": fields, "percents": percents})
+
+
+@app.route("/api/es/stats")
+def es_stats():
+    """Summary numbers for the KPI tiles: doc count, time span, per-field stats."""
+    index, time_field, time_unit, frm, to, query = _common_params()
+    fields = [f for f in request.args.get("fields", "").split(",") if f]
+    split_by = request.args.get("split_by", "").strip()
+    if not index:
+        return jsonify({"error": "index required"}), 400
+
+    metrics = {f"s{i}": {"stats": {"field": f}} for i, f in enumerate(fields)}
+    aggs = dict(metrics)
+    aggs["t_min"] = {"min": {"field": time_field}}
+    aggs["t_max"] = {"max": {"field": time_field}}
+    if split_by:
+        aggs["split"] = {"terms": {"field": _aggregatable(index, split_by),
+                                   "size": 20},
+                         "aggs": metrics}
+
+    try:
+        res = _es_search(index, {"size": 0, "query": query,
+                                 "track_total_hits": True, "aggs": aggs})
+    except ES_ERRORS as e:
+        return _es_fail(e)
+
+    agg = res.get("aggregations", {})
+    mul = 1000.0 if time_unit == "s" else 1.0
+    t_min = agg.get("t_min", {}).get("value")
+    t_max = agg.get("t_max", {}).get("value")
+    total = res.get("hits", {}).get("total", {})
+
+    groups, by_group = [], {}
+    for sb in agg.get("split", {}).get("buckets", []):
+        groups.append(sb["key"])
+        by_group[sb["key"]] = {
+            "count": sb.get("doc_count"),
+            **{f: sb.get(f"s{i}", {}) for i, f in enumerate(fields)},
+        }
+
+    return jsonify({
+        "count": total.get("value") if isinstance(total, dict) else total,
+        "t_min": t_min * mul if t_min is not None else None,
+        "t_max": t_max * mul if t_max is not None else None,
+        "duration_ms": (t_max - t_min) * mul
+                       if (t_min is not None and t_max is not None) else None,
+        "series": {f: agg.get(f"s{i}", {}) for i, f in enumerate(fields)},
+        "groups": groups,
+        "by_group": by_group,
+    })
+
+
+@app.route("/api/es/points")
+def es_points():
+    """Raw x/y[/z] points for the 2D and 3D scatter panels.
+
+    `mode` decides HOW the points are picked:
+      spread (default) — one document per time bucket, evenly across the range.
+      latest           — the newest `limit` documents.
+
+    `latest` was the only behaviour before, and it quietly misled: over a wide
+    range it returns the tail of the data, not a picture of the whole range, so
+    a TCP path looked like it only covered the last few seconds.
+    """
+    index, time_field, time_unit, frm, to, query = _common_params(
+        default_index="ros-tcp-pose-topic", default_time_field="header.sec")
     fx = request.args.get("x", "pose.position.x")
     fy = request.args.get("y", "pose.position.y")
     fz = request.args.get("z", "pose.position.z")
-    time_field = request.args.get("time_field", "header.sec")
-    time_unit = request.args.get("time_unit", "s")
+    fc = request.args.get("color", "").strip()
     limit = max(10, min(10000, int(request.args.get("limit", 3000))))
-    frm = _parse_time_param(request.args.get("from"))
-    to = _parse_time_param(request.args.get("to"))
+    mode = request.args.get("mode", "spread")
 
-    def to_unit(ms):
-        return ms / 1000.0 if time_unit == "s" else ms
-
-    if isinstance(frm, int) or isinstance(to, int):
-        rng = {}
-        if isinstance(frm, int):
-            rng["gte"] = to_unit(frm)
-        if isinstance(to, int):
-            rng["lte"] = to_unit(to)
-        query = {"range": {time_field: rng}}
-    else:
-        query = {"match_all": {}}
-
-    body = {
-        "size": limit,
-        "_source": [fx, fy, fz, time_field],
-        "query": query,
-        "sort": [{time_field: {"order": "desc"}}],
-    }
+    axes = [a for a in (fx, fy, fz, fc) if a]
+    source = list(dict.fromkeys(axes + [time_field]))
 
     try:
-        res = _es_search(index, body)
-    except (urllib.error.URLError, urllib.error.HTTPError, ValueError) as e:
-        return jsonify({"error": str(e)}), 502
-
-    def dig(src, path):
-        cur = src
-        for part in path.split("."):
-            if isinstance(cur, dict) and part in cur:
-                cur = cur[part]
+        if mode == "spread":
+            span = _span_ms(index, time_field, frm, to, query)
+            if span is None:
+                return jsonify({"x": [], "y": [], "z": [], "color": [], "t": []})
+            if time_unit == "s":
+                span *= 1000
+            interval_ms = max(1, span // limit)
+            if time_unit == "s":
+                hist = {"histogram": {"field": time_field,
+                                      "interval": max(0.001, interval_ms / 1000.0),
+                                      "min_doc_count": 1}}
             else:
-                return None
-        return cur
+                hist = {"date_histogram": {"field": time_field,
+                                           "fixed_interval": f"{interval_ms}ms",
+                                           "min_doc_count": 1}}
+            hist["aggs"] = {"doc": {"top_hits": {"size": 1, "_source": source}}}
+            res = _es_search(index, {"size": 0, "query": query,
+                                     "aggs": {"ts": hist}})
+            hits = [h
+                    for b in res.get("aggregations", {}).get("ts", {}).get("buckets", [])
+                    for h in b.get("doc", {}).get("hits", {}).get("hits", [])]
+        else:
+            res = _es_search(index, {
+                "size": limit, "_source": source, "query": query,
+                "sort": [{time_field: {"order": "desc"}}],
+            })
+            hits = res.get("hits", {}).get("hits", [])[::-1]  # chronological
+    except ES_ERRORS as e:
+        return _es_fail(e)
 
-    xs, ys, zs = [], [], []
-    for hit in res.get("hits", {}).get("hits", []):
+    xs, ys, zs, cs, ts = [], [], [], [], []
+    for hit in hits:
         src = hit.get("_source", {})
-        xv, yv, zv = dig(src, fx), dig(src, fy), dig(src, fz)
-        if xv is None or yv is None or zv is None:
+        xv, yv = _dig(src, fx), _dig(src, fy)
+        zv = _dig(src, fz) if fz else 0
+        if xv is None or yv is None or (fz and zv is None):
             continue
         xs.append(xv)
         ys.append(yv)
         zs.append(zv)
+        if fc:
+            cs.append(_dig(src, fc))
+        tv = _dig(src, time_field)
+        ts.append(tv * 1000 if (tv is not None and time_unit == "s") else tv)
 
-    # Returned newest-first; reverse so the path runs chronologically.
-    return jsonify({"x": xs[::-1], "y": ys[::-1], "z": zs[::-1]})
+    return jsonify({"x": xs, "y": ys, "z": zs, "color": cs, "t": ts})
+
+
+@app.route("/api/es/scatter3d")
+def es_scatter3d():
+    """Backwards-compatible alias for /api/es/points."""
+    return es_points()
+
+
+@app.route("/api/es/docs")
+def es_docs():
+    """Raw documents for the Discover-style table, and CSV export.
+
+    Params: fields (columns), size, offset, sort, order, format=json|csv.
+    """
+    index, time_field, time_unit, frm, to, query = _common_params()
+    fields = [f for f in request.args.get("fields", "").split(",") if f]
+    size = max(1, min(1000, int(request.args.get("size", 100))))
+    offset = max(0, min(9000, int(request.args.get("offset", 0))))
+    sort_field = request.args.get("sort", time_field)
+    order = "asc" if request.args.get("order", "desc") == "asc" else "desc"
+    fmt = request.args.get("format", "json")
+
+    if not index:
+        return jsonify({"error": "index required"}), 400
+
+    body = {
+        "size": size, "from": offset, "query": query,
+        "track_total_hits": True,
+        "sort": [{sort_field: {"order": order}}],
+    }
+    if fields:
+        body["_source"] = list(dict.fromkeys(fields + [time_field]))
+
+    try:
+        res = _es_search(index, body)
+    except ES_ERRORS as e:
+        return _es_fail(e)
+
+    hits = res.get("hits", {}).get("hits", [])
+    columns = fields or []
+    if not columns:
+        # No explicit column list. ROS documents are nested
+        # ({joint: {position, velocity, effort}}), so the top-level scalar keys
+        # of a hit are almost none — take the mapping's leaf paths instead, with
+        # the time field and the use-case tag pulled to the front.
+        leaves = [f["path"] for f in _index_fields(index)
+                  if not f["path"].endswith(".keyword")]
+        head = [c for c in (time_field, "use_case") if c in leaves]
+        columns = head + [c for c in leaves if c not in head]
+        columns = columns[:25]
+        if not columns and hits:
+            columns = [k for k, v in (hits[0].get("_source") or {}).items()
+                       if not isinstance(v, (dict, list))][:25]
+
+    rows = []
+    for h in hits:
+        src = h.get("_source", {})
+        rows.append([_dig(src, c) for c in columns])
+
+    if fmt == "csv":
+        import csv
+        import io as _io
+        buf = _io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(columns)
+        w.writerows(rows)
+        return Response(
+            buf.getvalue(), mimetype="text/csv",
+            headers={"Content-Disposition":
+                     f'attachment; filename="{index}.csv"'})
+
+    total = res.get("hits", {}).get("total", {})
+    return jsonify({
+        "total": total.get("value") if isinstance(total, dict) else total,
+        "columns": columns,
+        "rows": rows,
+    })
 
 
 # ==============================================================================
@@ -1325,7 +2045,8 @@ def handle_connect():
 def handle_start_scenario(data):
     scenario_key = data.get("scenario")
     use_fake_hardware = data.get("use_fake_hardware", False)
-    scenario_mgr.start_scenario(scenario_key, use_fake_hardware)
+    data_acquisition = data.get("data_acquisition", False)
+    scenario_mgr.start_scenario(scenario_key, use_fake_hardware, data_acquisition)
 
 @socketio.on("confirm_robot")
 def handle_confirm_robot():
@@ -1367,6 +2088,9 @@ def main():
     # Start anomaly detection collector
     anomaly_collector.start()
 
+    # Start the use-case broadcaster (tags everything the Kafka bridge collects)
+    use_case_pub.start()
+
     try:
         socketio.run(app, host="0.0.0.0", port=8080, debug=False, allow_unsafe_werkzeug=True)
     except KeyboardInterrupt:
@@ -1375,6 +2099,7 @@ def main():
         camera_streamer.stop()
         joint_collector.stop()
         scenario_mgr.stop_all()
+        use_case_pub.stop()
 
 
 if __name__ == "__main__":

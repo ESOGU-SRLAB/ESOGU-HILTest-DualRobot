@@ -22,17 +22,23 @@
 </head>
 <body>
 
-<!-- ===== TAB SWITCHER (top-right, floating) ===== -->
-<div class="tab-switcher" id="tab-switcher">
-    <button class="tab-btn active" id="tab-btn-home" onclick="switchTab('home')">
-        🏠 Dashboard
+<!-- ===== SIDE MENU (top-left, hover-to-reveal) ===== -->
+<div class="side-menu" id="side-menu">
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Open navigation menu"
+            aria-haspopup="true" aria-expanded="false" aria-controls="tab-switcher">
+        <span></span><span></span><span></span>
     </button>
-    <button class="tab-btn" id="tab-btn-analytics" onclick="switchTab('analytics')">
-        📈 Data Analytics
-    </button>
-    <button class="tab-btn" id="tab-btn-anomaly" onclick="switchTab('anomaly')">
-        🚨 Anomaly Detection
-    </button>
+    <div class="tab-switcher" id="tab-switcher">
+        <button class="tab-btn active" id="tab-btn-home" onclick="switchTab('home')">
+            🏠 Dashboard
+        </button>
+        <button class="tab-btn" id="tab-btn-analytics" onclick="switchTab('analytics')">
+            📈 Data Analytics
+        </button>
+        <button class="tab-btn" id="tab-btn-anomaly" onclick="switchTab('anomaly')">
+            🚨 Anomaly Detection
+        </button>
+    </div>
 </div>
 
 <!-- ===== VIEW: HOME (existing dashboard — unchanged) ===== -->
@@ -57,31 +63,88 @@
 
     <!-- ===== CONTROL BAR (Scenario Buttons + Emergency Stop) ===== -->
     <nav class="control-bar fade-in" id="control-bar">
-        <button class="scenario-btn" id="btn-multi_robot_inspection" onclick="startScenario('multi_robot_inspection')">
-            <span class="btn-icon">🤖</span>
-            Multi-Robot Inspection
-        </button>
-        <button class="scenario-btn" id="btn-ur10e_inspection" onclick="startScenario('ur10e_inspection')">
-            <span class="btn-icon">🔍</span>
-            UR10e Inspection
-        </button>
-        <button class="scenario-btn" id="btn-pick_and_place" onclick="startScenario('pick_and_place')">
-            <span class="btn-icon">📦</span>
-            Pick &amp; Place
-        </button>
-        <button class="scenario-btn" id="btn-human_robot_collaboration" onclick="startScenario('human_robot_collaboration')">
-            <span class="btn-icon">🤝</span>
-            Human-Robot Collaboration
-        </button>
+        <div class="scenario-btn-wrap">
+            <button class="scenario-btn" id="btn-multi_robot_inspection" onclick="startScenario('multi_robot_inspection')">
+                <span class="btn-icon">🤖</span>
+                Multi-Robot Inspection
+            </button>
+            <button type="button" class="info-btn" aria-label="About Multi-Robot Inspection">i
+                <span class="info-tooltip">
+                    <strong>Multi-Robot Inspection</strong>
+                    The UR10e and the Kawasaki RS005L move together around the cell
+                    chassis, visiting a set of pre-planned viewpoints. At each stop,
+                    both arms capture a SICK point cloud together with the camera's
+                    optical-frame pose, saving both to disk for later 3D coverage
+                    analysis.
+                </span>
+            </button>
+        </div>
+        <div class="scenario-btn-wrap">
+            <button class="scenario-btn" id="btn-ur10e_inspection" onclick="startScenario('ur10e_inspection')">
+                <span class="btn-icon">🔍</span>
+                UR10e Inspection
+            </button>
+            <button type="button" class="info-btn" aria-label="About UR10e Inspection">i
+                <span class="info-tooltip">
+                    <strong>UR10e Inspection</strong>
+                    The single-robot version of the inspection scenario: the UR10e
+                    alone visits its own pre-planned viewpoints around the cell. At
+                    each stop it captures a SICK point cloud and the camera's
+                    optical-frame pose, saving both to disk for coverage analysis.
+                </span>
+            </button>
+        </div>
+        <div class="scenario-btn-wrap">
+            <button class="scenario-btn" id="btn-pick_and_place" onclick="startScenario('pick_and_place')">
+                <span class="btn-icon">📦</span>
+                Pick &amp; Place
+            </button>
+            <button type="button" class="info-btn" aria-label="About Pick &amp; Place">i
+                <span class="info-tooltip">
+                    <strong>Pick &amp; Place</strong>
+                    You describe the task in plain English (e.g. "pick up the thing on
+                    the conveyor and place it in an empty compartment of the
+                    toolkit's top row"). Gemini Robotics ER 2 reads the camera and
+                    works out a pick and a place target; the UR10e then carries it
+                    out with the vacuum gripper via MoveIt.
+                </span>
+            </button>
+        </div>
+        <div class="scenario-btn-wrap">
+            <button class="scenario-btn" id="btn-human_robot_collaboration" onclick="startScenario('human_robot_collaboration')">
+                <span class="btn-icon">🤝</span>
+                Human-Robot Collaboration
+            </button>
+            <button type="button" class="info-btn" aria-label="About Human-Robot Collaboration">i
+                <span class="info-tooltip">
+                    <strong>Human-Robot Collaboration</strong>
+                    The UR10e picks up a screwdriver tool and moves through 4
+                    pre-taught screw points. At each one it stops and waits for the
+                    operator to press a physical green button before slowly driving
+                    the screwdriver down to tighten the screw, then retracts and
+                    moves on — repeating in a loop until stopped.
+                </span>
+            </button>
+        </div>
 
         <div class="control-separator"></div>
 
-        <div class="toggle-container" title="Enable this switch when not connected to real hardware">
-            <label class="toggle-switch">
-                <input type="checkbox" id="fake-hardware-toggle" checked>
-                <span class="slider"></span>
-            </label>
-            <span class="toggle-label">Use Fake Hardware</span>
+        <div class="toggle-stack">
+            <div class="toggle-container" title="Enable this switch when not connected to real hardware">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="fake-hardware-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Use Fake Hardware</span>
+            </div>
+
+            <div class="toggle-container" title="Enable this switch to start the ROS2 → Kafka data collection bridge for this run">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="data-acquisition-toggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Data Acquisition</span>
+            </div>
         </div>
 
         <button class="emergency-btn" id="btn-emergency" onclick="emergencyStop()">
@@ -306,11 +369,231 @@
                 🔄 Refresh
             </button>
             <span class="tb-status" id="analytics-status">Idle</span>
+            <span class="crosshair-time" id="crosshair-time"
+                  title="Time under the cursor — synced across every time-series panel"></span>
         </div>
     </header>
 
+    <!-- ===== FILTER BAR (applies to every panel) ===== -->
+    <div class="filter-bar" id="filter-bar">
+        <div class="filter-row">
+            <span class="filter-group-label">🏷️ Use case</span>
+            <div class="use-case-chips" id="use-case-chips">
+                <span class="uc-chip loading">loading…</span>
+            </div>
+            <button class="tb-btn ghost" onclick="clearUseCases()"
+                    title="Clear the use-case selection">Clear</button>
+        </div>
+
+        <div class="filter-row">
+            <span class="filter-group-label">🔍 Filters</span>
+            <div class="filter-pills" id="filter-pills"></div>
+            <button class="tb-btn ghost" id="btn-add-filter" onclick="openFilterEditor()">
+                ＋ Add filter
+            </button>
+            <span class="filter-hint" id="filter-hint">
+                No filters — showing everything in range.
+            </span>
+        </div>
+
+        <div class="filter-row">
+            <span class="filter-group-label">🧩 Panels</span>
+            <select id="layout-select" class="tb-inline-select"
+                    onchange="onLayoutChange()"></select>
+            <button class="tb-btn ghost" onclick="openPanelBuilder()">＋ Add panel</button>
+            <button class="tb-btn ghost" onclick="resetLayout()"
+                    title="Restore the built-in panel set">↺ Reset</button>
+            <label class="tb-check">
+                <input type="checkbox" id="toggle-discover" onchange="toggleDiscover()">
+                <span>Discover table</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- ===== KPI TILES ===== -->
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <!-- ===== AUTO INSIGHT ===== -->
+    <div class="insight-bar" id="insight-bar" hidden>
+        <span class="insight-icon">💡</span>
+        <span class="insight-text" id="insight-text"></span>
+    </div>
+
     <div class="analytics-grid" id="analytics-grid">
         <!-- Panels are generated by analytics.js -->
+    </div>
+
+    <!-- ===== DISCOVER TABLE (raw documents) ===== -->
+    <section class="a-panel discover-panel" id="discover-panel" hidden>
+        <div class="a-panel-header">
+            <h3>🔎 Discover — raw documents</h3>
+            <div class="discover-controls">
+                <select id="discover-index" class="tb-inline-select"
+                        onchange="refreshDiscover()"></select>
+                <select id="discover-size" class="tb-inline-select"
+                        onchange="refreshDiscover()">
+                    <option value="25">25 rows</option>
+                    <option value="100" selected>100 rows</option>
+                    <option value="500">500 rows</option>
+                </select>
+                <button class="tb-btn ghost" onclick="exportDiscoverCsv()">⬇ CSV</button>
+                <span class="discover-total" id="discover-total"></span>
+            </div>
+        </div>
+        <div class="discover-table-wrap">
+            <table class="discover-table" id="discover-table">
+                <thead><tr><th>—</th></tr></thead>
+                <tbody><tr><td class="a-empty-cell">Not loaded.</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== FILTER EDITOR MODAL ===== -->
+    <div class="modal-overlay" id="filter-modal" onclick="onFilterOverlayClick(event)">
+        <div class="modal-box" role="dialog" aria-modal="true"
+             aria-labelledby="filter-modal-title">
+            <div class="modal-header">
+                <h3 id="filter-modal-title">🔍 Add filter</h3>
+                <button class="modal-close" onclick="closeFilterEditor()"
+                        title="Close (Esc)">✕</button>
+            </div>
+            <p class="modal-desc">
+                Filters apply to every panel at once, on top of the time range.
+            </p>
+            <div class="form-grid">
+                <label class="form-field">
+                    <span>Index</span>
+                    <select id="filter-index" onchange="loadFilterFields()"></select>
+                </label>
+                <label class="form-field">
+                    <span>Field</span>
+                    <input list="filter-field-list" id="filter-field"
+                           placeholder="use_case" autocomplete="off"
+                           onchange="onFilterFieldChange()">
+                    <datalist id="filter-field-list"></datalist>
+                </label>
+                <label class="form-field">
+                    <span>Operator</span>
+                    <select id="filter-op" onchange="onFilterOpChange()">
+                        <option value="is">is</option>
+                        <option value="is_not">is not</option>
+                        <option value="one_of">is one of</option>
+                        <option value="not_one_of">is not one of</option>
+                        <option value="gt">&gt;</option>
+                        <option value="gte">&ge;</option>
+                        <option value="lt">&lt;</option>
+                        <option value="lte">&le;</option>
+                        <option value="between">between</option>
+                        <option value="exists">exists</option>
+                        <option value="missing">does not exist</option>
+                        <option value="contains">contains</option>
+                    </select>
+                </label>
+                <label class="form-field" id="filter-value-field">
+                    <span>Value</span>
+                    <input list="filter-value-list" id="filter-value"
+                           placeholder="PICKPLACE" autocomplete="off">
+                    <datalist id="filter-value-list"></datalist>
+                </label>
+                <label class="form-field" id="filter-value2-field" style="display:none;">
+                    <span>and</span>
+                    <input id="filter-value2" placeholder="upper bound"
+                           autocomplete="off">
+                </label>
+            </div>
+            <div class="modal-status" id="filter-status"></div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeFilterEditor()">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" onclick="applyFilterEditor()">
+                    ✅ Add filter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PANEL BUILDER MODAL ===== -->
+    <div class="modal-overlay" id="panel-modal" onclick="onPanelOverlayClick(event)">
+        <div class="modal-box wide" role="dialog" aria-modal="true"
+             aria-labelledby="panel-modal-title">
+            <div class="modal-header">
+                <h3 id="panel-modal-title">🧩 Add panel</h3>
+                <button class="modal-close" onclick="closePanelBuilder()"
+                        title="Close (Esc)">✕</button>
+            </div>
+            <div class="form-grid">
+                <label class="form-field">
+                    <span>Title</span>
+                    <input id="pb-title" placeholder="UR10e — elbow effort">
+                </label>
+                <label class="form-field">
+                    <span>Chart type</span>
+                    <select id="pb-type" onchange="onPanelTypeChange()">
+                        <option value="line">Line (time-series)</option>
+                        <option value="envelope">Envelope (min / avg / max)</option>
+                        <option value="histogram">Histogram (distribution)</option>
+                        <option value="box">Box plot (percentiles)</option>
+                        <option value="heatmap">Heatmap (fields × time)</option>
+                        <option value="scatter2d">Scatter 2D (correlation)</option>
+                        <option value="scatter3d">Scatter 3D (path)</option>
+                        <option value="bar">Bar (compare groups)</option>
+                    </select>
+                </label>
+                <label class="form-field">
+                    <span>Index</span>
+                    <select id="pb-index" onchange="loadPanelFields()"></select>
+                </label>
+                <label class="form-field">
+                    <span>Time field</span>
+                    <select id="pb-time-field"></select>
+                </label>
+                <label class="form-field wide-field" id="pb-fields-field">
+                    <span>Fields <small>(comma separated)</small></span>
+                    <input list="pb-field-list" id="pb-fields"
+                           placeholder="ur10e_elbow_joint.effort" autocomplete="off">
+                    <datalist id="pb-field-list"></datalist>
+                </label>
+                <label class="form-field" id="pb-x-field" style="display:none;">
+                    <span>X</span>
+                    <input list="pb-field-list" id="pb-x" autocomplete="off">
+                </label>
+                <label class="form-field" id="pb-y-field" style="display:none;">
+                    <span>Y</span>
+                    <input list="pb-field-list" id="pb-y" autocomplete="off">
+                </label>
+                <label class="form-field" id="pb-z-field" style="display:none;">
+                    <span>Z</span>
+                    <input list="pb-field-list" id="pb-z" autocomplete="off">
+                </label>
+                <label class="form-field" id="pb-split-field">
+                    <span>Split by <small>(optional)</small></span>
+                    <input list="pb-field-list" id="pb-split"
+                           placeholder="use_case" autocomplete="off">
+                </label>
+                <label class="form-field">
+                    <span>Unit label</span>
+                    <input id="pb-unit" placeholder="rad / Nm / m">
+                </label>
+                <label class="form-field">
+                    <span>Width</span>
+                    <select id="pb-width">
+                        <option value="half">Half</option>
+                        <option value="full">Full</option>
+                    </select>
+                </label>
+            </div>
+            <div class="modal-hint" id="pb-hint"></div>
+            <div class="modal-status" id="pb-status"></div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closePanelBuilder()">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" onclick="applyPanelBuilder()">
+                    ✅ Add panel
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 <!-- ===== /VIEW: DATA ANALYTICS ===== -->
@@ -320,7 +603,9 @@
     <header class="analytics-header">
         <div class="analytics-title">
             <h1>🚨 Anomaly Detection</h1>
-            <p>UR10e — residual + raw autoencoder fusion (Eq. 4), θ<sub>abs</sub> = <span id="an-thr-head">—</span></p>
+            <p>Two LSTM-autoencoder models watch the UR10e in real time — one on the
+               raw joint signals, one on their residual — and their fused score
+               flags abnormal behavior on the robot.</p>
         </div>
         <div class="analytics-toolbar">
             <span class="an-conn" id="an-conn">● NO CONNECTION</span>

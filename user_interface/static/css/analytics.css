@@ -2,20 +2,89 @@
    Data Analytics Tab — styles (reuses the dashboard's dark theme variables)
    ============================================================================== */
 
-/* ---------- Tab Switcher (floating, top-right) ---------- */
-.tab-switcher {
+/* ---------- Side Menu (top-left, hover-to-reveal hamburger) ---------- */
+.side-menu {
     position: fixed;
     top: 16px;
-    right: 16px;
+    left: 16px;
     z-index: 1000;
+}
+
+.hamburger-btn {
+    width: 44px;
+    height: 44px;
     display: flex;
-    gap: 6px;
-    padding: 6px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     background: rgba(17, 24, 39, 0.85);
     backdrop-filter: blur(8px);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.hamburger-btn span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--text-secondary);
+    border-radius: 2px;
+    transition: background var(--transition-fast);
+}
+
+.side-menu:hover .hamburger-btn,
+.side-menu.open .hamburger-btn,
+.side-menu:focus-within .hamburger-btn {
+    background: var(--bg-card-hover);
+}
+
+.side-menu:hover .hamburger-btn span,
+.side-menu.open .hamburger-btn span,
+.side-menu:focus-within .hamburger-btn span {
+    background: var(--text-primary);
+}
+
+/* The flyout list of tabs. Hidden by default and revealed on hover/focus (for
+   mouse/keyboard) or the .open class (toggled by JS on click, for touch
+   screens where :hover never fires -- this control panel may run on a
+   touchscreen kiosk display in the lab). Extra top padding (rather than a
+   margin/gap) keeps the panel's own hit-box touching the button's bottom
+   edge, so moving the pointer straight down from the button into the list
+   never passes through a dead zone that would close it early. */
+.tab-switcher {
+    position: absolute;
+    top: 44px;
+    left: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 200px;
+    padding: 14px 6px 6px;
+    background: rgba(17, 24, 39, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+    pointer-events: none;
+}
+
+.side-menu:hover .tab-switcher,
+.side-menu.open .tab-switcher,
+.side-menu:focus-within .tab-switcher {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .tab-btn {
@@ -25,11 +94,13 @@
     color: var(--text-secondary);
     background: transparent;
     border: none;
-    padding: 8px 14px;
+    padding: 10px 14px;
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all var(--transition-fast);
     white-space: nowrap;
+    text-align: left;
+    width: 100%;
 }
 
 .tab-btn:hover {
@@ -230,4 +301,397 @@
 @media (max-width: 1100px) {
     .analytics-grid { grid-template-columns: 1fr; }
     .analytics-header { padding-right: 0; }
+}
+
+/* ==========================================================================
+   Filter bar — use-case chips + ad-hoc filter pills.
+   Applies to every panel at once, on top of the time range.
+   ========================================================================== */
+
+.filter-bar {
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    background: var(--gradient-card, rgba(255, 255, 255, 0.02));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: var(--radius-md, 12px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-group-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted, #64748b);
+    min-width: 92px;
+}
+
+.use-case-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.uc-chip {
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 5px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    color: var(--text-secondary, #94a3b8);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    transition: all 0.14s ease;
+}
+
+.uc-chip:hover { border-color: var(--uc-color, rgba(99, 102, 241, 0.55)); color: #c7d2fe; }
+
+/* Colors come from --uc-color / --uc-bg, set inline per chip in JS (a fixed
+   palette keyed by use-case name -- see USE_CASE_COLORS in analytics.js) so
+   the same scenario reads as the same color everywhere: chips, charts, the
+   insight banner. */
+.uc-chip .uc-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 5px;
+    background: var(--uc-color, #6366f1);
+    vertical-align: middle;
+}
+
+.uc-chip.active {
+    color: #f1f5f9;
+    background: var(--uc-bg, rgba(99, 102, 241, 0.22));
+    border-color: var(--uc-color, rgba(99, 102, 241, 0.7));
+}
+
+/* A use case with no documents in range still gets a chip, dimmed — an absent
+   chip would read as "this scenario does not exist". */
+.uc-chip.empty { opacity: 0.42; }
+.uc-chip.loading { cursor: default; opacity: 0.5; }
+.uc-chip small { opacity: 0.65; font-weight: 500; margin-left: 3px; }
+
+.uc-missing {
+    font-size: 0.72rem;
+    color: var(--text-muted, #64748b);
+    font-style: italic;
+    align-self: center;
+    padding-left: 4px;
+}
+
+.filter-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.74rem;
+    padding: 4px 6px 4px 10px;
+    border-radius: 6px;
+    color: var(--text-secondary, #94a3b8);
+    background: rgba(6, 182, 212, 0.11);
+    border: 1px solid rgba(6, 182, 212, 0.32);
+}
+
+.filter-pill b { color: #a5f3fc; font-weight: 700; }
+.filter-pill i { color: #e2e8f0; font-style: normal; font-weight: 600; }
+
+.filter-pill-x {
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #64748b);
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 0 2px;
+    line-height: 1;
+}
+.filter-pill-x:hover { color: var(--accent-red, #ef4444); }
+
+.filter-hint {
+    font-size: 0.74rem;
+    color: var(--text-muted, #64748b);
+    font-style: italic;
+}
+
+.tb-btn.ghost {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    color: var(--text-secondary, #94a3b8);
+}
+.tb-btn.ghost:hover {
+    border-style: solid;
+    border-color: rgba(99, 102, 241, 0.6);
+    color: #c7d2fe;
+}
+
+.tb-inline-select {
+    font-family: inherit;
+    font-size: 0.76rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    color: var(--text-primary, #e2e8f0);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tb-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    color: var(--text-secondary, #94a3b8);
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   KPI tiles
+   ========================================================================== */
+
+.kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.kpi-tile {
+    padding: 12px 14px;
+    border-radius: var(--radius-md, 12px);
+    background: var(--gradient-card, rgba(255, 255, 255, 0.02));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.kpi-tile.error { color: var(--accent-red, #ef4444); font-size: 0.8rem; }
+
+.kpi-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #64748b);
+    margin-bottom: 5px;
+}
+
+.kpi-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary, #e2e8f0);
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+.kpi-unit {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-muted, #64748b);
+    margin-left: 4px;
+}
+
+/* ==========================================================================
+   Panel chrome additions
+   ========================================================================== */
+
+.a-panel-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.a-panel-split {
+    font-size: 0.66rem;
+    color: var(--text-muted, #64748b);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 7px;
+    border-radius: 999px;
+}
+
+.a-panel-x {
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #64748b);
+    cursor: pointer;
+    font-size: 0.72rem;
+    padding: 2px 4px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.14s ease, color 0.14s ease;
+}
+
+.a-panel:hover .a-panel-x { opacity: 1; }
+.a-panel-x:hover { color: var(--accent-red, #ef4444); }
+
+/* ==========================================================================
+   Discover table (raw documents)
+   ========================================================================== */
+
+.discover-panel { margin-top: 16px; }
+
+.discover-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.discover-total {
+    font-size: 0.72rem;
+    color: var(--text-muted, #64748b);
+}
+
+.discover-table-wrap {
+    max-height: 420px;
+    overflow: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.discover-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.74rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.discover-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    text-align: left;
+    padding: 7px 10px;
+    font-weight: 700;
+    color: var(--text-secondary, #94a3b8);
+    background: #0f172a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+}
+
+.discover-table td {
+    padding: 5px 10px;
+    color: var(--text-primary, #e2e8f0);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    white-space: nowrap;
+}
+
+.discover-table tbody tr:hover { background: rgba(99, 102, 241, 0.07); }
+
+.a-empty-cell {
+    color: var(--text-muted, #64748b) !important;
+    text-align: center;
+    padding: 20px !important;
+    font-style: italic;
+}
+
+/* ==========================================================================
+   Modal forms (filter editor + panel builder)
+   ========================================================================== */
+
+.modal-box.wide { width: min(860px, 100%); }
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-field.wide-field { grid-column: 1 / -1; }
+
+.form-field > span {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, #64748b);
+}
+
+.form-field > span small {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 500;
+    opacity: 0.75;
+}
+
+.form-field input,
+.form-field select {
+    font-family: inherit;
+    font-size: 0.82rem;
+    padding: 8px 10px;
+    border-radius: 7px;
+    color: var(--text-primary, #e2e8f0);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.form-field input:focus,
+.form-field select:focus {
+    outline: none;
+    border-color: rgba(99, 102, 241, 0.7);
+    background: rgba(99, 102, 241, 0.07);
+}
+
+@media (max-width: 1100px) {
+    .filter-group-label { min-width: auto; }
+    .kpi-row { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+}
+
+/* ==========================================================================
+   Synchronized crosshair time label (toolbar)
+   ========================================================================== */
+
+.crosshair-time {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted, #64748b);
+    min-width: 78px;
+}
+
+/* ==========================================================================
+   Auto-generated insight banner
+   ========================================================================== */
+
+.insight-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md, 12px);
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-left: 3px solid #6366f1;
+}
+
+.insight-icon {
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.insight-text {
+    font-size: 0.82rem;
+    color: var(--text-secondary, #94a3b8);
+}
+
+.insight-text b.insight-uc {
+    font-weight: 700;
 }

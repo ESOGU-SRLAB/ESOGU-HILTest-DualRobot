@@ -137,9 +137,11 @@ function clearLogs() {
 
 function startScenario(scenarioKey) {
     const useFakeHardware = document.getElementById("fake-hardware-toggle").checked;
+    const dataAcquisition = document.getElementById("data-acquisition-toggle").checked;
     socket.emit("start_scenario", {
         scenario: scenarioKey,
-        use_fake_hardware: useFakeHardware
+        use_fake_hardware: useFakeHardware,
+        data_acquisition: dataAcquisition
     });
 }
 

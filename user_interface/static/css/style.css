@@ -188,9 +188,14 @@ body::before {
 }
 
 /* Scenario Buttons */
-.scenario-btn {
+.scenario-btn-wrap {
+    position: relative;
     flex: 1;
     min-width: 180px;
+}
+
+.scenario-btn {
+    width: 100%;
     padding: 12px 16px;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
@@ -254,6 +259,85 @@ body::before {
     margin-bottom: 4px;
 }
 
+/* Info button ("i") — sits in the top-right corner of each scenario button
+   and reveals a short explanation of what that scenario actually does. Hover
+   + keyboard focus only (:focus-visible); this is a supplementary aid, not a
+   blocking control, so no touch-tap fallback is needed (unlike the side
+   menu, which gates navigation itself). */
+.info-btn {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-style: italic;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: help;
+    z-index: 2;
+    transition: all var(--transition-fast);
+}
+
+.info-btn:hover,
+.info-btn:focus-visible {
+    color: #fff;
+    border-color: var(--accent-blue);
+    background: var(--accent-blue);
+    outline: none;
+}
+
+.info-tooltip {
+    position: absolute;
+    top: 26px;
+    right: 0;
+    width: 260px;
+    display: block;
+    padding: 12px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    color: var(--text-secondary);
+    font-size: 0.74rem;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.5;
+    text-align: left;
+    white-space: normal;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+    pointer-events: none;
+    z-index: 50;
+}
+
+.info-tooltip strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-style: normal;
+    margin-bottom: 6px;
+}
+
+.info-btn:hover .info-tooltip,
+.info-btn:focus-visible .info-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
 /* Separator */
 .control-separator {
     width: 1px;
@@ -263,11 +347,17 @@ body::before {
 }
 
 /* ========== TOGGLE SWITCH ========== */
+.toggle-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-right: 10px;
+}
+
 .toggle-container {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-right: 10px;
 }
 
 .toggle-label {
@@ -888,7 +978,7 @@ body::before {
     .control-bar {
         flex-direction: column;
     }
-    .scenario-btn {
+    .scenario-btn-wrap {
         min-width: unset;
     }
     .control-separator {

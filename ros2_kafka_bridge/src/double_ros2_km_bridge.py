@@ -28,7 +28,7 @@ from visualization_msgs.msg import InteractiveMarkerUpdate
 from moveit_msgs.msg import PlanningScene
 from ur_msgs.msg import ToolDataMsg
 from geometry_msgs.msg import WrenchStamped, PoseStamped
-from rclpy.qos import QoSProfile, QoSReliabilityPolicy
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSDurabilityPolicy
 from control_msgs.msg import JointTrajectoryControllerState
 
 from pymongo import MongoClient
@@ -85,6 +85,24 @@ KAWASAKI_JOINTS = [
 qos = QoSProfile(depth=10)
 qos.reliability = QoSReliabilityPolicy.RELIABLE
 
+# ------------------------------------------------------------
+# Use-case etiketi
+# ------------------------------------------------------------
+# Arayuz (user_interface/app.py) o an calisan senaryonun adini LATCHED bir
+# topic'ten yayinliyor. Toplanan her belge bu adla damgalaniyor; boylece veri
+# sonradan senaryo bazinda filtrelenebiliyor.
+#
+# TRANSIENT_LOCAL sart: bu kopru uzun omurlu, kosum ortasinda yeniden
+# baslayabilir. Varsayilan VOLATILE ile abone olmadan once yayinlanan degeri
+# hicbir zaman gormez ve tum kosumu IDLE diye damgalar.
+USE_CASE_TOPIC = "/testbed/use_case"
+USE_CASE_IDLE = "IDLE"
+USE_CASE_FIELD = "use_case"
+
+latched_qos = QoSProfile(depth=1)
+latched_qos.durability = QoSDurabilityPolicy.TRANSIENT_LOCAL
+latched_qos.reliability = QoSReliabilityPolicy.RELIABLE
+
 
 class double_ros2_km_bridge:
     def __init__(self, args=None):
@@ -98,6 +116,13 @@ class double_ros2_km_bridge:
         #   icin tek bu topic yeterli; /dynamic_joint_states'e gerek yok.
         # ------------------------------------------------------------
         self.node.create_subscription(JointState, '/joint_states', self.joint_states_real_callback, qos)
+
+        # ------------------------------------------------------------
+        # Aktif use case (latched) — hem Kafka belgelerine hem Mongo
+        # dokumanina basiliyor.
+        # ------------------------------------------------------------
+        self.use_case = USE_CASE_IDLE
+        self.node.create_subscription(String, USE_CASE_TOPIC, self.use_case_callback, latched_qos)
 
         # ------------------------------------------------------------
         # Kafka'ya ozel diger abonelikler (sadece ENABLE_KAFKA=True iken)
@@ -229,6 +254,7 @@ class double_ros2_km_bridge:
 
                 doc = {
                     "ts": datetime.now(timezone.utc),   # yazim aninda damgala
+                    USE_CASE_FIELD: self.use_case,
                     "ur10e": ur10e,
                     "kawasaki": kawa,
                 }
@@ -283,8 +309,21 @@ class double_ros2_km_bridge:
                     print(f"[Kafka Flusher Error] {e}")
         threading.Thread(target=flusher, daemon=True).start()
 
+    def use_case_callback(self, msg):
+        """Arayuzun yayinladigi use case adini benimse."""
+        name = (msg.data or "").strip() or USE_CASE_IDLE
+        if name != self.use_case:
+            self.use_case = name
+            self.node.get_logger().info(f"🏷️  USE_CASE = {name}")
+
     def safe_publish(self, topic, data):
-        """Non-blocking enqueue to Kafka (sadece ENABLE_KAFKA=True iken anlamli)"""
+        """Non-blocking enqueue to Kafka (sadece ENABLE_KAFKA=True iken anlamli).
+
+        Damga her callback'te degil BURADA basiliyor: butun topic'lerin gectigi
+        tek nokta burasi, dolayisiyla tek satir joint state'i de TCP pose'u da
+        wrench'i de etiketliyor.
+        """
+        data[USE_CASE_FIELD] = self.use_case
         if not ENABLE_KAFKA:
             return
         try:
