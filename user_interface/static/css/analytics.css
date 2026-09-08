@@ -180,7 +180,6 @@
     cursor: pointer;
     min-width: 120px;
     text-transform: none;
-    color-scheme: dark;
 }
 
 .tb-field select:focus,
@@ -446,7 +445,7 @@
     padding: 5px 8px;
     border-radius: 6px;
     color: var(--text-primary, #e2e8f0);
-    background: rgba(255, 255, 255, 0.04);
+    background: #212739;        /* opaque, for the same reason as .form-field select */
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -465,7 +464,7 @@
 
 .kpi-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
     gap: 12px;
     margin-bottom: 16px;
 }
@@ -478,6 +477,29 @@
 }
 
 .kpi-tile.error { color: var(--accent-red, #ef4444); font-size: 0.8rem; }
+
+/* The tiles report corpus-wide figures, so each carries a line saying exactly
+   what it counted -- "7.1M" means nothing without "rows across every index". */
+.kpi-hint {
+    margin-top: 3px;
+    font-size: 0.63rem;
+    line-height: 1.35;
+    color: var(--text-muted, #64748b);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.insight-more {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    color: var(--text-muted, #64748b);
+    background: rgba(255, 255, 255, 0.06);
+    cursor: help;
+}
 
 .kpi-label {
     font-size: 0.68rem;
@@ -539,7 +561,400 @@
    Discover table (raw documents)
    ========================================================================== */
 
+/* `.filter-row` sets display:flex, which outranks the `hidden` attribute's
+   UA display:none — without this the DSL box would never actually hide. */
+[hidden] { display: none !important; }
+
+.a-panel-note.note-err { color: #f87171; }
+
+.a-panel-note {
+    padding: 0 14px 10px;
+    font-size: 0.68rem;
+    line-height: 1.45;
+    color: var(--text-muted, #64748b);
+}
+
+/* ==========================================================================
+   Query bar
+   ========================================================================== */
+
+.query-input {
+    flex: 1 1 380px;
+    min-width: 220px;
+    padding: 6px 10px;
+    font-size: 0.76rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    color: var(--text-primary, #e2e8f0);
+    background: var(--bg-input, #0d1225);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    border-radius: var(--radius-sm, 8px);
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.query-input:focus { border-color: var(--accent-blue, #6366f1); }
+.query-input::placeholder { color: var(--text-muted, #64748b); opacity: 0.7; }
+
+.tb-btn.ghost.active {
+    color: var(--accent-blue-light, #818cf8);
+    border-color: var(--accent-blue, #6366f1);
+}
+
+.dsl-row { align-items: flex-start !important; }
+
+.dsl-input {
+    flex: 1 1 420px;
+    min-width: 240px;
+    padding: 8px 10px;
+    font-size: 0.74rem;
+    line-height: 1.5;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    color: var(--text-primary, #e2e8f0);
+    background: var(--bg-input, #0d1225);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    border-radius: var(--radius-sm, 8px);
+    resize: vertical;
+    outline: none;
+}
+
+.dsl-input:focus { border-color: var(--accent-blue, #6366f1); }
+
+.dsl-side {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    max-width: 260px;
+}
+
+.dsl-status {
+    font-size: 0.68rem;
+    color: var(--text-muted, #64748b);
+    line-height: 1.45;
+}
+
+.dsl-status.err { color: #f87171; }
+.dsl-status code, .filter-hint code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    font-size: 0.95em;
+}
+
+/* ---------- Query preview modal ---------- */
+
+.query-json {
+    max-height: 46vh;
+    overflow: auto;
+    margin: 0 0 10px;
+    padding: 12px 14px;
+    font-size: 0.72rem;
+    line-height: 1.55;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    color: #a5b4fc;
+    background: var(--bg-input, #0d1225);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    border-radius: var(--radius-sm, 8px);
+    white-space: pre;
+}
+
+/* ==========================================================================
+   Discover
+   ========================================================================== */
+
 .discover-panel { margin-top: 16px; }
+
+.discover-timefield {
+    font-size: 0.68rem;
+    padding: 2px 7px;
+    border-radius: 999px;
+    color: var(--text-muted, #64748b);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    white-space: nowrap;
+}
+
+.discover-body {
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .discover-body { grid-template-columns: 1fr; }
+    .discover-fields { max-height: 220px; }
+}
+
+/* ---------- Field sidebar ---------- */
+
+.discover-fields {
+    display: flex;
+    flex-direction: column;
+    max-height: 520px;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    border-radius: var(--radius-sm, 8px);
+    background: rgba(0, 0, 0, 0.14);
+    overflow: hidden;
+}
+
+.df-search { padding: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+
+.df-search input {
+    width: 100%;
+    padding: 5px 8px;
+    font-size: 0.72rem;
+    color: var(--text-primary, #e2e8f0);
+    background: var(--bg-input, #0d1225);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    border-radius: 6px;
+    outline: none;
+}
+
+.df-search input:focus { border-color: var(--accent-blue, #6366f1); }
+
+.df-list { overflow-y: auto; padding: 4px; }
+
+.df-empty {
+    padding: 16px 10px;
+    font-size: 0.72rem;
+    font-style: italic;
+    text-align: center;
+    color: var(--text-muted, #64748b);
+}
+
+.df-item { border-radius: 6px; }
+.df-item.active { background: rgba(99, 102, 241, 0.1); }
+
+.df-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.df-row:hover { background: rgba(255, 255, 255, 0.05); }
+
+.df-type {
+    flex: 0 0 14px;
+    font-size: 0.66rem;
+    text-align: center;
+    color: var(--text-muted, #64748b);
+}
+
+.df-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.7rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    color: var(--text-secondary, #94a3b8);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    direction: rtl;              /* keep the distinctive tail of a long path */
+    text-align: left;
+}
+
+.df-add {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    font-size: 0.8rem;
+    line-height: 1;
+    color: var(--text-muted, #64748b);
+    background: transparent;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.df-add:hover {
+    color: #fff;
+    background: var(--accent-blue, #6366f1);
+    border-color: var(--accent-blue, #6366f1);
+}
+
+.df-sum {
+    padding: 6px 8px 9px;
+    font-size: 0.68rem;
+    color: var(--text-secondary, #94a3b8);
+}
+
+.df-sum.df-err { color: #f87171; }
+
+.df-cov {
+    margin-bottom: 6px;
+    font-size: 0.64rem;
+    color: var(--text-muted, #64748b);
+}
+
+.df-val { margin-bottom: 5px; }
+
+.df-val-head {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 2px;
+}
+
+.df-val-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.66rem;
+}
+
+.df-val-pct { flex: 0 0 auto; font-size: 0.63rem; color: var(--text-muted, #64748b); }
+
+.df-val-add {
+    flex: 0 0 auto;
+    padding: 0 2px;
+    font-size: 0.62rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.55;
+}
+
+.df-val-add:hover { opacity: 1; }
+
+.df-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+}
+
+.df-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent-blue-light, #818cf8);
+}
+
+.df-stats {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.65rem;
+    font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.df-stats td { padding: 1px 3px; }
+.df-stats td:nth-child(odd) { color: var(--text-muted, #64748b); }
+.df-stats td:nth-child(even) { text-align: right; color: var(--text-primary, #e2e8f0); }
+
+.df-span, .df-note {
+    font-size: 0.65rem;
+    line-height: 1.5;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    color: var(--text-secondary, #94a3b8);
+}
+
+.df-note { font-style: italic; font-family: inherit; color: var(--text-muted, #64748b); }
+
+/* ---------- Volume histogram ---------- */
+
+.discover-main { min-width: 0; }
+
+.discover-hist {
+    position: relative;
+    height: 74px;
+    margin-bottom: 10px;
+    padding: 4px 2px;
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    border-radius: var(--radius-sm, 8px);
+    background: rgba(0, 0, 0, 0.14);
+}
+
+.discover-hist canvas { cursor: pointer; }
+
+.dh-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-style: italic;
+    color: var(--text-muted, #64748b);
+}
+
+/* ---------- Table extras ---------- */
+
+.discover-table th.dt-col { cursor: pointer; user-select: none; }
+.discover-table th.dt-col:hover { color: var(--accent-blue-light, #818cf8); }
+
+.dt-drop {
+    margin-left: 3px;
+    opacity: 0.35;
+    cursor: pointer;
+}
+
+.dt-drop:hover { opacity: 1; color: #f87171; }
+
+.discover-table th.dt-expander,
+.discover-table td.dt-expander {
+    width: 22px;
+    padding: 5px 4px;
+    text-align: center;
+    color: var(--text-muted, #64748b);
+    cursor: pointer;
+    user-select: none;
+}
+
+.discover-table td.dt-expander:hover { color: var(--accent-blue-light, #818cf8); }
+.discover-table tr.dt-open { background: rgba(99, 102, 241, 0.09); }
+.discover-table tr.dt-raw-row:hover { background: none; }
+.discover-table tr.dt-raw-row td { padding: 0; white-space: normal; }
+
+.dt-raw-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px 4px;
+    font-size: 0.68rem;
+    color: var(--text-muted, #64748b);
+}
+
+.dt-raw {
+    max-height: 300px;
+    overflow: auto;
+    margin: 0;
+    padding: 8px 12px 12px;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    color: #a5b4fc;
+    white-space: pre;
+}
+
+/* ---------- Pager ---------- */
+
+.discover-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 10px;
+}
+
+.dp-label {
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted, #64748b);
+}
+
+.discover-pager .tb-btn[disabled] {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
 
 .discover-controls {
     display: flex;
@@ -638,7 +1053,11 @@
     padding: 8px 10px;
     border-radius: 7px;
     color: var(--text-primary, #e2e8f0);
-    background: rgba(255, 255, 255, 0.04);
+    /* Opaque, not rgba(255,255,255,0.04): the translucent form composites over
+       whatever is behind it, and behind the OPEN dropdown that is the browser's
+       white popup surface. #212739 is the same colour once blended over the
+       modal's card gradient, so the closed control is unchanged. */
+    background: #212739;
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 

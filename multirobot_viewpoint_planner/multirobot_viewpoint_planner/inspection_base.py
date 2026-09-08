@@ -56,6 +56,14 @@ import open3d as o3d
 class InspectionNodeBase(Node):
     """Base for a single-arm inspection node. `robot_tag` is "ur" or "kawasaki"."""
 
+    # Per-arm defaults for parameters declared in THIS class. A subclass overrides them
+    # as plain class attributes, which are already bound by the time super().__init__()
+    # declares the parameter -- the two arms need different values (random IK seeds and
+    # a reduced IK group matter to the Kawasaki, not to the UR) but share one launch
+    # parameter dict, so a per-arm DEFAULT is the only place the distinction can live.
+    DEFAULT_IK_RANDOM_SEEDS = 0
+    DEFAULT_BRANCH_IK_GROUP = ""
+
     def __init__(self, node_name, robot_tag):
         super().__init__(node_name)
         self.robot_tag = robot_tag
@@ -99,6 +107,12 @@ class InspectionNodeBase(Node):
         # spins the node internally, which corrupts this node's executor wait set.
         # Set self.ik_group_name in a subclass to enable nearest-branch IK.
         self.ik_group_name = None
+        # Cleared for good if move_group rejects `branch_ik_group` (INVALID_GROUP_NAME),
+        # so a config that has lost the reduced group degrades to the planning group
+        # instead of losing the branch search altogether.
+        self._branch_ik_group_ok = True
+        self._last_ik_error = None   # error_code.val of the most recent /compute_ik call
+        self._ik_rng = None          # seeded lazily from `ik_random_seed`
         self._ik_cli = self.create_client(
             GetPositionIK, "compute_ik", callback_group=self._cb)
 
@@ -162,7 +176,20 @@ class InspectionNodeBase(Node):
         self.declare_parameter("plan_timeout_sec", 30.0)
         self.declare_parameter("motion_timeout_sec", 120.0)
         self.declare_parameter("allowed_planning_time", 5.0)
+        # MoveIt plans this many times and keeps the SHORTEST result, so it is the
+        # cheapest path-length lever there is. Measured 2026-09-05 on the 8 plannable
+        # Kawasaki chassis hops (/plan_kinematic_path, RRTConnect, 5 s budget): 1
+        # attempt 4680 deg, 3 attempts 4364, 10 attempts 3663 (-22%), 20 attempts 3603.
+        # It saturates at ~10, and 10 attempts of RRTConnect cost 0.15 s -- less than a
+        # SINGLE attempt of any asymptotically optimal planner on this cell.
         self.declare_parameter("num_planning_attempts", 10)
+        # Empty -> MoveIt's own fallback, which is RRTConnect (none of the config
+        # packages sets a `default_planner_config`). Anything else must be a config name
+        # listed under this group in the moveit_config package's ompl_planning.yaml,
+        # e.g. "RRTstarkConfigDefault" or "AnytimePathShorteningkConfigDefault"; MoveIt
+        # silently falls back to the default if the name is unknown, so verify in the log.
+        # Benchmarked alternatives are in tools/planner_bench.py.
+        self.declare_parameter("planner_id", "")
         self.declare_parameter("plan_attempts", 4)
 
         # Floor collision box so MoveIt never plans an arm below ground.
@@ -234,6 +261,28 @@ class InspectionNodeBase(Node):
         # branch_max_rail_shift <= 0 locks the rail to the planned value exactly.
         self.declare_parameter("branch_rail_probe", 0.25)      # m, seed probe; 0 disables
         self.declare_parameter("branch_max_rail_shift", 0.0)   # m a candidate may move it
+        # RANDOM RESTARTS FOR A LOCAL SOLVER. The two knobs above sample the branches of
+        # a pose only when the SOLVER restarts randomly -- true of the UR's pick_ik in
+        # `mode: global`, NOT of KDL, which the Kawasaki group uses. Every seed clustered
+        # around the planned goal converges straight back to it, which is why this arm
+        # logged "nearest-branch IK: 1 distinct branch(es)" on every single viewpoint and
+        # hops like kawa_vp_008's 876 deg could never be improved. A live /compute_ik
+        # probe against the running move_group settled it: with 24 RANDOM seeds the same
+        # group and poses returned 16-20 DISTINCT solutions, so the solver was never the
+        # problem -- our seed list was. These add N random in-limits arm postures to it.
+        # Revolute joints only: a prismatic axis is the plan's coverage choice, never
+        # something to randomise. Costs IK calls only while RECORDING a trajectory.
+        self.declare_parameter("ik_random_seeds", self.DEFAULT_IK_RANDOM_SEEDS)
+        self.declare_parameter("ik_random_seed", 0)   # RNG seed, so a run is repeatable
+        # The OTHER half of the same fix. `branch_max_rail_shift` guards the AGV, but on
+        # the 7-DOF (rail + 6) Kawasaki group the rail is a free variable of every solve
+        # and KDL drifts it even when the seed pins it -- so the guard then threw away
+        # nearly every branch the seeds did find (measured on kawa_vp_005: 1 of 19
+        # solutions kept the planned rail; on kawa_vp_002, 3 of 16). Solving in a REDUCED
+        # group that does not contain the rail makes it structurally impossible to drift,
+        # so 100% of the branches found are valid at the rail the planner chose. Empty
+        # string -> solve in the planning group, i.e. exactly the old behaviour.
+        self.declare_parameter("branch_ik_group", self.DEFAULT_BRANCH_IK_GROUP)
         # Branch candidates are RANKED by goal-space distance (sum of |goal - current|),
         # which is only a proxy: the path OMPL actually returns can wander far past that
         # straight line. Measured on the doors run, the Kawasaki's recorded paths travel
@@ -738,17 +787,23 @@ class InspectionNodeBase(Node):
         js.position = [float(v) for v in pos.values()]
         return js if js.name else None
 
-    def _solve_ik(self, position, quat_xyzw, seed, timeout, ik_link=None):
+    def _solve_ik(self, position, quat_xyzw, seed, timeout, ik_link=None, group=None):
         """One seeded /compute_ik call. Returns the solution JointState, or None.
         Solving for the caller's `ik_link` (not the group's default tip) is what makes
-        the camera -- rather than the wrist flange -- land on the target pose."""
+        the camera -- rather than the wrist flange -- land on the target pose.
+
+        `group` overrides the planning group for this solve (the branch search uses a
+        reduced group; see _active_branch_group). The outcome is left in
+        `self._last_ik_error` so the caller can tell a rejected GROUP NAME apart from a
+        pose that simply has no solution."""
+        self._last_ik_error = None
         if self.ik_group_name is None or not self._ik_cli.service_is_ready():
             return None
         link = ik_link or self._pose_target_link()
         if link is None:
             return None
         req = GetPositionIK.Request()
-        req.ik_request.group_name = self.ik_group_name
+        req.ik_request.group_name = group or self.ik_group_name
         req.ik_request.ik_link_name = link
         req.ik_request.avoid_collisions = bool(
             self.get_parameter("ik_avoid_collisions").value)
@@ -770,9 +825,48 @@ class InspectionNodeBase(Node):
         if not self._wait_future(future, max(2.0, timeout * 4.0)):
             return None
         res = future.result()
-        if res is None or res.error_code.val != res.error_code.SUCCESS:
+        if res is None:
+            return None
+        self._last_ik_error = res.error_code.val
+        if res.error_code.val != res.error_code.SUCCESS:
             return None
         return res.solution.joint_state
+
+    def _active_branch_group(self):
+        """The group the branch search solves in: `branch_ik_group` when move_group
+        accepts it, otherwise the planning group.
+
+        The fallback is not paranoia. These SRDFs are NOT in git and have been silently
+        overwritten before (that is how the kinematics.yaml files reverted to KDL), so a
+        run against a config whose reduced group is missing must lose only the rail
+        guarantee -- not the whole branch search."""
+        if not self._branch_ik_group_ok:
+            return self.ik_group_name
+        name = (self.get_parameter("branch_ik_group").value or "").strip()
+        # "default" means "whatever this arm's DEFAULT_BRANCH_IK_GROUP says". The launch
+        # file passes that sentinel rather than a literal group name so the two arms'
+        # different defaults live in ONE place (the node classes) instead of being
+        # duplicated -- and drifting -- in the launch arguments as well.
+        if name == "default":
+            name = (self.DEFAULT_BRANCH_IK_GROUP or "").strip()
+        # "none" is the same as the empty string -- solve in the planning group. It
+        # exists because `ros2 launch` refuses an empty argument value outright
+        # ("malformed launch argument"), so there would otherwise be no way to ask for
+        # the old behaviour from the command line.
+        if name == "none":
+            name = ""
+        return name or self.ik_group_name
+
+    def _prismatic_names(self, names):
+        """The linear axes among `names` (the AGV rail / the UR's rail), by URDF type
+        where the model is known and by naming convention otherwise."""
+        limits = self._joint_limits or {}
+        out = []
+        for n in names:
+            lim = limits.get(n)
+            if (not lim.is_revolute) if lim is not None else self._is_prismatic(n):
+                out.append(n)
+        return out
 
     def _branch_candidates(self, position, quat_xyzw, label, ik_link=None,
                            planned_goal=None):
@@ -782,9 +876,15 @@ class InspectionNodeBase(Node):
         Two ways to land on a different branch. Repeating the query only samples anything
         when the solver restarts randomly -- true of pick_ik in `mode: global` (the UR),
         NOT of KDL (the Kawasaki group), which returns the same answer every time. So the
-        SEED is varied as well: the measured pose, the planned goal, and the planned goal
-        with the rail nudged either way, which is the redundancy knob on the Kawasaki's
-        7-DOF (rail + 6) group.
+        SEED is varied as well: the measured pose, the planned goal, the planned goal with
+        the rail nudged either way, and `ik_random_seeds` random arm postures -- the last
+        of which are what actually break a local solver out of the planned solution.
+
+        Where an arm nominates a REDUCED group (`branch_ik_group`), the search runs there
+        instead: the Kawasaki's rail sits outside that group, so it cannot drift during
+        the solve and every branch found is usable at the AGV position the planner chose.
+        The rail is pinned to that planned value on the way in (it fixes where the arm
+        base IS, so the solve is only meaningful at the planned one) and on the way out.
 
         Each result is unwound first, so a branch is never judged by an accidental
         whole-turn offset, then scored by travel from the current pose.
@@ -796,18 +896,48 @@ class InspectionNodeBase(Node):
             return []
         names = list(self.moveit.joint_names)
         timeout = float(self.get_parameter("ik_timeout").value)
-        attempts = max(1, int(self.get_parameter("ik_seed_attempts").value))
+        self._ensure_joint_limits()
+
+        group = self._active_branch_group()
+        rail_lock = None
+        if group != self.ik_group_name and planned_goal is not None:
+            pris = set(self._prismatic_names(names))
+            rail_lock = {n: float(planned_goal[i])
+                         for i, n in enumerate(names) if n in pris}
 
         out = []
         seen = set()
-        for s in self._ik_seeds(seed, planned_goal, names):
-            for _ in range(attempts):
-                sol = self._solve_ik(position, quat_xyzw, s, timeout, ik_link=ik_link)
+        for s, repeats in self._ik_seeds(seed, planned_goal, names, rail_lock):
+            for _ in range(repeats):
+                sol = self._solve_ik(position, quat_xyzw, s, timeout, ik_link=ik_link,
+                                     group=group)
                 if sol is None:
+                    if (self._last_ik_error == -15  # INVALID_GROUP_NAME
+                            and group != self.ik_group_name):
+                        self.get_logger().error(
+                            f"[{label}] move_group does not know the branch IK group "
+                            f"'{group}' -- is it missing from this config's SRDF? "
+                            f"Falling back to '{self.ik_group_name}' for the rest of "
+                            f"this run; branches that move the AGV rail will be "
+                            f"rejected again as they were before.")
+                        self._branch_ik_group_ok = False
+                        return self._branch_candidates(
+                            position, quat_xyzw, label, ik_link=ik_link,
+                            planned_goal=planned_goal)
                     continue
                 goal = self._subset(list(sol.name), list(sol.position), names)
+                if goal is None and planned_goal is not None:
+                    # A reduced group may answer with only its own joints; the rest of
+                    # the goal is the plan's, which for the rail is exactly right.
+                    lut = dict(zip(sol.name, sol.position))
+                    goal = [float(lut.get(n, planned_goal[i]))
+                            for i, n in enumerate(names)]
                 if goal is None:
                     continue
+                if rail_lock:
+                    for i, n in enumerate(names):
+                        if n in rail_lock:
+                            goal[i] = rail_lock[n]
                 goal, _ = self._wrap_goal_to_current(goal, names)
                 if not self._rail_shift_ok(goal, planned_goal, names, label):
                     continue
@@ -818,18 +948,30 @@ class InspectionNodeBase(Node):
                 out.append((goal, self._goal_travel(goal, names)))
         out.sort(key=lambda t: t[1])
         if out:
+            where = "" if group == self.ik_group_name else f" in '{group}'"
             self.get_logger().info(
-                f"[{label}] nearest-branch IK: {len(out)} distinct branch(es), "
+                f"[{label}] nearest-branch IK{where}: {len(out)} distinct branch(es), "
                 f"travel from current pose "
                 f"{', '.join(f'{np.rad2deg(t):.0f}' for _, t in out)} deg.")
         return out
 
-    def _ik_seeds(self, measured, planned_goal, names):
-        """Seeds for the branch search, most-likely first: where the arm actually is, the
-        planned goal, then the planned goal with the rail probed either way."""
-        seeds = [measured]
-        if planned_goal is None:
-            return seeds
+    def _ik_seeds(self, measured, planned_goal, names, rail_lock=None):
+        """Seeds for the branch search as (state, repeats) pairs, most-likely first:
+        where the arm actually is, the planned goal, the planned goal with the rail
+        probed either way, then `ik_random_seeds` random arm postures.
+
+        Repeats exist to sample a solver that RESTARTS RANDOMLY (the UR's pick_ik in
+        `mode: global`); a random seed gets exactly one, because re-running a local
+        solver from the same seed can only return the same answer.
+
+        `rail_lock` ({joint: planned value}) pins every prismatic joint in every seed.
+        It is set when the search runs in a reduced group that excludes the rail: the
+        seed's rail value then decides where the arm base physically sits during the
+        solve, so it must be the planned one or the arm angles that come back would aim
+        the camera somewhere else once dispatched. It also makes the rail probes below
+        pointless -- they would all describe a base position the run will never be in --
+        so they are skipped."""
+        attempts = max(1, int(self.get_parameter("ik_seed_attempts").value))
 
         def as_state(values):
             js = JointState()
@@ -837,24 +979,84 @@ class InspectionNodeBase(Node):
             js.position = [float(v) for v in values]
             return js
 
-        seeds.append(as_state(planned_goal))
-        probe = float(self.get_parameter("branch_rail_probe").value)
-        if probe <= 0.0:
+        def locked(values):
+            vals = [float(v) for v in values]
+            if rail_lock:
+                for i, n in enumerate(names):
+                    if n in rail_lock:
+                        vals[i] = rail_lock[n]
+            return vals
+
+        if rail_lock:
+            m = self._subset(list(measured.name), list(measured.position), names)
+            if m is not None:
+                measured = as_state(locked(m))
+        seeds = [(measured, attempts)]
+        if planned_goal is None:
             return seeds
+
+        seeds.append((as_state(locked(planned_goal)), attempts))
+        probe = float(self.get_parameter("branch_rail_probe").value)
         limits = self._joint_limits or {}
+        if probe > 0.0 and not rail_lock:
+            for i, n in enumerate(names):
+                lim = limits.get(n)
+                if lim is None or lim.is_revolute:
+                    continue
+                for d in (probe, -probe):
+                    v = float(np.clip(planned_goal[i] + d,
+                                      lim.lower + 1e-6, lim.upper - 1e-6))
+                    if abs(v - planned_goal[i]) < 1e-4:
+                        continue
+                    vals = list(planned_goal)
+                    vals[i] = v
+                    seeds.append((as_state(vals), attempts))
+        seeds.extend(self._random_arm_seeds(planned_goal, names, as_state, locked))
+        return seeds
+
+    def _random_arm_seeds(self, planned_goal, names, as_state, locked):
+        """`ik_random_seeds` seeds whose REVOLUTE joints are drawn uniformly from their
+        URDF limits, with every other joint left at the planned value.
+
+        This is the part that makes the branch search work on a local solver. The
+        prismatic axes are never drawn: the planner picked the rail position for
+        coverage, and on the Kawasaki a seed at a different rail describes a base
+        position the arm will not be in. A continuous joint has no limits to draw from,
+        so it is sampled over one full turn."""
+        n_rand = int(self.get_parameter("ik_random_seeds").value)
+        if n_rand < 0:                      # sentinel: see _active_branch_group()
+            n_rand = int(self.DEFAULT_IK_RANDOM_SEEDS)
+        if n_rand <= 0:
+            return []
+        limits = self._ensure_joint_limits()
+        if not limits:
+            self.get_logger().warning(
+                "ik_random_seeds is set but no joint limits are known (no "
+                "/robot_description) -- random branch seeds are DISABLED for this run.")
+            return []
+        if self._ik_rng is None:
+            self._ik_rng = np.random.default_rng(
+                int(self.get_parameter("ik_random_seed").value))
+        draw = []
         for i, n in enumerate(names):
             lim = limits.get(n)
-            if lim is None or lim.is_revolute:
+            if lim is None or not lim.is_revolute:
                 continue
-            for d in (probe, -probe):
-                v = float(np.clip(planned_goal[i] + d,
-                                  lim.lower + 1e-6, lim.upper - 1e-6))
-                if abs(v - planned_goal[i]) < 1e-4:
-                    continue
-                vals = list(planned_goal)
-                vals[i] = v
-                seeds.append(as_state(vals))
-        return seeds
+            lo, hi = float(lim.lower), float(lim.upper)
+            if not (np.isfinite(lo) and np.isfinite(hi)):
+                lo, hi = -np.pi, np.pi          # continuous joint
+            if hi - lo < 1e-6:
+                continue
+            draw.append((i, lo, hi))
+        if not draw:
+            return []
+        out = []
+        for _ in range(n_rand):
+            vals = list(planned_goal)
+            for i, lo, hi in draw:
+                vals[i] = float(self._ik_rng.uniform(lo, hi))
+            out.append((as_state(locked(vals)), 1))
+        return out
 
     def _rail_shift_ok(self, goal, planned_goal, names, label):
         """Reject a branch that would send the AGV somewhere the plan never intended.

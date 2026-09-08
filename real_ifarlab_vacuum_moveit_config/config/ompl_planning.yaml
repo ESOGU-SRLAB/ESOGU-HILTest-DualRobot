@@ -1,6 +1,32 @@
 planning_plugin: ompl_interface/OMPLPlanner
-request_adapters: default_planner_request_adapters/AddTimeOptimalParameterization
+# The four "Fix*" adapters were MISSING here (only AddTimeOptimalParameterization was
+# listed), which also made `start_state_max_bounds_error` below dead config: nothing read
+# it. On the real robots an encoder reading a hair outside the URDF limit -- normal at a
+# joint that is parked exactly on its limit -- then failed EVERY plan with "Start state
+# out of bounds", with no way to recover. FixStartStateBounds snaps such a start back
+# inside the limits (up to the tolerance below); FixStartStateCollision nudges a start
+# that begins in contact; FixWorkspaceBounds supplies a default workspace when the
+# request carries none. Order matters: MoveIt runs adapters in the order given.
+request_adapters: >-
+  default_planner_request_adapters/AddTimeOptimalParameterization
+  default_planner_request_adapters/FixWorkspaceBounds
+  default_planner_request_adapters/FixStartStateBounds
+  default_planner_request_adapters/FixStartStateCollision
+  default_planner_request_adapters/FixStartStatePathConstraints
 start_state_max_bounds_error: 0.1
+
+# AddTimeOptimalParameterization does not just time the path -- it RESAMPLES it, blending
+# every corner by up to `path_tolerance` radians. At the stock 0.1 rad (5.7 deg) the
+# trajectory that comes back is no longer the path OMPL validated, and the pipeline's own
+# check then throws it out: measured 2026-09-05, 10-25% of Kawasaki plans died with
+# INVALID_MOTION_PLAN, "Computed path is not valid. Invalid states at index locations:
+# [65] out of 149", and /display_contacts named the culprit every time -- `camera_link`
+# against a chassis part. The camera sits outside the padded link set (padding covers
+# link1..link6) and has to come close to the sheet metal by design, so 5.7 deg of
+# corner-cutting is exactly where it gets consumed. 0.01 rad keeps the executed path on
+# top of the validated one; the cost is a few more waypoints, which is nothing at the
+# 1.5-8% velocity scaling this cell runs at.
+path_tolerance: 0.01
 
 planner_configs:
   SBLkConfigDefault:
@@ -39,22 +65,32 @@ planner_configs:
   #   delay_collision_checking: 1
 
   RRTkConfigDefault:
-    # type: geometric::RRT
-    optimization_objective: MaximizeMinClearanceObjective
+    # `type` was commented out and an optimization_objective left in its place. Measured
+    # 2026-09-05 on the chassis plan (8 Kawasaki hops, /plan_kinematic_path): with
+    # MaximizeMinClearanceObjective plain RRT never satisfies the objective, so it runs
+    # the FULL time budget on every hop -- 5.84 s vs RRTConnect's 0.12 s -- and returns
+    # paths that are no shorter (3687 deg vs 3617 deg). Clearance is not what this cell
+    # needs; padding already handles that. Objective removed, type restored.
+    type: geometric::RRT
     range: 0.0
     goal_bias: 0.05
-    delay_collision_checking: 1
   RRTConnectkConfigDefault:
     type: geometric::RRTConnect
   RRTstarkConfigDefault:
-    # type: geometric::RRTstar
-    optimization_objective: MaximizeMinClearanceObjective
+    # Same story as RRT above: measured 6.43 s per hop for 3659 deg, i.e. it spent the
+    # whole budget optimising CLEARANCE and gave back nothing in path length. RRT* is an
+    # asymptotically optimal planner, so the objective decides what it optimises -- for
+    # this job that is path length. Note it still needs a real time budget to beat
+    # RRTConnect; at 5 s it does not (RRTConnect with num_planning_attempts=10 reaches
+    # 3663 deg for 0.15 s of planning).
+    type: geometric::RRTstar
+    optimization_objective: PathLengthOptimizationObjective
     range: 0.0
     goal_bias: 0.05
     delay_collision_checking: 1
 
   TRRTkConfigDefault:
-    # type: geometric::TRRT
+    type: geometric::TRRT
     goal_bias: 0.05
     max_states_failed: 10
     temp_change_factor: 2.0
@@ -67,9 +103,28 @@ planner_configs:
     type: geometric::PRM
     max_nearest_neighbors: 10
   PRMstarkConfigDefault:
-    # type: geometric::PRMstar
-    # type: geometric::PRM
+    type: geometric::PRMstar
     max_nearest_neighbors: 10
+
+  # Not selected by default -- here so it can be tried without editing this file again.
+  # AnytimePathShortening runs several planners in parallel and keeps shortcutting and
+  # hybridising the paths for as long as the time budget allows. That trade (spend
+  # planning time, get a shorter path) is exactly right for THIS workflow, where every
+  # trajectory is recorded once and then replayed from the cache for the rest of the
+  # robot's life. Untested on this cell as of 2026-09-05.
+  AnytimePathShorteningkConfigDefault:
+    type: geometric::AnytimePathShortening
+    shortcut: true
+    hybridize: true
+    max_hybrid_paths: 24
+    # NOTE: a `planners: "RRTConnect,..."` line belongs here per the MoveIt docs, but on
+    # this Humble build it makes every request die with `bad lexical cast` (measured
+    # 2026-09-05, 24/24 FAILURE) -- moveit_ompl_interface registers AnytimePathShortening
+    # through the generic MultiQueryPlannerAllocator, which hands every key straight to
+    # OMPL's ParamSet instead of parsing the sub-planner list. Without the line OMPL uses
+    # its own default sub-planners. STILL UNVERIFIED: nothing has planned with this
+    # config yet, so try it with tools/planner_bench.py before trusting it.
+    num_planners: 4
 
 real_ur10e:
   planner_configs:
@@ -84,10 +139,19 @@ real_ur10e:
     - TRRTkConfigDefault
     - PRMkConfigDefault
     - PRMstarkConfigDefault
+    - AnytimePathShorteningkConfigDefault
   longest_valid_segment_fraction: 0.005
   projection_evaluator: joints(ur10e_shoulder_pan_joint,ur10e_shoulder_lift_joint)
 
 real_kawasaki:
+  # This group had NO projection_evaluator, and a projection is how KPIECE/BKPIECE/
+  # LBKPIECE/SBL decide which part of the space to expand next. Measured 2026-09-05:
+  # every one of those four failed 100% of the time on this group (24/24, error 99999)
+  # while the same planners work on real_ur10e, which HAS a projection_evaluator. EST is
+  # projection-based too and only managed 16 of 24. The rail plus joint1 span this cell's
+  # workspace better than any pair of arm joints (the AGV covers 2 m of chassis);
+  # joints(joint1,joint2) is the alternative if the rail is ever locked out.
+  projection_evaluator: joints(world_to_agv,joint1)
   planner_configs:
     - SBLkConfigDefault
     - ESTkConfigDefault
@@ -100,4 +164,5 @@ real_kawasaki:
     - TRRTkConfigDefault
     - PRMkConfigDefault
     - PRMstarkConfigDefault
+    - AnytimePathShorteningkConfigDefault
   longest_valid_segment_fraction: 0.005

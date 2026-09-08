@@ -1,0 +1,3 @@
+[14:38:10] [FREEMOVE] 🔍 ur: IK check failing (not_ready).
+[14:38:49] [FREEMOVE] 🔍 ur: IK check failing (not_ready).
+[14:38:55] [FREEMOVE] 🔍 ur: IK check failing (not_ready).

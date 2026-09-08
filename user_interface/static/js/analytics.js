@@ -89,22 +89,22 @@ function defaultPanels() {
     return [
         // Row 1 — UR10e positions: real | sim
         {
-            id: "ur10e_pos_real", type: "line", side: "live",
+            id: "ur10e_pos_real", type: "line", side: "live", pair: "ur10e_pos",
             title: "UR10e — Joint Positions (Real)",
-            index: "ros-joint-states", time_field: "@timestamp",
+            index: "ros-joint-states",
             unit: "rad", fields: ur10eFields("ur10e_", "position"),
         },
         {
-            id: "ur10e_pos_sim", type: "line", side: "sim",
+            id: "ur10e_pos_sim", type: "line", side: "sim", pair: "ur10e_pos",
             title: "UR10e — Joint Positions (Sim)",
-            index: "ros-sim-joint-states", time_field: "@timestamp",
+            index: "ros-sim-joint-states",
             unit: "rad", fields: ur10eFields("sim_ur10e_", "position"),
         },
         // Row 2 — Kawasaki + AGV positions: real | sim
         {
-            id: "kawa_pos_real", type: "line", side: "live",
+            id: "kawa_pos_real", type: "line", side: "live", pair: "kawa_pos",
             title: "Kawasaki — Joint Positions (Real)",
-            index: "ros-kawasaki-joint-states", time_field: "@timestamp",
+            index: "ros-kawasaki-joint-states",
             unit: "rad",
             fields: [1, 2, 3, 4, 5, 6].map((n, i) => ({
                 key: `joint${n}.position`, label: `joint ${n}`,
@@ -112,49 +112,53 @@ function defaultPanels() {
             })),
         },
         {
-            id: "kawa_pos_sim", type: "line", side: "sim",
+            id: "kawa_pos_sim", type: "line", side: "sim", pair: "kawa_pos",
             title: "Kawasaki + AGV — Joint Positions (Sim)",
-            index: "ros-sim-joint-states", time_field: "@timestamp",
+            index: "ros-sim-joint-states",
             unit: "rad",
             fields: [
                 ...[1, 2, 3, 4, 5, 6].map((n, i) => ({
                     key: `sim_kawasaki_joint${n}.position`, label: `joint ${n}`,
                     color: ANALYTICS_JOINT_COLORS[i % ANALYTICS_JOINT_COLORS.length],
                 })),
-                { key: "world_to_agv.position", label: "AGV", color: ANALYTICS_JOINT_COLORS[6] },
+                // sim_ prefix, like every other series on this panel. The sim
+                // joint-state documents carry sim_world_to_agv; plain
+                // world_to_agv only exists on ros-agv-joint-states, which this
+                // panel does not read — so the unprefixed key drew nothing.
+                { key: "sim_world_to_agv.position", label: "AGV", color: ANALYTICS_JOINT_COLORS[6] },
             ],
         },
         // Row 3 — UR10e velocities: real | sim
         {
-            id: "ur10e_vel_real", type: "line", side: "live",
+            id: "ur10e_vel_real", type: "line", side: "live", pair: "ur10e_vel",
             title: "UR10e — Joint Velocities (Real)",
-            index: "ros-joint-states", time_field: "@timestamp",
+            index: "ros-joint-states",
             unit: "rad/s", fields: ur10eFields("ur10e_", "velocity"),
         },
         {
-            id: "ur10e_vel_sim", type: "line", side: "sim",
+            id: "ur10e_vel_sim", type: "line", side: "sim", pair: "ur10e_vel",
             title: "UR10e — Joint Velocities (Sim)",
-            index: "ros-sim-joint-states", time_field: "@timestamp",
+            index: "ros-sim-joint-states",
             unit: "rad/s", fields: ur10eFields("sim_ur10e_", "velocity"),
         },
         // Row 4 — UR10e efforts: real (envelope) | sim
         {
-            id: "ur10e_eff_real", type: "envelope", side: "live",
+            id: "ur10e_eff_real", type: "envelope", side: "live", pair: "ur10e_eff",
             title: "UR10e — Joint Efforts (Real)",
-            index: "ros-joint-states", time_field: "@timestamp",
+            index: "ros-joint-states",
             unit: "Nm", fields: ur10eFields("ur10e_", "effort"),
         },
         {
-            id: "ur10e_eff_sim", type: "line", side: "sim",
+            id: "ur10e_eff_sim", type: "line", side: "sim", pair: "ur10e_eff",
             title: "UR10e — Joint Efforts (Sim)",
-            index: "ros-sim-joint-states", time_field: "@timestamp",
+            index: "ros-sim-joint-states",
             unit: "Nm", fields: ur10eFields("sim_ur10e_", "effort"),
         },
         // Row 5 — cross-use-case comparisons (only meaningful once tagged)
         {
             id: "eff_box_by_use_case", type: "box", side: "live",
             title: "Elbow / Shoulder Effort — distribution per use case",
-            index: "ros-joint-states", time_field: "@timestamp",
+            index: "ros-joint-states",
             unit: "Nm", split_by: "use_case",
             fields: [
                 { key: "ur10e_elbow_joint.effort", label: "elbow" },
@@ -164,7 +168,7 @@ function defaultPanels() {
         {
             id: "eff_hist_by_use_case", type: "histogram", side: "live",
             title: "Elbow Effort — histogram per use case",
-            index: "ros-joint-states", time_field: "@timestamp",
+            index: "ros-joint-states",
             unit: "Nm", split_by: "use_case",
             fields: [{ key: "ur10e_elbow_joint.effort", label: "elbow effort" }],
         },
@@ -173,32 +177,25 @@ function defaultPanels() {
             id: "tcp_3d", type: "scatter3d", side: "live", width: "full",
             title: "TCP Position — 3D Path",
             index: "ros-tcp-pose-topic",
-            time_field: "header.sec", time_unit: "s",
+            // The cell chassis, read from the same STLs the robot description
+            // uses, drawn in the TCP pose's own frame. A path in mid-air says
+            // nothing; against the part being worked on it is readable.
+            mesh: "chassis",
             x: "pose.position.x", y: "pose.position.y", z: "pose.position.z",
         },
     ];
 }
 
-// KPI tiles across the top. Each is one /api/es/stats call.
+// Default index for the parts of the UI that need one before the user has
+// picked (Discover, the query preview). Not a claim that it is special.
 const KPI_INDEX = "ros-joint-states";
-const KPI_TIME_FIELD = "@timestamp";
-const KPI_FIELDS = [
-    "ur10e_elbow_joint.effort",
-    "ur10e_shoulder_lift_joint.effort",
-    "ur10e_elbow_joint.velocity",
-];
 
-// The auto-insight compares this one metric across use cases -- elbow effort
-// is a reasonable proxy for "how hard the arm is working" across all four
-// scenarios. Piggybacks on the same /api/es/stats call the KPI tiles already
-// make (split_by=use_case), so it costs nothing extra.
-const INSIGHT_FIELD = "ur10e_elbow_joint.effort";
-const INSIGHT_LABEL = "Elbow effort";
-const INSIGHT_UNIT = "Nm";
+// A newest document older than this makes the archive worth calling stale in
+// the insight bar rather than presenting it as if it were live.
+const STALE_AFTER_DAYS = 7;
 // Below this ratio the difference is called out as "not meaningful" rather
 // than dressed up as a finding -- an insight banner that always claims
 // something notable stops being trustworthy.
-const INSIGHT_RATIO_THRESHOLD = 1.3;
 
 // ==============================================================================
 // State
@@ -218,14 +215,28 @@ const state = {
     panels: [],           // active layout
     layoutName: "default",
     fieldCache: {},       // index → {fields, numeric, keyword, date}
+    timeFieldCache: {},   // index → {time_field, time_unit, usable, candidates}
     indices: [],
+    q: "",                // query bar (Lucene / KQL comparisons)
+    dsl: "",              // raw DSL fragment, AND-ed into bool.filter
+    discover: {
+        columns: [],      // [] = use the backend's default set
+        defaultColumns: [],
+        page: 0,
+        sort: null,
+        order: "desc",
+        total: 0,
+        timeField: null,
+        expanded: {},     // row index → open
+        summaries: {},    // field path → /api/es/field_summary result
+    },
 };
 
 // ==============================================================================
 // Tab switching
 // ==============================================================================
 
-const TABS = ["home", "analytics", "anomaly"];
+const TABS = ["home", "analytics", "anomaly", "freemove"];
 
 function switchTab(tab) {
     if (!TABS.includes(tab)) tab = "home";
@@ -266,6 +277,14 @@ function switchTab(tab) {
             if (typeof initAnomalyTab === "function") initAnomalyTab();
         } catch (err) {
             console.error("[anomaly] switchTab failed:", err);
+        }
+    } else if (tab === "freemove") {
+        // 3D sahne bir kere kurulur; soket dinleyicileri de freemove.js içinde
+        // sekmeden bağımsız bağlanır (Enable/Disable ise operatör kararı).
+        try {
+            if (typeof initFreeMove === "function") initFreeMove();
+        } catch (err) {
+            console.error("[freemove] switchTab failed:", err);
         }
     }
 }
@@ -336,6 +355,19 @@ function initAnalytics() {
 // Layout persistence
 // ==============================================================================
 
+// A layout saved before a built-in panel gained a property would keep the old
+// shape for ever: the chassis underlay and the live|sim pair keys were both
+// added after layouts started being persisted, so anyone who had ever touched
+// the panel set silently kept panels without them. Merging the built-in
+// definition in UNDERNEATH the saved copy adopts new features while leaving
+// every field the user actually changed alone. An explicit null still wins, so
+// switching a feature off stays switched off.
+function migratePanels(saved) {
+    const builtin = {};
+    defaultPanels().forEach((p) => { builtin[p.id] = p; });
+    return saved.map((p) => (builtin[p.id] ? Object.assign({}, builtin[p.id], p) : p));
+}
+
 function loadLayout() {
     try {
         const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
@@ -343,7 +375,7 @@ function loadLayout() {
             const saved = JSON.parse(raw);
             if (Array.isArray(saved) && saved.length) {
                 state.layoutName = CUSTOM_LAYOUT_NAME;
-                return saved;
+                return migratePanels(saved);
             }
         }
     } catch (err) {
@@ -679,6 +711,33 @@ async function fetchFields(index) {
     return meta;
 }
 
+// Which field this index can be plotted against. Asked once per index and
+// cached; the answer is what every panel, the Discover table and the panel
+// builder now use instead of assuming "@timestamp".
+async function fetchTimeField(index) {
+    if (state.timeFieldCache[index]) return state.timeFieldCache[index];
+    let r = { time_field: null, time_unit: "ms", usable: false, candidates: [] };
+    try {
+        const res = await fetch(`/api/es/time_field?index=${encodeURIComponent(index)}`);
+        const d = await res.json();
+        if (!d.error) r = d;
+    } catch (err) {
+        console.warn("[analytics] time field unavailable for", index, err.message);
+    }
+    state.timeFieldCache[index] = r;
+    return r;
+}
+
+// The unit a chosen time field is STORED in — a date field is epoch millis, a
+// header.sec-style long is epoch seconds, and the backend has to be told which.
+function unitForField(index, field) {
+    const known = ((state.timeFieldCache[index] || {}).candidates || [])
+        .find((c) => c.path === field);
+    if (known) return known.unit;
+    const meta = state.fieldCache[index] || {};
+    return (meta.date || []).includes(field) ? "ms" : "s";
+}
+
 function fillDatalist(id, values) {
     const dl = document.getElementById(id);
     if (!dl) return;
@@ -722,6 +781,8 @@ function buildPanels() {
                 <div class="a-panel-tools">
                     ${splitNote}
                     <span class="a-panel-badge ${badgeClass}">${badgeText}</span>
+                    <button class="a-panel-x" title="Open ${escapeHtml(p.index)} in Discover"
+                            onclick="drillToDiscover('${p.id}')">🔎</button>
                     <button class="a-panel-x" title="Remove this panel"
                             onclick="removePanel('${p.id}')">✕</button>
                 </div>
@@ -734,6 +795,7 @@ function buildPanels() {
                     No data in selected range.
                 </div>
             </div>
+            ${p.mesh ? `<div class="a-panel-note" id="chassis-note-${p.id}"></div>` : ""}
         `;
         grid.appendChild(panel);
 
@@ -767,6 +829,7 @@ function baseChartOptions(p, opts = {}) {
             legend: {
                 labels: { color: "#94a3b8", boxWidth: 12, font: { size: 10 },
                           filter: (item) => !item.text.startsWith("__") },
+                onClick: isolateSeries,
             },
             tooltip: Object.assign({
                 callbacks: {
@@ -960,7 +1023,11 @@ function getRangeParams() {
 function panelParams(p, extra = {}) {
     const params = new URLSearchParams();
     params.set("index", p.index);
-    params.set("time_field", p.time_field || "@timestamp");
+    // Only sent when a panel deliberately overrides it. Left out, the backend
+    // resolves the field that actually carries values in this index — the UI
+    // used to assume "@timestamp", which silently emptied every index the
+    // ingest never stamped.
+    if (p.time_field) params.set("time_field", p.time_field);
     if (p.time_unit) params.set("time_unit", p.time_unit);
 
     const range = getRangeParams();
@@ -969,6 +1036,8 @@ function panelParams(p, extra = {}) {
 
     const filters = allFilters();
     if (filters.length) params.set("filters", JSON.stringify(filters));
+    if (state.q) params.set("q", state.q);
+    if (state.dsl) params.set("dsl", state.dsl);
 
     Object.entries(extra).forEach(([k, v]) => {
         if (v !== undefined && v !== null && v !== "") params.set(k, v);
@@ -1031,6 +1100,7 @@ async function refreshAnalytics() {
     if (!document.getElementById("discover-panel").hidden) jobs.push(refreshDiscover());
 
     const results = await Promise.allSettled(jobs);
+    applyPairedScales();
     const failed = results.filter((r) => r.status === "rejected");
     if (failed.length) {
         console.error("[analytics] panel failures:", failed.map((f) => f.reason));
@@ -1264,9 +1334,12 @@ async function updateScatter2dPanel(p) {
 // ---- scatter 3D ----
 
 async function updateScatter3dPanel(p) {
-    const data = await getJson("/api/es/points?" + panelParams(p, {
-        x: p.x, y: p.y, z: p.z, limit: p.limit || 4000, mode: p.mode || "spread",
-    }).toString());
+    const [data, chassis] = await Promise.all([
+        getJson("/api/es/points?" + panelParams(p, {
+            x: p.x, y: p.y, z: p.z, limit: p.limit || 4000, mode: p.mode || "spread",
+        }).toString()),
+        fetchChassisMesh(p),
+    ]);
 
     const hasData = (data.x || []).length > 0;
     toggleEmpty(p.id, !hasData);
@@ -1274,6 +1347,7 @@ async function updateScatter3dPanel(p) {
     const trace = {
         type: "scatter3d",
         mode: "lines+markers",
+        name: "TCP path",
         x: data.x, y: data.y, z: data.z,
         line: { width: 3, color: data.z, colorscale: "Viridis" },
         marker: { size: 2, color: data.z, colorscale: "Viridis" },
@@ -1289,7 +1363,78 @@ async function updateScatter3dPanel(p) {
         },
         font: { color: "#94a3b8" },
     };
-    Plotly.react(`plot-${p.id}`, [trace], layout, { responsive: true, displaylogo: false });
+    const drawable = chassis && !chassis.error;
+    const traces = drawable ? [chassisTrace(chassis), trace] : [trace];
+    Plotly.react(`plot-${p.id}`, traces, layout, { responsive: true, displaylogo: false });
+    renderChassisNote(p, chassis);
+}
+
+// ---- cell geometry underlay ----
+
+// The chassis is fixed in the cell while the robot rides the linear axis, so in
+// the TCP pose's frame the chassis position depends on where that axis was.
+// The backend picks the median over the selected range and reports the spread;
+// the note under the panel says which, because a wide spread means the outline
+// is only representative.
+async function fetchChassisMesh(p) {
+    if (p.mesh !== "chassis") return null;
+    const params = new URLSearchParams();
+    const range = getRangeParams();
+    if (range.from != null) params.set("from", range.from);
+    if (range.to != null) params.set("to", range.to);
+    if (p.mesh_q !== undefined && p.mesh_q !== "") params.set("q", p.mesh_q);
+    try {
+        return await getJson("/api/mesh/chassis?" + params.toString());
+    } catch (err) {
+        console.warn("[analytics] chassis mesh unavailable:", err.message);
+        return { error: err.message };
+    }
+}
+
+function chassisTrace(m) {
+    return {
+        type: "mesh3d",
+        name: "Chassis",
+        x: m.x, y: m.y, z: m.z,
+        i: m.i, j: m.j, k: m.k,
+        color: "#8fa3c8",
+        // 0.28 was too faint to read against the dark scene once WebGL had
+        // blended 16 k translucent triangles over each other.
+        opacity: 0.5,
+        flatshading: true,
+        // The path is what a cursor should find, not the scenery behind it.
+        hoverinfo: "skip",
+        showscale: false,
+        lighting: { ambient: 0.85, diffuse: 0.6, specular: 0.05 },
+    };
+}
+
+function renderChassisNote(p, m) {
+    const el = document.getElementById(`chassis-note-${p.id}`);
+    if (!el) return;
+    if (!m) { el.textContent = ""; return; }
+    if (m.error) {
+        el.textContent = "Chassis outline unavailable: " + m.error;
+        el.classList.add("note-err");
+        return;
+    }
+    el.classList.remove("note-err");
+
+    const spread = (m.q_p95 != null && m.q_p5 != null) ? m.q_p95 - m.q_p5 : null;
+    let text = `Chassis: ${formatCount(m.triangles)} tris from ${m.parts} STL parts`;
+    if (m.q_source === "median") {
+        text += ` · linear axis ${m.q.toFixed(3)} m (median)`;
+        // Half a metre of travel moves the chassis visibly against the path.
+        if (spread !== null && spread > 0.05) {
+            text += ` — axis moved ${m.q_min.toFixed(2)}–${m.q_max.toFixed(2)} m ` +
+                    "in this range, so the outline is indicative";
+        }
+    } else if (m.q_source === "requested") {
+        text += ` · linear axis pinned at ${m.q.toFixed(3)} m`;
+    } else {
+        text += " · no joint states in range, drawn at axis origin";
+    }
+    el.textContent = text;
 }
 
 // ---- bar (compare groups) ----
@@ -1329,103 +1474,312 @@ function toggleEmpty(id, show) {
 // KPI tiles
 // ==============================================================================
 
+// Pure: overview payload -> the tiles to render. Split out from updateKpis so
+// the wording and the arithmetic can be exercised without a DOM.
+function kpiTiles(d) {
+    const t = (d && d.totals) || {};
+    const docs = t.docs || 0;
+    const days = t.span_ms ? Math.max(1, Math.round(t.span_ms / 86400000)) : null;
+    const span = days === null ? "—" : `${days} ${days === 1 ? "day" : "days"}`;
+    const dateRange = (t.t_min && t.t_max)
+        ? `${shortDate(t.t_min)} → ${shortDate(t.t_max)}` : "no timestamps";
+
+    // `tagged` is counted inside the current range, so when one is selected the
+    // whole-corpus total is the wrong denominator.
+    const tagBase = d && d.ranged ? (t.in_range || 0) : docs;
+    const tagPct = tagBase ? (t.tagged / tagBase) * 100 : 0;
+
+    return [
+        { label: "documents", value: formatCount(docs),
+          hint: `${docs.toLocaleString()} rows across every index` },
+        { label: "topics", value: String(t.indices || 0),
+          hint: `${t.usable || 0} ${t.usable === 1 ? "carries" : "carry"} ` +
+                "a usable time field" +
+                (t.unusable
+                    ? `, ${t.unusable} ${t.unusable === 1 ? "does" : "do"} not`
+                    : "") },
+        { label: "on disk", value: formatBytes(t.bytes || 0),
+          hint: "primary + replica store size" },
+        { label: "coverage", value: span, hint: dateRange },
+        { label: d && d.ranged ? "in range" : "plottable",
+          value: formatCount(t.in_range || 0),
+          hint: d && d.ranged
+              ? "documents inside the selected window"
+              : "documents with a usable timestamp — the rest cannot be charted" },
+        { label: "use-case tagged",
+          value: tagPct >= 0.05 ? tagPct.toFixed(1) + "%" : "none",
+          hint: `${(t.tagged || 0).toLocaleString()} of ${tagBase.toLocaleString()} ` +
+                `documents${d && d.ranged ? " in the selected window" : ""}` },
+    ];
+}
+
+// The tiles describe the archive, not one joint. They used to report the peak
+// effort of ur10e_elbow_joint over the selection, which is a number about a
+// single joint of a single robot dressed up as a headline about the data set.
 async function updateKpis() {
     const host = document.getElementById("kpi-row");
     if (!host) return;
-    const pseudo = { index: KPI_INDEX, time_field: KPI_TIME_FIELD };
+
+    const params = new URLSearchParams();
+    const range = getRangeParams();
+    if (range.from != null) params.set("from", range.from);
+    if (range.to != null) params.set("to", range.to);
+
     let d;
     try {
-        d = await getJson("/api/es/stats?" + panelParams(pseudo, {
-            fields: KPI_FIELDS.join(","),
-            split_by: "use_case",
-        }).toString());
+        d = await getJson("/api/es/overview?" + params.toString());
     } catch (err) {
-        host.innerHTML = `<div class="kpi-tile error">Stats unavailable — ${escapeHtml(err.message)}</div>`;
+        host.innerHTML = `<div class="kpi-tile error">Overview unavailable — ${escapeHtml(err.message)}</div>`;
         const bar = document.getElementById("insight-bar");
         if (bar) bar.hidden = true;
         return;
     }
 
-    const tiles = [
-        { label: "documents", value: formatCount(d.count || 0),
-          hint: "in the current selection" },
-        { label: "time span", value: formatDuration(d.duration_ms),
-          hint: d.t_min ? new Date(d.t_min).toLocaleString() : "—" },
-        { label: "peak elbow effort",
-          value: formatNum(statOf(d.series, "ur10e_elbow_joint.effort", "max")), unit: "Nm",
-          hint: "max over the selection" },
-        { label: "peak shoulder effort",
-          value: formatNum(statOf(d.series, "ur10e_shoulder_lift_joint.effort", "max")), unit: "Nm",
-          hint: "max over the selection" },
-        { label: "peak elbow velocity",
-          value: formatNum(statOf(d.series, "ur10e_elbow_joint.velocity", "max")), unit: "rad/s",
-          hint: "max over the selection" },
-        { label: "active use case", value: state.useCases.length
-            ? state.useCases.join(", ") : "all",
-          hint: "click a chip above to filter" },
-    ];
-
-    host.innerHTML = tiles.map((t) => `
-        <div class="kpi-tile" title="${escapeHtml(t.hint || "")}">
-            <div class="kpi-label">${escapeHtml(t.label)}</div>
-            <div class="kpi-value">${escapeHtml(String(t.value))}${
-                t.unit ? `<span class="kpi-unit">${escapeHtml(t.unit)}</span>` : ""}</div>
+    host.innerHTML = kpiTiles(d).map((t2) => `
+        <div class="kpi-tile" title="${escapeHtml(t2.hint || "")}">
+            <div class="kpi-label">${escapeHtml(t2.label)}</div>
+            <div class="kpi-value">${escapeHtml(String(t2.value))}${
+                t2.unit ? `<span class="kpi-unit">${escapeHtml(t2.unit)}</span>` : ""}</div>
+            <div class="kpi-hint">${escapeHtml(t2.hint || "")}</div>
         </div>`).join("");
 
     renderInsight(d);
 }
 
-// A plain-language read of the same use-case breakdown the KPI tiles and the
-// "distribution per use case" panels already show as numbers. Picks a
-// baseline (IDLE if tagged, else the lowest-average group) and the highest
-// group excluding it, and only calls out a difference when it clears
-// INSIGHT_RATIO_THRESHOLD -- otherwise it says so plainly instead of forcing
-// a "finding" out of noise.
+function shortDate(ms) {
+    return new Date(ms).toLocaleDateString(undefined,
+        { year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatBytes(n) {
+    if (!n) return "0 B";
+    const u = ["B", "kB", "MB", "GB", "TB"];
+    const i = Math.min(u.length - 1, Math.floor(Math.log10(n) / 3));
+    return (n / Math.pow(1000, i)).toFixed(i ? 1 : 0) + " " + u[i];
+}
+
+// One line about the state of the archive, picked from what is actually worth
+// saying rather than always manufacturing a comparison. Ordered by how much it
+// should change what the reader does next.
 function renderInsight(d) {
     const bar = document.getElementById("insight-bar");
     const text = document.getElementById("insight-text");
     if (!bar || !text) return;
 
-    const groups = (d && d.groups) || [];
-    const byGroup = (d && d.by_group) || {};
-    const usable = groups
-        .map((g) => ({ name: g, avg: statOf(byGroup[g], INSIGHT_FIELD, "avg") }))
-        .filter((g) => g.avg !== undefined && g.avg !== null);
-
-    if (usable.length < 2) {
-        text.textContent = "Not enough tagged use-case data in this range to compare yet.";
+    const t = (d && d.totals) || {};
+    const rows = (d && d.indices) || [];
+    if (!t.docs) {
+        text.textContent = "Elasticsearch holds no collected data yet.";
         bar.hidden = false;
         return;
     }
 
-    const idle = usable.find((g) => g.name === "IDLE");
-    const sorted = [...usable].sort((a, b) => a.avg - b.avg);
-    const baseline = idle || sorted[0];
-    const peak = usable.filter((g) => g.name !== baseline.name)
-        .sort((a, b) => b.avg - a.avg)[0];
+    const b = (x) => `<b>${escapeHtml(String(x))}</b>`;
+    const notes = [];
 
-    const tag = (g) => `<b class="insight-uc" style="color:${colorForGroup(g.name)}">` +
-        `${escapeHtml(g.name)}</b>`;
+    if (!t.tagged) {
+        notes.push(`None of the ${b(t.docs.toLocaleString())} collected documents ` +
+            "carry a <code>use_case</code> yet, so the per-scenario panels stay " +
+            "empty until the next collection run.");
+    }
 
-    if (!peak || baseline.avg <= 1e-6) {
-        text.innerHTML = `${INSIGHT_LABEL} levels are similar across use cases in this range.`;
-    } else {
-        const ratio = peak.avg / baseline.avg;
-        if (ratio < INSIGHT_RATIO_THRESHOLD) {
-            text.innerHTML = `${INSIGHT_LABEL} levels are similar across use cases in this ` +
-                `range (highest: ${tag(peak)}, ${formatNum(peak.avg)} ${INSIGHT_UNIT} avg).`;
-        } else {
-            text.innerHTML = `${INSIGHT_LABEL} peaks in ${tag(peak)} ` +
-                `(${formatNum(peak.avg)} ${INSIGHT_UNIT} avg) — ${ratio.toFixed(1)}× higher ` +
-                `than ${tag(baseline)} (${formatNum(baseline.avg)} ${INSIGHT_UNIT} avg).`;
+    const dead = rows.filter((r) => r.docs && !r.usable).map((r) => r.index);
+    if (dead.length) {
+        const many = dead.length > 1;
+        notes.push(`${b(dead.length)} topic${many ? "s" : ""} ` +
+            `(${escapeHtml(dead.join(", "))}) ` +
+            `${many ? "carry" : "carries"} no field that can serve as a time axis, ` +
+            `so ${many ? "they" : "it"} cannot be charted.`);
+    }
+
+    if (t.t_max) {
+        const ageDays = (Date.now() - t.t_max) / 86400000;
+        if (ageDays > STALE_AFTER_DAYS) {
+            notes.push(`The newest document is ${b(Math.round(ageDays) + " days")} old — ` +
+                "a recent-window preset will look empty.");
         }
     }
+
+    const top = rows[0];
+    if (top && top.docs / t.docs > 0.5) {
+        notes.push(`${b(top.index)} alone is ` +
+            `${((top.docs / t.docs) * 100).toFixed(0)}% of everything collected.`);
+    }
+
+    if (!notes.length) {
+        const gb = (t.bytes / 1e9).toFixed(1);
+        notes.push(`${b(t.docs.toLocaleString())} documents across ` +
+            `${b(t.indices)} topics, ${gb} GB on disk.`);
+    }
+
+    text.innerHTML = notes[0] +
+        (notes.length > 1
+            ? ` <span class="insight-more">+${notes.length - 1} more</span>`
+            : "");
+    text.title = notes.map((n) => n.replace(/<[^>]+>/g, "")).join("\n\n");
     bar.hidden = false;
 }
 
 // ==============================================================================
-// Discover table
+// Query bar
 // ==============================================================================
+//
+// Two levels on purpose. The one-line bar covers the common case in Lucene
+// syntax (with KQL-style `field > 5` comparisons rewritten server-side, since
+// that is what everyone types first and plain Lucene answers it with a silent
+// zero). The DSL box is the escape hatch: a hand-written clause, AND-ed into
+// the same bool.filter, for everything the bar cannot say.
+
+function applyQueryBar() {
+    state.q = document.getElementById("query-bar").value.trim();
+    state.discover.page = 0;
+    refreshAnalytics();
+}
+window.applyQueryBar = applyQueryBar;
+
+function toggleDslBox() {
+    const row = document.getElementById("dsl-row");
+    row.hidden = !row.hidden;
+    document.getElementById("btn-dsl").classList.toggle("active", !row.hidden);
+    if (!row.hidden) document.getElementById("query-dsl").focus();
+}
+window.toggleDslBox = toggleDslBox;
+
+function applyDsl() {
+    const raw = document.getElementById("query-dsl").value.trim();
+    const status = document.getElementById("dsl-status");
+    if (raw) {
+        // Fail here rather than as eight identical panel errors.
+        try {
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+                throw new Error("expected a JSON object holding one query clause");
+            }
+        } catch (err) {
+            status.textContent = "✕ " + err.message;
+            status.classList.add("err");
+            return;
+        }
+    }
+    status.classList.remove("err");
+    status.innerHTML = raw
+        ? "✅ Applied — AND-ed into <code>bool.filter</code>."
+        : "AND-ed into <code>bool.filter</code>. Read-only: no aggs, no scripts.";
+    state.dsl = raw;
+    state.discover.page = 0;
+    refreshAnalytics();
+}
+window.applyDsl = applyDsl;
+
+function clearDsl() {
+    document.getElementById("query-dsl").value = "";
+    applyDsl();
+}
+window.clearDsl = clearDsl;
+
+// ------------------------------------------------------------------------------
+// "Show query" — the DSL the whole page is actually sending
+// ------------------------------------------------------------------------------
+
+let lastQueryPreview = null;
+
+async function showQueryPreview() {
+    const modal = document.getElementById("query-modal");
+    const pre = document.getElementById("query-json");
+    modal.classList.add("open");
+    document.getElementById("query-copy-status").textContent = "";
+    pre.textContent = "loading…";
+    try {
+        const index = document.getElementById("discover-panel").hidden
+            ? KPI_INDEX : discoverIndex();
+        const d = await getJson("/api/es/query_preview?" +
+            panelParams({ index }).toString());
+        lastQueryPreview = d;
+        pre.textContent = JSON.stringify(d.body, null, 2);
+        document.getElementById("query-modal-desc").textContent =
+            `Index ${d.index}, time field ${d.time_field} (${d.time_unit}). ` +
+            "Range, use-case chips, filter pills and the query bar all fold into " +
+            "this one read-only query.";
+    } catch (err) {
+        pre.textContent = "error: " + err.message;
+    }
+}
+window.showQueryPreview = showQueryPreview;
+
+function closeQueryPreview() {
+    document.getElementById("query-modal").classList.remove("open");
+}
+window.closeQueryPreview = closeQueryPreview;
+
+function onQueryOverlayClick(e) {
+    if (e.target.id === "query-modal") closeQueryPreview();
+}
+window.onQueryOverlayClick = onQueryOverlayClick;
+
+function copyQueryText(kind) {
+    if (!lastQueryPreview) return;
+    const text = kind === "curl"
+        ? lastQueryPreview.curl
+        : JSON.stringify(lastQueryPreview.body, null, 2);
+    copyText(text, kind === "curl" ? "curl copied." : "JSON copied.",
+             "query-copy-status");
+}
+window.copyQueryText = copyQueryText;
+
+function copyText(text, okMsg, statusId) {
+    const done = (msg) => {
+        if (!statusId) { setStatus(msg, "ok"); return; }
+        const el = document.getElementById(statusId);
+        if (el) el.textContent = msg;
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => done(okMsg),
+                                                 () => done("Copy failed."));
+        return;
+    }
+    // The dashboard is normally reached over plain http on the lab network,
+    // where navigator.clipboard is not available.
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { done(document.execCommand("copy") ? okMsg : "Copy failed."); }
+    catch (e) { done("Copy failed."); }
+    document.body.removeChild(ta);
+}
+
+// ==============================================================================
+// Discover — raw documents, field sidebar, volume histogram
+// ==============================================================================
+//
+// The table used to render the mapping's first 25 leaf paths, which on
+// ros-joint-states meant `digital_input_11` and firmware version numbers while
+// every joint sat off-screen. Columns are now chosen: the backend supplies a
+// sane default set, the sidebar shows what each field actually contains, and a
+// row expands to the untouched _source — the nesting is the point of a ROS
+// document, and flattening threw it away.
+
+let discoverHits = [];        // the raw hits behind the current page
+
+function discoverIndex() {
+    return document.getElementById("discover-index").value || KPI_INDEX;
+}
+
+function discoverSize() {
+    return parseInt(document.getElementById("discover-size").value, 10) || 50;
+}
+
+// Read a dotted path out of a nested _source, mirroring the backend's _dig.
+function dig(src, path) {
+    let cur = src;
+    for (const part of String(path).split(".")) {
+        if (cur && typeof cur === "object" && part in cur) cur = cur[part];
+        else return undefined;
+    }
+    return cur;
+}
 
 function toggleDiscover() {
     const on = document.getElementById("toggle-discover").checked;
@@ -1435,31 +1789,87 @@ function toggleDiscover() {
 window.toggleDiscover = toggleDiscover;
 
 function discoverPseudoPanel() {
-    const index = document.getElementById("discover-index").value || KPI_INDEX;
-    // header.sec indices are not date-based; pick a time field that exists.
-    const time_field = index === "ros-tcp-pose-topic" ? "header.sec" : "@timestamp";
-    const time_unit = index === "ros-tcp-pose-topic" ? "s" : "ms";
-    return { index, time_field, time_unit };
+    return { index: discoverIndex() };
 }
+
+function onDiscoverIndexChange() {
+    state.discover.columns = [];
+    state.discover.page = 0;
+    state.discover.sort = null;
+    state.discover.summaries = {};
+    state.discover.expanded = {};
+    refreshDiscover();
+}
+window.onDiscoverIndexChange = onDiscoverIndexChange;
+
+function onDiscoverSizeChange() {
+    state.discover.page = 0;
+    refreshDiscover();
+}
+window.onDiscoverSizeChange = onDiscoverSizeChange;
+
+function resetDiscoverColumns() {
+    state.discover.columns = [];
+    refreshDiscover();
+}
+window.resetDiscoverColumns = resetDiscoverColumns;
+
+function discoverPage(delta) {
+    const next = state.discover.page + delta;
+    if (next < 0) return;
+    state.discover.page = next;
+    state.discover.expanded = {};
+    refreshDiscover();
+}
+window.discoverPage = discoverPage;
+
+function sortDiscoverBy(col) {
+    const d = state.discover;
+    if (d.sort === col) d.order = d.order === "desc" ? "asc" : "desc";
+    else { d.sort = col; d.order = "desc"; }
+    d.page = 0;
+    refreshDiscover();
+}
+window.sortDiscoverBy = sortDiscoverBy;
+
+function toggleDiscoverRow(i) {
+    state.discover.expanded[i] = !state.discover.expanded[i];
+    renderDiscoverRows();
+}
+window.toggleDiscoverRow = toggleDiscoverRow;
 
 async function refreshDiscover() {
     const panel = document.getElementById("discover-panel");
     if (!panel || panel.hidden) return;
-    const size = document.getElementById("discover-size").value;
-    const table = document.getElementById("discover-table");
     const totalEl = document.getElementById("discover-total");
+    const d = state.discover;
+    const index = discoverIndex();
+    const size = discoverSize();
+
+    const extra = { size, format: "raw", offset: d.page * size };
+    if (d.sort) { extra.sort = d.sort; extra.order = d.order; }
 
     try {
-        const d = await getJson("/api/es/docs?" +
-            panelParams(discoverPseudoPanel(), { size }).toString());
-        const cols = d.columns || [];
-        table.querySelector("thead").innerHTML =
-            "<tr>" + cols.map((c) => `<th>${escapeHtml(c)}</th>`).join("") + "</tr>";
-        table.querySelector("tbody").innerHTML = (d.rows || []).length
-            ? d.rows.map((r) => "<tr>" + r.map((v) =>
-                `<td>${escapeHtml(formatCell(v))}</td>`).join("") + "</tr>").join("")
-            : `<tr><td class="a-empty-cell" colspan="${cols.length || 1}">No documents in range.</td></tr>`;
-        totalEl.textContent = `${formatCount(d.total || 0)} matching`;
+        const [docs] = await Promise.all([
+            getJson("/api/es/docs?" + panelParams(discoverPseudoPanel(), extra).toString()),
+            refreshDiscoverHistogram(),
+        ]);
+
+        discoverHits = docs.hits || [];
+        d.total = docs.total || 0;
+        d.defaultColumns = docs.columns || [];
+        d.timeField = docs.time_field;
+
+        document.getElementById("discover-timefield").textContent =
+            docs.time_field ? `time: ${docs.time_field}` : "no time field";
+
+        renderDiscoverHead();
+        renderDiscoverRows();
+        renderDiscoverPager();
+        // After the columns are known, so the sidebar's add/remove state is not
+        // a refresh behind what the table is showing.
+        await renderFieldSidebar();
+        totalEl.textContent = `${formatCount(d.total)} matching`;
     } catch (err) {
         totalEl.textContent = "error: " + err.message;
         throw err;
@@ -1467,11 +1877,311 @@ async function refreshDiscover() {
 }
 window.refreshDiscover = refreshDiscover;
 
+function discoverColumns() {
+    const d = state.discover;
+    return d.columns.length ? d.columns : (d.defaultColumns || []);
+}
+
+function renderDiscoverHead() {
+    const d = state.discover;
+    const cols = discoverColumns();
+    const arrow = (c) => (d.sort === c ? (d.order === "desc" ? " ▾" : " ▴") : "");
+    document.getElementById("discover-table").querySelector("thead").innerHTML =
+        "<tr><th class='dt-expander'></th>" +
+        cols.map((c) =>
+            `<th class="dt-col" title="Sort by ${escapeHtml(c)}"
+                 onclick="sortDiscoverBy(${jsAttr(c)})">${escapeHtml(c)}${arrow(c)}` +
+            (d.columns.length
+                ? ` <span class="dt-drop" title="Remove this column"
+                        onclick="event.stopPropagation();removeDiscoverColumn(${jsAttr(c)})">✕</span>`
+                : "") +
+            "</th>").join("") + "</tr>";
+}
+
+function renderDiscoverRows() {
+    const cols = discoverColumns();
+    const tbody = document.getElementById("discover-table").querySelector("tbody");
+
+    if (!discoverHits.length) {
+        tbody.innerHTML =
+            `<tr><td class="a-empty-cell" colspan="${cols.length + 1}">No documents in range.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = discoverHits.map((h, i) => {
+        const open = !!state.discover.expanded[i];
+        const cells = cols.map((c) =>
+            `<td>${escapeHtml(formatCell(dig(h._source, c)))}</td>`).join("");
+        const row =
+            `<tr class="${open ? "dt-open" : ""}">
+                <td class="dt-expander" onclick="toggleDiscoverRow(${i})"
+                    title="Show the raw document">${open ? "▾" : "▸"}</td>
+                ${cells}
+             </tr>`;
+        if (!open) return row;
+        return row +
+            `<tr class="dt-raw-row">
+                <td colspan="${cols.length + 1}">
+                    <div class="dt-raw-head">
+                        <code>_id: ${escapeHtml(h._id)}</code>
+                        <button class="tb-btn ghost" onclick="copyDoc(${i})">📋 Copy JSON</button>
+                    </div>
+                    <pre class="dt-raw">${escapeHtml(JSON.stringify(h._source, null, 2))}</pre>
+                </td>
+             </tr>`;
+    }).join("");
+}
+
+function copyDoc(i) {
+    const h = discoverHits[i];
+    if (!h) return;
+    copyText(JSON.stringify(h._source, null, 2), "Document copied.");
+}
+window.copyDoc = copyDoc;
+
+function renderDiscoverPager() {
+    const d = state.discover;
+    const size = discoverSize();
+    const from = d.page * size;
+    const shown = discoverHits.length;
+    document.getElementById("dp-label").textContent = shown
+        ? `${formatCount(from + 1)}–${formatCount(from + shown)} of ${formatCount(d.total)}`
+        : "—";
+    document.getElementById("dp-prev").disabled = d.page === 0;
+    // Elasticsearch refuses a from+size window past 10 000 without a scroll or
+    // search_after, and the backend caps `offset` at 9 000 to match.
+    const atWindowEnd = from + size >= 9000;
+    document.getElementById("dp-next").disabled =
+        atWindowEnd || from + shown >= d.total;
+    document.getElementById("dp-next").title = atWindowEnd
+        ? "Elasticsearch's 10 000-document paging window ends here — narrow the range or add a filter"
+        : "";
+}
+
+// ------------------------------------------------------------------------------
+// Document-volume histogram above the table
+// ------------------------------------------------------------------------------
+
+async function refreshDiscoverHistogram() {
+    const canvas = document.getElementById("discover-hist-canvas");
+    if (!canvas) return;
+    let d;
+    try {
+        d = await getJson("/api/es/timeseries?" +
+            panelParams(discoverPseudoPanel(), { stat: "count", points: 60 }).toString());
+    } catch (err) {
+        d = { time: [], series: {} };
+    }
+    const times = d.time || [];
+    const counts = (d.series || {})["doc_count::count"] || [];
+    document.getElementById("dh-empty").hidden = times.length > 0;
+
+    if (charts.__discoverHist) charts.__discoverHist.destroy();
+    if (!times.length) { charts.__discoverHist = null; return; }
+
+    charts.__discoverHist = new Chart(canvas.getContext("2d"), {
+        type: "bar",
+        data: {
+            labels: times,
+            datasets: [{
+                data: counts,
+                backgroundColor: "rgba(56, 189, 248, 0.55)",
+                borderColor: "rgba(56, 189, 248, 0.9)",
+                borderWidth: 1,
+                barPercentage: 1.0,
+                categoryPercentage: 1.0,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            onClick: (evt, els) => {
+                if (!els.length) return;
+                zoomToBucket(times, els[0].index);
+            },
+            scales: {
+                x: { type: "category",
+                     ticks: { color: "#64748b", maxTicksLimit: 8,
+                              callback: (v, i) => shortTime(times[i]) },
+                     grid: { display: false } },
+                y: { ticks: { color: "#64748b", maxTicksLimit: 4 },
+                     grid: { color: "rgba(255,255,255,0.04)" } },
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (items) => new Date(times[items[0].dataIndex]).toLocaleString(),
+                        label: (item) => `${formatCount(item.parsed.y)} documents`,
+                    },
+                },
+            },
+        },
+    });
+}
+
+function shortTime(ms) {
+    const d = new Date(ms);
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Clicking a bar narrows the whole page to that bucket — the drill-down that
+// makes the histogram worth showing rather than decoration.
+function zoomToBucket(times, i) {
+    const start = times[i];
+    const end = i + 1 < times.length ? times[i + 1] : start + (times[1] - times[0] || 1000);
+    const toInput = (ms) => new Date(ms).toISOString().slice(0, 19);
+    document.getElementById("range-preset").value = "custom";
+    onPresetChange();
+    document.getElementById("range-from").value = toInput(start);
+    document.getElementById("range-to").value = toInput(end);
+    state.discover.page = 0;
+    refreshAnalytics();
+}
+
+// ------------------------------------------------------------------------------
+// Field sidebar
+// ------------------------------------------------------------------------------
+
+async function renderFieldSidebar() {
+    const list = document.getElementById("df-list");
+    if (!list) return;
+    const index = discoverIndex();
+    const meta = await fetchFields(index);
+    const needle = (document.getElementById("df-search").value || "").toLowerCase();
+    const shown = discoverColumns();
+
+    const fields = (meta.fields || [])
+        .filter((f) => !f.path.endsWith(".keyword"))
+        .filter((f) => !needle || f.path.toLowerCase().includes(needle));
+
+    if (!fields.length) {
+        list.innerHTML = `<div class="df-empty">${
+            meta.fields && meta.fields.length ? "No field matches." : "No mapped fields."}</div>`;
+        return;
+    }
+
+    list.innerHTML = fields.map((f) => {
+        const active = shown.includes(f.path);
+        const sum = state.discover.summaries[f.path];
+        return `<div class="df-item ${active ? "active" : ""}">
+            <div class="df-row" onclick="toggleFieldSummary(${jsAttr(f.path)})">
+                <span class="df-type" title="${escapeHtml(f.type)}">${typeGlyph(f.type)}</span>
+                <span class="df-name" title="${escapeHtml(f.path)}">${escapeHtml(f.path)}</span>
+                <button class="df-add" title="${active ? "Remove column" : "Add as column"}"
+                        onclick="event.stopPropagation();${active
+                            ? `removeDiscoverColumn(${jsAttr(f.path)})`
+                            : `addDiscoverColumn(${jsAttr(f.path)})`}">${active ? "−" : "＋"}</button>
+            </div>
+            ${sum ? renderFieldSummary(sum) : ""}
+        </div>`;
+    }).join("");
+}
+window.renderFieldSidebar = renderFieldSidebar;
+
+function typeGlyph(t) {
+    if (["long", "integer", "short", "byte", "double", "float",
+         "half_float", "scaled_float"].includes(t)) return "#";
+    if (t === "date") return "🕓";
+    if (t === "boolean") return "◑";
+    return "t";
+}
+
+async function toggleFieldSummary(field) {
+    const cache = state.discover.summaries;
+    if (cache[field]) { delete cache[field]; renderFieldSidebar(); return; }
+    cache[field] = { loading: true, field };
+    renderFieldSidebar();
+    try {
+        cache[field] = await getJson("/api/es/field_summary?" +
+            panelParams(discoverPseudoPanel(), { field }).toString());
+    } catch (err) {
+        cache[field] = { field, error: err.message };
+    }
+    renderFieldSidebar();
+}
+window.toggleFieldSummary = toggleFieldSummary;
+
+function renderFieldSummary(s) {
+    if (s.loading) return `<div class="df-sum">loading…</div>`;
+    if (s.error) return `<div class="df-sum df-err">${escapeHtml(s.error)}</div>`;
+
+    const coverage = s.total
+        ? `${((s.present / s.total) * 100).toFixed(0)}% of ${formatCount(s.total)} docs`
+        : "no documents";
+    let body = "";
+
+    if (s.kind === "terms" && (s.top || []).length) {
+        body = s.top.map((t) => `
+            <div class="df-val">
+                <div class="df-val-head">
+                    <span class="df-val-name" title="${escapeHtml(t.value)}">${escapeHtml(t.value)}</span>
+                    <span class="df-val-pct">${t.pct.toFixed(1)}%</span>
+                    <button class="df-val-add" title="Filter to this value"
+                            onclick="event.stopPropagation();filterToValue(${jsAttr(s.field)},${jsAttr(t.value)})">🔍</button>
+                </div>
+                <div class="df-bar"><span style="width:${Math.max(2, t.pct)}%"></span></div>
+            </div>`).join("");
+    } else if (s.kind === "number" && s.stats) {
+        const p = s.percentiles || {};
+        body = `<table class="df-stats">
+            <tr><td>min</td><td>${formatNum(s.stats.min)}</td><td>p05</td><td>${formatNum(p["5.0"])}</td></tr>
+            <tr><td>p25</td><td>${formatNum(p["25.0"])}</td><td>p50</td><td>${formatNum(p["50.0"])}</td></tr>
+            <tr><td>p75</td><td>${formatNum(p["75.0"])}</td><td>p95</td><td>${formatNum(p["95.0"])}</td></tr>
+            <tr><td>max</td><td>${formatNum(s.stats.max)}</td><td>avg</td><td>${formatNum(s.stats.avg)}</td></tr>
+        </table>`;
+    } else if (s.kind === "date" && s.stats) {
+        body = `<div class="df-span">
+            ${escapeHtml(s.stats.min_as_string || "—")}<br>→ ${escapeHtml(s.stats.max_as_string || "—")}
+        </div>`;
+    } else {
+        body = `<div class="df-note">No values in the current selection.</div>`;
+    }
+
+    return `<div class="df-sum">
+        <div class="df-cov">${coverage}${
+            s.distinct != null ? ` · ${formatCount(s.distinct)} distinct` : ""}</div>
+        ${body}
+    </div>`;
+}
+
+function addDiscoverColumn(field) {
+    const d = state.discover;
+    if (!d.columns.length) d.columns = (d.defaultColumns || []).slice();
+    if (!d.columns.includes(field)) d.columns.push(field);
+    renderDiscoverHead();
+    renderDiscoverRows();
+    renderFieldSidebar();
+}
+window.addDiscoverColumn = addDiscoverColumn;
+
+function removeDiscoverColumn(field) {
+    const d = state.discover;
+    if (!d.columns.length) d.columns = (d.defaultColumns || []).slice();
+    d.columns = d.columns.filter((c) => c !== field);
+    renderDiscoverHead();
+    renderDiscoverRows();
+    renderFieldSidebar();
+}
+window.removeDiscoverColumn = removeDiscoverColumn;
+
+// A value in the sidebar becomes a real filter pill, so it applies to every
+// panel rather than only to the table it was clicked in.
+function filterToValue(field, value) {
+    state.filters.push({ field, op: "is", value: numOrString(value) });
+    renderFilterPills();
+    refreshAnalytics();
+}
+window.filterToValue = filterToValue;
+
 function exportDiscoverCsv() {
-    const size = document.getElementById("discover-size").value;
-    const url = "/api/es/docs?" +
-        panelParams(discoverPseudoPanel(), { size, format: "csv" }).toString();
-    window.open(url, "_blank");
+    const d = state.discover;
+    const extra = { size: discoverSize(), format: "csv", offset: d.page * discoverSize() };
+    if (d.columns.length) extra.fields = d.columns.join(",");
+    if (d.sort) { extra.sort = d.sort; extra.order = d.order; }
+    window.open("/api/es/docs?" +
+        panelParams(discoverPseudoPanel(), extra).toString(), "_blank");
 }
 window.exportDiscoverCsv = exportDiscoverCsv;
 
@@ -1519,23 +2229,38 @@ function onPanelTypeChange() {
     document.getElementById("pb-x-field").style.display = xyz ? "" : "none";
     document.getElementById("pb-y-field").style.display = xyz ? "" : "none";
     document.getElementById("pb-z-field").style.display = t === "scatter3d" ? "" : "none";
+    document.getElementById("pb-mesh-field").style.display = t === "scatter3d" ? "" : "none";
     document.getElementById("pb-hint").textContent = PANEL_HINTS[t] || "";
 }
 window.onPanelTypeChange = onPanelTypeChange;
 
 async function loadPanelFields() {
     const index = document.getElementById("pb-index").value;
-    const meta = await fetchFields(index);
+    const [meta, tf] = await Promise.all([fetchFields(index), fetchTimeField(index)]);
     fillDatalist("pb-field-list", meta.fields.map((f) => f.path));
 
-    // Offer only fields that can actually serve as a time axis.
+    // Candidates the resolver confirmed hold documents come first and carry
+    // their coverage, so a field that exists but is empty is visibly a bad pick.
     const timeSel = document.getElementById("pb-time-field");
-    const candidates = [...(meta.date || []), ...(meta.numeric || [])
-        .filter((f) => /sec$|time|stamp/i.test(f))];
-    const list = candidates.length ? candidates : ["@timestamp"];
-    timeSel.innerHTML = list
-        .map((f) => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join("");
-    if (list.includes("@timestamp")) timeSel.value = "@timestamp";
+    const confirmed = (tf.candidates || []).filter((c) => c.docs > 0);
+    const confirmedPaths = confirmed.map((c) => c.path);
+    const others = [...(meta.date || []), ...(meta.numeric || [])
+        .filter((f) => /sec$|time|stamp/i.test(f))]
+        .filter((f) => !confirmedPaths.includes(f));
+
+    const opts = confirmed.map((c) =>
+        `<option value="${escapeHtml(c.path)}">${escapeHtml(c.path)} — ${formatCount(c.docs)} docs</option>`)
+        .concat(others.map((f) =>
+            `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`));
+    timeSel.innerHTML = opts.length ? opts.join("")
+        : '<option value="@timestamp">@timestamp</option>';
+    if (tf.time_field) timeSel.value = tf.time_field;
+
+    const hint = document.getElementById("pb-hint");
+    if (hint && !tf.usable) {
+        hint.textContent = `⚠ ${index} has no time field holding data — a panel ` +
+            "on it will come up empty.";
+    }
 }
 window.loadPanelFields = loadPanelFields;
 
@@ -1543,23 +2268,27 @@ function applyPanelBuilder() {
     const status = document.getElementById("pb-status");
     const type = document.getElementById("pb-type").value;
     const index = document.getElementById("pb-index").value;
-    const timeField = document.getElementById("pb-time-field").value || "@timestamp";
+    const timeField = document.getElementById("pb-time-field").value || "";
     const title = document.getElementById("pb-title").value.trim();
     const split = document.getElementById("pb-split").value.trim();
     const unit = document.getElementById("pb-unit").value.trim();
     const width = document.getElementById("pb-width").value;
     const xyz = type === "scatter2d" || type === "scatter3d";
 
-    const meta = state.fieldCache[index] || { date: [] };
-    // header.sec-style fields hold epoch SECONDS; the backend needs to be told.
-    const timeUnit = (meta.date || []).includes(timeField) ? "ms" : "s";
-
     const panel = {
         id: "user_" + Date.now().toString(36),
         type, index, title: title || `${type} — ${index}`,
-        time_field: timeField, time_unit: timeUnit,
         unit, width, side: index.includes("sim") ? "sim" : "live",
     };
+
+    // Keeping the resolved field means storing nothing: the panel then follows
+    // the index if the ingest starts stamping a better one later. Only a
+    // deliberate override is pinned, and it gets its stored unit with it.
+    const resolvedField = (state.timeFieldCache[index] || {}).time_field;
+    if (timeField && timeField !== resolvedField) {
+        panel.time_field = timeField;
+        panel.time_unit = unitForField(index, timeField);
+    }
 
     if (xyz) {
         panel.x = document.getElementById("pb-x").value.trim();
@@ -1567,6 +2296,18 @@ function applyPanelBuilder() {
         panel.z = document.getElementById("pb-z").value.trim();
         if (!panel.x || !panel.y) { status.textContent = "X and Y are required."; return; }
         if (type === "scatter3d" && !panel.z) { status.textContent = "Z is required."; return; }
+        // Only meaningful for a path already expressed in the UR10e base frame;
+        // on any other index the outline would be placed against coordinates it
+        // has nothing to do with.
+        if (type === "scatter3d" && document.getElementById("pb-mesh").checked) {
+            if (index !== "ros-tcp-pose-topic") {
+                status.textContent =
+                    "The chassis outline is positioned in the ur10e_base frame, " +
+                    "which only ros-tcp-pose-topic uses.";
+                return;
+            }
+            panel.mesh = "chassis";
+        }
         if (split) panel.split_by = split;
     } else {
         const fields = document.getElementById("pb-fields").value
@@ -1624,15 +2365,95 @@ function nz(v, fallback) {
     return (v === null || v === undefined) ? fallback : v;
 }
 
-function statOf(series, field, key) {
-    const s = series ? series[field] : null;
-    return s ? s[key] : undefined;
+
+// ==============================================================================
+// Panel interaction
+// ==============================================================================
+
+// Clicking a legend entry isolates that series instead of merely hiding it.
+// Seven joints drawn on top of each other is the normal case here, and picking
+// one out by hiding the other six was six clicks. Clicking the isolated series
+// again brings everything back.
+function isolateSeries(e, item, legend) {
+    const chart = legend.chart;
+    const label = item.text;
+    const belongs = (l) => l === label || l === "__min_" + label || l === "__max_" + label;
+    const visible = chart.data.datasets
+        .map((ds, i) => (!ds.label.startsWith("__") && chart.isDatasetVisible(i) ? ds.label : null))
+        .filter(Boolean);
+    const isolated = visible.length === 1 && visible[0] === label;
+
+    chart.data.datasets.forEach((ds, i) => {
+        chart.setDatasetVisibility(i, isolated ? true : belongs(ds.label));
+    });
+    chart.update("none");
 }
+
+// A live panel and its sim twin are only comparable if they share a y scale.
+// Side by side on different scales, a 0.2 rad wobble and a 2 rad sweep look
+// identical, which is the opposite of what the pairing is for.
+function applyPairedScales() {
+    const groups = {};
+    state.panels.forEach((p) => {
+        if (p.pair) (groups[p.pair] = groups[p.pair] || []).push(p);
+    });
+
+    Object.values(groups).forEach((panels) => {
+        const paired = panels.map((p) => charts[p.id]).filter(Boolean);
+        if (paired.length < 2) return;
+
+        let min = Infinity, max = -Infinity;
+        paired.forEach((ch) => (ch.data.datasets || []).forEach((ds) => {
+            (ds.data || []).forEach((pt) => {
+                const y = pt && typeof pt === "object" ? pt.y : pt;
+                if (typeof y === "number" && Number.isFinite(y)) {
+                    if (y < min) min = y;
+                    if (y > max) max = y;
+                }
+            });
+        }));
+        if (!Number.isFinite(min) || !Number.isFinite(max)) return;
+
+        const pad = (max - min) * 0.05 || Math.abs(max) * 0.05 || 1;
+        paired.forEach((ch) => {
+            ch.options.scales.y.min = min - pad;
+            ch.options.scales.y.max = max + pad;
+            ch.update("none");
+        });
+    });
+}
+
+// Panel → Discover, carrying the index across. The point of the two living on
+// one page is being able to go from "that spike" to the documents behind it.
+function drillToDiscover(panelId) {
+    const p = state.panels.find((x) => x.id === panelId);
+    if (!p) return;
+    const sel = document.getElementById("discover-index");
+    if (![...sel.options].some((o) => o.value === p.index)) {
+        sel.insertAdjacentHTML("beforeend",
+            `<option value="${escapeHtml(p.index)}">${escapeHtml(p.index)}</option>`);
+    }
+    sel.value = p.index;
+    document.getElementById("toggle-discover").checked = true;
+    document.getElementById("discover-panel").hidden = false;
+    onDiscoverIndexChange();
+    document.getElementById("discover-panel")
+        .scrollIntoView({ behavior: "smooth", block: "start" });
+}
+window.drillToDiscover = drillToDiscover;
 
 function escapeHtml(s) {
     return String(nz(s, "")).replace(/[&<>"']/g, (c) => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
     }[c]));
+}
+
+// Safe to drop into an inline handler like onclick="fn(...)".
+// escapeHtml alone is not: it turns ' into &#39;, which the HTML parser decodes
+// back to a bare quote that closes the JS string literal. JSON.stringify does
+// the JS-level escaping, escapeHtml then protects the attribute delimiter.
+function jsAttr(v) {
+    return escapeHtml(JSON.stringify(String(v)));
 }
 
 function numOrString(v) {
@@ -1663,14 +2484,6 @@ function formatCount(n) {
     return String(n);
 }
 
-function formatDuration(ms) {
-    if (!ms || ms <= 0) return "—";
-    const s = ms / 1000;
-    if (s < 60) return s.toFixed(1) + " s";
-    if (s < 3600) return Math.floor(s / 60) + "m " + Math.round(s % 60) + "s";
-    if (s < 86400) return Math.floor(s / 3600) + "h " + Math.round((s % 3600) / 60) + "m";
-    return (s / 86400).toFixed(1) + " days";
-}
 
 function formatCell(v) {
     if (v === null || v === undefined) return "—";
@@ -1690,6 +2503,24 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("range-from").addEventListener("change", refreshAnalytics);
     document.getElementById("range-to").addEventListener("change", refreshAnalytics);
 
+    // Enter runs the query bar; blurring it without Enter does not, so a
+    // half-typed clause never fires eight requests on its own.
+    const qbar = document.getElementById("query-bar");
+    if (qbar) {
+        qbar.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") { e.preventDefault(); applyQueryBar(); }
+        });
+    }
+    const dslBox = document.getElementById("query-dsl");
+    if (dslBox) {
+        dslBox.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                applyDsl();
+            }
+        });
+    }
+
     const hamburger = document.getElementById("hamburger-btn");
     if (hamburger) hamburger.addEventListener("click", toggleSideMenu);
 
@@ -1706,6 +2537,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key !== "Escape") return;
         closeFilterEditor();
         closePanelBuilder();
+        closeQueryPreview();
         closeSideMenu();
     });
 });

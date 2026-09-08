@@ -1,0 +1,52 @@
+{% macro freemove_params(arm) %}
+<details class="fm-params">
+    <summary>⚙️ Planning settings</summary>
+
+    <label class="fm-param-row">
+        <span>Velocity scale</span>
+        <input type="number" class="fm-param-input" id="fm-vel-{{ arm }}"
+               data-arm="{{ arm }}" data-key="max_velocity"
+               min="0.01" max="1" step="0.01" value="0.2">
+    </label>
+    <label class="fm-param-row">
+        <span>Acceleration scale</span>
+        <input type="number" class="fm-param-input" id="fm-acc-{{ arm }}"
+               data-arm="{{ arm }}" data-key="max_acceleration"
+               min="0.01" max="1" step="0.01" value="0.2">
+    </label>
+    <label class="fm-param-row">
+        <span>Planning attempts</span>
+        <input type="number" class="fm-param-input" id="fm-attempts-{{ arm }}"
+               data-arm="{{ arm }}" data-key="num_planning_attempts"
+               min="1" max="50" step="1" value="10">
+    </label>
+    <label class="fm-param-row">
+        <span>Planning time (s)</span>
+        <input type="number" class="fm-param-input" id="fm-time-{{ arm }}"
+               data-arm="{{ arm }}" data-key="allowed_planning_time"
+               min="0.1" max="30" step="0.1" value="5">
+    </label>
+    <label class="fm-param-row">
+        <span>Planner ID</span>
+        <select class="fm-param-input fm-param-select" id="fm-planner-{{ arm }}"
+                data-arm="{{ arm }}" data-key="planner_id">
+            <option value="">Auto (RRTConnect)</option>
+        </select>
+    </label>
+    <button type="button" class="fm-btn secondary fm-apply-settings-btn" data-arm="{{ arm }}">
+        Apply settings
+    </button>
+
+    <label class="fm-param-row fm-param-padding">
+        <span>Collision padding (m)</span>
+        <input type="number" class="fm-param-input" id="fm-padding-{{ arm }}"
+               data-arm="{{ arm }}" min="0" max="0.2" step="0.01" value="0.04">
+    </label>
+    <button type="button" class="fm-btn secondary fm-apply-padding-btn" data-arm="{{ arm }}">
+        Apply padding
+    </button>
+    <p class="fm-param-hint">Padding is added to every collision link of this arm via
+        the live planning scene (GetPlanningScene/ApplyPlanningScene) — it does not
+        persist across a Free Move restart.</p>
+</details>
+{% endmacro %}

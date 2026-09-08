@@ -35,6 +35,23 @@ KAWASAKI_JOINT_NAMES = [
 
 
 class KawasakiInspectionNode(InspectionNodeBase):
+    # The nearest-branch IK search needs both of these on the Kawasaki, and neither on
+    # the UR (see InspectionNodeBase for the parameters they are the defaults of; both
+    # arms share ONE launch parameter dict, so the per-arm distinction lives here).
+    #
+    # The Kawasaki solves with KDL, a LOCAL solver: the two or three seeds that used to
+    # be offered all sat on the planned goal, so every one of them converged straight
+    # back to it and the executor logged "1 distinct branch(es)" at every viewpoint.
+    # Random arm seeds are what a global solver would do internally; a /compute_ik probe
+    # with 24 random seeds returned 16-20 distinct solutions for the same poses.
+    DEFAULT_IK_RANDOM_SEEDS = 12
+    # ...and those solutions were then thrown away, because the 7-DOF "real_kawasaki"
+    # group lets KDL drift world_to_agv: only 1 of 19 solutions for kawa_vp_005 (3 of 16
+    # for kawa_vp_002) kept the rail where the plan put it, and branch_max_rail_shift is
+    # 0.0. "real_kawasaki_arm" is the same chain from base_link, whose parent joint
+    # (base_mount) is FIXED -- so the rail is not in the group and cannot drift.
+    DEFAULT_BRANCH_IK_GROUP = "real_kawasaki_arm"
+
     def __init__(self):
         super().__init__("kawasaki_inspection_node", robot_tag="kawasaki")
 
@@ -118,6 +135,7 @@ class KawasakiInspectionNode(InspectionNodeBase):
         self.moveit.max_acceleration = self.get_parameter("kawasaki_acceleration").value
         self.moveit.allowed_planning_time = self.get_parameter("allowed_planning_time").value
         self.moveit.num_planning_attempts = self.get_parameter("num_planning_attempts").value
+        self.moveit.planner_id = self.get_parameter("planner_id").value
         self.ctrl = ActionClient(
             self, FollowJointTrajectory,
             self.get_parameter("kawasaki_controller_action").value, callback_group=self._cb)

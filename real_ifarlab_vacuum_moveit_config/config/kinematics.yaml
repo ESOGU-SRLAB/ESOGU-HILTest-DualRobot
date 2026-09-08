@@ -2,6 +2,17 @@ real_kawasaki:
   kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
   kinematics_solver_search_resolution: 0.0050000000000000001
   kinematics_solver_timeout: 0.0050000000000000001
+real_kawasaki_arm:
+  # The rail-free Kawasaki chain (see whole_cell_hw.srdf). Used ONLY by the inspection
+  # executor's nearest-branch IK search, never for planning. KDL like real_kawasaki, so
+  # the branch search keeps solving with the solver the /compute_ik probe was measured
+  # on. The timeout is the LONGER 0.05 s on purpose: KDL is an iterative Newton solver
+  # that re-seeds randomly on failure, and this group is queried with a dozen random
+  # arm seeds per viewpoint -- every extra restart it can fit in is another candidate
+  # branch. A miss here costs nothing but one candidate; it never fails a viewpoint.
+  kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
+  kinematics_solver_search_resolution: 0.0050000000000000001
+  kinematics_solver_timeout: 0.05
 real_ur10e:
   kinematics_solver: pick_ik/PickIkPlugin
   kinematics_solver_timeout: 0.05

@@ -8,7 +8,7 @@ import rclpy
 import json
 import time
 import threading
-from queue import Queue, Empty
+from queue import Queue, Empty, Full
 from kafka import KafkaProducer, KafkaConsumer
 from std_msgs.msg import String
 from control_msgs.msg import DynamicJointState
@@ -42,6 +42,17 @@ USE_CASE_TOPIC = "/testbed/use_case"
 USE_CASE_IDLE = "IDLE"
 USE_CASE_FIELD = "use_case"
 
+# The run id identifies ONE EXECUTION of a scenario, where the use case only
+# names the scenario. It arrives on its own latched topic, so this bridge can
+# adopt it without the /testbed/use_case payload changing shape for anyone else
+# still reading that topic as a bare string.
+#
+# Empty means "no run in progress" and is left off the document entirely rather
+# than stored as "": a missing field aggregates cleanly as missing, whereas an
+# empty string becomes a real term that shows up in every run listing.
+RUN_ID_TOPIC = "/testbed/run_id"
+RUN_ID_FIELD = "run_id"
+
 latched_qos = QoSProfile(depth=1)
 latched_qos.durability = QoSDurabilityPolicy.TRANSIENT_LOCAL
 latched_qos.reliability = QoSReliabilityPolicy.RELIABLE
@@ -56,12 +67,34 @@ class double_ros2_kafka_bridge:
         # Active use case (latched) — stamped onto every outgoing document
         # ------------------------------------------------------------
         self.use_case = USE_CASE_IDLE
+        self.run_id = ""
+
+        # Dropped-message accounting for safe_publish(). Losing data silently is
+        # how the 89% loss went unnoticed; these make it a visible rate.
+        self.dropped_total = 0
+        self.dropped_at_last_log = 0
+        self.last_drop_log = 0.0
+
+        # Health-report counters, drained once a minute by start_health_reporter().
+        # Written from the worker thread and read from the reporter thread without
+        # a lock on purpose: a lock on this path would cost more than the numbers
+        # are worth, and a stats line that is off by a message or two is still
+        # telling the truth about whether the bridge is keeping up.
+        self.sent_counts = {}
+        self.sent_total = 0
+        self.lat_sum = 0.0
+        self.lat_max = 0.0
+        self.send_errors = 0
+        self.errors_at_last_log = 0
+        self.last_send_error = ""
         self.node.create_subscription(String, USE_CASE_TOPIC, self.use_case_callback, latched_qos)
+        self.node.create_subscription(String, RUN_ID_TOPIC, self.run_id_callback, latched_qos)
 
         # ------------------------------------------------------------
         # ROS → Kafka Subscriptions
         # ------------------------------------------------------------
         self.node.create_subscription(DynamicJointState, '/dynamic_joint_states', self.joint_states_callback, qos)
+        self.node.create_subscription(DynamicJointState, '/kawasaki/dynamic_joint_states', self.kawasaki_joint_states_callback, qos)
         self.node.create_subscription(Image, '/sim/image', self.sim_image_callback, qos)
         self.node.create_subscription(PointCloud2, '/sim/pointcloud', self.sim_point_cloud_callback, qos)
         self.node.create_subscription(JointState, '/sim/joint_states', self.sim_joint_states_callback, qos)
@@ -77,14 +110,42 @@ class double_ros2_kafka_bridge:
         # Kafka Producer Setup (Real-time optimized)
         # ------------------------------------------------------------s
         self.kafka_queue = Queue(maxsize=100000)
+        # MEASURED 4 Sep 2026 on the live cell: with the previous settings
+        # (linger_ms=0, batch_size=4096, max_in_flight=1) the bridge delivered
+        # 53 Hz out of a 500 Hz source — 175 of 178 sampled seconds were
+        # completely silent, then a 7000 msg/s burst. ~89% of the cell's data
+        # never reached Kafka. The numbers below are chosen against the real
+        # message sizes, so batching can actually happen:
+        #
+        #   batch_size    a dynamic_joint_states message measures 3.59 KB, so
+        #                 the old 4096 fit ONE message per batch — every record
+        #                 became its own request. 128 KB holds ~35 of them.
+        #   linger_ms     0 meant "never wait", which defeats batching outright.
+        #                 5 ms costs nothing perceptible at 500 Hz and lets a
+        #                 batch actually fill.
+        #   max_in_flight 1 forced strict serialisation: one stalled request
+        #                 stopped the whole bridge. 5 is the library default.
+        #   compression   joint-state JSON is highly repetitive; lz4 is cheap
+        #                 enough to run on the producer thread.
         self.producer = KafkaProducer(
             bootstrap_servers='localhost:9092',
             client_id='ros2_kafka_bridge_realtime',
-            acks=0,                      # no wait for broker ack
-            linger_ms=0,                 # send immediately
-            batch_size=4096,             # small batch size (~4KB)
-            buffer_memory=33554432,      # 32MB buffer
-            max_in_flight_requests_per_connection=1,
+            # acks=1, NOT 0. MEASURED 4 Sep 2026 against this cell's broker
+            # (Kafka 4.0 KRaft + kafka-python 2.2.3): with acks=0 the producer
+            # accepts every record and delivers NONE of them — 0 of 1500 landed,
+            # four runs in a row, with and without compression, while acks=1
+            # landed 1500 of 1500 every time. Because acks=0 asks for no broker
+            # response, nothing raises and no counter notices: send() returns
+            # happily and the data is simply gone. That is what produced months
+            # of "the bridge is publishing but Elasticsearch is empty".
+            # Do not set this back to 0 to chase throughput; acks=1 measured
+            # FASTER here (0.25 s vs 0.36 s for the same 2000 records).
+            acks=1,
+            linger_ms=5,                 # let a batch fill before sending
+            batch_size=131072,           # 128KB — ~35 joint-state messages
+            buffer_memory=67108864,      # 64MB buffer
+            max_in_flight_requests_per_connection=5,
+            compression_type='lz4',
             value_serializer=lambda m: json.dumps(m).encode('utf-8')
         )
 
@@ -93,9 +154,10 @@ class double_ros2_kafka_bridge:
         else:
             self.node.get_logger().warn("⚠️ Kafka producer not connected! Check localhost:9092")
 
-        # Start worker and auto flusher
+        # Start worker, auto flusher and the once-a-minute health report
         self.start_kafka_worker()
         self.start_kafka_auto_flusher()
+        self.start_health_reporter()
 
         # ------------------------------------------------------------
         # Kafka → ROS Setup (optional)
@@ -121,18 +183,35 @@ class double_ros2_kafka_bridge:
     # ------------------------------------------------------------
     def start_kafka_worker(self):
         def worker():
-            send_count = 0
+            # NO flush() here. py-spy caught this thread parked in
+            # producer.flush() -> await_flush_completion(): at ~2500 msg/s the
+            # old "flush every 10 messages" put a full-buffer barrier in the
+            # path 250 times a second and was the direct cause of the 49-126
+            # second stalls. start_kafka_auto_flusher() already flushes every
+            # 0.5 s, which is what bounds latency when the cell goes quiet.
             while True:
                 try:
-                    topic, data = self.kafka_queue.get(timeout=1)
-                    self.producer.send(topic, data)
-                    send_count += 1
-                    if send_count % 10 == 0:
-                        self.producer.flush()  # frequent flush for near real-time
+                    topic, data, t_enq = self.kafka_queue.get(timeout=1)
+                    # add_errback takes a bound method, not a lambda: this runs
+                    # ~2500 times a second and a fresh closure per message would
+                    # be pure garbage. Counting FAILED deliveries is what makes
+                    # the minute report honest — the counter below still counts
+                    # sends, and a send is only a handoff to the producer.
+                    self.producer.send(topic, data).add_errback(self._on_send_error)
+                    # How long this message sat in the queue. This is THE
+                    # real-time number: near zero means the bridge is keeping
+                    # up, a growing value means Kafka is not draining as fast
+                    # as the cell produces.
+                    lat = time.monotonic() - t_enq
+                    self.sent_counts[topic] = self.sent_counts.get(topic, 0) + 1
+                    self.sent_total += 1
+                    self.lat_sum += lat
+                    if lat > self.lat_max:
+                        self.lat_max = lat
                 except Empty:
                     continue
                 except Exception as e:
-                    print(f"[Kafka Worker Error] {e}")
+                    self.node.get_logger().error(f"Kafka worker hatasi: {e}")
         threading.Thread(target=worker, daemon=True).start()
 
     def start_kafka_auto_flusher(self):
@@ -143,8 +222,89 @@ class double_ros2_kafka_bridge:
                 try:
                     self.producer.flush()
                 except Exception as e:
-                    print(f"[Kafka Flusher Error] {e}")
+                    self.node.get_logger().error(f"Kafka flusher hatasi: {e}")
         threading.Thread(target=flusher, daemon=True).start()
+
+    def _on_send_error(self, exc):
+        """Delivery failed at the broker. Counted, never logged from here —
+        this runs on the producer's network thread, once per failed record."""
+        self.send_errors += 1
+        self.last_send_error = repr(exc)[:160]
+
+    # ------------------------------------------------------------
+    # Health Reporter Thread: one line per minute, nothing per message
+    # ------------------------------------------------------------
+    def start_health_reporter(self, period=60.0):
+        """Report once a minute whether the bridge is actually keeping up.
+
+        Replaces the 16 per-message prints this file used to make. Those made the
+        launch terminal unreadable and, worse, hid the real failure: on 4 Sep 2026
+        the bridge was silently dropping ~89% of the cell's data behind a wall of
+        "Published [...]" lines.
+
+        The four numbers that matter, in order of how quickly they tell you
+        something is wrong:
+
+          dusen     messages that never made it into the queue at all. Anything
+                    above zero is data loss, and the line becomes a WARNING.
+          bekleme   how long a message waited in the queue before being handed to
+                    Kafka. This is the "is it real time?" number — single-digit
+                    milliseconds is healthy, a climbing peak means Kafka is not
+                    draining fast enough.
+          kuyruk    queue depth at the instant of the report. Steady near zero is
+                    healthy; steadily rising means the same thing as above.
+          Hz        per-topic throughput, so a single dead subscription is
+                    obvious next to the ones that are still flowing.
+
+        A window with no traffic at all logs its own explicit line: silence used
+        to be indistinguishable from a wedged bridge.
+        """
+        def reporter():
+            while True:
+                time.sleep(period)
+
+                # Snapshot and reset. Reading then zeroing can lose the handful of
+                # messages the worker writes in between; that is acceptable for a
+                # stats line and keeps this off the hot path.
+                counts, self.sent_counts = self.sent_counts, {}
+                total, self.sent_total = self.sent_total, 0
+                lat_sum, self.lat_sum = self.lat_sum, 0.0
+                lat_max, self.lat_max = self.lat_max, 0.0
+                dropped = self.dropped_total - self.dropped_at_last_log
+                self.dropped_at_last_log = self.dropped_total
+                failed = self.send_errors - self.errors_at_last_log
+                self.errors_at_last_log = self.send_errors
+
+                depth = self.kafka_queue.qsize()
+                log = self.node.get_logger()
+
+                if total == 0 and dropped == 0:
+                    log.warn(
+                        f"📊 {period:.0f} sn: Kafka'ya HIC mesaj gitmedi "
+                        f"(kuyruk {depth}, use_case={self.use_case}). "
+                        f"Hucre bosta degilse kopru tikanmis demektir.")
+                    continue
+
+                avg_ms = (lat_sum / total * 1000.0) if total else 0.0
+                head = (f"📊 {period:.0f} sn: {total} mesaj ({total / period:.0f} Hz) | "
+                        f"kuyruk {depth} | bekleme ort {avg_ms:.1f} ms / tepe "
+                        f"{lat_max * 1000.0:.0f} ms | dusen {dropped} | "
+                        f"teslim edilemeyen {failed}")
+                detail = "   " + " · ".join(
+                    f"{t.replace('_topic', '')} {c / period:.0f} Hz"
+                    for t, c in sorted(counts.items(), key=lambda kv: -kv[1]))
+
+                if dropped or failed:
+                    note = f"  ⚠️ VERI KAYBI (kuyruk {self.dropped_total}, "
+                    note += f"teslim {self.send_errors}"
+                    if self.last_send_error:
+                        note += f": {self.last_send_error}"
+                    log.warn(head + note + ")")
+                    log.warn(detail)
+                else:
+                    log.info(head)
+                    log.info(detail)
+        threading.Thread(target=reporter, daemon=True).start()
 
     def use_case_callback(self, msg):
         """Adopt the use case the dashboard is broadcasting."""
@@ -153,19 +313,33 @@ class double_ros2_kafka_bridge:
             self.use_case = name
             self.node.get_logger().info(f"🏷️  USE_CASE = {name}")
 
+    def run_id_callback(self, msg):
+        """Adopt the run id the dashboard is broadcasting."""
+        run_id = (msg.data or "").strip()
+        if run_id != self.run_id:
+            self.run_id = run_id
+            self.node.get_logger().info(f"🔖 RUN_ID = {run_id or '-'}")
+
     def safe_publish(self, topic, data):
         """Non-blocking enqueue to Kafka.
 
-        The use-case stamp is applied HERE rather than in each callback: this is
-        the single choke point every topic passes through, so one line tags
-        joint states, TCP poses, wrenches, controller state and images alike.
-        The dicts are built fresh in each callback, so mutating is safe.
+        The use-case and run-id stamps are applied HERE rather than in each
+        callback: this is the single choke point every topic passes through, so
+        two lines tag joint states, TCP poses, wrenches, controller state and
+        images alike. The dicts are built fresh in each callback, so mutating is
+        safe.
         """
         data[USE_CASE_FIELD] = self.use_case
+        if self.run_id:
+            data[RUN_ID_FIELD] = self.run_id
         try:
-            self.kafka_queue.put_nowait((topic, data))
-        except:
-            print(f"⚠️ Kafka queue full, dropping message for {topic}")
+            self.kafka_queue.put_nowait((topic, data, time.monotonic()))
+        except Full:
+            # Counted only — never logged from here. When the queue backs up this
+            # path runs ~2500 times a second, so any logging in it would both burn
+            # a core and flood the terminal. The minute report turns the count into
+            # a rate and raises itself to a warning when it is non-zero.
+            self.dropped_total += 1
 
     # ------------------------------------------------------------
     # Kafka → ROS Reader
@@ -175,7 +349,6 @@ class double_ros2_kafka_bridge:
             msg = String()
             msg.data = message.value.get("data", "")
             publisher.publish(msg)
-            print(f"⬅️ Kafka → ROS [{message.topic}]")
 
     # ------------------------------------------------------------
     # ROS → Kafka Callbacks
@@ -191,7 +364,34 @@ class double_ros2_kafka_bridge:
         data["header.stamp.sec"] = msg.header.stamp.sec
         data["header.stamp.nanosec"] = msg.header.stamp.nanosec
         self.safe_publish('dynamic_joint_states_topic', data)
-        print(f"🤖 Published [dynamic_joint_states_topic] ({len(data)} joints)")
+
+    def kawasaki_joint_states_callback(self, msg):
+        """Kawasaki + AGV gercek eklem durumlari.
+
+        NEDEN AYRI BIR TOPIC: /joint_states bu hucrede UR10e eklemlerini
+        tasiyor (ur10e_*), Kawasaki'ninkiler yalnizca /kawasaki/dynamic_joint_states
+        uzerinde. Bu yuzden ros-kawasaki-joint-states 8 Haz 2026'dan beri bostu ve
+        arayuzdeki "Kawasaki — Joint Positions (Real)" paneli hicbir sey cizmiyordu:
+        veri hic toplanmiyordu (4 Eyl 2026'da tespit edildi).
+
+        Kafka topic'i de ayri tutuluyor. joint_states_topic'e karistirilsaydi
+        KafkatoElastic_KawaAGVJointStates.py'nin 'joint1' filtresi iki kaynagi
+        birbirine gecirirdi.
+
+        Mesaj joint1..joint6'nin yani sira world_to_agv ve tekerlekleri de
+        tasiyor; hepsi oldugu gibi aktariliyor - panel joint1..6'yi okuyor,
+        gerisi AGV tarafi icin hazir duruyor.
+        """
+        data = {
+            joint_name: {
+                iface_name: iface_value
+                for iface_name, iface_value in zip(joint_interfaces.interface_names, joint_interfaces.values)
+            }
+            for joint_name, joint_interfaces in zip(msg.joint_names, msg.interface_values)
+        }
+        data["header.stamp.sec"] = msg.header.stamp.sec
+        data["header.stamp.nanosec"] = msg.header.stamp.nanosec
+        self.safe_publish('kawasaki_dynamic_joint_states_topic', data)
 
     def sim_joint_states_callback(self, msg):
         # Gerçek ROS2 timestamp'i al
@@ -214,7 +414,6 @@ class double_ros2_kafka_bridge:
         data["header.stamp.nanosec"] = current_time.seconds_nanoseconds()[1]
         
         self.safe_publish('sim_joint_states_topic', data)
-        print("🦾 Published [sim_joint_states_topic]")
 
     def joint_states_real_callback(self, msg):
         current_time = self.node.get_clock().now()
@@ -233,7 +432,6 @@ class double_ros2_kafka_bridge:
         data["ros_time.nanosec"] = current_time.seconds_nanoseconds()[1]
 
         self.safe_publish('joint_states_topic', data)
-        print("🦿 Published [joint_states_topic]")
 
     def sim_image_callback(self, msg):
         import base64
@@ -243,7 +441,6 @@ class double_ros2_kafka_bridge:
         current_time = self.node.get_clock().now()
         
         # Debug: encoding tipini kontrol et
-        print(f"🔍 DEBUG: Image encoding = {msg.encoding}, size = {len(msg.data)}, width={msg.width}, height={msg.height}")
         
         try:
             # Encoding tipine göre işlem yap
@@ -307,8 +504,6 @@ class double_ros2_kafka_bridge:
                 }
                 
                 self.safe_publish('sim_image_topic', data)
-                print(f"📷 Published [sim_image_topic] - {msg.width}x{msg.height} " +
-                      f"(compressed: {len(encoded_img)//1024}KB, ratio: {data['compression_ratio']}x)")
             else:
                 raise Exception("JPEG encoding failed")
             
@@ -316,7 +511,6 @@ class double_ros2_kafka_bridge:
             import traceback
             error_details = traceback.format_exc()
             self.node.get_logger().error(f"Image processing error: {e}\n{error_details}")
-            print(f"❌ ERROR Details:\n{error_details}")
             
             # Hata durumunda sadece metadata gönder
             data = {
@@ -337,7 +531,6 @@ class double_ros2_kafka_bridge:
                 "error_details": error_details
             }
             self.safe_publish('sim_image_topic', data)
-            print(f"📷 Published [sim_image_topic] - METADATA ONLY (error: {e})")
 
     def sim_point_cloud_callback(self, msg):
         current_time = self.node.get_clock().now()
@@ -357,7 +550,6 @@ class double_ros2_kafka_bridge:
             "total_points": msg.height * msg.width
         }
         self.safe_publish('sim_point_cloud_topic', data)
-        print("☁️ Published [sim_point_cloud_topic]")
 
     def monitored_planning_scene_callback(self, msg):
         data = {
@@ -368,12 +560,10 @@ class double_ros2_kafka_bridge:
                        "nanosec": msg.robot_state.joint_state.header.stamp.nanosec}
         }
         self.safe_publish('monitored_planning_scene_topic', data)
-        print("🗺️ Published [monitored_planning_scene_topic]")
 
     def interactive_marker_update_callback(self, msg):
         data = {"server_id": msg.server_id, "seq_num": msg.seq_num, "type": msg.type}
         self.safe_publish('interactive_marker_update_topic', data)
-        print("🎮 Published [interactive_marker_update_topic]")
 
     def tool_data_callback(self, msg):
         data = {
@@ -383,7 +573,6 @@ class double_ros2_kafka_bridge:
             "tool_mode": msg.tool_mode
         }
         self.safe_publish('tool_data_topic', data)
-        print("🔧 Published [tool_data_topic]")
 
     def force_torque_callback(self, msg):
         data = {
@@ -392,7 +581,6 @@ class double_ros2_kafka_bridge:
             "header": {"sec": msg.header.stamp.sec, "nanosec": msg.header.stamp.nanosec}
         }
         self.safe_publish('force_torque_sensor_topic', data)
-        print("🔩 Published [force_torque_sensor_topic]")
 
     def tcp_pose_callback(self, msg):
         data = {
@@ -412,7 +600,6 @@ class double_ros2_kafka_bridge:
             "header": {"sec": msg.header.stamp.sec, "nanosec": msg.header.stamp.nanosec}
         }
         self.safe_publish('tcp_pose_topic', data)
-        print("📍 Published [tcp_pose_topic]")
     
     def serialize_trajectory_point(self, traj_point):
         """JointTrajectoryPoint nesnesini dict'e çevirir"""
@@ -456,7 +643,6 @@ class double_ros2_kafka_bridge:
         }
         
         self.safe_publish('controller_state_topic', data)
-        print("🎛️ Published [controller_state_topic]")
 
 
 # ------------------------------------------------------------

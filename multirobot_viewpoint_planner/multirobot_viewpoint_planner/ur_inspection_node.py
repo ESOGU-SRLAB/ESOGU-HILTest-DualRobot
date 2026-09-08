@@ -114,6 +114,7 @@ class URInspectionNode(InspectionNodeBase):
         self.moveit.max_acceleration = self.get_parameter("ur_acceleration").value
         self.moveit.allowed_planning_time = self.get_parameter("allowed_planning_time").value
         self.moveit.num_planning_attempts = self.get_parameter("num_planning_attempts").value
+        self.moveit.planner_id = self.get_parameter("planner_id").value
         # UR executes via MoveIt's execute_trajectory action (move_group) -- the proven
         # robot.execute() path. move_group's execution manager routes the full rail+arm
         # trajectory to the scaled_joint_trajectory_controller the way the 110-loop system

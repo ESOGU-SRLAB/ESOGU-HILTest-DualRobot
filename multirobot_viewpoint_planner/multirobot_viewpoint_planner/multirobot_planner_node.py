@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import time
 import traceback
 
@@ -11,6 +12,11 @@ from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from scipy.spatial.transform import Rotation
 from sensor_msgs.msg import JointState
+from geometry_msgs.msg import Pose
+from shape_msgs.msg import SolidPrimitive
+from moveit_msgs.msg import (CollisionObject, LinkPadding, PlanningScene,
+                             PlanningSceneComponents)
+from moveit_msgs.srv import ApplyPlanningScene, GetPlanningScene
 
 # Reuse the single-arm viewpoint_planner core verbatim (this package depends on
 # it). Only the ALLOCATION across the two arms is new -- everything up to and
@@ -23,6 +29,84 @@ from viewpoint_planner.joint_wrap import (describe_changes, parse_joint_limits,
                                           wrap_to_reference)
 
 from multirobot_viewpoint_planner.robot_allocator import RobotAllocator
+
+
+class IkSceneBuilder(Node):
+    """Puts move_group's planning scene into the state the EXECUTORS build at run time
+    -- floor box plus per-link collision padding -- BEFORE any /compute_ik runs here.
+
+    Reachability is verified with `ik_avoid_collisions`, i.e. against whatever scene
+    move_group happens to hold. The executors add a ground plane and pad their moving
+    links (inspection_base._add_ground_plane / _apply_collision_padding); this node did
+    not, so the generator was checking a bare scene and the executor a padded one with a
+    floor. Measured on the 2026-09-07 and 2026-09-08 chassis plans: one UR viewpoint per
+    run (ur_vp_020 at z=0.278, ur_vp_018 at z=0.256) had NO collision-free IK branch at
+    execution time -- 40 seeded /compute_ik queries all returned NO_IK_SOLUTION -- while
+    every branch put forearm/wrist_1/wrist_2 inside the floor. Both were still written
+    into the plan and their coverage counted in `coverage_achieved`.
+
+    Padding is applied to BOTH arms' link sets at once, which is exactly what a
+    cooperative run produces: the two executors pad the same shared scene.
+
+    It is a node of its own, like ReachabilityChecker, so its synchronous service calls
+    spin on their own executor instead of deadlocking the planner's service callback.
+    """
+
+    def __init__(self):
+        super().__init__('ik_scene_builder')
+        self.apply_cli = self.create_client(ApplyPlanningScene, '/apply_planning_scene')
+        self.get_cli = self.create_client(GetPlanningScene, '/get_planning_scene')
+
+    def _call(self, cli, req, timeout=10.0):
+        future = cli.call_async(req)
+        rclpy.spin_until_future_complete(self, future, timeout_sec=timeout)
+        return future.result()
+
+    def wait_for_services(self, timeout_sec=10.0):
+        return (self.apply_cli.wait_for_service(timeout_sec=timeout_sec)
+                and self.get_cli.wait_for_service(timeout_sec=timeout_sec))
+
+    def add_ground_plane(self, top_z, size, thickness, frame_id='world'):
+        """Same box the executors add: centred on the world origin, TOP face at top_z."""
+        box = SolidPrimitive()
+        box.type = SolidPrimitive.BOX
+        box.dimensions = [float(size), float(size), float(thickness)]
+        pose = Pose()
+        pose.position.z = float(top_z) - float(thickness) / 2.0
+        pose.orientation.w = 1.0
+
+        obj = CollisionObject()
+        obj.id = 'ground_plane'
+        obj.header.frame_id = frame_id
+        obj.operation = CollisionObject.ADD
+        obj.primitives = [box]
+        obj.primitive_poses = [pose]
+
+        scene = PlanningScene()
+        scene.is_diff = True
+        scene.world.collision_objects = [obj]
+        result = self._call(self.apply_cli, ApplyPlanningScene.Request(scene=scene))
+        return bool(result and result.success)
+
+    def apply_padding(self, padding, patterns):
+        """Pad every scene link matching one of `patterns` (regexes). Returns the number
+        of links padded, or -1 if the scene could not be read."""
+        req = GetPlanningScene.Request()
+        req.components.components = PlanningSceneComponents.ALLOWED_COLLISION_MATRIX
+        result = self._call(self.get_cli, req)
+        if result is None:
+            return -1
+        rxs = [re.compile(x) for x in patterns]
+        links = [n for n in result.scene.allowed_collision_matrix.entry_names
+                 if any(rx.search(n) for rx in rxs)]
+        if not links:
+            return 0
+        scene = PlanningScene()
+        scene.is_diff = True
+        scene.link_padding = [LinkPadding(link_name=n, padding=float(padding))
+                              for n in links]
+        applied = self._call(self.apply_cli, ApplyPlanningScene.Request(scene=scene))
+        return len(links) if (applied and applied.success) else -1
 
 
 class MultiRobotPlannerNode(Node):
@@ -98,6 +182,22 @@ class MultiRobotPlannerNode(Node):
         #     reach without hitting the floor. Raise if the arm still grazes the floor;
         #     lower toward 0 if it wrongly drops legitimate low chassis viewpoints.
         # Set enabled False to disable. Same box the solo viewpoint_planner uses.
+        # --- IK verification scene -------------------------------------------
+        # The executors add these to move_group's scene before they plan
+        # (inspection_base._add_ground_plane / _apply_collision_padding). The
+        # reachability sweep below must see the SAME scene, or it approves camera
+        # poses whose only IK branches put an arm inside the floor -- keep these
+        # values equal to the launch arguments the run will actually use.
+        self.declare_parameter('ik_scene_setup', True)
+        self.declare_parameter('ground_plane_z', -0.02)
+        self.declare_parameter('ground_plane_size', 6.0)
+        self.declare_parameter('ground_plane_thickness', 0.2)
+        self.declare_parameter('collision_padding', 0.04)
+        # Regexes for the links the executors pad: the UR node pads every 'ur10e_*'
+        # link, the Kawasaki node pads link1..link6. Both sets are applied here
+        # because a cooperative run ends up with both applied to the one scene.
+        self.declare_parameter('ik_padding_link_patterns', ['^ur10e_', '^link[1-6]$'])
+
         self.declare_parameter('ur_workspace_filter_enabled', True)
         self.declare_parameter('ur_workspace_bounds_min', [-100.0, -100.0, 0.20])
         self.declare_parameter('ur_workspace_bounds_max', [-0.20, 100.0, 100.0])
@@ -150,6 +250,18 @@ class MultiRobotPlannerNode(Node):
         # Options: 'max_y' | 'min_y' | 'coverage' (start at the highest-coverage VP).
         self.declare_parameter('ur_order_anchor', 'max_y')
         self.declare_parameter('kawasaki_order_anchor', 'min_y')
+        # HOW the tour is built once the anchor is chosen:
+        #   'y_bands'   -> monotone sweep: finish one Y band, then the next, never
+        #                  come back. Ordering inside a band is still shortest-path.
+        #   'proximity' -> plain shortest 3D path (the original behaviour), which is
+        #                  free to walk back up the chassis whenever that is cheaper.
+        self.declare_parameter('order_mode', 'y_bands')
+        # Depth in metres of one Y band. 0 degenerates into a strict sort by Y;
+        # larger than the chassis degenerates into 'proximity'. Measured on the
+        # 2026-09-07/08 UR tours: 0.30 keeps the worst backward step at 0.22 m
+        # (against 0.76 m for 'proximity') for +13% path length; going tighter
+        # buys almost no monotonicity and costs another 15%.
+        self.declare_parameter('order_band_width_m', 0.30)
 
         # 2*pi UNWINDING of the stored IK solutions. IK returns one arbitrary branch of
         # a solution family, so the tour can store e.g. +100 deg at one stop and -260 deg
@@ -320,6 +432,64 @@ class MultiRobotPlannerNode(Node):
         return lambda p: bool(np.all(np.asarray(p, dtype=float) >= lo)
                               and np.all(np.asarray(p, dtype=float) <= hi))
 
+    def _prepare_ik_scene(self):
+        """Recreate the executors' planning scene so reachability is verified against
+        the scene the arms will actually plan in. Returns a dict describing what was
+        applied; it is stamped into the plan file so a plan produced against a bare
+        scene can never be mistaken for a verified one."""
+        stamp = {'applied': False, 'reason': 'disabled'}
+        if not self.get_parameter('ik_scene_setup').value:
+            self.get_logger().warning(
+                "ik_scene_setup=False: reachability will be checked against move_group's "
+                "CURRENT scene. If the executors add a ground plane or padding, this plan "
+                "may contain viewpoints the arms cannot reach.")
+            return stamp
+
+        builder = IkSceneBuilder()
+        try:
+            if not builder.wait_for_services():
+                stamp['reason'] = 'apply_planning_scene/get_planning_scene unavailable'
+                self.get_logger().error(
+                    "Planning-scene services unavailable; the IK sweep will run against a "
+                    "BARE scene and may approve unreachable viewpoints.")
+                return stamp
+
+            top_z = float(self.get_parameter('ground_plane_z').value)
+            size = float(self.get_parameter('ground_plane_size').value)
+            thickness = float(self.get_parameter('ground_plane_thickness').value)
+            padding = float(self.get_parameter('collision_padding').value)
+            patterns = list(self.get_parameter('ik_padding_link_patterns').value)
+
+            if not builder.add_ground_plane(top_z, size, thickness):
+                stamp['reason'] = 'ground plane not applied'
+                self.get_logger().error(
+                    "Ground plane could not be added to the planning scene; the IK sweep "
+                    "will not see the floor.")
+                return stamp
+            time.sleep(0.3)
+
+            padded = builder.apply_padding(padding, patterns) if padding > 0.0 else 0
+            if padded < 0:
+                stamp['reason'] = 'padding not applied'
+                self.get_logger().error(
+                    "Collision padding could not be applied; the IK sweep sees the floor "
+                    "but not the arms' safety margin.")
+                return stamp
+            time.sleep(0.3)
+
+            stamp = {'applied': True, 'ground_plane_z': top_z,
+                     'ground_plane_size': size, 'ground_plane_thickness': thickness,
+                     'collision_padding': padding, 'padded_links': padded,
+                     'padding_link_patterns': patterns}
+            self.get_logger().info(
+                f"IK verification scene ready: floor top face at z={top_z:.3f} "
+                f"({size}x{size}x{thickness} m box), {padding * 100:.1f} cm padding on "
+                f"{padded} link(s) matching {patterns}. Reachability now matches what the "
+                "executors will plan against.")
+            return stamp
+        finally:
+            builder.destroy_node()
+
     def _make_reachability_fn(self, checker, label, workspace_gate=None):
         """candidate -> (reachable, joint_solution) for one arm. Returns None
         (arm treated as able to reach everything, UNVERIFIED) if /compute_ik never
@@ -378,6 +548,8 @@ class MultiRobotPlannerNode(Node):
 
             # 3. Build a reachability function per arm. The Kawasaki solves IK for
             #    its own camera optical frame, same as the UR.
+            #    The scene goes up FIRST: every check_ik below is answered against it.
+            ik_scene = self._prepare_ik_scene()
             avoid_collisions = self.get_parameter('ik_avoid_collisions').value
             if not avoid_collisions:
                 self.get_logger().warning(
@@ -473,12 +645,20 @@ class MultiRobotPlannerNode(Node):
             if self.get_parameter('order_by_proximity').value:
                 ur_anchor = self.get_parameter('ur_order_anchor').value
                 kawa_anchor = self.get_parameter('kawasaki_order_anchor').value
-                ur_vps = self._order_by_proximity(ur_vps, anchor=ur_anchor)
-                kawa_vps = self._order_by_proximity(kawa_vps, anchor=kawa_anchor)
+                mode = str(self.get_parameter('order_mode').value)
+                width = float(self.get_parameter('order_band_width_m').value)
+                if mode == 'y_bands':
+                    ur_vps = self._order_by_y_bands(ur_vps, ur_anchor, width)
+                    kawa_vps = self._order_by_y_bands(kawa_vps, kawa_anchor, width)
+                else:
+                    ur_vps = self._order_by_proximity(ur_vps, anchor=ur_anchor)
+                    kawa_vps = self._order_by_proximity(kawa_vps, anchor=kawa_anchor)
+                how = (f"monotone Y sweep in {width:.2f} m bands (shortest path "
+                       "inside each band)" if mode == 'y_bands'
+                       else "shortest cartesian path (nearest-neighbour + 2-opt + Or-opt)")
                 self.get_logger().info(
-                    "Viewpoints reordered by cartesian proximity (nearest-neighbour "
-                    f"+ 2-opt + Or-opt). UR starts at '{ur_anchor}', Kawasaki at "
-                    f"'{kawa_anchor}' (opposite ends of the chassis).")
+                    f"Viewpoints reordered by {how}. UR starts at '{ur_anchor}', "
+                    f"Kawasaki at '{kawa_anchor}' (opposite ends of the chassis).")
 
             for i, vp in enumerate(ur_vps):
                 vp['id'] = f'ur_vp_{i:03d}'
@@ -504,6 +684,10 @@ class MultiRobotPlannerNode(Node):
                 "total_ur_viewpoints": len(ur_vps),
                 "total_kawasaki_viewpoints": len(kawa_vps),
                 "camera_config": self.camera_config,
+                # What the reachability sweep was verified against. applied=False means
+                # the viewpoints below were NOT checked against the executors' floor and
+                # padding, so some may be unreachable at execution time.
+                "ik_scene": ik_scene,
                 "ur_viewpoints": [self._vp_to_dict(vp) for vp in ur_vps],
                 "kawasaki_viewpoints": [self._vp_to_dict(vp) for vp in kawa_vps],
             }
@@ -785,19 +969,20 @@ class MultiRobotPlannerNode(Node):
 
     @staticmethod
     def _order_by_proximity(vps, anchor='coverage'):
-        """Reorder viewpoints into a short cartesian visiting path so the arm
-        sweeps neighbouring stops instead of criss-crossing the chassis. Only the
-        ORDER changes -- the exact same set of viewpoints is returned.
-
-        Nearest-neighbour tour from a chosen ANCHOR viewpoint, then 2-opt + Or-opt
-        refinement (which never move the anchor). Distance = Euclidean distance
-        between viewpoint positions (a proxy for arm travel). With <=30 stops per
-        arm this is effectively instant.
+        """Reorder viewpoints into the SHORTEST cartesian visiting path, ignoring
+        any sweep direction. Only the ORDER changes -- the exact same set of
+        viewpoints is returned.
 
         anchor selects the START viewpoint:
           'coverage' -> index 0 (the highest-coverage VP the greedy put first),
           'max_y'    -> the largest-Y viewpoint  (the FRONT of the chassis),
           'min_y'    -> the smallest-Y viewpoint (the BACK of the chassis).
+
+        Beware what this optimises: a pure shortest-path tour is free to walk back
+        up the chassis whenever that is cheaper in 3D, and it does -- on the
+        2026-09-08 chassis plan 9 of the UR's 20 hops moved AWAY from the sweep
+        direction, and after reaching the far end (y=-0.49) the tour climbed all
+        the way back to y=+1.25. Use 'y_bands' for a monotone sweep instead.
         """
         n = len(vps)
         if n <= 2:
@@ -812,6 +997,69 @@ class MultiRobotPlannerNode(Node):
             start = int(np.argmin(pos[:, 1]))
         else:
             start = 0  # 'coverage': greedy already put the best-coverage VP first
+
+        return [vps[t] for t in MultiRobotPlannerNode._short_path(dist, start)]
+
+    @staticmethod
+    def _order_by_y_bands(vps, anchor='max_y', band_width=0.30):
+        """Monotone sweep along Y: finish one Y band before moving to the next.
+
+        The arm starts at the anchor end of the chassis, visits every viewpoint whose
+        Y falls in the first `band_width` metres, then the next band, and so on --
+        it never returns to a band it has left. Inside a band the stops are ordered
+        by the same shortest-path routine as 'proximity', starting from whichever
+        viewpoint is closest to where the previous band ended, so the local motion
+        stays short while the global progress stays one-directional.
+
+        band_width is the whole trade-off: at 0 it degenerates into a strict sort by
+        Y (shortest possible sweep in Y, longest in X/Z), and at more than the
+        chassis length it degenerates into plain 'proximity'. It should be about the
+        depth of the region the camera covers from one Y position, so that stops
+        that genuinely belong together are still free to be ordered sensibly.
+
+        anchor gives the direction: 'max_y' sweeps front-to-back (descending Y),
+        'min_y' back-to-front. Any other value has no direction, so the caller
+        should use 'proximity' instead.
+        """
+        n = len(vps)
+        if n <= 2:
+            return list(vps)
+        pos = np.array([np.asarray(v['position'], dtype=np.float64) for v in vps])
+        y = pos[:, 1]
+        descending = (anchor != 'min_y')
+        width = max(float(band_width), 1e-6)
+        # Band 0 is always the band the sweep STARTS in, whichever way it runs.
+        edge = y.max() if descending else y.min()
+        band = np.floor((np.abs(y - edge)) / width).astype(int)
+
+        order, prev = [], None
+        for b in sorted(set(band.tolist())):
+            idx = [i for i in range(n) if band[i] == b]
+            if len(idx) == 1:
+                order.append(idx[0])
+                prev = pos[idx[0]]
+                continue
+            sub = pos[idx]
+            d = np.linalg.norm(sub[:, None, :] - sub[None, :, :], axis=2)
+            if prev is None:
+                # Very first stop: the extreme-Y viewpoint, so the sweep really does
+                # begin at the end of the chassis the anchor names.
+                start = int(np.argmax(sub[:, 1]) if descending else np.argmin(sub[:, 1]))
+            else:
+                start = int(np.argmin(np.linalg.norm(sub - prev, axis=1)))
+            tour = MultiRobotPlannerNode._short_path(d, start)
+            order.extend(idx[k] for k in tour)
+            prev = sub[tour[-1]]
+        return [vps[i] for i in order]
+
+    @staticmethod
+    def _short_path(dist, start):
+        """Open shortest-path order over `dist`, pinned at `start`: nearest-neighbour
+        seed, then 2-opt + Or-opt refinement (neither ever moves index 0 of the tour).
+        Returns a list of indices into `dist`. n is small, so this is instant."""
+        n = dist.shape[0]
+        if n <= 2:
+            return list(range(n)) if start == 0 else [start] + [i for i in range(n) if i != start]
 
         # Nearest-neighbour seed tour starting from the anchor.
         unvisited = set(range(n))
@@ -863,7 +1111,7 @@ class MultiRobotPlannerNode(Node):
                     if improved:
                         break
 
-        return [vps[t] for t in tour]
+        return tour
 
     @staticmethod
     def _vp_to_dict(vp):

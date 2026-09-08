@@ -8,6 +8,13 @@
 
 /* ---------- CSS Custom Properties ---------- */
 :root {
+    /* Native controls follow the dark theme: select popups, date pickers,
+       scrollbars and autofill. Declared once HERE rather than on individual
+       control rules -- it used to sit only on `.tb-field select`, so the
+       toolbar dropdowns read correctly while every select in a modal opened as
+       white-on-white. A per-control property invites exactly that omission. */
+    color-scheme: dark;
+
     /* Color Palette */
     --bg-primary: #0a0e1a;
     --bg-secondary: #111827;
@@ -628,6 +635,22 @@ body::before {
 @keyframes modalFade {
     from { opacity: 0; }
     to   { opacity: 1; }
+}
+
+/* Belt and braces for the select popup. `color-scheme` handles it on current
+   Chrome/Firefox, but some Chromium builds on Linux still paint the option list
+   from the option's own background, which defaults to white while the text
+   colour is inherited from the (light) select. */
+option,
+optgroup {
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+}
+
+option:checked,
+option:hover {
+    background-color: var(--accent-blue);
+    color: #fff;
 }
 
 .modal-box {

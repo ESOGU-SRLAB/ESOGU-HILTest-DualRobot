@@ -15,7 +15,14 @@ multirobot_planner_node:
       frame_rate_hz: 5.0
       viewpoint_distances: [0.3, 0.6, 1.0, 1.4]
       tilt_variations_deg: [-15.0, 0.0, 15.0]
-      max_incidence_angle_deg: 80.0
+      # Steepest surface-to-view angle still counted as covered. Measured on the
+      # chassis mesh (4277 targets, 5136 candidates): the geometric coverage
+      # ceiling is 90.5% at 80 deg, 91.7% at 85, 94.6% at 88. It costs nothing --
+      # the candidate set does not change, only which targets they are credited
+      # with. 85 is the honest stopping point: a ToF sensor returns little at a
+      # grazing incidence, so the extra 3 points at 88/89 deg would be counted
+      # coverage the camera does not actually measure.
+      max_incidence_angle_deg: 85.0
 
     coverage_threshold: 0.98
 
@@ -33,15 +40,35 @@ multirobot_planner_node:
 
     # Fractional tail cutter (mirrors the solo viewpoint_planner "cut at 0.5%").
     # Stop once the best remaining viewpoint adds fewer than this FRACTION of all
-    # target points as new coverage (0.005 = 0.5% ~= 25 new points on 5000 targets).
-    # The effective floor is max(min_new_points, min_marginal_coverage*targets), so
-    # this 0.5% dominates the min_new_points=8 above and cuts the long tail harder.
-    # 0.0 disables it.
-    min_marginal_coverage: 0.005
+    # target points as new coverage (0.0035 = 0.35% ~= 15 new points on 4277
+    # targets). The effective floor is max(min_new_points, min_marginal_coverage *
+    # targets), so this still dominates min_new_points=8. 0.0 disables it.
+    #
+    # Was 0.005 (= 22 new points on this mesh), which stopped the chassis plan at
+    # 28 viewpoints and 75.0% geometric coverage. Measured 2026-09-08 on the greedy
+    # curve for this mesh, at max_incidence 85 deg: floor 22 -> 29 viewpoints /
+    # 76.4%, floor 15 -> 37 / 79.5%, floor 9 -> 51 / 83.0%. The achieved figure is
+    # lower than all of these because most of the tail is unreachable, but the
+    # ranking holds. This sits mid-way: it buys back most of the coverage the 0.5%
+    # cutter was discarding without doubling the number of stops. The extra stops
+    # cost planning time only once -- both arms run in parallel and every
+    # trajectory is cached after the first recording run.
+    min_marginal_coverage: 0.0035
 
     # Hard per-ARM cap as a safety guard. 0 = no cap (let min_new_points decide).
     # With the two arms in parallel the wall-clock cost is ~max(per-arm counts).
+    # Shared fallback, used only by an arm with no override below.
     max_viewpoints_per_robot: 30
+
+    # PER-ARM overrides (0 = no override, fall back to the shared cap above). The
+    # arms are not interchangeable: the Kawasaki runs at 0.015 velocity scaling
+    # (~4.5 deg/s), so its stop count sets the wall-clock length of a run, while
+    # the UR is far quicker. Raised together with min_marginal_coverage=0.002,
+    # which lengthens the plan from ~28 to ~51 viewpoints: without these the
+    # shared cap of 30 would stop the allocation early ("Every arm reached its
+    # per-robot budget") and throw away the coverage the looser tail cutter buys.
+    max_viewpoints_ur: 45
+    max_viewpoints_kawasaki: 13
 
     # A candidate reachable by both arms goes to the less-loaded arm (balances the
     # parallel run). Set false for a fixed arm priority order.
@@ -58,6 +85,23 @@ multirobot_planner_node:
     # Y (back), 'coverage' = start at the highest-coverage viewpoint.
     ur_order_anchor: "max_y"
     kawasaki_order_anchor: "min_y"
+    # HOW the tour is built once the anchor is chosen.
+    #   'y_bands'   -> monotone sweep: every viewpoint in the first Y band, then the
+    #                  next band, and so on -- the arm never returns to a band it has
+    #                  left. Inside a band the stops still take the shortest path.
+    #   'proximity' -> the original behaviour: the globally shortest 3D path. It is
+    #                  free to walk back up the chassis whenever that is cheaper, and
+    #                  it does: on the 2026-09-08 plan the UR tour ran down to
+    #                  y=-0.49 and then climbed all the way back to y=+1.25, with 9
+    #                  of its 20 hops moving against the sweep direction (2.28 m of
+    #                  backward Y travel, worst single step 0.76 m).
+    order_mode: "y_bands"
+    # Depth of one Y band, metres. Measured on the same two plans: at 0.30 the worst
+    # backward step falls to 0.22 m and total backward travel to 0.54 m, for ~13%
+    # more path length than 'proximity'. Smaller bands approach a strict sort by Y
+    # (perfectly monotone, ~35% longer path); larger bands drift back towards
+    # 'proximity'. Set it to about the Y depth one camera position covers.
+    order_band_width_m: 0.30
 
     # Once the visiting order is fixed, re-express each viewpoint's stored IK angles as
     # the 2*pi-equivalents nearest the PREVIOUS viewpoint, where the joint's URDF limits
@@ -87,6 +131,24 @@ multirobot_planner_node:
     # IK rejects poses where the arm collides with the scene/chassis.
     ik_avoid_collisions: true
 
+    # --- The scene that reachability is verified against ---------------------
+    # ik_avoid_collisions above is answered by move_group, against whatever scene
+    # move_group holds. The EXECUTORS add a floor box and pad their moving links
+    # before they plan, so without recreating that here the generator checks a bare
+    # scene and the executor a padded one: measured on the 2026-09-07/08 chassis
+    # plans, one UR viewpoint per run (z = 0.278 and 0.256 m) had no collision-free
+    # IK branch at execution time, yet its coverage was counted in the plan total.
+    # KEEP THESE EQUAL TO THE LAUNCH ARGUMENTS THE RUN WILL USE -- they mirror
+    # multirobot_inspection.launch.py's defaults.
+    ik_scene_setup: true
+    ground_plane_z: -0.02        # world-frame height of the floor box TOP face
+    ground_plane_size: 6.0
+    ground_plane_thickness: 0.2
+    collision_padding: 0.04      # safety margin the arms keep from every obstacle
+    # Links the executors pad: UR node pads every 'ur10e_*' link, Kawasaki node pads
+    # link1..link6. A cooperative run applies both to the one shared scene.
+    ik_padding_link_patterns: ["^ur10e_", "^link[1-6]$"]
+
     # --- UR10e: camera on ur10e_depth_optical_frame ---
     ur_group_name: "real_ur10e"
     ur_base_frame: "world"
@@ -100,8 +162,10 @@ multirobot_planner_node:
     # The rail is at world X=-0.158 (cell at origin, travels along Y); -0.20 keeps a
     # ~4 cm margin. Same box the solo viewpoint_planner uses, applied per-arm here.
     # X upper = -0.20 (rejects behind-rail poses; rail at world X=-0.158).
-    # Z lower =  0.20 (floor clearance; rejects near-ground poses the UR can't
-    #                  reach without hitting the floor -- raise if it still grazes).
+    # Z lower =  0.20 is now only a cheap PRE-filter: it bounds the CAMERA, which
+    #                  says nothing about where the wrist ends up, and that is what
+    #                  actually hits the floor. The real floor test is the collision
+    #                  check against the ground plane set up by ik_scene_setup above.
     ur_workspace_filter_enabled: true
     ur_workspace_bounds_min: [-100.0, -100.0, 0.20]
     ur_workspace_bounds_max: [-0.20, 100.0, 100.0]

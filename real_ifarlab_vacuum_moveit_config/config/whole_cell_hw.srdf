@@ -15,6 +15,20 @@
     <group name="real_kawasaki">
         <chain base_link="ifarlab_ray_link" tip_link="link7"/>
     </group>
+    <!-- The same arm WITHOUT the AGV rail, used only by the inspection executor's
+         nearest-branch IK search (multirobot_viewpoint_planner, parameter
+         branch_ik_group). A chain also pulls in the parent joints of its links, but
+         base_link's parent joint (base_mount) is FIXED, so world_to_agv is NOT a member
+         here, which is the whole point. In the 7-DOF group above KDL treats the rail
+         as a free variable and drifts it: of 19 IK solutions found for viewpoint
+         kawa_vp_005 only 1 kept the rail where the plan put it, so branch candidates
+         were being discarded en masse. The executor pins the rail to the PLANNED value
+         in every seed and re-attaches it to the dispatched goal.
+         NOTE: link7 is rigid w.r.t. link6 (joint7 is fixed), so ik_link_name "link6"
+         is still valid inside this group. -->
+    <group name="real_kawasaki_arm">
+        <chain base_link="base_link" tip_link="link7"/>
+    </group>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
     <!-- CHASSIS FEET (chassis_part54..57), 2026-08-04. The four legs carrying the linear
          axis are 60 x 40 mm in the STL, which does not match the real feet, so their

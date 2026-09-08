@@ -82,6 +82,45 @@ def generate_launch_description():
                     'planner put it; raise it only if you want the executor to re-resolve '
                     'the Kawasaki\'s rail redundancy at run time, which makes the AGV '
                     'drive to places the plan did not choose.')
+    planner_id_arg = DeclareLaunchArgument(
+        'planner_id', default_value='',
+        description='OMPL planner for BOTH arms. Empty (default) -> MoveIt\'s own '
+                    'fallback, RRTConnect, which is what every recorded trajectory so '
+                    'far was planned with. Measured on the chassis plan 2026-09-05: no '
+                    'other loadable planner beats it once num_planning_attempts is 10 '
+                    '(RRTConnect 3663 deg, TRRT 4074, PRM* ~3100 but 21/24 solved, RRT '
+                    'and RRT* burn 6 s a hop). Any other value must be a config name '
+                    'listed for the group in ompl_planning.yaml, e.g. '
+                    '"AnytimePathShorteningkConfigDefault"; an unknown name is silently '
+                    'ignored by MoveIt, so check the move_group log. Re-measure with '
+                    'tools/planner_bench.py before switching.')
+    ik_random_seeds_arg = DeclareLaunchArgument(
+        'ik_random_seeds', default_value='-1',
+        description='How many RANDOM in-limits arm postures to add to the nearest-branch '
+                    'IK seed list, per viewpoint. -1 (default) means "use the node\'s own '
+                    'per-arm default" (12 on the Kawasaki). KDL is a LOCAL solver, so the '
+                    'old seeds -- all sitting on the planned goal -- converged straight '
+                    'back to it and the executor logged "1 distinct branch(es)" every '
+                    'time; a /compute_ik probe with 24 random seeds returned 16-20 '
+                    'DISTINCT solutions for the same poses. Only revolute joints are '
+                    'randomised, and only while a trajectory is being RECORDED. '
+                    '0 disables random seeds, i.e. the old behaviour.')
+    ik_random_seed_arg = DeclareLaunchArgument(
+        'ik_random_seed', default_value='0',
+        description='RNG seed behind ik_random_seeds, so a recording run is repeatable. '
+                    'Change it to draw a different set of random arm postures.')
+    branch_ik_group_arg = DeclareLaunchArgument(
+        'branch_ik_group', default_value='default',
+        description='SRDF group the nearest-branch IK search solves in (planning is '
+                    'unaffected). "default" means the node\'s own per-arm default: '
+                    '"real_kawasaki_arm", the rail-free chain base_link -> link7. In the '
+                    '7-DOF real_kawasaki group KDL drifts world_to_agv, and '
+                    'branch_max_rail_shift then discards nearly every candidate (1 of 19 '
+                    'kept the planned rail on kawa_vp_005). Empty string -> solve in the '
+                    'planning group, i.e. the old behaviour ("none" does the same, and '
+                    'unlike "" it survives ros2 launch\'s argument parser). '
+                    'If move_group does not know '
+                    'the group the node logs an error and falls back on its own.')
     kawasaki_velocity_arg = DeclareLaunchArgument(
         'kawasaki_velocity', default_value='0.015',
         description='MoveIt velocity SCALING FACTOR for the Kawasaki (fraction of the '
@@ -145,6 +184,7 @@ def generate_launch_description():
         'nearest_branch_ik': LaunchConfiguration('nearest_branch_ik'),
         'branch_max_rail_shift': LaunchConfiguration('branch_max_rail_shift'),
         'branch_plan_candidates': LaunchConfiguration('branch_plan_candidates'),
+        'planner_id': LaunchConfiguration('planner_id'),
         'kawasaki_velocity': LaunchConfiguration('kawasaki_velocity'),
         'kawasaki_acceleration': LaunchConfiguration('kawasaki_acceleration'),
         'return_home_ur': LaunchConfiguration('return_home_ur'),
@@ -161,12 +201,19 @@ def generate_launch_description():
         output='screen',
         parameters=[common_params],
     )
+    # The branch-IK knobs go to the KAWASAKI ONLY. They exist for its KDL solver and its
+    # redundant AGV rail; handing them to the UR (pick_ik, already restarting randomly in
+    # `mode: global`) would change a stack that is measured and working.
     kawasaki_node = Node(
         package='multirobot_viewpoint_planner',
         executable='kawasaki_inspection_node',
         name='kawasaki_inspection_node',
         output='screen',
-        parameters=[common_params],
+        parameters=[common_params, {
+            'ik_random_seeds': LaunchConfiguration('ik_random_seeds'),
+            'ik_random_seed': LaunchConfiguration('ik_random_seed'),
+            'branch_ik_group': LaunchConfiguration('branch_ik_group'),
+        }],
     )
 
     # RViz waypoint visualizer alongside: draws BOTH arms' viewpoint arrows
@@ -188,6 +235,7 @@ def generate_launch_description():
         add_ground_plane_arg, ground_plane_z_arg, collision_padding_arg,
         use_trajectory_cache_arg, force_replan_arg, wrap_goals_to_current_arg,
         nearest_branch_ik_arg, branch_max_rail_shift_arg, branch_plan_candidates_arg,
+        ik_random_seeds_arg, ik_random_seed_arg, branch_ik_group_arg, planner_id_arg,
         kawasaki_velocity_arg, kawasaki_acceleration_arg,
         return_home_ur_arg, return_home_kawasaki_arg,
         home_before_viewpoints_arg,

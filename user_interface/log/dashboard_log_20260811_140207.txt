@@ -1,6 +1,6 @@
 [14:02:17] [SYSTEM] 🚀 Starting: ros2 launch my_robot_cell_control hil_test_whole_unified.launch.py use_vacuum_gripper:=true use_fake_hardware:=true use_mock_hardware:=true fake_sensor_commands:=true
 [14:02:17] [SYSTEM] ✅ HIL initialized: Pick & Place Scenario. Please confirm that the robot is ready.
-[14:02:18] [HIL] [INFO] [launch]: All log files can be found below /home/cem/.ros/log/2026-08-11-14-02-18-380502-cem-26789
+[14:02:18] [HIL] [INFO] [launch]: All log files can be found below /home/ifarlab/.ros/log/2026-08-11-14-02-18-380502-ifarlab-26789
 [14:02:18] [HIL] [INFO] [launch]: Default logging verbosity is set to INFO
 [14:02:18] [HIL] [INFO] [launch.user]: ============================================================
 [14:02:18] [HIL] [INFO] [launch.user]: HIL Test Whole (Unified URDF) - 2 Taraflı Sistem Başlatılıyor
@@ -289,52 +289,52 @@
 [14:02:22] [HIL] [robot_state_publisher-9] [INFO] [1786446142.487782110] [sim.robot_state_publisher]: got segment world
 [14:02:22] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:166] [0m[1;36mSubscribing to [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
 [14:02:22] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:168] [0m[1;36mWaiting for a world to be set from the GUI...[0m[1;36m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mReceived world [[0m[1;32m/home/ifarlab/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m] from the GUI.[0m[1;32m[0m
 [14:02:22] [HIL] [gz sim-10] [1;36m[Dbg] [gz.cc:172] [0m[1;36mUnsubscribing from [[0m[1;36m/gazebo/starting_world[0m[1;36m].[0m[1;36m[0m
 [14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mGazebo Sim Server v[0m[1;32m8.14.0[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf[0m[1;32m].[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/home/ifarlab/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf[0m[1;32m].[0m
 [14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing entity system service on [[0m[1;32m/[0m[1;32mentity/system/add[0m[1;32m][0m[1;32m[0m
 [14:02:22] [HIL] [gz sim-10] [1;36m[Dbg] [Physics.cc:945] [0m[1;36mLoaded [[0m[1;36mgz::physics::dartsim::Plugin[0m[1;36m] from library [[0m[1;36m/usr/lib/x86_64-linux-gnu/gz-physics-7/engine-plugins/libgz-physics-dartsim-plugin.so[0m[1;36m][0m[1;36m[0m
 [14:02:22] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::Physics[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/cem/create_multiple[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/cem/create_multiple/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/cem/remove[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/cem/remove/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/cem/set_pose[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/cem/set_pose/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/cem/set_pose_vector[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/cem/set_pose_vector/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/cem/light_config[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/cem/light_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/cem/set_physics[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/cem/set_physics/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/cem/set_spherical_coordinates[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/cem/set_spherical_coordinates/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/cem/enable_collision[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/cem/enable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/cem/disable_collision[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/cem/disable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/cem/visual_config[0m[1;32m] (async)[0m[1;32m[0m
-[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/cem/visual_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/ifarlab/create_multiple[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/ifarlab/create_multiple/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/ifarlab/remove[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/ifarlab/remove/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/ifarlab/set_pose[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/ifarlab/set_pose/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/ifarlab/set_pose_vector[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/ifarlab/set_pose_vector/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/ifarlab/light_config[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/ifarlab/light_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/ifarlab/set_physics[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/ifarlab/set_physics/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/ifarlab/set_spherical_coordinates[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/ifarlab/set_spherical_coordinates/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/ifarlab/enable_collision[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/ifarlab/enable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/ifarlab/disable_collision[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/ifarlab/disable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/ifarlab/visual_config[0m[1;32m] (async)[0m[1;32m[0m
+[14:02:22] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/ifarlab/visual_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
 [14:02:23] [HIL] [create-11] [INFO] [1786446142.999789479] [sim.ros_gz_sim]: Requested creation of entity.
 [14:02:23] [HIL] [create-11] [INFO] [1786446142.999828228] [sim.ros_gz_sim]: OK creation of entity.
 [14:02:23] [HIL] [INFO] [create-11]: process has finished cleanly [pid 27066]
 [14:02:23] [HIL] [rviz2-15] [INFO] [1786446143.287577206] [rviz2]: Stereo is NOT SUPPORTED
 [14:02:23] [HIL] [rviz2-15] [INFO] [1786446143.287641792] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
 [14:02:23] [HIL] [rviz2-15] [INFO] [1786446143.310780391] [rviz2]: Stereo is NOT SUPPORTED
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.509157398] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points (gz.msgs.PointCloudPacked) -> pointcloud (sensor_msgs/msg/PointCloud2)] (Lazy 1)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.511622642] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/depth_image (gz.msgs.Image) -> depth/image (sensor_msgs/msg/Image)] (Lazy 1)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.512801618] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/clock (gz.msgs.Clock) -> /clock (rosgraph_msgs/msg/Clock)] (Lazy 0)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.603954281] [sim.ros_gz_bridge]: Creating ROS->GZ Bridge: [/clock (rosgraph_msgs/msg/Clock) -> /world/cem/clock (gz.msgs.Clock)] (Lazy 0)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.606767323] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/dynamic_pose/info (gz.msgs.Pose_V) -> pose (geometry_msgs/msg/PoseArray)] (Lazy 1)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.509157398] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/points (gz.msgs.PointCloudPacked) -> pointcloud (sensor_msgs/msg/PointCloud2)] (Lazy 1)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.511622642] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/depth_image (gz.msgs.Image) -> depth/image (sensor_msgs/msg/Image)] (Lazy 1)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.512801618] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/clock (gz.msgs.Clock) -> /clock (rosgraph_msgs/msg/Clock)] (Lazy 0)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.603954281] [sim.ros_gz_bridge]: Creating ROS->GZ Bridge: [/clock (rosgraph_msgs/msg/Clock) -> /world/ifarlab/clock (gz.msgs.Clock)] (Lazy 0)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.606767323] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/dynamic_pose/info (gz.msgs.Pose_V) -> pose (geometry_msgs/msg/PoseArray)] (Lazy 1)
 [14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.608105096] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/sim_robot_joint_states (gz.msgs.Model) -> sim_joint_states (sensor_msgs/msg/JointState)] (Lazy 1)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.608947886] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image (gz.msgs.Image) -> image (sensor_msgs/msg/Image)] (Lazy 1)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.609521264] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/camera_info (gz.msgs.CameraInfo) -> camera_info (sensor_msgs/msg/CameraInfo)] (Lazy 1)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.610364724] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/points (gz.msgs.PointCloudPacked) -> kawasaki/pointcloud (sensor_msgs/msg/PointCloud2)] (Lazy 1)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.610898364] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/depth_image (gz.msgs.Image) -> kawasaki/depth_image (sensor_msgs/msg/Image)] (Lazy 1)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.611460479] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/image (gz.msgs.Image) -> kawasaki/image (sensor_msgs/msg/Image)] (Lazy 1)
-[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.612286801] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/cem/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/camera_info (gz.msgs.CameraInfo) -> kawasaki/camera_info (sensor_msgs/msg/CameraInfo)] (Lazy 1)
-[14:02:23] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/cem/wheel_slip[0m[1;32m] (async)[0m[1;32m[1;32m[Msg] [0m[1;32mGazebo Sim GUI    v[0m[1;32m8.14.0[0m[1;32m[0m
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.608947886] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/image (gz.msgs.Image) -> image (sensor_msgs/msg/Image)] (Lazy 1)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.609521264] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/whole_cell_sim/link/sim_ur10e_wrist_3_link/sensor/sim_ur10e_depth_optical_frame/camera_info (gz.msgs.CameraInfo) -> camera_info (sensor_msgs/msg/CameraInfo)] (Lazy 1)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.610364724] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/points (gz.msgs.PointCloudPacked) -> kawasaki/pointcloud (sensor_msgs/msg/PointCloud2)] (Lazy 1)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.610898364] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/depth_image (gz.msgs.Image) -> kawasaki/depth_image (sensor_msgs/msg/Image)] (Lazy 1)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.611460479] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/image (gz.msgs.Image) -> kawasaki/image (sensor_msgs/msg/Image)] (Lazy 1)
+[14:02:23] [HIL] [parameter_bridge-12] [INFO] [1786446143.612286801] [sim.ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/ifarlab/model/whole_cell_sim/link/sim_kawasaki_link6/sensor/sim_kawasaki_camera_rgb_optic_frame/camera_info (gz.msgs.CameraInfo) -> kawasaki/camera_info (sensor_msgs/msg/CameraInfo)] (Lazy 1)
+[14:02:23] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/ifarlab/wheel_slip[0m[1;32m] (async)[0m[1;32m[1;32m[Msg] [0m[1;32mGazebo Sim GUI    v[0m[1;32m8.14.0[0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[Dbg] [Gui.cc:275] [0m[1;36mWaiting for subscribers to [[0m[1;36m/gazebo/starting_world[0m[1;36m]...[0m[1;36m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[Dbg] [Application.cc:96] [0m[1;36mInitializing application.[0m[1;36m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[Dbg] [Application.cc:170] [0m[1;36mQt using OpenGL graphics interface[0m[1;36m[0m
@@ -342,9 +342,9 @@
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [PathManager.cc:68] [0m[1;36mRequesting resource paths through [[0m[1;36m/gazebo/resource_paths/get[0m[1;36m][0m[1;36m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Gui.cc:355] [0m[1;36mGUI requesting list of world names. The server may be busy [0m[1;36mdownloading resources. Please be patient.[0m[1;36m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [PathManager.cc:57] [0m[1;36mReceived resource paths.[0m[1;36m[0m
-[14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Gui.cc:413] [0m[1;36mRequesting GUI from [[0m[1;36m/world/cem/gui/info[0m[1;36m]...[0m[1;36m[0m
-[14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [GuiRunner.cc:149] [0m[1;36mRequesting initial state from [[0m[1;36m/world/cem/state[0m[1;36m]...[0m[1;36m[0m
-[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading config [[0m[1;32m/home/cem/.gz/sim/8/gui.config[0m[1;32m][0m[1;32m[0m
+[14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Gui.cc:413] [0m[1;36mRequesting GUI from [[0m[1;36m/world/ifarlab/gui/info[0m[1;36m]...[0m[1;36m[0m
+[14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [GuiRunner.cc:149] [0m[1;36mRequesting initial state from [[0m[1;36m/world/ifarlab/state[0m[1;36m]...[0m[1;36m[0m
+[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoading config [[0m[1;32m/home/ifarlab/.gz/sim/8/gui.config[0m[1;32m][0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mMinimalScene[0m[1;36m][0m[1;36m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:802] [0m[1;36mCreating gz-rendering interface for OpenGL[0m[1;36m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [MinimalScene.cc:802] [0m[1;36mCreating gz-rendering interface for OpenGL[0m[1;36m[0m
@@ -370,7 +370,7 @@
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mCamera tracking[0m[1;32m] to main window[0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mCameraTracking[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libCameraTracking.so[0m[1;32m][0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mMarkerManager[0m[1;36m][0m[1;36m[0m
-[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/cem/stats[0m[1;32m][0m[1;32m[0m
+[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/ifarlab/stats[0m[1;32m][0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mMarker Manager[0m[1;32m] to main window[0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mMarkerManager[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libMarkerManager.so[0m[1;32m][0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mSelectEntities[0m[1;36m][0m[1;36m[0m
@@ -390,13 +390,13 @@
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mVisualization capabilities[0m[1;32m] to main window[0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mVisualizationCapabilities[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-sim-8/plugins/gui/libVisualizationCapabilities.so[0m[1;32m][0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mWorldControl[0m[1;36m][0m[1;36m[0m
-[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mUsing world control service [[0m[1;32m/world/cem/control[0m[1;32m][0m[1;32m[0m
-[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/cem/stats[0m[1;32m][0m[1;32m[0m
+[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mUsing world control service [[0m[1;32m/world/ifarlab/control[0m[1;32m][0m[1;32m[0m
+[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/ifarlab/stats[0m[1;32m][0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [WorldControl.cc:237] [0m[1;36mUsing an event to share WorldControl msgs with the server[0m
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mWorld control[0m[1;32m] to main window[0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mWorldControl[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libWorldControl.so[0m[1;32m][0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mWorldStats[0m[1;36m][0m[1;36m[0m
-[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/cem/stats[0m[1;32m][0m[1;32m[0m
+[14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mListening to stats on [[0m[1;32m/world/ifarlab/stats[0m[1;32m][0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mAdded plugin [[0m[1;32mWorld stats[0m[1;32m] to main window[0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;32m[GUI] [0m[1;32m[Msg] [0m[1;32mLoaded plugin [[0m[1;32mWorldStats[0m[1;32m] from path [[0m[1;32m/usr/lib/x86_64-linux-gnu/gz-gui-8/plugins/libWorldStats.so[0m[1;32m][0m[1;32m[0m
 [14:02:23] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:528] [0m[1;36mLoading plugin [[0m[1;36mShapes[0m[1;36m][0m[1;36m[0m
@@ -426,7 +426,7 @@
 [14:02:24] [HIL] [gz sim-10] libEGL warning: egl: failed to create dri2 screen
 [14:02:24] [HIL] [gz sim-10] libEGL warning: egl: failed to create dri2 screen
 [14:02:24] [HIL] [gz sim-10] [1;36m[GUI] [Dbg] [Application.cc:398][0m
-[14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/cem/wheel_slip/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/ifarlab/wheel_slip/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
 [14:02:24] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::UserCommands[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
 [14:02:24] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::SceneBroadcaster[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
 [14:02:24] [HIL] [gz sim-10] [1;36m[Dbg] [SystemManager.cc:80] [0m[1;36mLoaded system [[0m[1;36mgz::sim::systems::Contact[0m[1;36m] for entity [[0m[1;36m1[0m[1;36m][0m[1;36m[0m
@@ -436,10 +436,10 @@
 [14:02:24] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:532] [0m[1;36mSensorsPrivate::RenderThread started[0m[1;36m[0m
 [14:02:24] [HIL] [gz sim-10] [1;36m[Dbg] [Sensors.cc:337] [0m[1;36mWaiting for init[0m[1;36m[0m
 [14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mLoaded level [[0m[1;32mdefault[0m[1;32m][0m[1;32m[0m
-[14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing world controls on [[0m[1;32m/world/cem[0m[1;32m/control], [[0m[1;32m/world/cem[0m[1;32m/control/state] and [[0m[1;32m/world/cem[0m[1;32m/playback/control][0m[1;32m[0m
-[14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing GUI information on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mgui/info[0m[1;32m][0m[1;32m[0m
+[14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing world controls on [[0m[1;32m/world/ifarlab[0m[1;32m/control], [[0m[1;32m/world/ifarlab[0m[1;32m/control/state] and [[0m[1;32m/world/ifarlab[0m[1;32m/playback/control][0m[1;32m[0m
+[14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing GUI information on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mgui/info[0m[1;32m][0m[1;32m[0m
 [14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mWorld [[0m[1;32mcem[0m[1;32m] initialized with [[0m[1;32mode[0m[1;32m] physics profile.[0m[1;32m[0m
-[14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing world SDF generation service on [[0m[1;32m/world/cem[0m[1;32m/[0m[1;32mgenerate_world_sdf[0m[1;32m][0m[1;32m[0m
+[14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing world SDF generation service on [[0m[1;32m/world/ifarlab[0m[1;32m/[0m[1;32mgenerate_world_sdf[0m[1;32m][0m[1;32m[0m
 [14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mServing world names on [[0m[1;32m/gazebo/worlds[0m[1;32m][0m[1;32m[0m
 [14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mResource path add service on [[0m[1;32m/gazebo/resource_paths/add[0m[1;32m].[0m[1;32m[0m
 [14:02:24] [HIL] [gz sim-10] [1;32m[Msg] [0m[1;32mResource path get service on [[0m[1;32m/gazebo/resource_paths/get[0m[1;32m].[0m[1;32m[0m
@@ -7862,7 +7862,7 @@
 [14:03:12] [SYSTEM] ✅ Robot confirmation received. Starting scenario...
 [14:03:12] [SYSTEM] 🚀 Starting: ros2 launch pymoveit2_real pick_and_place_scenario.launch.py
 [14:03:12] [SYSTEM] 🚀 Pick & Place Scenario is running!
-[14:03:12] [SENARYO] [INFO] [launch]: All log files can be found below /home/cem/.ros/log/2026-08-11-14-03-12-477973-cem-27748
+[14:03:12] [SENARYO] [INFO] [launch]: All log files can be found below /home/ifarlab/.ros/log/2026-08-11-14-03-12-477973-ifarlab-27748
 [14:03:12] [SENARYO] [INFO] [launch]: Default logging verbosity is set to INFO
 [14:03:12] [SENARYO] [INFO] [pick_and_place_scenario.py-1]: process started with pid [27765]
 [14:03:13] [SENARYO] [pick_and_place_scenario.py-1] [0m[INFO] [1786446193.262849123] [pick_and_place_scenario]: Çarpışma önleyici robot kontrolcüsü başlatıldı[0m
@@ -8070,11 +8070,11 @@
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1] [0m[INFO] [1786446223.486489671] [pick_and_place_scenario]: Güvenli kapatılıyor...[0m
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1] Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:389
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1] Traceback (most recent call last):
-[14:03:43] [SENARYO] [pick_and_place_scenario.py-1]   File "/home/cem/colcon_ws/install/pymoveit2_real/lib/pymoveit2_real/pick_and_place_scenario.py", line 296, in <module>
+[14:03:43] [SENARYO] [pick_and_place_scenario.py-1]   File "/home/ifarlab/colcon_ws/install/pymoveit2_real/lib/pymoveit2_real/pick_and_place_scenario.py", line 296, in <module>
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1]     main()
-[14:03:43] [SENARYO] [pick_and_place_scenario.py-1]   File "/home/cem/colcon_ws/install/pymoveit2_real/lib/pymoveit2_real/pick_and_place_scenario.py", line 290, in main
+[14:03:43] [SENARYO] [pick_and_place_scenario.py-1]   File "/home/ifarlab/colcon_ws/install/pymoveit2_real/lib/pymoveit2_real/pick_and_place_scenario.py", line 290, in main
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1]     robot_controller.move_to_joint_angles(home_joints, synchronous=True)
-[14:03:43] [SENARYO] [pick_and_place_scenario.py-1]   File "/home/cem/colcon_ws/install/pymoveit2_real/lib/pymoveit2_real/pick_and_place_scenario.py", line 118, in move_to_joint_angles
+[14:03:43] [SENARYO] [pick_and_place_scenario.py-1]   File "/home/ifarlab/colcon_ws/install/pymoveit2_real/lib/pymoveit2_real/pick_and_place_scenario.py", line 118, in move_to_joint_angles
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1]     self.get_logger().info(f"Güvenli JOINT hareketi başlatılıyor: {joint_positions}")
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/impl/rcutils_logger.py", line 329, in info
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1]     return self.log(message, LoggingSeverity.INFO, **kwargs)
@@ -8089,7 +8089,7 @@
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1]   File "/usr/lib/python3.10/posixpath.py", line 413, in _joinrealpath
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1]     name, _, rest = rest.partition(sep)
 [14:03:43] [SENARYO] [pick_and_place_scenario.py-1] KeyboardInterrupt
-[14:03:43] [SENARYO] [ERROR] [pick_and_place_scenario.py-1]: process has died [pid 27765, exit code -2, cmd '/home/cem/colcon_ws/install/pymoveit2_real/lib/pymoveit2_real/pick_and_place_scenario.py --ros-args -r __node:=pick_and_place_scenario'].
+[14:03:43] [SENARYO] [ERROR] [pick_and_place_scenario.py-1]: process has died [pid 27765, exit code -2, cmd '/home/ifarlab/colcon_ws/install/pymoveit2_real/lib/pymoveit2_real/pick_and_place_scenario.py --ros-args -r __node:=pick_and_place_scenario'].
 [14:03:43] [SYSTEM] ✅ Senaryo successfully stopped.
 [14:03:43] [SYSTEM] 🛑 Stopping HIL (SIGINT)...
 [14:03:43] [HIL] [WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
@@ -8105,7 +8105,7 @@
 [14:03:43] [HIL] [INFO] [real_to_sim_bridge-26]: sending signal 'SIGINT' to process[real_to_sim_bridge-26]
 [14:03:43] [HIL] [INFO] [move_group-23]: sending signal 'SIGINT' to process[move_group-23]
 [14:03:43] [HIL] [INFO] [spawner-20]: sending signal 'SIGINT' to process[spawner-20]
-[14:03:43] [HIL] [ERROR] [real_to_sim_bridge-26]: process has died [pid 27658, exit code -2, cmd '/home/cem/colcon_ws/install/my_robot_cell_control/lib/my_robot_cell_control/real_to_sim_bridge --ros-args -r __node:=real_to_sim_bridge --params-file /tmp/launch_params_iqw7zkqb --params-file /tmp/launch_params_naq7i4_3 --params-file /tmp/launch_params_kystq7f6 --params-file /tmp/launch_params_8ai2fvkr'].
+[14:03:43] [HIL] [ERROR] [real_to_sim_bridge-26]: process has died [pid 27658, exit code -2, cmd '/home/ifarlab/colcon_ws/install/my_robot_cell_control/lib/my_robot_cell_control/real_to_sim_bridge --ros-args -r __node:=real_to_sim_bridge --params-file /tmp/launch_params_iqw7zkqb --params-file /tmp/launch_params_naq7i4_3 --params-file /tmp/launch_params_kystq7f6 --params-file /tmp/launch_params_8ai2fvkr'].
 [14:03:43] [HIL] [INFO] [spawner-19]: sending signal 'SIGINT' to process[spawner-19]
 [14:03:43] [HIL] [INFO] [spawner-18]: sending signal 'SIGINT' to process[spawner-18]
 [14:03:43] [HIL] [INFO] [spawner-17]: sending signal 'SIGINT' to process[spawner-17]
@@ -8133,7 +8133,7 @@
 [14:03:43] [HIL] [INFO] [parameter_bridge-2]: sending signal 'SIGINT' to process[parameter_bridge-2]
 [14:03:43] [HIL] [INFO] [static_transform_publisher-1]: sending signal 'SIGINT' to process[static_transform_publisher-1]
 [14:03:43] [HIL] [real_to_sim_bridge-26] [INFO] [1786446223.599964064] [rclcpp]: signal_handler(SIGINT/SIGTERM)
-[14:03:43] [HIL] [ERROR] [ros2_control_node-3]: process has died [pid 26812, exit code -2, cmd '/opt/ros/humble/lib/controller_manager/ros2_control_node --ros-args --params-file /tmp/launch_params_l_qtx9wf --params-file /home/cem/colcon_ws/install/ur_robot_driver/share/ur_robot_driver/config/ur10e_update_rate.yaml --params-file /tmp/launch_params_sja5e30w'].
+[14:03:43] [HIL] [ERROR] [ros2_control_node-3]: process has died [pid 26812, exit code -2, cmd '/opt/ros/humble/lib/controller_manager/ros2_control_node --ros-args --params-file /tmp/launch_params_l_qtx9wf --params-file /home/ifarlab/colcon_ws/install/ur_robot_driver/share/ur_robot_driver/config/ur10e_update_rate.yaml --params-file /tmp/launch_params_sja5e30w'].
 [14:03:43] [HIL] [move_group-23] [INFO] [1786446223.599960112] [rclcpp]: signal_handler(SIGINT/SIGTERM)
 [14:03:43] [HIL] [parameter_bridge-2] [INFO] [1786446223.599984000] [rclcpp]: signal_handler(SIGINT/SIGTERM)
 [14:03:43] [HIL] [robot_state_publisher-5] [INFO] [1786446223.599988585] [rclcpp]: signal_handler(SIGINT/SIGTERM)
@@ -8234,7 +8234,7 @@
 [14:03:48] [HIL] [INFO] [urscript_interface-4]: sending signal 'SIGTERM' to process[urscript_interface-4]
 [14:03:48] [HIL] [move_group-23] [INFO] [1786446228.617513563] [rclcpp]: signal_handler(SIGINT/SIGTERM)
 [14:03:48] [HIL] [urscript_interface-4] [INFO] [1786446228.623321694] [rclcpp]: signal_handler(SIGINT/SIGTERM)
-[14:03:48] [HIL] [ERROR] [gz sim-10]: process has died [pid 27064, exit code -15, cmd 'ruby /usr/bin/gz sim -r -v 8 /home/cem/colcon_ws/src/mobile_manipulator_description/worlds/cem.sdf --force-version 8'].
+[14:03:48] [HIL] [ERROR] [gz sim-10]: process has died [pid 27064, exit code -15, cmd 'ruby /usr/bin/gz sim -r -v 8 /home/ifarlab/colcon_ws/src/mobile_manipulator_description/worlds/ifarlab.sdf --force-version 8'].
 [14:03:48] [HIL] [INFO] [launch]: process[gz sim-10] was required: shutting down launched system
 [14:03:53] [SYSTEM] ⚠️ HIL did not respond, sending SIGTERM...
 [14:03:53] [SYSTEM] ✅ HIL stopped via SIGTERM.
