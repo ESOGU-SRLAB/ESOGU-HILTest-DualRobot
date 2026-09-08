@@ -2,8 +2,8 @@
   "coverage_achieved": 0.7011709601873536,
   "coverage_threshold": 0.98,
   "objective": "multi_robot_max_coverage_balanced",
-  "total_ur_viewpoints": 25,
-  "total_kawasaki_viewpoints": 11,
+  "total_ur_viewpoints": 24,
+  "total_kawasaki_viewpoints": 12,
   "camera_config": {
     "horizontal_fov_deg": 70.0,
     "vertical_fov_deg": 60.0,
@@ -304,74 +304,6 @@
         -1.570661208126542,
         5.188565801988059
       ]
-    },
-    {
-      "id": "ur_vp_024",
-      "robot": "ur",
-      "position": [
-        -1.1,
-        2.3,
-        0.315
-      ],
-      "rotation": [
-        [
-          0.9853485719005401,
-          -0.08113000552232039,
-          0.15002037880739555
-        ],
-        [
-          0.1705526072904375,
-          0.46871951329109623,
-          -0.8667259232344396
-        ],
-        [
-          -0.0,
-          0.8796135174405327,
-          0.4756890370146172
-        ]
-      ],
-      "rank": null,
-      "global_order": null,
-      "new_points_covered": null,
-      "total_points_visible": 235,
-      "cumulative_coverage": null,
-      "joint_names": [
-        "world_to_agv",
-        "joint1",
-        "joint2",
-        "joint3",
-        "joint4",
-        "joint5",
-        "joint6",
-        "wheel_left_base",
-        "wheel_right_base",
-        "ur10e_base_to_robot_mount",
-        "ur10e_shoulder_pan_joint",
-        "ur10e_shoulder_lift_joint",
-        "ur10e_elbow_joint",
-        "ur10e_wrist_1_joint",
-        "ur10e_wrist_2_joint",
-        "ur10e_wrist_3_joint"
-      ],
-      "joint_positions": [
-        1.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.8073471580482858,
-        -0.06292397443659122,
-        -3.4328705120942313,
-        -0.8534075562604478,
-        -0.5519200609643496,
-        -1.0896172994209563,
-        4.977863574331232
-      ],
-      "manual_edit": "took over kawa_vp_010's surface patch. world_to_agv is a prismatic X axis, so every Kawasaki pose seeing that patch needs rail >= 1.92 m (the end of travel), which the cell cannot deliver; the UR reaches it with its own rail at 1.81 m and keeps 85.9% of what kawa_vp_010 saw."
     },
     {
       "id": "ur_vp_004",
@@ -1585,29 +1517,29 @@
       "position": [
         -0.4686156366993546,
         -0.19847980710664492,
-        0.8221778274438144
+        0.6721778274438144
       ],
       "rotation": [
         [
-          -0.8596831769186813,
-          -0.08798370488488279,
-          -0.5031935045265717
+          -0.8808489820807102,
+          -0.0923624829199304,
+          -0.46429973348715414
         ],
         [
-          -0.5108275984351307,
-          0.1480697424419149,
-          0.846835589739934
+          -0.4733973708919145,
+          0.17185857815218641,
+          0.8639210371024263
         ],
         [
           0.0,
-          0.9850554395808973,
-          -0.17223757125576628
+          0.9807822392684189,
+          -0.19510561021053596
         ]
       ],
       "rank": 22,
       "global_order": 27,
       "new_points_covered": 22,
-      "total_points_visible": 354,
+      "total_points_visible": 259,
       "cumulative_coverage": 0.6676814988290398,
       "joint_names": [
         "world_to_agv",
@@ -1637,15 +1569,14 @@
         0.0,
         0.0,
         0.0,
-        0.4080872937936993,
-        1.3276648258220691,
-        -2.6834840937310176,
-        -1.5339405653415696,
-        -0.3710856415271286,
-        -1.4494326084178109,
-        0.7716395112434098
-      ],
-      "manual_edit": "raised 15 cm and re-aimed at the centroid of the surface the original saw; the original pose was reachable in the model but not on the real cell. Keeps 86.9% of it."
+        0.3940196465456598,
+        1.3240039802391097,
+        -2.9013951511300538,
+        -1.422511380863021,
+        -0.2428457832517731,
+        -1.438914020556605,
+        0.7305514948017473
+      ]
     },
     {
       "id": "ur_vp_023",
@@ -2387,6 +2318,73 @@
       ]
     },
     {
+      "id": "kawa_vp_010",
+      "robot": "kawasaki",
+      "position": [
+        -1.2420483906536077,
+        2.2652692199747526,
+        0.3146322067404086
+      ],
+      "rotation": [
+        [
+          0.883994023703545,
+          -0.1500600878514104,
+          0.4427601338088643
+        ],
+        [
+          0.46749819898735057,
+          0.28374915912919907,
+          -0.8372167273992176
+        ],
+        [
+          0.0,
+          0.9470841487045907,
+          0.3209853817115361
+        ]
+      ],
+      "rank": 10,
+      "global_order": 28,
+      "new_points_covered": 20,
+      "total_points_visible": 136,
+      "cumulative_coverage": 0.6723653395784543,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        2.0,
+        -0.5991684398667315,
+        2.044759001766899,
+        -0.5460895004089078,
+        1.4889357795195082,
+        1.9063238816645043,
+        1.3767848729016174,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -1.57,
+        0.0,
+        -1.57,
+        0.0,
+        0.0
+      ]
+    },
+    {
       "id": "kawa_vp_011",
       "robot": "kawasaki",
       "position": [
@@ -2453,12 +2451,5 @@
         0.0
       ]
     }
-  ],
-  "manual_edits": {
-    "date": "2026-09-08",
-    "why": "two viewpoints the real cell cannot execute (AGV communication delay at the end of its travel, and collisions the model does not carry)",
-    "ur_vp_022": "raised 15 cm, re-aimed, re-solved",
-    "kawa_vp_010": "removed from the Kawasaki and re-created as ur_vp_024 on the UR",
-    "coverage_achieved": "no longer exact -- it was computed for the original set"
-  }
+  ]
 }

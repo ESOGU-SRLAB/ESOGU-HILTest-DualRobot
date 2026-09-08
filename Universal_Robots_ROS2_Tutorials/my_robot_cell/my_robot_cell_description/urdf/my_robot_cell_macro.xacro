@@ -48,7 +48,34 @@
           <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/base_link.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
-    </link>
+      <!-- LINEAR-AXIS MOTOR HOUSING, enlarged 2026-09-08.
+           base_link.stl already carries this protrusion as 12 triangles spanning
+           x -0.492..-0.317, y 0.040..0.120, z 0.492..0.597 (0.175 x 0.080 x 0.105 m)
+           at the y=0 end of the rail, and a UR joint struck the real housing there, so
+           the modelled volume was too small. This box supersedes it: 0.20 m out
+           along -X, 0.15 m wide grown toward -Y, 0.14 m tall. The BACK face
+           (x=-0.317, where it meets the rail body) and the +Y face (y=0.120) are
+           unchanged; the box grows forward along -X, toward -Y, and SYMMETRICALLY in
+           height: 1.75 cm up and 1.75 cm down, so z runs 0.4745..0.6145 around the
+           original feature's own centre. Growing upward past the rail top (z=0.597)
+           is safe even though ur10e_robot_mount rides this rail from z=0.583 up:
+           the mount's collision mesh starts at x=-0.310 and this box ends at
+           x=-0.317, so the two never meet at any rail position.
+           The mesh feature stays where it is, fully inside this box. -->
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.417 0.045 0.5445"/>
+        <geometry>
+          <box size="0.20 0.15 0.14"/>
+        </geometry>
+      </collision>
+      <visual>
+        <origin rpy="0 0 0" xyz="-0.417 0.045 0.5445"/>
+        <geometry>
+          <box size="0.20 0.15 0.14"/>
+        </geometry>
+        <material name="silver"/>
+      </visual>
+</link>
 
     <!-- Chassis assembly - tüm PART1-PART44 parçalarını içerir -->
     <xacro:chassis_assembly tf_prefix="${tf_prefix}" parent="${parent}">
