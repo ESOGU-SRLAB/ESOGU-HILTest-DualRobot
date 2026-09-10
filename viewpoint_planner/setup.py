@@ -15,9 +15,9 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
         (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
     ],
-    # open3d was previously listed here but is never imported anywhere in
-    # this package -- dropped to avoid an unnecessary heavy dependency.
-    install_requires=['setuptools', 'trimesh', 'scipy', 'numpy', 'matplotlib'],
+    # open3d IS imported (inspection_base writes the captured clouds as .pcd via
+    # o3d.io.write_point_cloud); an earlier comment here claimed otherwise.
+    install_requires=['setuptools', 'trimesh', 'scipy', 'numpy', 'matplotlib', 'open3d'],
     zip_safe=True,
     maintainer='User',
     maintainer_email='user@todo.todo',

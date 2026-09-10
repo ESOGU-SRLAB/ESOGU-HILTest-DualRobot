@@ -25,9 +25,14 @@ class ViewpointVisualizer(Node):
         self.declare_parameter('color_by_contribution', True)
         self.declare_parameter('scale_by_contribution', False)
         self.declare_parameter('label_top_n', 0)   # 0 = no text labels
+        # Which plan to draw. It used to be hardcoded, which meant running the executor
+        # against a different plan file left RViz showing the arrows of the old one.
+        self.declare_parameter(
+            'plan_file',
+            '/home/cem/colcon_ws/src/viewpoint_planner/plans/viewpoint_plan.json')
 
         self.timer = self.create_timer(2.0, self.timer_callback)
-        self.plan_file = '/home/cem/colcon_ws/src/viewpoint_planner/plans/viewpoint_plan.json'
+        self.plan_file = os.path.expanduser(self.get_parameter('plan_file').value)
         self._warned_missing_plan = False
         self._last_logged_marker_count = None
         self.get_logger().info(f"viewpoint_visualizer started, watching '{self.plan_file}' every 2.0s.")

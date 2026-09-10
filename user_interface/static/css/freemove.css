@@ -253,6 +253,39 @@
     line-height: 1.4;
 }
 
+/* ---- Joint-angle sliders ---- */
+
+.fm-joint-sliders {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.fm-joint-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.fm-joint-row .fm-joint-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.fm-joint-row input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent-blue);
+}
+
+.fm-sync-joints-btn {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
 /* ---- Terminal / log panel ---- */
 
 .fm-terminal-section {

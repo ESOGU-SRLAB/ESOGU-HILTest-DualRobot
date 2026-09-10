@@ -1041,10 +1041,8 @@ def main():
     frontOfScrewer,
     ]
     
-    loop_counter = 0
-    
     try:
-        robot_controller.get_logger().info("=== EKLEM HEDEFLİ SONSUZ DÖNGÜ BAŞLATILIYOR ===")
+        robot_controller.get_logger().info("=== VİDALAMA OPERASYONU BAŞLATILIYOR (TEK TUR) ===")
         robot_controller.get_logger().info("Durdurmak için Ctrl+C tuşlayın")
         
         # Program açılışında gripper'ın konumu bilinmiyor (önceki çalıştırma
@@ -1056,18 +1054,15 @@ def main():
         # robot_controller.move_to_joint_angles(home_joints, synchronous=True)
         time.sleep(2.0)
         
-        while rclpy.ok():
-            loop_counter += 1
-            robot_controller.get_logger().info(f"=== EKLEM DÖNGÜSÜ {loop_counter} BAŞLIYOR ===")
-            
-            # Güvenli sıralı eklem hareketi (deneme sayısı 3 olacak şekilde)
-            robot_controller.safe_joint_sequence(safe_joint_configurations, wait_time=0.5, max_retries=3)
-            
-            robot_controller.get_logger().info(f"Döngü {loop_counter} tamamlandı. 3 saniye bekleniyor...")
-            time.sleep(3.0)
+        # Operasyon TEK SEFER koşar: 4 vida sıkılır, vidalama aleti yerine
+        # bırakılır, sonra finally bloğu `home_joints`'e dönüp düğümü kapatır.
+        # Yeni bir tur için launch dosyasını tekrar başlatmak gerekir.
+        robot_controller.safe_joint_sequence(safe_joint_configurations, wait_time=0.5, max_retries=3)
+        
+        robot_controller.get_logger().info("=== VİDALAMA OPERASYONU TAMAMLANDI ===")
         
     except KeyboardInterrupt:
-        robot_controller.get_logger().info(f"Program kullanıcı tarafından durduruldu (Toplam {loop_counter} döngü)")
+        robot_controller.get_logger().info("Program kullanıcı tarafından durduruldu")
     except Exception as e:
         robot_controller.get_logger().error(f"Beklenmeyen hata: {str(e)}")
     

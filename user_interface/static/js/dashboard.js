@@ -68,6 +68,27 @@ socket.on("status_update", (data) => {
         banner.classList.remove("visible");
     }
 
+    // "Run Again" banner is always on screen (a fixed part of the layout) -- only
+    // the button's enabled state changes. It's clickable once a one-shot scenario
+    // (anything but Pick & Place, which is a long-running task-prompt loop, not a
+    // single pass) has finished on its own. robot_confirmed distinguishes that from
+    // the FIRST-ever confirm-banner state above: that one is "HIL just came up,
+    // never confirmed yet" (robot_confirmed false), this one is "already confirmed
+    // once, that run finished" (robot_confirmed true).
+    const rerunBanner = document.getElementById("rerun-banner");
+    const rerunBtn = document.getElementById("btn-rerun");
+    const canRerun =
+        data.hil_status === "running" &&
+        data.robot_confirmed &&
+        data.scenario_status === "stopped" &&
+        data.current_scenario &&
+        data.current_scenario !== "pick_and_place";
+    rerunBtn.disabled = !canRerun;
+    rerunBanner.classList.toggle("disabled", !canRerun);
+    document.getElementById("rerun-banner-text").textContent = canRerun
+        ? `${SCENARIO_LABELS[data.current_scenario] || data.current_scenario} finished. Run it again?`
+        : "Run a one-shot scenario to enable this.";
+
     // "Send Command" yalnızca serbest metin komut alan senaryo çalışırken.
     // Senaryo durunca gizlenir; duran bir düğüme komut yollamanın anlamı yok.
     const sendBtn = document.getElementById("btn-send-command");
@@ -146,6 +167,15 @@ function startScenario(scenarioKey) {
 }
 
 function confirmRobot() {
+    socket.emit("confirm_robot");
+}
+
+function rerunScenario() {
+    // HIL is still up from the run that just finished (current_scenario/hil_status
+    // are deliberately left alone by the backend's natural-completion detection), so
+    // relaunching is just another confirm_robot -- same event confirmRobot() uses,
+    // it relaunches the same current_scenario's command immediately instead of
+    // restarting HIL from scratch.
     socket.emit("confirm_robot");
 }
 

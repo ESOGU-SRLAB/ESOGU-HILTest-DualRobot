@@ -198,6 +198,16 @@
         </button>
     </div>
 
+    <!-- ===== RUN AGAIN BANNER (always shown; enabled once a one-shot scenario
+         finishes on its own -- see dashboard.js's status_update handler) ===== -->
+    <div class="rerun-banner disabled" id="rerun-banner">
+        <span class="banner-icon">✅</span>
+        <span class="banner-text" id="rerun-banner-text">Run a one-shot scenario to enable this.</span>
+        <button class="confirm-btn" id="btn-rerun" onclick="rerunScenario()" disabled>
+            🔁 Run It Again
+        </button>
+    </div>
+
     <!-- ===== TASK COMMAND MODAL (/gemini/command) ===== -->
     <div class="modal-overlay" id="command-modal" onclick="onCommandOverlayClick(event)">
         <div class="modal-box" role="dialog" aria-modal="true"
@@ -790,7 +800,7 @@
 </div>
 <!-- ===== /VIEW: ANOMALY DETECTION ===== -->
 
-{% from "freemove_macros.html" import freemove_params %}
+{% from "freemove_macros.html" import freemove_params, freemove_joints %}
 <!-- ===== VIEW: FREE MOVE ===== -->
 <div id="view-freemove" hidden>
     <div class="dashboard freemove-dashboard">
@@ -838,7 +848,8 @@
                     <button type="button" class="fm-btn secondary fm-reset-btn" data-arm="ur" disabled>
                         ↺ Reset ball to current TCP
                     </button>
-                    {{ freemove_params("ur") }}
+                    {{ freemove_params("ur", default_velocity=0.1, default_acceleration=0.1) }}
+                    {{ freemove_joints("ur") }}
                 </div>
 
                 <div class="fm-arm-card" id="fm-card-kawasaki" data-arm="kawasaki">
@@ -857,7 +868,8 @@
                     <button type="button" class="fm-btn secondary fm-reset-btn" data-arm="kawasaki" disabled>
                         ↺ Reset ball to current TCP
                     </button>
-                    {{ freemove_params("kawasaki") }}
+                    {{ freemove_params("kawasaki", default_velocity=0.02, default_acceleration=0.02) }}
+                    {{ freemove_joints("kawasaki") }}
                 </div>
             </div>
         </div>

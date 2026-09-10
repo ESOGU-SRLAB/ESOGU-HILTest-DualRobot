@@ -23,6 +23,11 @@ def generate_launch_description():
         description='Target coverage threshold (0.0 to 1.0)'
     )
 
+    output_plan_file_arg = DeclareLaunchArgument(
+        'output_plan_file',
+        default_value='/home/cem/colcon_ws/src/viewpoint_planner/plans/viewpoint_plan.json',
+        description='Where to write the generated plan JSON. The executor reads it from '
+                    'here and keeps its trajectory cache in <plans>/trajectories/.')
     config_file_arg = DeclareLaunchArgument(
         'config_file',
         default_value=default_config,
@@ -42,6 +47,7 @@ def generate_launch_description():
             LaunchConfiguration('config_file'),
             {
                 'mesh_path': LaunchConfiguration('mesh_path'),
+                'output_plan_file': LaunchConfiguration('output_plan_file'),
                 'coverage_threshold': LaunchConfiguration('coverage_threshold'),
             },
         ]
@@ -56,6 +62,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         mesh_path_arg,
+        output_plan_file_arg,
         coverage_threshold_arg,
         config_file_arg,
         planner_node,

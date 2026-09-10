@@ -267,6 +267,13 @@ class ScenarioManager:
             "scenario_cmd": "ros2 launch multirobot_viewpoint_planner multirobot_inspection.launch.py",
             # use_fake_hardware açıkken only_sim:=true, gerçek robot bağlıyken only_sim:=false
             "sim_flag": "only_sim",
+            # multirobot_inspection.launch.py also starts multirobot_viewpoint_visualizer,
+            # a PERMANENT node with no on_exit handler registered -- so `ros2 launch`
+            # itself never terminates once the tour is actually done (see memory
+            # "inspection-launch-never-exits"). Watch the one-shot executor processes
+            # (ur_inspection_node / kawasaki_inspection_node) inside the launch's own
+            # process group instead: see _watch_executor_completion().
+            "executor_pattern": "inspection_node",
         },
         "ur10e_inspection": {
             "label": "UR10e Inspection Scenario",
@@ -275,6 +282,12 @@ class ScenarioManager:
             "hil_params": "",
             "scenario_cmd": "ros2 launch viewpoint_planner inspection_execution.launch.py",
             "sim_flag": "only_sim",
+            # Same story as multi_robot_inspection above: inspection_execution.launch.py
+            # also starts a permanent viewpoint_visualizer node. Pattern is more specific
+            # than "inspection_node" on purpose -- the executable here is
+            # "inspection_executor_node", which "inspection_node" would NOT match as a
+            # substring (unlike ur_inspection_node/kawasaki_inspection_node above).
+            "executor_pattern": "inspection_executor_node",
         },
         "pick_and_place": {
             "label": "Pick & Place Scenario",
@@ -360,6 +373,92 @@ class ScenarioManager:
                     break
         except (ValueError, OSError):
             pass  # Process closed
+
+        if source_name != "SENARYO":
+            return
+        # human_robot_collaboration exits its OWN process cleanly (on_exit=Shutdown
+        # in its launch file), so this EOF-based path is enough for it. But
+        # multi_robot_inspection / ur10e_inspection each also start a PERMANENT
+        # visualizer node with no on_exit handler -- `ros2 launch` for those never
+        # exits on its own even once the actual work is done (see memory
+        # "inspection-launch-never-exits"), so process.wait() below just blocks
+        # forever for them; confirm_robot_ready() spawns a SEPARATE
+        # _watch_executor_completion() watcher for those instead. Both paths funnel
+        # into the same _mark_natural_completion() and are safe to run concurrently
+        # (whichever notices first wins; the other's guard is then a no-op).
+        process.wait()
+        self._mark_natural_completion(process)
+
+    def _mark_natural_completion(self, process):
+        """Flip scenario_status back to "stopped" once `process` (the SENARYO
+        subprocess) is confirmed done, WITHOUT touching current_scenario or
+        hil_status: HIL is still up and homed, so a "Run Again" click can relaunch
+        the same scenario_cmd immediately via confirm_robot_ready() instead of a full
+        HIL restart. Called from both _stream_output (EOF on the launch process
+        itself) and _watch_executor_completion (the one-shot executor node(s) inside
+        it have all exited) -- see the comment in _stream_output for why a launch
+        exit alone is not always a valid completion signal."""
+        with self._lock:
+            # Only treat this as a natural completion if nothing has already
+            # superseded it -- a manual Stop or a fresh Start both flip
+            # scenario_status away from "running" (to "stopping") before killing the
+            # old process, so this guard can't fire for either of those.
+            if self.scenario_process is not process or self.scenario_status != "running":
+                return
+            self.scenario_status = "stopped"
+            label = self.SCENARIOS.get(self.current_scenario, {}).get(
+                "label", self.current_scenario)
+            returncode = process.poll()
+            if returncode in (0, None):
+                self._emit_log("SYSTEM", f"✅ {label} finished on its own.")
+            else:
+                self._emit_log("SYSTEM", f"⚠️ {label} exited (code {returncode}).")
+            self._emit_status()
+
+    def _watch_executor_completion(self, process, pattern):
+        """For scenarios whose launch file has a permanent side node and no on_exit
+        handler (see the "executor_pattern" comments on SCENARIOS and memory
+        "inspection-launch-never-exits") -- `ros2 launch` itself never terminates
+        once the actual work is done, so _stream_output's EOF-based detection never
+        fires. Poll the ACTUAL one-shot executor process(es) inside the launch's
+        process group instead: once they have appeared and then all disappeared, the
+        run is over, independent of the launch wrapper or the permanent visualizer.
+        Mirrors doors_inspection/doors_mission_node.py's _await_tour_end(), the
+        existing working pattern for this exact problem in this workspace."""
+        try:
+            pgid = os.getpgid(process.pid)
+        except (ProcessLookupError, OSError):
+            return
+        seen = False
+        # If the executors never even appear (launch itself failed to come up),
+        # don't watch forever -- give up and let a manual Stop or the EOF-based path
+        # (if the launch process happens to die outright) handle it instead.
+        grace_deadline = time.monotonic() + 90.0
+        while True:
+            if process.poll() is not None:
+                return  # launch process itself exited; _stream_output's path handles it
+            with self._lock:
+                if self.scenario_process is not process:
+                    return  # superseded by a manual stop/restart
+            try:
+                out = subprocess.run(
+                    ["pgrep", "-g", str(pgid), "-f", pattern],
+                    capture_output=True, text=True, timeout=5).stdout
+            except (subprocess.SubprocessError, OSError):
+                out = ""
+            pids = [p for p in out.split() if p]
+            if pids:
+                seen = True
+            elif seen:
+                time.sleep(1.0)  # let stdout flush the final lines before marking done
+                self._mark_natural_completion(process)
+                return
+            elif time.monotonic() > grace_deadline:
+                self._emit_log("SYSTEM",
+                    f"⚠️ Executor process ('{pattern}') never appeared after 90s; "
+                    "giving up on auto-detecting completion for this run.")
+                return
+            time.sleep(1.0)
 
     def _kill_process(self, process, name, timeout=10):
         """Gracefully kill a process: SIGINT → wait → SIGTERM → wait → SIGKILL."""
@@ -723,6 +822,19 @@ class ScenarioManager:
                 self._emit_status()
 
                 self._emit_log("SYSTEM", f"🚀 {scenario['label']} is running!")
+
+                # multi_robot_inspection / ur10e_inspection: the launch process
+                # itself never exits (permanent visualizer, no on_exit handler --
+                # see "executor_pattern" on SCENARIOS), so _stream_output's EOF-based
+                # completion detection never fires for them. Watch the actual
+                # executor node(s) instead.
+                executor_pattern = scenario.get("executor_pattern")
+                if executor_pattern:
+                    watch_thread = threading.Thread(
+                        target=self._watch_executor_completion,
+                        args=(self.scenario_process, executor_pattern),
+                        daemon=True)
+                    watch_thread.start()
 
                 # Serbest metinle görev alan senaryolarda komut penceresini aç.
                 if scenario.get("command_prompt"):
@@ -3375,6 +3487,54 @@ def handle_freemove_execute(data):
             scenario_mgr._emit_log("FREEMOVE", f"✅ {arm_name}: move complete.")
         else:
             scenario_mgr._emit_log("FREEMOVE", f"❌ {arm_name}: move failed ({result.get('error')}).")
+
+    threading.Thread(target=_run, daemon=True).start()
+
+@socketio.on("freemove_plan_joint")
+def handle_freemove_plan_joint(data):
+    data = dict(data or {})
+
+    def _run():
+        arm_name = data.get("arm")
+        arm = free_move.manager.arm(arm_name)
+        if arm is None:
+            socketio.emit("freemove_plan_joint_result",
+                {"arm": arm_name, "ok": False, "error": "unknown_arm"})
+            return
+        result = arm.plan_joint(data.get("joint_positions") or {})
+        socketio.emit("freemove_plan_joint_result", {"arm": arm_name, **result})
+        if result["ok"]:
+            scenario_mgr._emit_log("FREEMOVE", f"📐 {arm_name}: joint plan OK.")
+        else:
+            scenario_mgr._emit_log("FREEMOVE",
+                f"📐 {arm_name}: joint plan failed ({result.get('error')}).")
+
+    threading.Thread(target=_run, daemon=True).start()
+
+@socketio.on("freemove_execute_joint")
+def handle_freemove_execute_joint(data):
+    data = dict(data or {})
+
+    def _run():
+        arm_name = data.get("arm")
+        arm = free_move.manager.arm(arm_name)
+        if arm is None:
+            socketio.emit("freemove_execute_status",
+                {"arm": arm_name, "state": "failed", "error": "unknown_arm"})
+            return
+        socketio.emit("freemove_execute_status", {"arm": arm_name, "state": "executing"})
+        scenario_mgr._emit_log("FREEMOVE", f"🚀 {arm_name}: executing joint move...")
+        result = arm.execute_joint(data.get("joint_positions") or {})
+        socketio.emit("freemove_execute_status", {
+            "arm": arm_name,
+            "state": "succeeded" if result["ok"] else "failed",
+            "error": result.get("error"),
+        })
+        if result["ok"]:
+            scenario_mgr._emit_log("FREEMOVE", f"✅ {arm_name}: joint move complete.")
+        else:
+            scenario_mgr._emit_log("FREEMOVE",
+                f"❌ {arm_name}: joint move failed ({result.get('error')}).")
 
     threading.Thread(target=_run, daemon=True).start()
 

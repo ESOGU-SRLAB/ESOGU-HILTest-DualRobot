@@ -75,14 +75,26 @@ POLL_INTERVAL = 0.02
 # (10 attempts / 5s budget beats the pymoveit2 defaults of 5 attempts / 0.5s, which
 # is too little time for a 7-DOF group with a non-trivial planner). planner_id empty
 # means "let MoveIt pick" -- it falls back to RRTConnect, the proven choice there.
+# max_velocity/max_acceleration are NOT here -- they default differently per arm
+# (see UR_DEFAULT_* / KAWASAKI_DEFAULT_* below) and get merged in per-instance.
 DEFAULT_PARAMS = {
-    "max_velocity": 0.2,
-    "max_acceleration": 0.2,
     "num_planning_attempts": 10,
     "allowed_planning_time": 5.0,
     "planner_id": "",
 }
+# Every key set_params() is allowed to touch -- DEFAULT_PARAMS plus the two that are
+# seeded per-arm instead of from a shared default (see UR_DEFAULT_*/KAWASAKI_DEFAULT_*).
+PARAM_KEYS = (*DEFAULT_PARAMS.keys(), "max_velocity", "max_acceleration")
 DEFAULT_PADDING_M = 0.04
+
+# Kawasaki defaults much slower than UR on purpose -- operator request, not a
+# measured limit: the AGV rail makes a Kawasaki jog cover more ground per radian
+# of joint motion than the UR does, so the same scaling factor feels far faster
+# on Kawasaki in practice.
+UR_DEFAULT_VELOCITY = 0.1
+UR_DEFAULT_ACCELERATION = 0.1
+KAWASAKI_DEFAULT_VELOCITY = 0.02
+KAWASAKI_DEFAULT_ACCELERATION = 0.02
 
 # Set by app.py at import time. _ros_spin's except block always print()s (visible
 # only if someone happens to be watching this process's own stdout, which for a
@@ -95,7 +107,7 @@ class FreeMoveArm:
     """One arm's MoveIt2 handle, owned by a single dedicated ROS thread."""
 
     def __init__(self, name, joint_names, end_effector_name, group_name, link_re,
-                 base_link_name=WORLD_FRAME):
+                 base_link_name=WORLD_FRAME, default_velocity=0.2, default_acceleration=0.2):
         self.name = name
         self._joint_names = list(joint_names)
         self._end_effector_name = end_effector_name
@@ -125,8 +137,16 @@ class FreeMoveArm:
         self._joint_pos = {}
 
         self._params = dict(DEFAULT_PARAMS)
+        self._params["max_velocity"] = default_velocity
+        self._params["max_acceleration"] = default_acceleration
         self._padding_m = DEFAULT_PADDING_M
         self._last_error = None
+        # The exact trajectory_msgs/JointTrajectory the last successful plan()/
+        # plan_joint() call computed (and the ghost preview animates), guarded by
+        # _exec_lock. execute()/execute_joint() run THIS directly instead of asking
+        # MoveIt to plan again -- see the long comment on execute() for why that
+        # matters.
+        self._last_trajectory = None
 
     # --- lifecycle --------------------------------------------------- #
     def start(self):
@@ -192,6 +212,19 @@ class FreeMoveArm:
                 end_effector_name=self._end_effector_name,
                 group_name=self._group_name,
                 callback_group=cb_group,
+                # CRITICAL: without this, move_to_pose()/move_to_configuration() take
+                # their OTHER branch -- self.execute(self.plan(...)) -- and that
+                # plan() is the BLOCKING wrapper (bare rclpy.spin_once(self._node,
+                # ...) in a loop), the exact "second spinner" this module's docstring
+                # warns about, except here it was happening on every single Execute
+                # click via a call this file never made directly. use_move_group_action
+                # routes both through the MoveGroup action's send_goal_async() instead,
+                # which only ever registers a done-callback -- no spinning of its own,
+                # safe under the same dedicated-executor-only rule as everything else
+                # here. This was very likely the real cause of "the system gets tired
+                # and starts timing out after a while": each Execute was corrupting
+                # this node's own executor wait set out from under it.
+                use_move_group_action=True,
             )
             self._apply_params_to(moveit2, self._params)
 
@@ -392,6 +425,7 @@ class FreeMoveArm:
             traj = moveit2.get_trajectory(future, cartesian=False)
             if traj is None:
                 return {"ok": False, "trajectory": None, "error": "no_plan_found"}
+            self._last_trajectory = traj
             points = [
                 {
                     "positions": list(pt.positions),
@@ -409,16 +443,35 @@ class FreeMoveArm:
             return {"ok": False, "trajectory": None, "error": str(e)}
 
     def execute(self, position, quat_xyzw):
-        """Plan+execute to a pose (joint-space). Blocks the calling thread until the
-        motion finishes or times out -- callers must run this on their own thread."""
+        """Run the EXACT trajectory the last plan() call computed. Blocks the calling
+        thread until the motion finishes or times out -- callers must run this on
+        their own thread.
+
+        This used to call moveit2.move_to_pose(...), which -- because FreeMoveArm
+        constructs MoveIt2Real with use_move_group_action=True -- sends a fresh
+        MoveGroup action goal and lets move_group plan AGAIN from scratch, completely
+        independently of the plan() call that had just been used to render the ghost
+        preview. OMPL is non-deterministic (and IK for a given pose is not unique --
+        the same Cartesian target has multiple valid elbow/wrist configurations), so
+        that second, independent plan routinely picked a different joint-space path,
+        sometimes even a different FINAL joint configuration for the same TCP goal:
+        exactly the "ghost and the real robot end up in different poses" and "extra
+        jerky" symptoms reported 2026-09-09. Running the stored trajectory directly
+        (moveit2.execute(), which talks straight to the controller, no re-planning)
+        guarantees the real robot follows the identical path the ghost just animated,
+        every time. position/quat_xyzw are accepted only for logging/API symmetry with
+        plan() -- the frontend already refuses to enable Execute unless the current
+        target still matches the pose that was last successfully planned."""
         moveit2 = self._get_moveit2()
         if moveit2 is None:
             return {"ok": False, "error": "not_ready"}
+        if self._last_trajectory is None:
+            return {"ok": False, "error": "no_plan"}
         if not self._exec_lock.acquire(blocking=False):
             return {"ok": False, "error": "busy"}
         try:
             from pymoveit2_real import MoveIt2State
-            moveit2.move_to_pose(position=position, quat_xyzw=quat_xyzw, cartesian=False)
+            moveit2.execute(self._last_trajectory)
             deadline = time.monotonic() + EXECUTE_TIMEOUT
             # NEVER wait_until_executed() here -- see module docstring. Poll the plain
             # state flags instead; the dedicated thread's executor advances them.
@@ -443,6 +496,76 @@ class FreeMoveArm:
             moveit2.cancel_execution()
         except Exception as e:
             print(f"[FreeMoveArm:{self.name}] cancel failed: {e}")
+
+    def plan_joint(self, joint_positions):
+        """Joint-space counterpart of plan() -- goal given as {joint_name: radians}
+        instead of a Cartesian pose, no IK involved at all."""
+        moveit2 = self._get_moveit2()
+        if moveit2 is None:
+            return {"ok": False, "trajectory": None, "error": "not_ready"}
+        start_state = self._current_joint_state_msg()
+        if start_state is None:
+            return {"ok": False, "trajectory": None, "error": "no_joint_state"}
+        try:
+            names = list(joint_positions.keys())
+            positions = [float(joint_positions[n]) for n in names]
+            future = moveit2.plan_async(
+                joint_positions=positions, joint_names=names, start_joint_state=start_state)
+            if self._wait_future(future, PLAN_TIMEOUT) is None:
+                return {"ok": False, "trajectory": None, "error": "timeout"}
+            traj = moveit2.get_trajectory(future, cartesian=False)
+            if traj is None:
+                return {"ok": False, "trajectory": None, "error": "no_plan_found"}
+            self._last_trajectory = traj
+            points = [
+                {
+                    "positions": list(pt.positions),
+                    "time_from_start": pt.time_from_start.sec
+                    + pt.time_from_start.nanosec * 1e-9,
+                }
+                for pt in traj.points
+            ]
+            return {
+                "ok": True,
+                "trajectory": {"joint_names": list(traj.joint_names), "points": points},
+                "error": None,
+            }
+        except Exception as e:
+            return {"ok": False, "trajectory": None, "error": str(e)}
+
+    def execute_joint(self, joint_positions):
+        """Joint-space counterpart of execute() -- runs the exact trajectory the last
+        plan_joint() call computed, for the same reason execute() no longer calls
+        move_to_pose(): move_to_configuration() would plan AGAIN from scratch and could
+        land the real robot on a different path/configuration than the ghost just
+        showed. Same safety notes apply (needs use_move_group_action=True on the
+        MoveIt2Real construction, never wait_until_executed()); blocks the calling
+        thread, run on its own. joint_positions is accepted only for API symmetry with
+        plan_joint() -- the frontend already gates the Execute button on the current
+        slider goal still matching what was last successfully planned."""
+        moveit2 = self._get_moveit2()
+        if moveit2 is None:
+            return {"ok": False, "error": "not_ready"}
+        if self._last_trajectory is None:
+            return {"ok": False, "error": "no_plan"}
+        if not self._exec_lock.acquire(blocking=False):
+            return {"ok": False, "error": "busy"}
+        try:
+            from pymoveit2_real import MoveIt2State
+            moveit2.execute(self._last_trajectory)
+            deadline = time.monotonic() + EXECUTE_TIMEOUT
+            while moveit2.query_state() != MoveIt2State.IDLE:
+                if time.monotonic() > deadline:
+                    moveit2.cancel_execution()
+                    return {"ok": False, "error": "timeout"}
+                time.sleep(POLL_INTERVAL)
+            if moveit2.motion_suceeded:
+                return {"ok": True, "error": None}
+            return {"ok": False, "error": "motion_failed"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        finally:
+            self._exec_lock.release()
 
     def current_tcp_pose(self):
         """{"position": [x,y,z], "quat_xyzw": [x,y,z,w]} for the end effector, or None."""
@@ -479,11 +602,11 @@ class FreeMoveArm:
         return {**self._params, "padding_m": self._padding_m}
 
     def set_params(self, updates):
-        """Merge `updates` (a subset of DEFAULT_PARAMS's keys) and apply them to the
-        live MoveIt2 object. Affects both plan() and execute(): pymoveit2's plan
-        service reuses the same request object the move-group action goal does."""
+        """Merge `updates` (a subset of PARAM_KEYS) and apply them to the live
+        MoveIt2 object. Affects both plan() and execute(): pymoveit2's plan service
+        reuses the same request object the move-group action goal does."""
         merged = dict(self._params)
-        for key in DEFAULT_PARAMS:
+        for key in PARAM_KEYS:
             if key in updates:
                 merged[key] = updates[key]
         moveit2 = self._get_moveit2()
@@ -545,10 +668,13 @@ class FreeMoveManager:
     """Owns both arms; started/stopped together by the dashboard."""
 
     def __init__(self):
-        self.ur = FreeMoveArm("ur", UR_JOINT_NAMES, UR_END_EFFECTOR, UR_GROUP, UR_LINK_RE)
+        self.ur = FreeMoveArm(
+            "ur", UR_JOINT_NAMES, UR_END_EFFECTOR, UR_GROUP, UR_LINK_RE,
+            default_velocity=UR_DEFAULT_VELOCITY, default_acceleration=UR_DEFAULT_ACCELERATION)
         self.kawasaki = FreeMoveArm(
             "kawasaki", KAWASAKI_JOINT_NAMES, KAWASAKI_END_EFFECTOR, KAWASAKI_GROUP,
-            KAWASAKI_LINK_RE)
+            KAWASAKI_LINK_RE,
+            default_velocity=KAWASAKI_DEFAULT_VELOCITY, default_acceleration=KAWASAKI_DEFAULT_ACCELERATION)
         self._active = False
 
     @property

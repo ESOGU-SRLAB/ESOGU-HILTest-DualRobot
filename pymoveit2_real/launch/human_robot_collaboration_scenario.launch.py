@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, Shutdown
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -130,6 +130,8 @@ def generate_launch_description():
                 ),
             }
         ],
+        # Senaryo tek tur koşup çıkar; düğüm bittiğinde launch da kapansın.
+        on_exit=Shutdown(),
     )
 
     return LaunchDescription(declared_arguments + [human_robot_collaboration_node])

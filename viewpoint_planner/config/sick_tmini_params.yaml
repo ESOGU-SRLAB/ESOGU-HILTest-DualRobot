@@ -41,9 +41,14 @@ viewpoint_planner_node:
       # the arm's comfortable reach and cover more area each.
       viewpoint_distances: [0.3, 0.6, 1.0, 1.4]
       tilt_variations_deg: [-15.0, 0.0, 15.0]
-      # Relaxed from 75 -> 80 deg: accept more oblique viewing angles so grazing
-      # interior/edge faces still count as covered. Raises the geometric ceiling.
-      max_incidence_angle_deg: 80.0
+      # Steepest surface-to-view angle still counted as covered. Measured on this
+      # chassis mesh (4277 targets, 5136 candidates): the geometric coverage ceiling
+      # is 90.5% at 80 deg, 91.7% at 85, 94.6% at 88. Raising it costs nothing -- the
+      # candidate set does not change, only which targets they are credited with.
+      # 85 is the honest stopping point: a ToF sensor returns little at a grazing
+      # incidence, so the extra points at 88/89 deg would be counted coverage the
+      # camera does not actually measure.
+      max_incidence_angle_deg: 85.0
 
     coverage_threshold: 0.98
 
@@ -71,7 +76,14 @@ viewpoint_planner_node:
     #   higher (e.g. 0.015-0.02) -> fewer, higher-value stops (~10-12)
     #   lower  (e.g. 0.005)      -> more coverage from a longer tail (~25)
     #   0.0                      -> disable (fall back to max_viewpoints/threshold)
-    min_marginal_coverage: 0.005
+    # Was 0.005 (= 22 new points on this mesh), which stops the plan early. Measured
+    # 2026-09-08 on the greedy curve for this mesh at max_incidence 85: floor 22 -> 29
+    # viewpoints / 76.4% geometric, floor 15 -> 37 / 79.5%, floor 9 -> 51 / 83.0%. The
+    # achieved figure is lower than all of these because most of the tail is
+    # unreachable, but the ranking holds. 0.0035 sits mid-way: it buys back most of the
+    # coverage the 0.5% cutter was discarding without doubling the number of stops, and
+    # the extra stops cost planning time only once now that trajectories are cached.
+    min_marginal_coverage: 0.0035
 
     # Candidate density: how many surface points seed viewpoints. Raised from the
     # 250 default to give more interior/edge targets a nearby candidate, lifting
@@ -108,7 +120,14 @@ viewpoint_planner_node:
     ground_plane_z: -0.02
     ground_plane_size: 6.0
     ground_plane_thickness: 0.2
-    collision_padding: 0.03
+    # Same as the multirobot cell: 4 cm on EVERY ur10e_* link (arm, furniture and
+    # chassis alike). MUST equal inspection_execution.launch.py's collision_padding.
+    collision_padding: 0.04
+    # 0.0 = no separate chassis margin, i.e. the chassis gets collision_padding too --
+    # exactly the multirobot behaviour. MUST equal the launch file's
+    # chassis_collision_padding: plan-time IK and execution-time motion planning have
+    # to see the SAME collision world. (Was 0.10 until 2026-09-10.)
+    chassis_collision_padding: 0.0
     arm_link_prefix: "ur10e_"
 
     # Reorder the selected viewpoints into a short cartesian visiting path
@@ -116,6 +135,39 @@ viewpoint_planner_node:
     # jumping in greedy coverage-discovery order. Only the visiting ORDER changes
     # -- the same viewpoints (and their informativeness rank) are kept.
     order_by_proximity: true
+    # WHERE the sweep starts: 'max_y' (chassis front), 'min_y' (back), or 'coverage'.
+    # The executor no longer re-orders the plan at run time -- this IS the visiting
+    # order it drives -- so max_y here reproduces the sweep the executor used to impose.
+    order_anchor: "max_y"
+    # HOW the tour is built.
+    #   'y_bands'   -> monotone sweep: every viewpoint in the first Y band, then the
+    #                  next, and so on; the arm never returns to a band it has left.
+    #   'proximity' -> the globally shortest 3D path, which is free to walk back up the
+    #                  chassis whenever that is cheaper -- and does.
+    #   'joint'     -> (DEFAULT here) order by how far the ARM moves between viewpoints,
+    #                  choosing each viewpoint's IK branch so the tour stays short. The
+    #                  cartesian orders above put stops together because their CAMERAS are
+    #                  close, which says nothing about the arm: on the 2026-09-10 plan two
+    #                  low viewpoints 0.58 m apart needed 546 deg of reconfiguration and
+    #                  had no path between them, though each was reachable on its own.
+    order_mode: "joint"
+    order_ik_seeds: 10          # random postures per viewpoint to find its alternative branches
+    order_ik_timeout: 0.1
+    order_rail_weight: 2.0      # rad of joint travel one metre of rail is worth
+    # MUST equal inspection_execution's start_pose (rail m, joints deg): the tour starts here.
+    order_start_pose: [1.0, 0.0, -90.0, 0.0, -90.0, 0.0, 0.0]
+    # Plan every hop of the joint-space tour for real and repair the failing ones, so
+    # the plan only holds a chain the executor can drive. The executor follows it
+    # (inspection_execution: use_pose_goal:=false, nearest_branch_ik:=false).
+    order_check_feasibility: true
+    order_plan_time: 3.0            # s per validation plan
+    order_max_tries_per_step: 8     # cheapest next-stop candidates planned before widening
+    order_feasibility_budget_s: 240.0
+    # Depth of one Y band, metres. Measured on the two-arm plans: at 0.30 the worst
+    # backward step falls from 0.76 m to 0.22 m for ~13% more path length. Smaller
+    # approaches a strict sort by Y (perfectly monotone, ~35% longer path); larger
+    # drifts back towards 'proximity'.
+    order_band_width_m: 0.30
 
     # WORKSPACE KEEP-OUT BOX (world frame, metres). The occlusion ray-trace only
     # knows the chassis mesh, so it cannot tell that a candidate camera pose behind

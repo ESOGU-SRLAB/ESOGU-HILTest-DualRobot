@@ -1,5 +1,6 @@
 import copy
 import threading
+import time
 from enum import Enum
 from typing import Any, List, Optional, Tuple, Union
 
@@ -45,6 +46,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from pymoveit2_real.joint_wrap import (
     describe_changes,
     parse_joint_limits,
+    path_travel,
     wrap_to_reference,
 )
 from pymoveit2_real.utils import enum_to_str
@@ -195,19 +197,26 @@ class MoveIt2:
         self.__urdf_xml = None
         self.__joint_limits = None
         self.__unwind_warned = False
-        if self.__unwind_joint_goals:
-            self._node.create_subscription(
-                msg_type=String,
-                topic="robot_description",
-                callback=self.__robot_description_callback,
-                qos_profile=QoSProfile(
-                    durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
-                    reliability=QoSReliabilityPolicy.RELIABLE,
-                    history=QoSHistoryPolicy.KEEP_LAST,
-                    depth=1,
-                ),
-                callback_group=self._callback_group,
-            )
+        # Subscribed UNCONDITIONALLY, not only when unwinding is on: `joint_limits` is a
+        # public property that other features read too (nearest_branch_ik needs it to
+        # tell a prismatic rail from a revolute joint, and to draw random seeds inside
+        # the real limits). Gating the subscription on unwind_joint_goals left the table
+        # empty for every caller that unwinds itself -- all three inspection executors do
+        # -- so travel scoring silently added rail METRES to wrist RADIANS. Unwinding
+        # itself is still gated by the flag inside unwind_joint_goal(); this only makes
+        # the model available.
+        self._node.create_subscription(
+            msg_type=String,
+            topic="robot_description",
+            callback=self.__robot_description_callback,
+            qos_profile=QoSProfile(
+                durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+                reliability=QoSReliabilityPolicy.RELIABLE,
+                history=QoSHistoryPolicy.KEEP_LAST,
+                depth=1,
+            ),
+            callback_group=self._callback_group,
+        )
 
         # Create action client for move action
         self.__move_action_client = ActionClient(
@@ -1322,9 +1331,17 @@ class MoveIt2:
         start_joint_state: Optional[Union[JointState, List[float]]] = None,
         constraints: Optional[Constraints] = None,
         wait_for_server_timeout_sec: Optional[float] = 1.0,
+        ik_link_name: Optional[str] = None,
+        ik_timeout: Optional[float] = None,
+        avoid_collisions: Optional[bool] = None,
+        group_name: Optional[str] = None,
     ) -> Optional[JointState]:
         """
-        Call compute_ik_async and wait on future
+        Call compute_ik_async and wait on future.
+
+        WARNING: this spins the node from the calling thread. If your node already runs
+        under an executor, use compute_ik_async() and await the future yourself -- see
+        nearest_branch_ik(), which does exactly that.
         """
         future = self.compute_ik_async(
             **{key: value for key, value in locals().items() if key != "self"}
@@ -1369,6 +1386,10 @@ class MoveIt2:
         start_joint_state: Optional[Union[JointState, List[float]]] = None,
         constraints: Optional[Constraints] = None,
         wait_for_server_timeout_sec: Optional[float] = 1.0,
+        ik_link_name: Optional[str] = None,
+        ik_timeout: Optional[float] = None,
+        avoid_collisions: Optional[bool] = None,
+        group_name: Optional[str] = None,
     ) -> Optional[Future]:
         """
         Compute inverse kinematics for the given pose. To indicate beginning of the search space,
@@ -1376,10 +1397,43 @@ class MoveIt2:
         computed IK.
           - `start_joint_state` defaults to current joint state.
           - `constraints` defaults to None.
+          - `ik_link_name` solves for THIS link instead of the group's default tip. Without
+            it a sensor mounted past the tip (a camera optical frame, say) cannot be placed
+            on a target pose: MoveIt would put the flange there instead. Defaults to the
+            group's own tip, i.e. the behaviour before this argument existed.
+          - `ik_timeout` seconds the IK solver may spend. Defaults to the solver's own
+            kinematics.yaml value.
+          - `avoid_collisions` overrides the default (True) for this call. False measures
+            PURE KINEMATIC reachability -- diagnostic only, the arm may be in collision.
+          - `group_name` solves in a different group than this object's. Useful when the
+            group you plan for contains a redundant axis you do NOT want the solver to
+            move (a rail): solving in a group that excludes it makes drift impossible.
+
+        The request object is reused between calls, so every optional field is written on
+        EVERY call -- passing None restores the default rather than leaving the previous
+        call's value behind.
         """
 
         if not hasattr(self, "__compute_ik_client"):
             self.__init_compute_ik()
+
+        self.__compute_ik_req.ik_request.ik_link_name = (
+            ik_link_name if ik_link_name else ""
+        )
+        self.__compute_ik_req.ik_request.group_name = (
+            group_name if group_name else self.__group_name
+        )
+        self.__compute_ik_req.ik_request.avoid_collisions = (
+            True if avoid_collisions is None else bool(avoid_collisions)
+        )
+        if ik_timeout is None:
+            self.__compute_ik_req.ik_request.timeout.sec = 0
+            self.__compute_ik_req.ik_request.timeout.nanosec = 0
+        else:
+            self.__compute_ik_req.ik_request.timeout.sec = int(ik_timeout)
+            self.__compute_ik_req.ik_request.timeout.nanosec = int(
+                (float(ik_timeout) - int(ik_timeout)) * 1e9
+            )
 
         if isinstance(position, Point):
             self.__compute_ik_req.ik_request.pose_stamped.pose.position = position
@@ -2104,6 +2158,251 @@ class MoveIt2:
         if changes:
             self._node.get_logger().info(f"[unwind] {describe_changes(changes)}")
         return new_goal
+
+    # ------------------------------------------------------------------ #
+    # Nearest-branch IK.
+    # ------------------------------------------------------------------ #
+    def __await_future(self, future, timeout: float) -> bool:
+        """Wait for a future WITHOUT spinning. Everything below runs from a caller that
+        already has its node under an executor, and rclpy.spin_once() from there hands
+        the node to the global executor and never gives it back -- which silently kills
+        the caller's own subscriptions. So we poll instead."""
+        if future is None:
+            return False
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if future.done():
+                return True
+            time.sleep(0.01)
+        return False
+
+    def nearest_branch_ik(
+        self,
+        position: Union[Point, Tuple[float, float, float]],
+        quat_xyzw: Union[Quaternion, Tuple[float, float, float, float]],
+        ik_link_name: Optional[str] = None,
+        planned_goal: Optional[List[float]] = None,
+        random_seeds: int = 0,
+        rng_seed: int = 0,
+        seed_attempts: int = 1,
+        ik_timeout: float = 0.1,
+        avoid_collisions: bool = True,
+        group_name: Optional[str] = None,
+        lock_joints: Optional[dict] = None,
+        unwind: bool = True,
+        call_timeout: float = 2.0,
+    ) -> List[Tuple[List[float], float]]:
+        """Joint goals that reach ONE pose, ordered by how little the arm must move to
+        get there from where it is now. Returns [(joint_positions, travel_rad), ...],
+        closest first; empty when the pose has no solution or no joint state is known.
+
+        A pose has several valid IK branches (shoulder / elbow / wrist flips, and on a
+        redundant arm a whole continuum). A single compute_ik call returns ONE of them,
+        arbitrarily, which is how two viewpoints centimetres apart end up hundreds of
+        degrees apart in joint space. This collects the branches and ranks them.
+
+        Two things produce a different branch. Repeating the query only samples anything
+        when the solver RESTARTS RANDOMLY (pick_ik in `mode: global` does; KDL does not,
+        it returns the same answer every time), so the SEED is varied as well:
+          - the arm's measured pose,
+          - `planned_goal`, when the caller already has a solution in mind,
+          - `random_seeds` random postures drawn uniformly from the URDF limits, which is
+            what actually breaks a local solver out of its one answer.
+        `seed_attempts` repeats each non-random seed, for solvers that restart randomly.
+
+        `lock_joints` ({name: value}) pins those joints in every seed AND in every result.
+        Use it for an axis the solver must not move: pass the rail's planned position and
+        the branches that come back are all usable at that position. Combining it with
+        `group_name` (a group that excludes the axis) makes drift structurally impossible.
+
+        Each solution is unwound towards the current pose before it is scored, so a
+        branch is never judged by an accidental whole-turn offset. Ranking uses
+        joint_wrap.path_travel over the REVOLUTE joints.
+
+        Does not spin the node: safe to call from a node running under an executor.
+        """
+        current = self.joint_state
+        if current is None:
+            self._node.get_logger().warn(
+                "nearest_branch_ik: no joint state yet; cannot rank branches."
+            )
+            return []
+        names = list(self.__joint_names)
+        limits = self.joint_limits
+        reference = {n: float(p) for n, p in zip(current.name, current.position)}
+
+        def as_state(values) -> JointState:
+            js = JointState()
+            js.name = list(names)
+            js.position = [float(v) for v in values]
+            return js
+
+        def locked(values) -> List[float]:
+            vals = [float(v) for v in values]
+            if lock_joints:
+                for i, n in enumerate(names):
+                    if n in lock_joints:
+                        vals[i] = float(lock_joints[n])
+            return vals
+
+        # --- seeds, most-likely first ---
+        measured = [reference.get(n, 0.0) for n in names]
+        seeds: List[Tuple[JointState, int]] = [
+            (as_state(locked(measured)), max(1, int(seed_attempts)))
+        ]
+        if planned_goal is not None:
+            seeds.append(
+                (as_state(locked(planned_goal)), max(1, int(seed_attempts)))
+            )
+        if random_seeds > 0:
+            base = list(planned_goal) if planned_goal is not None else list(measured)
+            drawable = []
+            for i, n in enumerate(names):
+                if lock_joints and n in lock_joints:
+                    continue
+                limit = limits.get(n)
+                if limit is not None and not limit.is_revolute:
+                    continue        # never draw a prismatic axis: it is a chosen value
+                lo, hi = (
+                    (float(limit.lower), float(limit.upper))
+                    if limit is not None
+                    else (-np.pi, np.pi)
+                )
+                if not (np.isfinite(lo) and np.isfinite(hi)) or hi - lo < 1e-6:
+                    lo, hi = -np.pi, np.pi      # continuous joint
+                drawable.append((i, lo, hi))
+            if drawable:
+                rng = np.random.default_rng(int(rng_seed))
+                for _ in range(int(random_seeds)):
+                    vals = list(base)
+                    for i, lo, hi in drawable:
+                        vals[i] = float(rng.uniform(lo, hi))
+                    seeds.append((as_state(locked(vals)), 1))
+            elif limits:
+                self._node.get_logger().warn(
+                    "nearest_branch_ik: random_seeds requested but no revolute joint "
+                    "has usable limits; random seeding is disabled for this call."
+                )
+
+        out: List[Tuple[List[float], float]] = []
+        seen = set()
+        for seed, repeats in seeds:
+            for _ in range(repeats):
+                future = self.compute_ik_async(
+                    position=position,
+                    quat_xyzw=quat_xyzw,
+                    start_joint_state=seed,
+                    ik_link_name=ik_link_name,
+                    ik_timeout=ik_timeout,
+                    avoid_collisions=avoid_collisions,
+                    group_name=group_name,
+                )
+                if not self.__await_future(future, call_timeout):
+                    continue
+                # Read the result directly rather than through
+                # get_compute_ik_result(): a branch search EXPECTS most random seeds to
+                # fail, and that helper warns on every failure, which would bury the log.
+                response = future.result()
+                if (
+                    response is None
+                    or response.error_code.val != MoveItErrorCodes.SUCCESS
+                ):
+                    continue
+                solution = response.solution.joint_state
+                lut = {n: float(p) for n, p in zip(solution.name, solution.position)}
+                # A reduced group answers with only ITS joints; the rest keep the
+                # caller's planned value (for a locked rail that is exactly right).
+                # A joint the solver did not answer for keeps the caller's planned
+                # value, or its measured one -- either way a joint that is not moving.
+                fallback = list(planned_goal) if planned_goal is not None else measured
+                goal = locked([
+                    lut.get(n, float(fallback[i]) if i < len(fallback) else 0.0)
+                    for i, n in enumerate(names)
+                ])
+                if unwind:
+                    goal = self.unwind_joint_goal(
+                        goal, joint_names=names, reference=current
+                    )
+                    goal = locked(goal)
+                key = tuple(round(v, 3) for v in goal)
+                if key in seen:
+                    continue
+                seen.add(key)
+                out.append(
+                    (goal, path_travel(goal, names, reference, limits=limits))
+                )
+        out.sort(key=lambda t: t[1])
+        return out
+
+    def plan_nearest_branch(
+        self,
+        position: Union[Point, Tuple[float, float, float]],
+        quat_xyzw: Union[Quaternion, Tuple[float, float, float, float]],
+        max_candidates: int = 3,
+        plan_timeout: float = 30.0,
+        candidates: Optional[List[Tuple[List[float], float]]] = None,
+        **branch_kwargs,
+    ) -> Optional[Tuple[JointTrajectory, List[float]]]:
+        """Plan to a pose through its nearest branches and keep the trajectory that
+        actually travels least. Returns (trajectory, joint_goal) or None.
+
+        Ranking branches by goal-space distance is only a PROXY: the path a randomized
+        planner returns can wander far past that straight line, so the closest goal does
+        not always give the shortest path. This plans up to `max_candidates` of them and
+        compares the trajectories themselves. 1 restores "take the first branch that
+        plans"; every extra candidate costs one more planning call.
+
+        `candidates` lets a caller reuse a list from nearest_branch_ik(); otherwise it is
+        computed here and every extra keyword is forwarded to it.
+
+        Does not spin the node.
+        """
+        if candidates is None:
+            candidates = self.nearest_branch_ik(
+                position=position, quat_xyzw=quat_xyzw, **branch_kwargs
+            )
+        if not candidates:
+            return None
+        names = list(self.__joint_names)
+        limits = self.joint_limits
+        best = None
+        for goal, _ in candidates[: max(1, int(max_candidates))]:
+            future = self.plan_async(
+                joint_positions=list(goal),
+                joint_names=names,
+                start_joint_state=self.joint_state,
+            )
+            if not self.__await_future(future, plan_timeout):
+                continue
+            trajectory = self.get_trajectory(future)
+            if trajectory is None or not trajectory.points:
+                continue
+            travel = self.trajectory_travel(trajectory, limits=limits)
+            if best is None or travel < best[0]:
+                best = (travel, trajectory, list(goal))
+        if best is None:
+            return None
+        return best[1], best[2]
+
+    @staticmethod
+    def trajectory_travel(
+        trajectory: JointTrajectory, limits: Optional[dict] = None
+    ) -> float:
+        """Total revolute joint travel along a trajectory, in radians -- the cost a
+        shorter branch is trying to reduce. Prismatic axes are excluded when `limits`
+        identifies them, because a metre of rail and a radian of wrist are not
+        comparable quantities."""
+        if trajectory is None or len(trajectory.points) < 2:
+            return 0.0
+        keep = [
+            i
+            for i, n in enumerate(trajectory.joint_names)
+            if not (limits and n in limits and not limits[n].is_revolute)
+        ]
+        if not keep:
+            return 0.0
+        positions = np.array([p.positions for p in trajectory.points], dtype=float)
+        return float(np.sum(np.abs(np.diff(positions[:, keep], axis=0))))
 
     def __joint_state_callback(self, msg: JointState):
         # Update only if all relevant joints are included in the message

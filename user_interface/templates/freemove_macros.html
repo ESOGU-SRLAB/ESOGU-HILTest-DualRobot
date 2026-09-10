@@ -1,4 +1,4 @@
-{% macro freemove_params(arm) %}
+{% macro freemove_params(arm, default_velocity=0.2, default_acceleration=0.2) %}
 <details class="fm-params">
     <summary>⚙️ Planning settings</summary>
 
@@ -6,13 +6,13 @@
         <span>Velocity scale</span>
         <input type="number" class="fm-param-input" id="fm-vel-{{ arm }}"
                data-arm="{{ arm }}" data-key="max_velocity"
-               min="0.01" max="1" step="0.01" value="0.2">
+               min="0.01" max="1" step="0.01" value="{{ default_velocity }}">
     </label>
     <label class="fm-param-row">
         <span>Acceleration scale</span>
         <input type="number" class="fm-param-input" id="fm-acc-{{ arm }}"
                data-arm="{{ arm }}" data-key="max_acceleration"
-               min="0.01" max="1" step="0.01" value="0.2">
+               min="0.01" max="1" step="0.01" value="{{ default_acceleration }}">
     </label>
     <label class="fm-param-row">
         <span>Planning attempts</span>
@@ -48,5 +48,25 @@
     <p class="fm-param-hint">Padding is added to every collision link of this arm via
         the live planning scene (GetPlanningScene/ApplyPlanningScene) — it does not
         persist across a Free Move restart.</p>
+</details>
+{% endmacro %}
+
+{% macro freemove_joints(arm) %}
+<details class="fm-params">
+    <summary>🎚️ Joint angles</summary>
+    <p class="fm-param-hint">Each slider is bounded by that joint's real URDF limits.
+        Dragging one previews the WHOLE arm on the ghost immediately (pure forward
+        kinematics, no IK/planning call) — Plan/Execute below send the exact joint
+        values shown, not a Cartesian pose.</p>
+    <div class="fm-joint-sliders" id="fm-joint-sliders-{{ arm }}">
+        <p class="fm-param-hint">Enable Free Move to load joint limits.</p>
+    </div>
+    <button type="button" class="fm-btn secondary fm-sync-joints-btn" data-arm="{{ arm }}">
+        ↺ Sync sliders to current pose
+    </button>
+    <div class="fm-actions">
+        <button type="button" class="fm-btn secondary fm-plan-joint-btn" data-arm="{{ arm }}" disabled>Plan</button>
+        <button type="button" class="fm-btn primary fm-execute-joint-btn" data-arm="{{ arm }}" disabled>Execute</button>
+    </div>
 </details>
 {% endmacro %}

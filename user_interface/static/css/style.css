@@ -591,6 +591,54 @@ body::before {
     box-shadow: var(--shadow-glow-green);
 }
 
+/* ========== RUN AGAIN BANNER ========== */
+/* Always on screen (a fixed part of the layout, not popped in/out) -- only the
+   button's enabled state changes, when a just-finished one-shot scenario can be
+   relaunched. See dashboard.js's status_update handler. */
+.rerun-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: var(--radius-md);
+    padding: 14px 24px;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.rerun-banner.disabled {
+    background: rgba(148, 163, 184, 0.06);
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+.rerun-banner .banner-icon {
+    font-size: 1.4rem;
+}
+
+.rerun-banner .banner-text {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--accent-green);
+}
+
+.rerun-banner.disabled .banner-text {
+    color: var(--text-muted);
+}
+
+.confirm-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: rgba(148, 163, 184, 0.08);
+    border-color: rgba(148, 163, 184, 0.3);
+    color: var(--text-muted);
+}
+
+.confirm-btn:disabled:hover {
+    background: rgba(148, 163, 184, 0.08);
+    box-shadow: none;
+}
+
 /* ========== SEND COMMAND BUTTON (status bar) ========== */
 .command-btn {
     display: inline-flex;
