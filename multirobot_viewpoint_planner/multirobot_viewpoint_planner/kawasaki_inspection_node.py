@@ -62,8 +62,8 @@ class KawasakiInspectionNode(InspectionNodeBase):
         self.declare_parameter("kawasaki_view_axis_correction_rpy",
                                [-1.5707963, -1.5707963, 0.0])
         self.declare_parameter("kawasaki_group_tip", "link6")
-        self.declare_parameter("kawasaki_velocity", 0.015)
-        self.declare_parameter("kawasaki_acceleration", 0.015)
+        self.declare_parameter("kawasaki_velocity", 0.007)
+        self.declare_parameter("kawasaki_acceleration", 0.007)
         self.declare_parameter(
             "kawasaki_controller_action",
             "/kawasaki/kawasaki_controller/follow_joint_trajectory")

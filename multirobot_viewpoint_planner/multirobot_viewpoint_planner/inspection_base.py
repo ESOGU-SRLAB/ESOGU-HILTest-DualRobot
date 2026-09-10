@@ -200,7 +200,11 @@ class InspectionNodeBase(Node):
         self.declare_parameter("collision_padding", 0.04)
 
         # Measured-arrival gating (Kawasaki uses it; UR trusts its controller).
-        self.declare_parameter("arrival_timeout_sec", 90.0)
+        # A FIXED budget, not tied to the trajectory's duration: it must cover the
+        # longest hop at the slowest velocity scaling in use. Raised 90 -> 180 s on
+        # 2026-09-10 when kawasaki_velocity went 0.015 -> 0.007 and long hops outlasted
+        # 90 s (the node then captured mid-motion and preempted the running move).
+        self.declare_parameter("arrival_timeout_sec", 180.0)
         self.declare_parameter("arrival_joint_tol", 0.10)   # rad, revolute joints
         self.declare_parameter("arrival_linear_tol", 0.08)  # m, world_to_agv / UR rail
 

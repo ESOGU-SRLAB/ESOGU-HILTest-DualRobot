@@ -1,7 +1,7 @@
 {
   "coverage_achieved": 0.5962529274004684,
   "coverage_threshold": 0.98,
-  "total_viewpoints": 28,
+  "total_viewpoints": 29,
   "camera_config": {
     "horizontal_fov_deg": 70.0,
     "vertical_fov_deg": 60.0,
@@ -1858,14 +1858,78 @@
         1.7982224752300855,
         -5.2404978815478005
       ]
+    },
+    {
+      "id": "vp_007",
+      "position": [
+        -0.9463568878784744,
+        0.7827246502717113,
+        1.7916849479000276
+      ],
+      "rotation": [
+        [
+          -0.8808685087623062,
+          -0.47235152291962096,
+          0.030898366726832827
+        ],
+        [
+          -0.47336103586044254,
+          0.8789899254159997,
+          -0.05749818037384979
+        ],
+        [
+          0.0,
+          -0.06527441928266853,
+          -0.9978673509977716
+        ]
+      ],
+      "rank": 7,
+      "new_points_covered": 65,
+      "total_points_visible": 310,
+      "cumulative_coverage": 0.39250585480093675,
+      "joint_names": [
+        "world_to_agv",
+        "joint1",
+        "joint2",
+        "joint3",
+        "joint4",
+        "joint5",
+        "joint6",
+        "wheel_left_base",
+        "wheel_right_base",
+        "ur10e_base_to_robot_mount",
+        "ur10e_shoulder_pan_joint",
+        "ur10e_shoulder_lift_joint",
+        "ur10e_elbow_joint",
+        "ur10e_wrist_1_joint",
+        "ur10e_wrist_2_joint",
+        "ur10e_wrist_3_joint"
+      ],
+      "joint_positions": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.2421152949917898,
+        2.7613971126285737,
+        -1.0239979071900112,
+        0.37330444024767556,
+        -2.406406091896213,
+        4.01699843805232,
+        -6.228708249607149
+      ]
     }
   ],
   "manual_edits": {
     "removed_2026-09-10": {
       "ids": [
         "vp_031",
-        "vp_009",
-        "vp_007"
+        "vp_009"
       ],
       "why": "removed by the operator after a real run"
     }

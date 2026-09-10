@@ -122,13 +122,14 @@ def generate_launch_description():
                     'If move_group does not know '
                     'the group the node logs an error and falls back on its own.')
     kawasaki_velocity_arg = DeclareLaunchArgument(
-        'kawasaki_velocity', default_value='0.015',
+        'kawasaki_velocity', default_value='0.007',
         description='MoveIt velocity SCALING FACTOR for the Kawasaki (fraction of the '
-                    'joint_limits.yaml limits, not a speed). 0.015 gives 4.5 deg/s on '
-                    'joint1-3 and 1.9 cm/s on the AGV rail. The chassis job keeps this '
-                    'default; raise it per job, and only after watching the arm.')
+                    'joint_limits.yaml limits, not a speed). 0.007 gives 2.1 deg/s on '
+                    'joint1-3 and 0.9 cm/s on the AGV rail (was 0.015 until 2026-09-10). '
+                    'Only affects NEWLY planned paths: a cached trajectory replays at the '
+                    'speed it was recorded with, so re-record (force_replan) to apply it.')
     kawasaki_acceleration_arg = DeclareLaunchArgument(
-        'kawasaki_acceleration', default_value='0.015',
+        'kawasaki_acceleration', default_value='0.007',
         description='Acceleration scaling factor. Currently a no-op: every joint in '
                     'harmony_moveit_config/config/joint_limits.yaml has '
                     'has_acceleration_limits: false, so there is no limit to scale. '
