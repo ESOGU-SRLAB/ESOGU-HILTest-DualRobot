@@ -73,7 +73,45 @@
         <geometry>
           <box size="0.20 0.15 0.14"/>
         </geometry>
-        <material name="silver"/>
+        <material name="table_blocks_grey"><color rgba="0.7 0.7 0.7 1.0"/></material>
+      </visual>
+      <!-- CABLE CHANNEL on the chassis-facing side of the linear axis, raised
+           2026-09-11. base_link.stl carries it as two blocks, x -0.317..-0.237 and
+           z 0.447..0.597, split at y 0.975 / 1.055 (y 0.040..0.975 and 1.055..2.405).
+           The real channel stands about 5 cm taller than that, so these two boxes
+           supersede the mesh blocks with the top at z=0.647, same footprint, same y
+           split. 5 cm is close to the limit: the carriage (ur10e_robot_mount) has a
+           bracket directly above this footprint whose lowest point is z=0.6524, so the
+           gap left is ~5 mm. Going above 0.652 would put the model INSIDE the
+           carriage, and MoveIt would never say so: ur10e_table <-> ur10e_robot_mount,
+           base_link_inertia and shoulder_link are all disabled in the SRDF.
+           Recorded UR trajectories pass right at the padded clearance above these
+           blocks, so after this change they must be re-recorded (force_replan). -->
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.277 0.5075 0.547"/>
+        <geometry>
+          <box size="0.080 0.935 0.200"/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.277 1.730 0.547"/>
+        <geometry>
+          <box size="0.080 1.350 0.200"/>
+        </geometry>
+      </collision>
+      <visual>
+        <origin rpy="0 0 0" xyz="-0.277 0.5075 0.547"/>
+        <geometry>
+          <box size="0.080 0.935 0.200"/>
+        </geometry>
+        <material name="table_blocks_grey"><color rgba="0.7 0.7 0.7 1.0"/></material>
+      </visual>
+      <visual>
+        <origin rpy="0 0 0" xyz="-0.277 1.730 0.547"/>
+        <geometry>
+          <box size="0.080 1.350 0.200"/>
+        </geometry>
+        <material name="table_blocks_grey"><color rgba="0.7 0.7 0.7 1.0"/></material>
       </visual>
 </link>
 

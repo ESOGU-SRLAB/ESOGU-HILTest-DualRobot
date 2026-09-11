@@ -66,7 +66,15 @@ WORLD_FRAME = "world"
 
 IK_TIMEOUT = 2.0
 PLAN_TIMEOUT = 10.0
-EXECUTE_TIMEOUT = 60.0
+# Was 60.0, then 120.0 -- too short for the Kawasaki at its default 0.02 velocity
+# scale (5x slower than the UR's 0.1 default): a real Free Move drag routinely took
+# longer than that, so execute()/execute_joint() cancelled a trajectory that was
+# still genuinely in progress ("controller TIMED OUT", reported 2026-09-11). Kept
+# equal to whole_cell_kawasaki_controllers.yaml's own goal_time tolerance -- raise
+# both together, never just one (if EXECUTE_TIMEOUT is smaller, this code cancels a
+# fine trajectory early; if the controller's goal_time is smaller, the CONTROLLER
+# aborts before this code even gets a chance to time out).
+EXECUTE_TIMEOUT = 240.0
 SCENE_TIMEOUT = 5.0
 POLL_INTERVAL = 0.02
 

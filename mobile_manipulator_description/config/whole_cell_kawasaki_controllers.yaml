@@ -58,7 +58,10 @@
         # son hedefi TUTAR; AGV yavaşça hedefe gidip durur. Ne zaman ilerleneceğine
         # artık executor'ın ölçülen-varış kapısı (arrival_timeout_sec) karar verir;
         # bir sonraki viewpoint gönderildiğinde bu goal zaten preempt edilir.
-        goal_time: 120.0
+        # 240'a çıkarıldı (2026-09-11): free_move.py'nin EXECUTE_TIMEOUT'uyla
+        # eşleşsin diye -- Kawasaki'nin varsayılan 0.02 hız ölçeğinde uzun bir Free
+        # Move sürükleme, eski 120s'yi de aşabiliyordu.
+        goal_time: 240.0
         # trajectory (path/state) toleransları KAPALI (0.0). Gerçek Kawasaki'nin
         # /joint_states feedback'i TCP bridge üzerinden geciktiği için, kol
         # interpolasyon eğrisinin ~0.25-0.39 rad gerisinde kalıyordu ve
