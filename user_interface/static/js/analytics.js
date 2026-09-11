@@ -60,6 +60,12 @@ const UR10E_JOINTS = [
     "wrist_1_joint", "wrist_2_joint", "wrist_3_joint", "base_to_robot_mount",
 ];
 
+// The six revolute arm joints. base_to_robot_mount is the prismatic mount axis:
+// on the real robot the UR driver does not own it (effort is always 0), and in
+// sim its effort is a force in N that reaches ±1000+ and drowns every torque
+// on a shared axis. Effort panels use this list; position/velocity keep the mount.
+const UR10E_ARM_JOINTS = UR10E_JOINTS.filter((j) => j !== "base_to_robot_mount");
+
 // Indices the filter/panel editors offer before Elasticsearch has been asked.
 const FALLBACK_INDICES = [
     "ros-joint-states", "ros-sim-joint-states",
@@ -75,8 +81,8 @@ function prettyLabel(name) {
 }
 
 // Build a field list ({key,label,color}) for a UR10e-style index.
-function ur10eFields(prefix, suffix) {
-    return UR10E_JOINTS.map((j, i) => ({
+function ur10eFields(prefix, suffix, joints = UR10E_JOINTS) {
+    return joints.map((j, i) => ({
         key: `${prefix}${j}.${suffix}`,
         label: prettyLabel(j),
         color: ANALYTICS_JOINT_COLORS[i % ANALYTICS_JOINT_COLORS.length],
@@ -141,25 +147,28 @@ function defaultPanels() {
             index: "ros-sim-joint-states",
             unit: "rad/s", fields: ur10eFields("sim_ur10e_", "velocity"),
         },
-        // Row 4 — UR10e efforts: real (envelope) | sim
+        // Row 4 — UR10e effort. NOT a like-for-like pair, so deliberately no
+        // `pair` key: the UR driver writes motor CURRENT (A, "actual_current")
+        // into JointState.effort, while gz_ros2_control reports joint TORQUE
+        // (Nm). Forcing them onto one y-axis flattened the real panel to zero.
         {
-            id: "ur10e_eff_real", type: "envelope", side: "live", pair: "ur10e_eff",
-            title: "UR10e — Joint Efforts (Real)",
+            id: "ur10e_eff_real", type: "envelope", side: "live",
+            title: "UR10e — Joint Currents (Real)",
             index: "ros-joint-states",
-            unit: "Nm", fields: ur10eFields("ur10e_", "effort"),
+            unit: "A", fields: ur10eFields("ur10e_", "effort", UR10E_ARM_JOINTS),
         },
         {
-            id: "ur10e_eff_sim", type: "line", side: "sim", pair: "ur10e_eff",
-            title: "UR10e — Joint Efforts (Sim)",
+            id: "ur10e_eff_sim", type: "line", side: "sim",
+            title: "UR10e — Joint Torques (Sim)",
             index: "ros-sim-joint-states",
-            unit: "Nm", fields: ur10eFields("sim_ur10e_", "effort"),
+            unit: "Nm", fields: ur10eFields("sim_ur10e_", "effort", UR10E_ARM_JOINTS),
         },
         // Row 5 — cross-use-case comparisons (only meaningful once tagged)
         {
             id: "eff_box_by_use_case", type: "box", side: "live",
-            title: "Elbow / Shoulder Effort — distribution per use case",
+            title: "Elbow / Shoulder Current — distribution per use case",
             index: "ros-joint-states",
-            unit: "Nm", split_by: "use_case",
+            unit: "A", split_by: "use_case",
             fields: [
                 { key: "ur10e_elbow_joint.effort", label: "elbow" },
                 { key: "ur10e_shoulder_lift_joint.effort", label: "shoulder lift" },
@@ -167,10 +176,10 @@ function defaultPanels() {
         },
         {
             id: "eff_hist_by_use_case", type: "histogram", side: "live",
-            title: "Elbow Effort — histogram per use case",
+            title: "Elbow Current — histogram per use case",
             index: "ros-joint-states",
-            unit: "Nm", split_by: "use_case",
-            fields: [{ key: "ur10e_elbow_joint.effort", label: "elbow effort" }],
+            unit: "A", split_by: "use_case",
+            fields: [{ key: "ur10e_elbow_joint.effort", label: "elbow current" }],
         },
         // Row 6 — 3D TCP path (full width)
         {
@@ -362,10 +371,32 @@ function initAnalytics() {
 // definition in UNDERNEATH the saved copy adopts new features while leaving
 // every field the user actually changed alone. An explicit null still wins, so
 // switching a feature off stays switched off.
+//
+// Built-in fields that were WRONG in earlier builds. For these the built-in
+// definition wins over a saved copy (a key absent from the built-in is dropped,
+// which is how the old `pair` goes away). Built-in panels cannot be edited in
+// the UI, so a saved value here is only a snapshot of the old default, never a
+// user choice. Real UR10e effort is motor current (A), not torque (Nm).
+const CORRECTED_BUILTIN_KEYS = {
+    ur10e_eff_real: ["title", "unit", "pair", "fields"],
+    ur10e_eff_sim: ["title", "unit", "pair", "fields"],
+    eff_box_by_use_case: ["title", "unit"],
+    eff_hist_by_use_case: ["title", "unit", "fields"],
+};
+
 function migratePanels(saved) {
     const builtin = {};
     defaultPanels().forEach((p) => { builtin[p.id] = p; });
-    return saved.map((p) => (builtin[p.id] ? Object.assign({}, builtin[p.id], p) : p));
+    return saved.map((p) => {
+        const b = builtin[p.id];
+        if (!b) return p;
+        const merged = Object.assign({}, b, p);
+        (CORRECTED_BUILTIN_KEYS[p.id] || []).forEach((k) => {
+            if (k in b) merged[k] = b[k];
+            else delete merged[k];
+        });
+        return merged;
+    });
 }
 
 function loadLayout() {
@@ -2399,6 +2430,10 @@ function applyPairedScales() {
     });
 
     Object.values(groups).forEach((panels) => {
+        // Sharing a y-axis only means something for the same quantity. Real
+        // effort is current (A), sim effort is torque (Nm): on one axis the
+        // larger unit flattens the other to a line at zero.
+        if (new Set(panels.map((p) => p.unit || "")).size > 1) return;
         const paired = panels.map((p) => charts[p.id]).filter(Boolean);
         if (paired.length < 2) return;
 

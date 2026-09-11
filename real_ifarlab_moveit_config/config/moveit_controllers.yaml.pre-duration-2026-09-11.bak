@@ -31,13 +31,3 @@ moveit_simple_controller_manager:
       - joint6
     action_ns: follow_joint_trajectory
     default: true
-    # move_group's own execution-duration monitor, for THIS controller only (the UR
-    # keeps the global 1.2 x duration + 0.5 s). With the defaults it cancelled a
-    # Free Move after 1.2 x planned + 0.5 s ("expected upper bound ... 22.3 s",
-    # TIMED_OUT, 2026-09-11) while the controller was still legitimately waiting
-    # for the slow AGV. The margin matches goal_time in
-    # whole_cell_kawasaki_controllers.yaml and EXECUTE_TIMEOUT in
-    # user_interface/free_move.py (240 s) -- raise all three together, so the
-    # CONTROLLER decides when a move has failed, not move_group.
-    allowed_execution_duration_scaling: 1.2
-    allowed_goal_duration_margin: 240.0

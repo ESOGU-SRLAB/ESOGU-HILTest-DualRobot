@@ -958,10 +958,11 @@ def main():
     tookScrew = [FIRST, math.radians(66.69), math.radians(-61.31), math.radians(88.26), math.radians(-137.56), math.radians(-117.30), math.radians(145.05)]
     outTookScrew = [FIRST, math.radians(70.21), math.radians(-62.50), math.radians(89.73), math.radians(-136.08), math.radians(-118.49), math.radians(148.79)]
     safeWaypoint = [FIRST, math.radians(57.68), math.radians(-91.49), math.radians(128.21), math.radians(-151.36), math.radians(-113.78), math.radians(135.83)]
-    firstTop = [FIRST, math.radians(50.19), math.radians(-78.53), math.radians(101.51), math.radians(-129.41), math.radians(-115.90), math.radians(145.14)]
-    firstOpt = [FIRST, math.radians(50.19), math.radians(-75.75), math.radians(105.28), math.radians(-135.95), math.radians(-115.92), math.radians(145.16)]
-    secondTop = [FIRST, math.radians(30.72), math.radians(-87.84), math.radians(114.97), math.radians(-141.86), math.radians(-105.69), math.radians(124.08)]
+    firstTop = [FIRST, math.radians(50.19), math.radians(-77.07), math.radians(103.68), math.radians(-133.03), math.radians(-115.90), math.radians(145.14)]
+    firstOpt = [FIRST, math.radians(50.19), math.radians(-75.66), math.radians(105.38), math.radians(-136.13), math.radians(-115.92), math.radians(145.17)]
+    secondTop = [FIRST, math.radians(30.72), math.radians(-86.57), math.radians(116.53), math.radians(-144.69), math.radians(-105.69), math.radians(124.08)]
     secondOpt = [FIRST, math.radians(30.72), math.radians(-85.54), math.radians(117.64), math.radians(-146.82), math.radians(-105.71), math.radians(124.09)]
+    thirdVeryTop = [FIRST, math.radians(30.31), math.radians(-53.84), math.radians(34.44), math.radians(-58.85), math.radians(-112.28), math.radians(209.64)]
     thirdTop = [1.8420303208638846, 0.6366738326549317, -0.7821781689244712,
                 0.7426429613881561, -1.29837890700152, -1.9427011974646786,
                 3.766707435569096]
@@ -1014,6 +1015,7 @@ def main():
     {"wait": 1.5},                 # vidanın oturması için bekle
     {"screwdriver": False},        # secondTop'a dönmeden önce vidalamayı kapat
     {"joints": secondTop, "speed": SCREW_SPEED},   # yavaşça geri çık
+    thirdVeryTop,
     thirdTop,
     # --- 3. VİDA: operatör yeşil butona basınca vidalama başlar ---
     {"wait_green_button": True},   # pendant: yeşil buton (dijital giriş) beklenir
