@@ -21,12 +21,14 @@ değiştikçe kayıyordu). Nereden geldikleri:
       -- python3 docs/figur_uret.py
 """
 import os
+import sys
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt, RGBColor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 OUT = os.path.join(HERE, "viewpoint_inspection_system_report.docx")
 FIG_WIDTH = Inches(5.2)
 
@@ -78,6 +80,34 @@ def figure(doc, filename, caption):
     run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
 
 
+
+def _coverage_rows():
+    """Octomap kaplama tablosunu .ot dosyalarından HESAPLAYARAK üretir."""
+    import figur_sasi as FS
+    P = FS.PCDS
+    sets = [
+        ("Çok-robot — gerçek robot", f"{P}/real_pcds/beliefMap_real.ot",
+         f"{P}/real_pcds/occupancyMap_real.ot"),
+        ("Çok-robot — simülasyon", f"{P}/sim_pcds/beliefMap_sim.ot",
+         f"{P}/sim_pcds/occupancyMap_sim.ot"),
+        ("Tek-kol UR10e — gerçek robot",
+         f"{P}/single_ur10e/real_data/beliefMap_single_ur10e_real.ot",
+         f"{P}/single_ur10e/real_data/occupancyMap_single_ur10e_real.ot"),
+        ("Tek-kol UR10e — simülasyon",
+         f"{P}/single_ur10e/sim_data/beliefMap_single_ur10e_sim.ot",
+         f"{P}/single_ur10e/sim_data/occupancyMap_single_ur10e_sim.ot"),
+    ]
+    rows = []
+    for label, b, o in sets:
+        if not (os.path.exists(b) and os.path.exists(o)):
+            rows.append([label, "-", "-", "dosya yok"])
+            continue
+        c = FS.coverage(b, o)
+        rows.append([label, len(c["belief"]), len(c["covered"]),
+                     f"%{100 * c['frac']:.1f}"])
+    return rows
+
+
 # --------------------------------------------------------------------------- #
 def build():
     doc = Document()
@@ -89,13 +119,18 @@ def build():
         "Teknik Rapor")
     sub.style = doc.styles["Subtitle"]
     meta = doc.add_paragraph()
-    meta.add_run("Revizyon 2 — 22 Ağustos 2026    |    Hazırlayan: Cem Süha Yılmaz "
+    meta.add_run("Revizyon 3 — 12 Eylül 2026    |    Hazırlayan: Cem Süha Yılmaz "
                  "   |    ROS 2 Humble / MoveIt 2").bold = True
-    p(doc, "Revizyon 1 (22 Temmuz 2026) şasi senaryosunu kapsıyordu. Bu revizyon, "
-           "aradaki bir aylık çalışmayı ekler: trajectory optimizasyonu (2π açma ve "
-           "IK dal seçimi), tamamlanan çarpışma modeli eklemeleri ve ikinci muayene "
-           "senaryosu olan kapı (doors) muayenesi. Değişen bütün sayılar mevcut plan "
-           "dosyalarından yeniden okunmuştur.")
+    p(doc, "Revizyon 1 (22 Temmuz 2026) şasi senaryosunu kapsıyordu. Revizyon 2 "
+           "(22 Ağustos 2026) trajectory optimizasyonunu (2π açma ve IK dal seçimi), "
+           "tamamlanan çarpışma modeli eklemelerini ve ikinci muayene senaryosu olan "
+           "kapı muayenesini ekledi. Bu revizyon, Eylül 2026 çalışmasını ekler: "
+           "planlayıcının artık yürütücünün sahnesini kurması, yeni kaplama ayarları, "
+           "Y-bant sıralaması, hücre geometrisindeki eklemeler, Kawasaki hız ve zaman "
+           "aşımı değerleri ve — en önemlisi — GERÇEK ROBOTLA TAMAMLANAN koşunun "
+           "octomap çıktısının simülasyonla sayısal karşılaştırması (bölüm 11). "
+           "Değişen bütün sayılar mevcut plan ve yapılandırma dosyalarından yeniden "
+           "okunmuştur.")
 
     # ---------------------------------------------------------------- 1
     h1(doc, "1. Yönetici Özeti")
@@ -233,8 +268,10 @@ def build():
            "greedy'yi durdurur — böylece viewpoint SAYISI, azalan-getiri eğrisinin "
            "dizinden (knee) doğal olarak ortaya çıkar.")
     bullets(doc, [
-        "min_marginal_coverage: yaml varsayılanı 0.005 (~%0.5 → şasi mesh'inde "
-        "~25 viewpoint). 0.015-0.02'ye çıkarınca ~10-12.",
+        "min_marginal_coverage: yaml'daki GÜNCEL değer 0.0035 (Eylül 2026). "
+        "Tarihçesi: 0.005 (~25 viewpoint) → 0.002 → 0.0035. Taban küçüldükçe kuyruk "
+        "uzar; 0.015-0.02 gibi büyük değerler sayıyı ~10-12'ye düşürür ama kaplamayı "
+        "da düşürür.",
         "max_viewpoints: artık opsiyonel güvenlik kapağı (yaml 0 = kapalı; node "
         "0→None eşler).",
         "Sentetik uzun-kuyruk verisinde doğrulandı (taban 0/0.005/0.01/0.02 → "
@@ -324,50 +361,62 @@ def build():
 
     h2(doc, "4.3 Bakış-Noktası Sayısı ve Rota")
     bullets(doc, [
-        "min_new_points (kol-başı kuyruk kesme, varsayılan 8) + "
-        "max_viewpoints_per_robot (sert kap, 30) + fractional min_marginal_coverage "
-        "(0.005). Etkin taban = max(8, ceil(0.005×num_targets)).",
+        "min_new_points (kol-başı kuyruk kesme, varsayılan 8) + kol-başı sert kap "
+        "(max_viewpoints_ur 45, max_viewpoints_kawasaki 13; ortak "
+        "max_viewpoints_per_robot 30 yalnız bunlar verilmediğinde geçerli) + "
+        "fractional min_marginal_coverage (0.0035). Etkin taban = "
+        "max(8, ceil(0.0035×num_targets)). Kawasaki'nin kapağı bilerek düşüktür: o "
+        "koldaki her bakış-noktası AGV'yi de hareket ettirdiği için pahalıdır.",
         "Karşıt-uçtan başlama: ur_order_anchor='max_y' (hedefin ÖNÜ), "
         "kawasaki_order_anchor='min_y' (ARKA) — iki kol zıt uçlardan tarar.",
         "UR workspace keep-out kutusu (yalnız UR): kamera pozu kutu dışındaysa UR için "
         "ULAŞILMAZ raporlanır, viewpoint Kawasaki'ye gider (Kawasaki asla "
         "gate'lenmez). bounds_min z 0.20 UR'nin yere yakın pozlarını da eler.",
-        "Güncel şasi planı: 19 UR + 9 Kawasaki = 28 bakış-noktası, %66.3 kaplama.",
+        "Sıralama: order_mode=y_bands (0.30 m genişliğinde Y bantları). Kol, şasiyi "
+        "bant bant tarar; bant içinde en kısa yol seçilir. Eski 'en yakın komşu' "
+        "sıralaması kolu şasinin bir ucundan diğerine savuruyordu.",
+        "Güncel şasi planı: 25 UR + 11 Kawasaki = 36 bakış-noktası, planlayıcının "
+        "kendi tahminiyle %70.1 kaplama (bir önceki revizyonda 19 + 9 = 28 ve %66.3 "
+        "idi). Plan dosyası ayrıca iki elle düzeltme taşır (8 Eylül 2026): ur_vp_022 "
+        "15 cm yukarı alınıp yeniden çözüldü, kawa_vp_010 Kawasaki'den çıkarılıp "
+        "UR'de ur_vp_024 olarak yeniden oluşturuldu — ikisi de gerçek hücrenin "
+        "yürütemediği pozlardı.",
     ])
     p(doc, "Aşağıdaki üç şekil, paketin kendi görselleştiricisi (plan_visualizer.py) "
            "tarafından doğrudan GÜNCEL plan dosyasından üretilmiştir; renk skalası her "
            "bakış-noktasının kaplamaya kattığı YENİ nokta sayısıdır (koyu = az katkı), "
            "yani rota üzerindeki azalan getiri figürün kendisinde okunabilir.")
     figure(doc, "fig_multirobot_plan.png",
-           "Şekil 8: Çok-robot çözümü dört görünümde (izometrik, ön, yan, tepe): "
-           "19 UR (turuncu-yeşil skala) + 9 Kawasaki (mavi skala) bakış-noktası, oklar "
-           "görüş ekseni. Tepe görünümü işin özünü verir: iki kümenin X aralıkları hiç "
-           "ÖRTÜŞMEZ — UR -1.22 … -0.22, Kawasaki -2.42 … -1.41 arasındadır ve şasi "
-           "(-1.50 … -0.74) tam ortada kalır. Kaplama tavanının nasıl aşıldığının "
-           "uzaysal kanıtı.")
+           "Şekil 8: GÜNCEL çok-robot çözümü dört görünümde (izometrik, ön, yan, "
+           "tepe): 25 UR (sıcak renk skalası) + 11 Kawasaki (soğuk skala) "
+           "bakış-noktası, oklar görüş ekseni, renk o pozun getirdiği YENİ nokta "
+           "sayısı. Gri voksel bulutu şasinin kendisidir (belief haritası). Tepe "
+           "görünümü işin özünü verir: iki kümenin X aralıkları hiç ÖRTÜŞMEZ — UR "
+           "-1.31 … -0.21, Kawasaki -2.47 … -1.33 arasındadır ve şasi tam ortada "
+           "kalır. Kaplama tavanının nasıl aşıldığının uzaysal kanıtı.")
     figure(doc, "fig_multirobot_ur10e.png",
-           "Şekil 9: Aynı plan, yalnız UR10e'nin 19 bakış-noktası (X -1.22 … -0.22, "
-           "yükseklik 0.51 … 2.14 m). Kol şasinin +X yüzünü ve üst bölgesini tarar; "
+           "Şekil 9: Aynı plan, yalnız UR10e'nin 25 bakış-noktası (X -1.31 … -0.21, "
+           "yükseklik 0.30 … 2.16 m). Kol şasinin +X yüzünü ve üst bölgesini tarar; "
            "rayın kendisi kamera ile şasi arasında kaldığı için karşı yüz bu kola "
            "tümüyle kapalıdır.")
     figure(doc, "fig_multirobot_kawasaki.png",
-           "Şekil 10: Aynı plan, yalnız Kawasaki'nin 9 bakış-noktası — hepsi "
-           "X ≤ -1.41'de, yani şasinin uzak yüzünde. İkinci kolun varlık sebebi bu "
-           "figürdür: bu dokuz poz sırasıyla 339, 149, 123, 76, 71, 51, 43, 29 ve 24 "
-           "YENİ nokta getirir; toplamı, UR'nin tek başına ulaşabildiği tavanın "
-           "üstüne çıkan farktır.")
+           "Şekil 10: Aynı plan, yalnız Kawasaki'nin 11 bakış-noktası — hepsi "
+           "X ≤ -1.33'te, yani şasinin uzak yüzünde. İkinci kolun varlık sebebi bu "
+           "figürdür; bölüm 11.7'deki ölçüm, bu kolun gerçek robotta kaplamaya kaç "
+           "puan kattığını sayısal olarak verir.")
 
     h2(doc, "4.4 Gerçek-Robot Yürütücüsü (Executor)")
     bullets(doc, [
         "Ölçülen-varış gating (Kawasaki): JTC action sonucuna güvenmek yerine, komut "
         "edilen her eklem birleşik /joint_states cache'inde tolerans içine girene "
-        "kadar (veya arrival_timeout_sec=90) beklenir. Gerekli, çünkü kol "
+        "kadar (veya arrival_timeout_sec=180; Eylül 2026'da 90'dan yükseltildi) beklenir. Gerekli, çünkü kol "
         "broadcaster'ı ile AGV bridge'i world_to_agv vs joint1..6'yı AYRI mesajlarda "
         "yayınlar. arrival_joint_tol 0.10 rad / arrival_linear_tol 0.08 m.",
         "AGV async: AGV ayrı bir async platformdur (JTC world_to_agv → bridge → "
         "/agv/goal_position → agv_controller → rosbridge → ROS1 action, 0.05 m/s). "
-        "Kawasaki controller path tolerance'ları 0.0'a, goal_time 3→120'ye çekildi — "
-        "JTC, AGV fiziksel olarak varana dek hedefi TUTAR.",
+        "Kawasaki controller path tolerance'ları 0.0'a, goal_time 3 → 120 → 240'a "
+        "çekildi — JTC, AGV fiziksel olarak varana dek hedefi TUTAR. Kawasaki hız ve "
+        "ivme ölçekleri Eylül 2026'da 0.015'ten 0.007'ye indirildi (bkz. 11.5).",
         "Sabit başlangıç pozu: _go_to_start() döngüden önce her kolu bilinen bir "
         "başlangıç pozuna götürür, böylece ilk cached trajectory tam kaydedildiği "
         "state'ten başlar.",
@@ -965,7 +1014,146 @@ def build():
     ])
 
     # ---------------------------------------------------------------- 11
-    h1(doc, "11. Açık Konular ve Sonraki Adımlar")
+    h1(doc, "11. Revizyon 3 — Eylül 2026 Çalışması")
+    p(doc, "Bu bölüm, iki muayene senaryosunun da gerçek robotlarla baştan sona "
+           "koşturulduğu dönemi belgeler. Değişikliklerin çoğu, planın kâğıt üzerinde "
+           "değil hücrede tutmasını sağlamak içindir.")
+
+    h2(doc, "11.1 Planlayıcı Artık Yürütücünün Sahnesini Kuruyor")
+    p(doc, "En önemli düzeltme budur. Planlayıcı, bakış-noktalarının ulaşılabilirliğini "
+           "/compute_ik ile sınarken move_group'un o anki sahnesini kullanıyordu; "
+           "yürütücü ise koşarken sahneye zemin düzlemini ekliyor ve bütün ur10e_* / "
+           "link1..6 gövdelerine padding uyguluyordu. İki sahne farklı olduğu için "
+           "planlayıcının 'ulaşılabilir' dediği pozlar yürütücüde çarpışmayla "
+           "reddedilebiliyordu — özellikle zemine yakın olanlar.")
+    bullets(doc, [
+        "multirobot_planner_node artık IK'dan ÖNCE yürütücüyle aynı sahneyi kurar: "
+        "ayrı bir yardımcı düğüm (IkSceneBuilder) zemin düzlemini ekler ve aynı "
+        "padding kurallarını uygular.",
+        "Kurulan sahne plana da yazılır: plan dosyasındaki ik_scene bloğu "
+        "(applied, ground_plane_z, collision_padding, padded_links) hangi koşullarda "
+        "doğrulandığını taşır. Güncel planda 81 link padding almış durumdadır.",
+        "Bu, kaydedilmiş trajectory cache'inin URDF değişikliklerine kör olmasıyla "
+        "birlikte okunmalıdır: sahne değişirse plan yeniden doğrulanmalı, cache "
+        "force_replan ile yenilenmelidir.",
+    ])
+
+    h2(doc, "11.2 Kaplama Ayarları")
+    table(doc, ["Parametre", "Eski", "Güncel", "Etkisi"], [
+        ["min_marginal_coverage", "0.005", "0.0035",
+         "kuyruk uzar, daha çok bakış-noktası"],
+        ["max_incidence_angle_deg", "80", "85",
+         "daha eğik yüzeyler de 'görüldü' sayılır"],
+        ["max_viewpoints_ur", "30 (ortak kap)", "45", "UR kuyruğu açılır"],
+        ["max_viewpoints_kawasaki", "30 (ortak kap)", "13",
+         "AGV hareketi pahalı olduğu için bilerek dar"],
+        ["order_mode", "en yakın komşu", "y_bands (0.30 m)",
+         "kol şasiyi bant bant tarar, savrulma biter"],
+    ])
+
+    h2(doc, "11.3 Hücre Geometrisine Eklenenler")
+    bullets(doc, [
+        "Festo motor kutusu: lineer eksenin ucundaki motor çıkıntısı artık modelde "
+        "(20 x 15 x 14 cm kutu, ur10e_table üzerinde). Gerçekte var olan ama modelde "
+        "olmayan bir gövde, planlayıcının oraya bakış-noktası koymasına izin "
+        "veriyordu.",
+        "Kablo kanalı blokları 5 cm yükseltildi: iki blok da 20 cm yüksekliğe "
+        "çıkarıldı, üst yüzleri z = 0.647 m. Ölçüm, taşıyıcı braketin alt yüzünün "
+        "z = 0.6524 m'de olduğunu gösteriyor; yani bloklar kanalı kapatıyor ama "
+        "brakete değmiyor.",
+        "Eklenen blokların rengi hücrenin geri kalanıyla aynı griye çekildi "
+        "(table_blocks_grey / sim_table_blocks_grey); önceden varsayılan siyahla "
+        "çiziliyorlardı ve RViz'de gerçek bir parça sanılıyorlardı.",
+        "Bu üç değişiklik de hem gerçek hem sim xacro'suna aynı biçimde işlendi; "
+        "aksi halde HIL ikizi ile gerçek hücre ayrışır.",
+    ])
+
+    h2(doc, "11.4 Elle Plan Düzeltmeleri")
+    p(doc, "Gerçek hücrede iki bakış-noktası yürütülemedi: biri AGV'nin strok sonunda "
+           "haberleşme gecikmesine takıldı, diğeri modelin taşımadığı bir çarpışmaya. "
+           "Kaynak kodda hiçbir değişiklik yapılmadan YALNIZCA plan dosyası "
+           "düzeltildi ve düzeltme plana manual_edits bloğu olarak yazıldı: ur_vp_022 "
+           "15 cm yukarı alınıp yeniden nişanlandı ve IK'sı yeniden çözüldü; "
+           "kawa_vp_010 Kawasaki'den çıkarılıp UR'de ur_vp_024 olarak yeniden "
+           "oluşturuldu. Plan dosyasındaki coverage_achieved değeri o andan itibaren "
+           "yaklaşıktır; bu da manual_edits içinde açıkça not edilmiştir.")
+
+    h2(doc, "11.5 Kawasaki Hızı ve Zaman Aşımları")
+    bullets(doc, [
+        "kawasaki_velocity ve kawasaki_acceleration 0.015 → 0.007. Not: bu değer "
+        "YALNIZCA yeni planlanan yörüngeleri etkiler; kayıtlı cache, kaydedildiği "
+        "hızla oynatılır. Eski hızla kaydedilmiş yörüngelerin yavaşlaması isteniyorsa "
+        "force_replan gerekir.",
+        "arrival_timeout_sec 90 → 180 s. Ölçülen-varış kapısı, AGV 0.05 m/s ile uzun "
+        "bir strok yaparken 90 saniyeyi aşabiliyordu.",
+        "Kawasaki JTC goal_time 240 s. AGV ayrı ve yavaş bir platform olduğu için "
+        "kontrolcünün hedefi TUTMASI gerekir; erken abort, world_to_agv komutunu geri "
+        "çekip AGV'yi son santimlerde durduruyordu.",
+    ])
+
+    h2(doc, "11.6 Üçüncü Zaman Aşımı Katmanı: move_group'un Süre Denetimi")
+    p(doc, "Kawasaki'ye move_group üzerinden gönderilen bir hareket üç ayrı zaman "
+           "aşımından geçer ve 11 Eylül 2026'da bunlardan yalnızca ikisi "
+           "büyütülmüştü:")
+    table(doc, ["Katman", "Nerede", "Değer"], [
+        ["JTC goal_time", "whole_cell_kawasaki_controllers.yaml",
+         "240 s (yörünge bitiminden sonra)"],
+        ["İstemci zaman aşımı", "user_interface/free_move.py EXECUTE_TIMEOUT", "240 s"],
+        ["move_group süre denetimi", "TrajectoryExecutionManager",
+         "ölçek x planlanan süre + marj"],
+    ])
+    p(doc, "Üçüncü katman varsayılan değerlerde kalmıştı (1.2 x süre + 0.5 s) ve "
+           "yavaş AGV hâlâ yoldayken hareketi TIMED_OUT ile iptal ediyordu: "
+           "'expected upper bound ... 22.3 saniye' satırı tam olarak budur. Çözüm, "
+           "real_ifarlab_moveit_config/config/moveit_controllers.yaml içinde YALNIZ "
+           "Kawasaki kontrolcüsüne allowed_goal_duration_margin = 240 s vermektir; UR "
+           "küresel varsayılanlarda kalır. Muayene yürütücüsü bu katmana hiç "
+           "takılmamıştı, çünkü yörüngeyi doğrudan kontrolcüye gönderir, move_group'a "
+           "değil.")
+
+    h2(doc, "11.7 Gerçek Robot ile Simülasyonun Octomap Karşılaştırması")
+    p(doc, "Eylül 2026'da iki muayene senaryosu da gerçek robotlarla baştan sona "
+           "koşturuldu ve her poz için hem gerçek SICK bulutu hem simülasyon bulutu "
+           "kaydedildi. Aşağıdaki karşılaştırma bu kayıtlardan üretilen octomap'lere "
+           "dayanır.")
+    p(doc, "Kaplama şöyle tanımlanmıştır: belief haritasındaki her şasi vokseli 2 "
+           "cm'lik çözünürlüğe açılır (budanmış 4 cm yapraklar 8 alt voksele "
+           "bölünür), aynı işlem occupancy haritasının DOLU vokselleri için yapılır ve "
+           "kaplama = kesişim / şasi voksel sayısı olarak hesaplanır. Bu, builder'ın "
+           "kendi parça-başına raporundan farklı bir paydadır; mutlak yüzdeler değil, "
+           "gerçek ile sim arasındaki FARK okunmalıdır.")
+    cov_rows = _coverage_rows()
+    table(doc, ["Koşu", "Şasi vokseli", "Kaplanan", "Kaplama"], cov_rows)
+    figure(doc, "fig_octomap_real_vs_sim.png",
+           "Şekil 16: Çok-robot koşusunun octomap'i — yeşil vokseller sensörle "
+           "kaplananlar, kırmızılar kaplanmayanlar. Gerçek ile sim AYNI kamera "
+           "açılarıyla çizilmiştir; octovis'te iki pencereye farklı açılardan bakmak "
+           "daha önce 'sim tamamen kaymış' izlenimi vermişti, oysa iki haritanın "
+           "sınırlayıcı kutusu birebir aynıdır.")
+    figure(doc, "fig_part_coverage.png",
+           "Şekil 17: Parça başına kaplama (belief haritasındaki renk = şasi "
+           "parçası), en kötüden en iyiye sıralı. Gerçek robottaki eksik, bütün "
+           "yüzeye yayılmış bir bozulma değil; birkaç parçada toplanmıştır.")
+    bullets(doc, [
+        "Fark, görsel izlenimin söylediği kadar büyük değil: gerçek %86.5, sim %97.9. "
+        "Aradaki 11 puan, kolun erişim sınırındaki iki bölgede toplanıyor — şasinin "
+        "en üst rayları (tavana yakın) ve AGV güverte seviyesindeki alt raylar ile "
+        "ayaklar.",
+        "Bu iki bölge, çarpışma modelinde de en dar paya sahip olanlardır: gerçek "
+        "robotta padding ve gerçek erişim payı bu köşelere güvenli yaklaşmayı "
+        "zorlaştırır; simülasyonun ideal sensörü bu kısıtı çekmez.",
+        "İKİNCİ KOLUN KATKISI ÖLÇÜLDÜ: aynı şasi, tek-kol UR10e koşusunda gerçek "
+        "robotla %81.3 kaplanırken çok-robot koşusunda %86.5'e çıkıyor. Kawasaki'nin "
+        "11 bakış-noktası, gerçek donanımda +5.2 puan getiriyor.",
+        "Poz meta verisi uyarısı: aynı viewpoint için real ve sim poses/<N>.txt "
+        "dosyalarındaki quaternion'lar belirgin biçimde farklı olabiliyor (aynı "
+        "Kartezyen hedefe farklı IK dalıyla ulaşılıyor). Bulutların yerini "
+        "bozmadığı, şasi içi/dışı oranları ile ayrıca sınandı; yine de real-sim poz "
+        "karşılaştırması bu dosyalar üzerinden yapılmamalıdır.",
+    ])
+
+    # ---------------------------------------------------------------- 12
+    h1(doc, "12. Açık Konular ve Sonraki Adımlar")
     bullets(doc, [
         "AGV-önce sıralama (kol topla → AGV yalnız git + varış bekle → kol uzat) hâlâ "
         "UYGULANMADI — gerçek robottaki kol/AGV desync çarpışmasının asıl çözümü "
@@ -995,8 +1183,19 @@ def build():
         "eksen) en son çare.",
     ])
 
+    bullets(doc, [
+        "Kablo kanalı yükseltildikten sonra multirobot UR cache'i yeniden "
+        "kaydedilmelidir: kayıtlı yörüngeler yeni blokların içinden geçiyor olabilir "
+        "(trajectory cache URDF değişikliğine kördür).",
+        "Kawasaki cache'i 0.015 hızıyla kaydedilmişti ve o hızla oynatılıyor; 0.007 "
+        "istenen hız ise force_replan gerekir.",
+        "Gerçek robottaki kaplama eksiği iki bölgede toplanıyor (üst raylar ve AGV "
+        "güverte seviyesi). Bu bölgeler için özel bakış-noktası üretimi ya da "
+        "padding'in bölgeye göre gevşetilmesi denenebilir.",
+    ])
+
     p(doc, "Bu rapor, viewpoint_planner, multirobot_viewpoint_planner ve "
-           "doors_inspection paketlerinde 22 Ağustos 2026 itibarıyla yürütülen "
+           "doors_inspection paketlerinde 12 Eylül 2026 itibarıyla yürütülen "
            "mühendislik çalışmasının bir özetidir.")
 
     doc.save(OUT)

@@ -9,6 +9,7 @@ gemini_robotics_ros geliştirme raporunu (.docx) üretir.
 """
 
 import os
+import sys
 
 from docx import Document
 from docx.enum.section import WD_SECTION
@@ -18,6 +19,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 FIG = os.path.join(HERE, "figures")
 OUT = os.path.join(HERE, "gemini_robotics_ros_raporu.docx")
 
@@ -151,6 +153,43 @@ def table(doc, headers, rows, widths=None):
                 row.cells[i].width = Inches(w)
     doc.add_paragraph().paragraph_format.space_after = Pt(6)
     return t
+
+
+
+# --------------------------------------------------------------------------
+# 28 Ağustos koşuları: tablo satırları kayıt klasörlerinden üretilir
+# --------------------------------------------------------------------------
+
+def _runs():
+    import kosu_figurleri
+    return kosu_figurleri.load_runs()
+
+
+def _run_rows():
+    import kosu_figurleri
+    try:
+        return kosu_figurleri.run_table(_runs())
+    except Exception as exc:                       # kayıtlar taşınmışsa rapor yine üretilsin
+        return [["-", "-", f"kayıtlar okunamadı: {exc}", "-", "-", "-", "-", "-"]]
+
+
+def _outcome_sentence():
+    try:
+        runs = _runs()
+    except Exception:
+        return "Koşu kayıtları bulunamadı."
+    ok = [r for r in runs if r["outcome"] == "DONE"]
+    durs = [r["duration"] for r in runs if r["duration"] == r["duration"]]
+    lat = [v for r in runs for v in r["latency"]]
+    per_run = sum(lat) / len(runs)
+    mean_dur = sum(durs) / len(durs)
+    return (f"{len(runs)} denemenin {len(ok)} tanesinde zincir baştan sona hatasız "
+            f"yürüdü. Ortalama koşu süresi {mean_dur:.0f} saniye "
+            f"(en kısa {min(durs):.0f}, en uzun {max(durs):.0f}). Bu sürenin koşu "
+            f"başına ortalama {per_run:.0f} saniyesi, yani yaklaşık "
+            f"%{100 * per_run / mean_dur:.0f}'i, model çağrısı beklemekle geçiyor: "
+            f"dokuz koşuda toplam {sum(lat):.0f} saniye, çağrı başına ortalama "
+            f"{sum(lat) / len(lat):.1f} saniye. Robot bu süre boyunca bekler.")
 
 
 # --------------------------------------------------------------------------
@@ -2178,6 +2217,116 @@ def build():
     code(doc, "colcon build --packages-select gemini_robotics_ros\n"
               "source install/setup.bash")
 
+
+
+    # ----------------------------------------------------------------- 24
+    h(doc, "24. Koşu Kaydedici: Ölçümün Ekran Kaydından Kurtarılması", 1)
+    para(doc,
+         "İlk gerçek robot koşularında elde yalnız ekran kaydı vardı. Aşama "
+         "süreleri, model gecikmesi ve varış sapmaları terminalden kare kare, "
+         "gözle okundu; aynı sayıya ikinci kez ihtiyaç duyulduğunda video yeniden "
+         "izlenmek zorunda kalındı. recorder_node bu sayıları koşu sırasında "
+         "yapılandırılmış dosyalara yazar; artık bir koşunun sonucu yeniden "
+         "üretilebilir bir veri kümesidir.")
+    table(doc, ["Dosya", "İçerik"],
+          [["events.jsonl", "/gemini/status + /gemini/record ham akışı"],
+           ["timeline.csv", "durum geçişleri ve aralarındaki süreler"],
+           ["arrivals.csv", "hedef ile TF'ten okunan kap ucu; sapma mm"],
+           ["surfaces.csv", "yama/bant nokta sayısı, RMS artık, normal, oturtma sapması"],
+           ["er_queries.csv", "model çağrısı: sorgu, gecikme, dönen tespitler"],
+           ["vacuum.csv", "ölçülen bağıl vakum zaman serisi (VGC10)"],
+           ["joint_states.csv / tcp_track.csv", "eklemler ve kap ucunun sürekli izi"],
+           ["frames/", "çağrı anındaki render (PNG), HAM derinlik (.npy), IR, camera_info"],
+           ["meta.json / run_summary.txt", "parametre anlık görüntüsü ve insan-okur özet"]],
+          widths=[1.9, 4.3])
+    bullet(doc,
+           "Ölçüm akışı durum akışından AYRI tutulur: /gemini/status insana bakan "
+           "kısa metindir, /gemini/record ise JSON ölçüm satırlarıdır. Böylece "
+           "durum mesajlarının biçimi bozulmadan istenildiği kadar alan eklenebilir.")
+    bullet(doc,
+           "telemetry.emit kurulmadıysa sessizce hiçbir şey yapmaz ve hiçbir koşulda "
+           "istisna fırlatmaz: ölçüm toplamak, görevi düşürmeye değecek bir iş "
+           "değildir.")
+    bullet(doc,
+           "frames/ altındaki HAM derinlik (.npy, sıkıştırılmamış float) ve "
+           "camera_info, çevrimdışı ablasyona yeter: 'kabartma yerine normal "
+           "gölgeleme verseydik ne olurdu' sorusu robota bir daha dokunmadan "
+           "yanıtlanabilir.")
+
+    # ----------------------------------------------------------------- 25
+    h(doc, "25. 28 Ağustos 2026 Gerçek Hücre Koşuları — Ölçülen Sonuç", 1)
+    para(doc,
+         "Aynı gün, aynı hücrede dokuz görev koşuldu ve hepsi kaydedildi. "
+         "Aşağıdaki tablo ve şekiller bu kayıtlardan doğrudan üretilir; elle "
+         "girilmiş sonuç yoktur.")
+    table(doc, ["#", "Koşu", "Not (operatör)", "Sonuç", "Süre [s]", "ER çağrısı",
+                "Ort. gecikme [s]", "Tespit"],
+          _run_rows(), widths=[0.25, 0.95, 1.9, 0.85, 0.6, 0.6, 0.7, 0.5])
+    figure(doc, "fig_runs_outcome.png",
+           "Şekil: dokuz koşunun süresi ve sonucu; sağda başarısızlık nedenlerinin "
+           "dağılımı. Yeşil = görev tamamlandı, kırmızı = yarıda kaldı.")
+    para(doc, _outcome_sentence())
+    h(doc, "25.1 Başarısızlıkların Okunması", 2)
+    bullet(doc,
+           "Vakum kurulamaması (parçanın tutulamaması) en sık başarısızlık "
+           "biçimidir. Biçimsiz köpük denemesinde de aynı noktada durulmuştur: "
+           "emme kabı düz ve gözeneksiz bir yüzey ister.")
+    bullet(doc,
+           "Bir koşuda emme kabı yüzeye hiç oturtulamadı (büyük kutu). Aynı kutu "
+           "bir sonraki denemede sorunsuz taşındı; yani bu, kutunun kendisinden "
+           "çok kavrama noktasının seçimine bağlı bir sınırdır.")
+    bullet(doc,
+           "İKİ KOŞU 'BAŞARILI' GÖRÜNÜYOR AMA GÖREVİ YAPMADI: operatör notuna göre "
+           "robot kutuyu toolkit rafına değil, aldığı yere (konveyöre) bıraktı. "
+           "Durum makinesi görevi tamamlanmış sayar, çünkü bırakma noktası "
+           "modelden gelir ve model o noktayı yanlış yere koymuştur. Yani "
+           "tablodaki 'BAŞARILI' sütunu, hedefe ulaşıldığının değil, zincirin "
+           "hatasız yürüdüğünün ölçüsüdür.")
+    bullet(doc,
+           "Bu ayrımı otomatik yakalamanın yolu açık: bırakma noktası, toolkit "
+           "rafının bilinen sınırlayıcı kutusunun içinde mi diye sınanabilir. "
+           "Bugün böyle bir sınama yoktur; bölüm 26'daki açık işler listesine "
+           "eklenmiştir.")
+    figure(doc, "fig_er_latency.png",
+           "Şekil: modele yapılan bütün çağrıların gecikme dağılımı ve çağrı tipine "
+           "göre kırılımı. Bu süre, robot beklerken geçen ölü zamandır.")
+    figure(doc, "fig_run_phases.png",
+           "Şekil: tamamlanan bir görevin aşama zaman çizgisi. Turuncu oklar model "
+           "çağrılarının yerini gösterir; aradaki uzun bantlar kolun hareket ettiği "
+           "zamandır.")
+    figure(doc, "fig_surface_quality.png",
+           "Şekil: kavrama yüzeyinin ölçüm kalitesi. Solda düzlem uydurma artığı, "
+           "sağda ölçülen normalin dünya eksenine sapması; 15°'lik snap toleransı "
+           "kesikli çizgidir.")
+    para(doc,
+         "Yüzey ölçümünün okunması: artıkların milimetrenin altında kalması, "
+         "seçilen yamanın gerçekten düz bir yüzeye oturduğunu gösterir. Normal "
+         "sapmasının küçük olması ise ölçülen normalin eksene oturtulmasının "
+         "(snap) çoğu koşuda yalnızca birkaç derecelik bir düzeltme olduğunu "
+         "söyler; yani ölçüm zaten doğru yöne bakıyordu, snap onu temizliyor.")
+
+    # ----------------------------------------------------------------- 26
+    h(doc, "26. Güncel Durum (12 Eylül 2026)", 1)
+    h(doc, "26.1 Gerçek hücrede doğrulandı", 2)
+    bullet(doc, "Uçtan uca görev: komut → model → kavrama → taşıma → bırakma, "
+                "28 Ağustos'ta dokuz kez koşuldu ve tamamı kaydedildi.")
+    bullet(doc, "Koşu kaydedici ve ölçüm veri yolu (bölüm 24) canlı hücrede çalıştı; "
+                "bu rapordaki bütün koşu sayıları o kayıtlardan üretildi.")
+    bullet(doc, "Arayüzden tek tuşla başlatma: 'Pick & Place Scenario' düğmesi HIL'i "
+                "use_vacuum_gripper:=true ile kaldırır, senaryoyu mode:=sim|real "
+                "ile başlatır ve görev metnini /gemini/command konusuna yayımlar.")
+    h(doc, "26.2 Açık işler", 2)
+    bullet(doc, "Bırakma noktasının doğrulanması: nokta, hedef rafın sınırlayıcı "
+                "kutusunun içinde mi? Bugün sınanmıyor ve model yanlış yere "
+                "koyduğunda görev 'tamamlandı' sayılıyor (bölüm 25.1).")
+    bullet(doc, "Kavrama yüzeyi seçimi: düz olmayan ve gözenekli cisimlerde vakum "
+                "kurulamıyor. Ya cisim sınıfına göre kavrama stratejisi ya da "
+                "başarısız emme sonrası ikinci bir nokta denemesi gerekir.")
+    bullet(doc, "Model gecikmesi çevrim süresinin görünür bir kısmını yiyor; "
+                "çağrı sayısını azaltmak (tek çağrıda hem kaynak hem hedef) "
+                "ölçülebilir bir kazanç sağlar.")
+    bullet(doc, "Çevrimdışı ablasyon henüz koşulmadı: kayıtlardaki ham derinlik "
+                "bunu robota dokunmadan mümkün kılıyor (bölüm 24).")
 
     doc.add_paragraph()
     para(doc,
