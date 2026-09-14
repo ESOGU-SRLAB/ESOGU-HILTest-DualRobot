@@ -193,6 +193,7 @@ def build():
     sim = F.coverage(
         os.path.join(F.SINGLE, "sim_data", "beliefMap_single_ur10e_sim.ot"),
         os.path.join(F.SINGLE, "sim_data", "occupancyMap_single_ur10e_sim.ot"))
+    pk = json.load(open(os.path.join(HERE, "planlayici_kaplama.json")))
     n_cache = len([f for f in os.listdir(os.path.join(PKG, "plans", "trajectories"))
                    if f.endswith(".json")]) if os.path.isdir(
         os.path.join(PKG, "plans", "trajectories")) else 0
@@ -229,8 +230,15 @@ def build():
         ["Sensör", "SICK ToF; gerçek /sick_points, sim /sim/pointcloud"],
         ["Plandaki bakış-noktası", f"{len(vps)}"],
         ["Kayıtlı yörünge", f"{n_cache} dosya (plans/trajectories/)"],
-        ["Gerçek robot kaplaması", f"%{100 * real['frac']:.1f}"],
-        ["Simülasyon kaplaması", f"%{100 * sim['frac']:.1f}"],
+        ["Planlayıcının yazdığı kaplama",
+         f"{pk['written']['covered']} / {pk['written']['targets']} hedef nokta "
+         f"(%{pk['written']['percent']:.2f}) — plan üretildiğindeki küme için"],
+        ["Koşan küme, planlayıcı modeliyle yeniden hesap",
+         f"%{pk['executed']['percent_mean']:.2f}"],
+        ["Gerçek robot octomap kaplaması",
+         f"{len(real['covered'])} / {len(real['belief'])} voksel (%{100 * real['frac']:.2f})"],
+        ["Simülasyon octomap kaplaması",
+         f"{len(sim['covered'])} / {len(sim['belief'])} voksel (%{100 * sim['frac']:.2f})"],
     ], widths=[1.9, 4.0])
 
     # 2
@@ -386,16 +394,21 @@ def build():
     table(doc, ["Ölçü", "Gerçek robot", "Simülasyon"], [
         ["Şasi vokseli", len(real["belief"]), len(sim["belief"])],
         ["Kaplanan voksel", len(real["covered"]), len(sim["covered"])],
-        ["Kaplama", f"%{100 * real['frac']:.1f}", f"%{100 * sim['frac']:.1f}"],
+        ["Kaplama", f"%{100 * real['frac']:.2f}", f"%{100 * sim['frac']:.2f}"],
     ], widths=[2.2, 1.8, 1.8])
     figure(doc, "fig_vp_octomap.png",
-           "Şekil 4: Kaplanan (yeşil) ve kaplanamayan (kırmızı) şasi vokselleri.")
+           "Şekil 4: Occupancy .ot dosyasının kendisi — renkli: dolu (kaplanan) "
+           "vokseller, parça renkleriyle; açık gri: kaplanmayan şasi vokselleri.")
     figure(doc, "fig_vp_part_coverage.png",
            "Şekil 5: Parça başına kaplama; eksik birkaç parçada toplanıyor.")
-    p(doc, "Planlayıcının kendi kaplama tahmini (%%%.1f) bu sayılarla "
-           "karşılaştırılmamalıdır: o, katı bir sensör modeli altında görülebilir "
-           "mesh örnek noktalarının kesridir; octomap ise gerçekte isabet alan "
-           "voksellerin oranıdır." % (100 * plan["coverage_achieved"]))
+    p(doc, "Planlayıcı kaplaması bu sayılarla karşılaştırılmamalıdır: o, katı bir "
+           "sensör modeli altında görülebilir mesh örnek noktalarının kesridir; octomap "
+           "ise gerçekte en az bir sensör noktası düşen şasi voksellerinin oranıdır. "
+           f"Plan dosyasındaki değer {pk['written']['covered']} / "
+           f"{pk['written']['targets']} hedef noktadır (%{pk['written']['percent']:.3f}) "
+           "ve plan üretildiği andaki kümeye aittir; gerçekte koşan "
+           f"{pk['executed']['viewpoints']} bakış-noktası için aynı modelle yeniden hesap "
+           f"%{pk['executed']['percent_mean']:.3f} verir.")
 
     # 9
     h1(doc, "9. Çalışma Kuralları ve Sınırlar")
@@ -408,7 +421,9 @@ def build():
         "iki kollu paket (multirobot_viewpoint_planner) vardır.",
         "Planlama ile yürütme padding'i aynı olmalıdır.",
         "Plan dosyası elle düzenlenebilir ve düzenleme manual_edits altında "
-        "kaydedilir; ancak düzenlemeden sonra coverage_achieved yaklaşık hale gelir.",
+        "kaydedilir; ancak coverage_achieved plan üretildiği andaki kümeye ait kalır. "
+        "Koşan kümenin planlayıcı kaplaması docs/planlayici_kaplama.py ile yeniden "
+        "hesaplanır.",
         "Zincire bağlanamayan duraklar skipped_viewpoints'e yazılır ve turda "
         "gezilmez; bunlar sessizce kaybolmaz.",
     ])

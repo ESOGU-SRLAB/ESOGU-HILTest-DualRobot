@@ -1,0 +1,219 @@
+{
+  "generated_at": "2026-09-14T16:42:33",
+  "method": {
+    "mesh": "/home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl",
+    "mesh_scale": 0.001,
+    "min_normal_z": -0.95,
+    "dense_samples": 500000,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "visibility": "viewpoint_planner.ViewpointGenerator.visible_mask",
+    "camera_config": {
+      "horizontal_fov_deg": 70.0,
+      "vertical_fov_deg": 60.0,
+      "fov_safety_margin_deg": 3.0,
+      "min_range_m": 0.2,
+      "max_range_m": 1.8,
+      "frame_rate_hz": 5.0,
+      "viewpoint_distances": [
+        0.3,
+        0.6,
+        1.0,
+        1.4
+      ],
+      "tilt_variations_deg": [
+        -15.0,
+        0.0,
+        15.0
+      ],
+      "max_incidence_angle_deg": 85.0
+    }
+  },
+  "written": {
+    "covered": 2994,
+    "targets": 4270,
+    "fraction": 0.7011709601873536,
+    "percent": 70.11709601873537,
+    "denominator_consistent_over": 36,
+    "consistent": true,
+    "plan_file": "/home/cem/colcon_ws/src/multirobot_viewpoint_planner/plans/multirobot_viewpoint_plan.json",
+    "refers_to_set_in": "/home/cem/colcon_ws/src/multirobot_viewpoint_planner/plans/multirobot_viewpoint_plan_backup_2026-09-08.json",
+    "original_viewpoints": 36,
+    "skipped_viewpoints": [],
+    "stored_new_points_sum": 2994,
+    "skipped_new_points": 0
+  },
+  "original": {
+    "plan_file": "/home/cem/colcon_ws/src/multirobot_viewpoint_planner/plans/multirobot_viewpoint_plan_backup_2026-09-08.json",
+    "viewpoints": 36,
+    "viewpoint_ids": [
+      "ur_vp_000",
+      "ur_vp_001",
+      "ur_vp_002",
+      "ur_vp_003",
+      "ur_vp_004",
+      "ur_vp_005",
+      "ur_vp_006",
+      "ur_vp_007",
+      "ur_vp_008",
+      "ur_vp_009",
+      "ur_vp_010",
+      "ur_vp_011",
+      "ur_vp_012",
+      "ur_vp_013",
+      "ur_vp_014",
+      "ur_vp_015",
+      "ur_vp_016",
+      "ur_vp_017",
+      "ur_vp_018",
+      "ur_vp_019",
+      "ur_vp_020",
+      "ur_vp_021",
+      "ur_vp_022",
+      "ur_vp_023",
+      "kawa_vp_000",
+      "kawa_vp_001",
+      "kawa_vp_002",
+      "kawa_vp_003",
+      "kawa_vp_004",
+      "kawa_vp_005",
+      "kawa_vp_006",
+      "kawa_vp_007",
+      "kawa_vp_008",
+      "kawa_vp_009",
+      "kawa_vp_010",
+      "kawa_vp_011"
+    ],
+    "per_seed": [
+      {
+        "seed": 0,
+        "covered": 297230,
+        "targets": 427992,
+        "percent": 69.44755976747228
+      },
+      {
+        "seed": 1,
+        "covered": 297155,
+        "targets": 428751,
+        "percent": 69.30712698046186
+      },
+      {
+        "seed": 2,
+        "covered": 297480,
+        "targets": 428925,
+        "percent": 69.3547823045987
+      },
+      {
+        "seed": 3,
+        "covered": 297391,
+        "targets": 428477,
+        "percent": 69.40652590454097
+      },
+      {
+        "seed": 4,
+        "covered": 297261,
+        "targets": 428674,
+        "percent": 69.34430359667253
+      }
+    ],
+    "percent_mean": 69.37205971074927,
+    "percent_min": 69.30712698046186,
+    "percent_max": 69.44755976747228,
+    "planner_sample_lower_bound": {
+      "covered": 2994,
+      "targets": 4270,
+      "percent": 70.11709601873537
+    }
+  },
+  "executed": {
+    "plan_file": "/home/cem/colcon_ws/src/multirobot_viewpoint_planner/plans/multirobot_viewpoint_plan.json",
+    "viewpoints": 36,
+    "viewpoint_ids": [
+      "ur_vp_000",
+      "ur_vp_001",
+      "ur_vp_002",
+      "ur_vp_003",
+      "ur_vp_024",
+      "ur_vp_004",
+      "ur_vp_005",
+      "ur_vp_006",
+      "ur_vp_007",
+      "ur_vp_008",
+      "ur_vp_009",
+      "ur_vp_010",
+      "ur_vp_011",
+      "ur_vp_012",
+      "ur_vp_013",
+      "ur_vp_014",
+      "ur_vp_015",
+      "ur_vp_016",
+      "ur_vp_017",
+      "ur_vp_018",
+      "ur_vp_019",
+      "ur_vp_020",
+      "ur_vp_021",
+      "ur_vp_022",
+      "ur_vp_023",
+      "kawa_vp_000",
+      "kawa_vp_001",
+      "kawa_vp_002",
+      "kawa_vp_003",
+      "kawa_vp_004",
+      "kawa_vp_005",
+      "kawa_vp_006",
+      "kawa_vp_007",
+      "kawa_vp_008",
+      "kawa_vp_009",
+      "kawa_vp_011"
+    ],
+    "per_seed": [
+      {
+        "seed": 0,
+        "covered": 297241,
+        "targets": 427992,
+        "percent": 69.45012990897025
+      },
+      {
+        "seed": 1,
+        "covered": 297206,
+        "targets": 428751,
+        "percent": 69.31902199645016
+      },
+      {
+        "seed": 2,
+        "covered": 297611,
+        "targets": 428925,
+        "percent": 69.38532377455266
+      },
+      {
+        "seed": 3,
+        "covered": 297522,
+        "targets": 428477,
+        "percent": 69.43709930754743
+      },
+      {
+        "seed": 4,
+        "covered": 297338,
+        "targets": 428674,
+        "percent": 69.36226596434587
+      }
+    ],
+    "percent_mean": 69.39076819037328,
+    "percent_min": 69.31902199645016,
+    "percent_max": 69.45012990897025
+  },
+  "validation": {
+    "original_dense_percent": 69.37205971074927,
+    "written_percent": 70.11709601873537,
+    "compared_planner_percent": 70.11709601873537,
+    "difference_points": 0.7450363079860978,
+    "sampling_sigma_points": 0.7054029198187355,
+    "z_score": 1.056185460895947,
+    "note": ""
+  }
+}

@@ -103,19 +103,22 @@ def read_ot(path, occupied_only=True):
 
 
 def voxel_keys(tree):
-    """Budanmış yaprakları en ince çözünürlüğe açar (4 cm yaprak = 8 x 2 cm voksel)."""
+    """Budanmış yaprakları en ince çözünürlüğe açar (4 cm yaprak = 8 x 2 cm voksel).
+
+    Anahtar FLOOR ile alınır: merkezler (k + 0.5) * res'tir; np.round k+0.5'i çift
+    sayıya yuvarlar ve komşu voksellerin yarısını birleştirir. Builder da floor kullanır."""
     res = tree["res"]
     keys = {}
     for c, s, rgb in zip(tree["centers"], tree["sizes"], tree["rgb"]):
         n = int(round(s / res))
         if n <= 1:
-            keys[tuple(np.round(c / res).astype(int))] = tuple(rgb)
+            keys[tuple(np.floor(c / res).astype(int))] = tuple(rgb)
             continue
         off = (np.arange(n) - (n - 1) / 2.0) * res
         for dx in off:
             for dy in off:
                 for dz in off:
-                    keys[tuple(np.round((c + [dx, dy, dz]) / res).astype(int))] = tuple(rgb)
+                    keys[tuple(np.floor((c + [dx, dy, dz]) / res).astype(int))] = tuple(rgb)
     return keys, res
 
 
@@ -123,7 +126,7 @@ def coverage(belief_path, occ_path):
     kb, res = voxel_keys(read_ot(belief_path, occupied_only=False))
     ko, _ = voxel_keys(read_ot(occ_path, occupied_only=True))
     covered = {k for k in kb if k in ko}
-    return dict(res=res, belief=kb, covered=covered,
+    return dict(res=res, belief=kb, covered=covered, occ=ko,
                 frac=len(covered) / max(1, len(kb)))
 
 
@@ -201,7 +204,11 @@ def fig_plan():
     vps = plan["ur_viewpoints"]
     belief = chassis_voxels()
     P = np.array([v["position"] for v in vps])
-    D = np.array([-np.asarray(v["rotation"])[2] for v in vps])
+    # Görüş ekseni rotasyon matrisinin 3. SÜTUNUDUR (kamera +Z, ROS optik
+    # konvansiyonu) — paketin plan_visualizer.py ve RViz düğümüyle aynı:
+    # z_axis = rot[:, 2]. (Önceki sürüm 3. SATIRI alıyordu; oklar hep aynı yöne
+    # bakıyordu.)
+    D = np.array([np.asarray(v["rotation"])[:, 2] for v in vps])
     gain = np.array([v.get("new_points_covered") or 0 for v in vps], float)
     norm = plt.Normalize(gain.min(), gain.max())
     cols = plt.get_cmap("autumn")(norm(gain))
@@ -293,7 +300,11 @@ def fig_gain():
     vps = sorted(plan["ur_viewpoints"], key=lambda v: v.get("rank", 0))
     gain = np.array([v.get("new_points_covered") or 0 for v in vps], float)
     cum = np.cumsum(gain)
-    total_pts = cum[-1] / max(1e-9, plan["coverage_achieved"])
+    # Payda plan dosyasından TAM olarak: planlayici_kaplama.py'nin ortak paydası.
+    # (Eskiden cum[-1] / coverage_achieved ile kestiriliyordu; elle çıkarılan
+    # duraklardan sonra bu yanlış bir payda veriyordu.)
+    pk = json.load(open(os.path.join(HERE, "planlayici_kaplama.json")))
+    total_pts = float(pk["written"]["targets"])
 
     fig, ax = plt.subplots(figsize=(8.6, 4.2), dpi=170)
     x = np.arange(1, len(vps) + 1)
@@ -311,9 +322,12 @@ def fig_gain():
     ax.annotate(f"min_marginal_coverage tabanı ≈ {floor:.0f} nokta\n"
                 f"(0.0035 x {total_pts:.0f} hedef)", (len(vps) * 0.55, floor),
                 textcoords="offset points", xytext=(0, 10), fontsize=7.5, color="#444444")
-    ax.set_title("Azalan getiri eğrisi: bakış-noktası sayısını taban belirler\n"
-                 f"{len(vps)} bakış-noktası, planlayıcı tahmini kaplama "
-                 f"%{100 * plan['coverage_achieved']:.1f}", fontsize=10.5, color=INK)
+    ax.set_title("Azalan getiri eğrisi (koşan bakış-noktaları, plan üretimindeki "
+                 "greedy sırasıyla)\n"
+                 f"planlayıcının yazdığı: {pk['written']['covered']}/{int(total_pts)} "
+                 f"(%{pk['written']['percent']:.2f}, üretimdeki küme) · koşan "
+                 f"{len(vps)} bakış-noktası yeniden hesap: "
+                 f"%{pk['executed']['percent_mean']:.2f}", fontsize=10, color=INK)
     fig.tight_layout()
     out = os.path.join(HERE, "fig_vp_gain.png")
     fig.savefig(out, bbox_inches="tight")
@@ -325,14 +339,19 @@ def fig_gain():
 # FİGÜR — gerçek/sim octomap ve tek kol ile çift kol karşılaştırması
 # --------------------------------------------------------------------------- #
 def _panel(ax, cov, basis, title):
+    """.ot'nin kendisini çizer: occupancy haritasının DOLU voksellerini .ot'de
+    saklanan parça renkleriyle (octovis'in gösterdiği gibi), kaplanamayan şasi
+    voksellerini açık gri. Merkezler (k + 0.5) * res."""
     res = cov["res"]
-    keys = np.array(list(cov["belief"].keys()), float) * res
-    covered = np.array([k in cov["covered"] for k in cov["belief"]])
-    rgb = np.where(covered[:, None], np.array([90, 160, 100]), np.array([200, 70, 60]))
-    draw_voxels(ax, keys, rgb.astype(np.uint8), np.full(len(keys), res), basis)
-    pts, _ = project(keys, basis)
+    keys = list(cov["belief"].keys())
+    centers = (np.array(keys, dtype=float) + 0.5) * res
+    rgb = np.array([cov["occ"][k] if k in cov["covered"] else (222, 222, 222)
+                    for k in keys], dtype=np.uint8)
+    draw_voxels(ax, centers, rgb, np.full(len(keys), res), basis)
+    pts, _ = project(centers, basis)
     frame(ax, [pts], pad=1.03)
     ax.set_title(title, fontsize=10, color=INK)
+    return pts
 
 
 def fig_octomap():
@@ -346,8 +365,8 @@ def fig_octomap():
                                                  (4, 275, "yan")]):
             _panel(axes[row, col], cov, camera(elev, azim),
                    f"{label} — {sub}  (kaplama %{100 * cov['frac']:.1f})")
-    fig.suptitle("Tek-kol koşusunun octomap'i: yeşil = kaplanan şasi vokseli, "
-                 "kırmızı = kaplanmayan\n2 cm çözünürlük, iki harita da AYNI kamera "
+    fig.suptitle("Tek-kol koşusunun octomap'i: renkli = .ot'deki dolu vokseller (parça renkleri), "
+                 "açık gri = kaplanmayan\n2 cm çözünürlük, iki harita da AYNI kamera "
                  "açılarıyla çizildi", fontsize=11, color=INK)
     fig.tight_layout()
     out = os.path.join(HERE, "fig_vp_octomap.png")
@@ -367,7 +386,7 @@ def fig_single_vs_multi():
     _panel(axes[0], c1, basis, f"Tek kol (UR10e) — %{100 * c1['frac']:.1f}")
     _panel(axes[1], c2, basis, f"İki kol (UR10e + Kawasaki) — %{100 * c2['frac']:.1f}")
     fig.suptitle("İkinci kolun gerçek donanımdaki katkısı: aynı şasi, aynı ölçüt\n"
-                 f"fark +{100 * (c2['frac'] - c1['frac']):.1f} puan — kırmızı "
+                 f"fark +{100 * (c2['frac'] - c1['frac']):.1f} puan — gri "
                  "bölgelerin nereden kapandığına bakınız", fontsize=11, color=INK)
     fig.tight_layout()
     out = os.path.join(HERE, "fig_vp_single_vs_multi.png")

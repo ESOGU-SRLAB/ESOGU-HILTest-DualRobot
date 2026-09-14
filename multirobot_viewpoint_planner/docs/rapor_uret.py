@@ -20,6 +20,7 @@ değiştikçe kayıyordu). Nereden geldikleri:
   fig_doors_*
       -- python3 docs/figur_uret.py
 """
+import json
 import os
 import sys
 
@@ -81,6 +82,55 @@ def figure(doc, filename, caption):
 
 
 
+def _planner_json(pkg):
+    """docs/planlayici_kaplama.json — viewpoint_planner/docs/planlayici_kaplama.py üretir."""
+    path = os.path.normpath(os.path.join(HERE, "..", "..", pkg, "docs",
+                                         "planlayici_kaplama.json"))
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"{path} yok — önce: python3 "
+                                "~/colcon_ws/src/viewpoint_planner/docs/planlayici_kaplama.py")
+    return json.load(open(path))
+
+
+def _exact(k, n, d=2):
+    return f"{k} / {n} (%{100 * k / n:.{d}f})"
+
+
+def _doors_written():
+    sys.path.insert(0, os.path.normpath(os.path.join(HERE, "..", "..", "viewpoint_planner", "docs")))
+    import planlayici_kaplama as PK
+    plan = json.load(open(os.path.normpath(os.path.join(
+        HERE, "..", "..", "doors_inspection", "plans", "doors_viewpoint_plan.json"))))
+    w = PK.exact_written(plan, ["ur_viewpoints", "kawasaki_viewpoints"])
+    return plan, w
+
+
+_COV_CACHE = {}
+
+
+def _cov(belief, occ):
+    import figur_sasi as FS
+    key = (belief, occ)
+    if key not in _COV_CACHE:
+        _COV_CACHE[key] = FS.coverage(belief, occ)
+    return _COV_CACHE[key]
+
+
+def _coverage_values():
+    """Metindeki yüzdeler .ot dosyalarından HESAPLANIR; elle sayı yazılmaz."""
+    import figur_sasi as FS
+    P = FS.PCDS
+    return {
+        "multi_real": 100 * _cov(f"{P}/real_pcds/beliefMap_real.ot",
+                                 f"{P}/real_pcds/occupancyMap_real.ot")["frac"],
+        "multi_sim": 100 * _cov(f"{P}/sim_pcds/beliefMap_sim.ot",
+                                f"{P}/sim_pcds/occupancyMap_sim.ot")["frac"],
+        "single_real": 100 * _cov(
+            f"{P}/single_ur10e/real_data/beliefMap_single_ur10e_real.ot",
+            f"{P}/single_ur10e/real_data/occupancyMap_single_ur10e_real.ot")["frac"],
+    }
+
+
 def _coverage_rows():
     """Octomap kaplama tablosunu .ot dosyalarından HESAPLAYARAK üretir."""
     import figur_sasi as FS
@@ -102,9 +152,9 @@ def _coverage_rows():
         if not (os.path.exists(b) and os.path.exists(o)):
             rows.append([label, "-", "-", "dosya yok"])
             continue
-        c = FS.coverage(b, o)
+        c = _cov(b, o)
         rows.append([label, len(c["belief"]), len(c["covered"]),
-                     f"%{100 * c['frac']:.1f}"])
+                     f"%{100 * c['frac']:.2f}"])
     return rows
 
 
@@ -152,14 +202,26 @@ def build():
     ])
     p(doc, "Kritik bulgu değişmedi: tek kolun kaplaması bir ERİŞİLEBİLİRLİK "
            "(reachability) tavanına çarpar, algılama geometrisine değil. İkinci kol "
-           "tam da bu tavana saldırmak için eklenmiştir. Mevcut plan dosyalarından "
-           "okunan güncel değerler:")
+           "tam da bu tavana saldırmak için eklenmiştir. Gerçek robotlarda koşturulan "
+           "plan dosyalarından okunan KESİN değerler (planlayıcı modeli: görülen hedef "
+           "nokta / toplam hedef nokta):")
+    pj_s, pj_m = _planner_json("viewpoint_planner"), _planner_json("multirobot_viewpoint_planner")
+    d_plan, d_w = _doors_written()
     table(doc,
-          ["Senaryo", "UR bakış-noktası", "Kawasaki", "Ulaşılan kaplama"],
-          [["viewpoint_planner (şasi, solo)", "24", "—", "%54.6"],
-           ["multirobot_viewpoint_planner (şasi)", "19", "9", "%66.3"],
-           ["doors_inspection (kapılar)", "9", "3", "%95.6"]])
-    p(doc, "Kapı senaryosunun %95.6'ya çıkması hedef geometrisinin küçüklüğü ve "
+          ["Senaryo", "UR", "Kawasaki", "Planlayıcının yazdığı (plan üretildiğinde)",
+           "Koşan küme (aynı model, yeniden hesap)"],
+          [["viewpoint_planner (şasi, tek kol)", str(pj_s["executed"]["viewpoints"]), "—",
+            _exact(pj_s["written"]["covered"], pj_s["written"]["targets"]),
+            f"%{pj_s['executed']['percent_mean']:.2f}"],
+           ["multirobot_viewpoint_planner (şasi)",
+            str(sum(1 for i in pj_m["executed"]["viewpoint_ids"] if i.startswith("ur_"))),
+            str(sum(1 for i in pj_m["executed"]["viewpoint_ids"] if i.startswith("kawa_"))),
+            _exact(pj_m["written"]["covered"], pj_m["written"]["targets"]),
+            f"%{pj_m['executed']['percent_mean']:.2f}"],
+           ["doors_inspection (kapılar)", str(len(d_plan["ur_viewpoints"])),
+            str(len(d_plan["kawasaki_viewpoints"])),
+            _exact(d_w["covered"], d_w["targets"]), "elle düzenlenmedi"]])
+    p(doc, f"Kapı senaryosunun %{d_w['percent']:.2f}'ye çıkması hedef geometrisinin küçüklüğü ve "
            "erişilebilirliğiyle açıklanır (birleşik kapı yüzeyi 6.82 m², şasi "
            "31.97 m²) — sistemin iyileşmesiyle değil. Şasi ile kapı sayıları aynı "
            "ölçekte karşılaştırılamaz.")
@@ -226,8 +288,9 @@ def build():
     figure(doc, "fig_solo_viewpoints.png",
            "Şekil 5: Adım 4 — Seçilen bakış-noktaları (solo UR10e). Renk ziyaret "
            "sırasını, oklar kamera görüş yönünü gösterir. Küme-kaplama, hedeflerin "
-           "çoğunu en az pozla kapatır. Güncel solo plan 24 bakış-noktası ve %54.6 "
-           "kaplama üretmektedir.")
+           "çoğunu en az pozla kapatır. Şekil Temmuz 2026 solo planına aittir (24 "
+           "bakış-noktası, planlayıcı değeri %54.6); güncel tek-kol planının kesin "
+           "sayıları bölüm 2'deki tablodadır.")
 
     h2(doc, "3.2 Kaplama Tavanı: Kök-neden Analizi")
     p(doc, "Azaltılmak istenen ~160-170 bakış-noktası aslında tam kaplama için "
@@ -375,9 +438,12 @@ def build():
         "Sıralama: order_mode=y_bands (0.30 m genişliğinde Y bantları). Kol, şasiyi "
         "bant bant tarar; bant içinde en kısa yol seçilir. Eski 'en yakın komşu' "
         "sıralaması kolu şasinin bir ucundan diğerine savuruyordu.",
-        "Güncel şasi planı: 25 UR + 11 Kawasaki = 36 bakış-noktası, planlayıcının "
-        "kendi tahminiyle %70.1 kaplama (bir önceki revizyonda 19 + 9 = 28 ve %66.3 "
-        "idi). Plan dosyası ayrıca iki elle düzeltme taşır (8 Eylül 2026): ur_vp_022 "
+        f"Güncel şasi planı: 25 UR + 11 Kawasaki = 36 bakış-noktası. Planlayıcının "
+        f"yazdığı kaplama {_exact(pj_m['written']['covered'], pj_m['written']['targets'])} "
+        f"hedef noktadır ve düzenleme öncesi 24 UR + 12 Kawasaki kümesine aittir; gerçekte "
+        f"koşan küme için aynı modelle yeniden hesap %{pj_m['executed']['percent_mean']:.2f} "
+        f"verir (bölüm 11.4). Bir önceki revizyonda plan 19 + 9 = 28 bakış-noktası ve "
+        "%66.3 idi. Plan dosyası ayrıca iki elle düzeltme taşır (8 Eylül 2026): ur_vp_022 "
         "15 cm yukarı alınıp yeniden çözüldü, kawa_vp_010 Kawasaki'den çıkarılıp "
         "UR'de ur_vp_024 olarak yeniden oluşturuldu — ikisi de gerçek hücrenin "
         "yürütemediği pozlardı.",
@@ -778,7 +844,7 @@ def build():
            "hattının fiziksel doğrulaması.")
     p(doc, "Metrik notu: planlayıcının kaplama tahmini ile octomap kaplaması FARKLI "
            "şeyler ölçer ve eşleşmeleri BEKLENMEZ. Planlayıcı, katı bir sensör modeli "
-           "altında (FOV-3°, geliş açısı ≤80°, menzil, occlusion) görülebilir mesh "
+           "altında (FOV-3°, geliş açısı ≤85°, menzil, occlusion) görülebilir mesh "
            "örnek noktalarının kesridir — muhafazakâr bir TAHMİNdir. Octomap ise "
            "referans PCD'lerin vokselleştirilmiş halinde gerçekte isabet alan "
            "vokselleri sayar (farklı payda, voksel başına any-hit).")
@@ -1075,8 +1141,29 @@ def build():
            "düzeltildi ve düzeltme plana manual_edits bloğu olarak yazıldı: ur_vp_022 "
            "15 cm yukarı alınıp yeniden nişanlandı ve IK'sı yeniden çözüldü; "
            "kawa_vp_010 Kawasaki'den çıkarılıp UR'de ur_vp_024 olarak yeniden "
-           "oluşturuldu. Plan dosyasındaki coverage_achieved değeri o andan itibaren "
-           "yaklaşıktır; bu da manual_edits içinde açıkça not edilmiştir.")
+           "oluşturuldu.")
+    v = pj_m["validation"]
+    p(doc, "Plan dosyasındaki coverage_achieved bu düzenlemeden ÖNCEKİ küme için "
+           "yazılmıştır ve birebir yeniden üretilemez: planlayıcı hedef noktaları her "
+           "koşuda tohumsuz örnekler ve kaydetmez. Bu yüzden iki kesin sayı birlikte "
+           "verilir: dosyadaki değerin tam kesri (bakış-noktası başına birikimli "
+           "değerlerin ortak paydasından) ve gerçekte koşan küme için planlayıcının "
+           "kendi görünürlük fonksiyonuyla, sabit tohumlu 500.000 örneklemeyle yapılan "
+           "yeniden hesap. Yöntem, dosyadaki değerin ait olduğu orijinal küme üzerinde "
+           "doğrulanmıştır.")
+    table(doc, ["Ölçü", "Değer"], [
+        ["Dosyadaki değer (düzenleme öncesi 24 UR + 12 Kawasaki)",
+         _exact(pj_m["written"]["covered"], pj_m["written"]["targets"], 3)],
+        ["Aynı orijinal küme, yeniden hesap",
+         f"%{pj_m['original']['percent_mean']:.3f} (5 tohum: "
+         f"%{pj_m['original']['percent_min']:.3f} – %{pj_m['original']['percent_max']:.3f})"],
+        ["Doğrulama: fark / 5000 örneklemenin σ'sı",
+         f"{v['difference_points']:+.3f} puan / {v['sampling_sigma_points']:.3f} puan "
+         f"(z = {v['z_score']:+.2f})"],
+        ["GERÇEKTE KOŞAN küme (25 UR + 11 Kawasaki), yeniden hesap",
+         f"%{pj_m['executed']['percent_mean']:.3f} (5 tohum: "
+         f"%{pj_m['executed']['percent_min']:.3f} – %{pj_m['executed']['percent_max']:.3f})"],
+    ])
 
     h2(doc, "11.5 Kawasaki Hızı ve Zaman Aşımları")
     bullets(doc, [
@@ -1116,17 +1203,18 @@ def build():
            "koşturuldu ve her poz için hem gerçek SICK bulutu hem simülasyon bulutu "
            "kaydedildi. Aşağıdaki karşılaştırma bu kayıtlardan üretilen octomap'lere "
            "dayanır.")
-    p(doc, "Kaplama şöyle tanımlanmıştır: belief haritasındaki her şasi vokseli 2 "
-           "cm'lik çözünürlüğe açılır (budanmış 4 cm yapraklar 8 alt voksele "
-           "bölünür), aynı işlem occupancy haritasının DOLU vokselleri için yapılır ve "
-           "kaplama = kesişim / şasi voksel sayısı olarak hesaplanır. Bu, builder'ın "
-           "kendi parça-başına raporundan farklı bir paydadır; mutlak yüzdeler değil, "
-           "gerçek ile sim arasındaki FARK okunmalıdır.")
+    p(doc, "Kaplama, pcd2octomap_builder'ın kendi tanımıdır: bir şasi vokseline (2 cm) "
+           "en az bir sensör noktası düştüyse o voksel kaplanmış sayılır; payda, CAD "
+           "parçalarından üretilen BENZERSİZ şasi voksel sayısıdır. Kaplanan voksel "
+           "kümesi occupancy .ot dosyasında DOLU olarak saklanır; aşağıdaki şekil bu "
+           ".ot'nin kendisidir, tablodaki sayılar da .ot'den okunur ve builder'ın "
+           "bastığı genel kaplamayla aynıdır.")
     cov_rows = _coverage_rows()
     table(doc, ["Koşu", "Şasi vokseli", "Kaplanan", "Kaplama"], cov_rows)
     figure(doc, "fig_octomap_real_vs_sim.png",
-           "Şekil 16: Çok-robot koşusunun octomap'i — yeşil vokseller sensörle "
-           "kaplananlar, kırmızılar kaplanmayanlar. Gerçek ile sim AYNI kamera "
+           "Şekil 16: Çok-robot koşusunun occupancy .ot dosyası — renkli vokseller "
+           ".ot'de DOLU olan (kaplanan) şasi vokselleri, parça renkleriyle; açık gri "
+           "olanlar kaplanmayanlar. Gerçek ile sim AYNI kamera "
            "açılarıyla çizilmiştir; octovis'te iki pencereye farklı açılardan bakmak "
            "daha önce 'sim tamamen kaymış' izlenimi vermişti, oysa iki haritanın "
            "sınırlayıcı kutusu birebir aynıdır.")
@@ -1134,17 +1222,20 @@ def build():
            "Şekil 17: Parça başına kaplama (belief haritasındaki renk = şasi "
            "parçası), en kötüden en iyiye sıralı. Gerçek robottaki eksik, bütün "
            "yüzeye yayılmış bir bozulma değil; birkaç parçada toplanmıştır.")
+    cv = _coverage_values()
     bullets(doc, [
-        "Fark, görsel izlenimin söylediği kadar büyük değil: gerçek %86.5, sim %97.9. "
-        "Aradaki 11 puan, kolun erişim sınırındaki iki bölgede toplanıyor — şasinin "
+        f"Gerçek robot %{cv['multi_real']:.2f}, simülasyon %{cv['multi_sim']:.2f} "
+        f"kaplıyor. Aradaki {cv['multi_sim'] - cv['multi_real']:.2f} puan, kolun "
+        "erişim sınırındaki iki bölgede toplanıyor — şasinin "
         "en üst rayları (tavana yakın) ve AGV güverte seviyesindeki alt raylar ile "
         "ayaklar.",
         "Bu iki bölge, çarpışma modelinde de en dar paya sahip olanlardır: gerçek "
         "robotta padding ve gerçek erişim payı bu köşelere güvenli yaklaşmayı "
         "zorlaştırır; simülasyonun ideal sensörü bu kısıtı çekmez.",
-        "İKİNCİ KOLUN KATKISI ÖLÇÜLDÜ: aynı şasi, tek-kol UR10e koşusunda gerçek "
-        "robotla %81.3 kaplanırken çok-robot koşusunda %86.5'e çıkıyor. Kawasaki'nin "
-        "11 bakış-noktası, gerçek donanımda +5.2 puan getiriyor.",
+        "İKİNCİ KOLUN KATKISI ÖLÇÜLDÜ: aynı şasi, gerçek robotla tek-kol UR10e "
+        f"koşusunda %{cv['single_real']:.2f}, çok-robot koşusunda ise "
+        f"%{cv['multi_real']:.2f} kaplanıyor. Kawasaki'nin bakış-noktaları gerçek "
+        f"donanımda +{cv['multi_real'] - cv['single_real']:.2f} puan getiriyor.",
         "Poz meta verisi uyarısı: aynı viewpoint için real ve sim poses/<N>.txt "
         "dosyalarındaki quaternion'lar belirgin biçimde farklı olabiliyor (aynı "
         "Kartezyen hedefe farklı IK dalıyla ulaşılıyor). Bulutların yerini "

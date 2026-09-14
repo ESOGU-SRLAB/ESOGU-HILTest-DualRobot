@@ -94,6 +94,7 @@ def build():
     sim = F.coverage(
         os.path.join(F.SINGLE, "sim_data", "beliefMap_single_ur10e_sim.ot"),
         os.path.join(F.SINGLE, "sim_data", "occupancyMap_single_ur10e_sim.ot"))
+    pk = json.load(open(os.path.join(HERE, "planlayici_kaplama.json")))
     multi = F.coverage(os.path.join(F.PCDS, "real_pcds", "beliefMap_real.ot"),
                        os.path.join(F.PCDS, "real_pcds", "occupancyMap_real.ot"))
 
@@ -119,19 +120,26 @@ def build():
         ["Kol", "UR10e, 2 m Festo lineer rayı üzerinde (MoveIt grubu real_ur10e)"],
         ["Sensör", "SICK TIM/Visionary ToF (ur10e_sick_optical_frame)"],
         ["Plandaki bakış-noktası", f"{len(vps)}"],
-        ["Planlayıcı tahmini kaplama", f"%{100 * plan['coverage_achieved']:.1f}"],
-        ["Gerçek robot octomap kaplaması", f"%{100 * real['frac']:.1f} "
-         f"({len(real['covered'])}/{len(real['belief'])} voksel)"],
-        ["Simülasyon octomap kaplaması", f"%{100 * sim['frac']:.1f}"],
+        ["Planlayıcının yazdığı kaplama",
+         f"{pk['written']['covered']} / {pk['written']['targets']} hedef nokta "
+         f"(%{pk['written']['percent']:.2f}) — plan üretildiğindeki "
+         f"{pk['written']['original_viewpoints']} + {len(pk['written']['skipped_viewpoints'])} "
+         "atlanan bakış-noktası için"],
+        ["Koşan küme, planlayıcı modeliyle yeniden hesap",
+         f"%{pk['executed']['percent_mean']:.2f} ({pk['executed']['viewpoints']} bakış-noktası)"],
+        ["Gerçek robot octomap kaplaması",
+         f"{len(real['covered'])} / {len(real['belief'])} voksel (%{100 * real['frac']:.2f})"],
+        ["Simülasyon octomap kaplaması",
+         f"{len(sim['covered'])} / {len(sim['belief'])} voksel (%{100 * sim['frac']:.2f})"],
         ["Turun toplam eklem yolu", f"{np.degrees(sum(hops)):.0f}° eşdeğer "
                                     f"(ray 1 m = 2 rad sayılarak)"],
         ["Bakış-noktası yükseklik aralığı", f"{P[:, 2].min():.2f} … {P[:, 2].max():.2f} m"],
         ["Atlanan bakış-noktası", ", ".join(plan.get("skipped_viewpoints") or ["yok"])],
     ])
     p(doc, "Tek cümlelik sonuç: paket, şasinin UR10e'nin ulaşabildiği yüzeyini "
-           "gerçek donanımda %%%.1f oranında kaplayan, tekrarlanabilir "
+           "gerçek donanımda %%%.2f oranında kaplayan, tekrarlanabilir "
            "(kayıt-ve-oynat) bir muayene turu üretiyor. Aynı şasi iki kolla "
-           "koşturulduğunda kaplama %%%.1f'e çıkıyor; aradaki %.1f puan, ikinci kolun "
+           "koşturulduğunda kaplama %%%.2f oluyor; aradaki %.2f puan, ikinci kolun "
            "ölçülen katkısıdır (bölüm 8)." %
            (100 * real["frac"], 100 * multi["frac"],
             100 * (multi["frac"] - real["frac"])))
@@ -308,34 +316,79 @@ def build():
     h1(doc, "8. Ölçülen Sonuç — Octomap")
     p(doc, "Koşu sırasında her durakta hem gerçek SICK bulutu hem simülasyon bulutu "
            "kaydedilir; bunlar dünya çerçevesinde birleştirilip octomap'e çevrilir. "
-           "Aşağıdaki kaplama şöyle tanımlanmıştır: belief haritasındaki her şasi "
-           "vokseli 2 cm çözünürlüğe açılır (budanmış 4 cm yapraklar 8 alt voksele "
-           "bölünür), occupancy haritasının DOLU vokselleri için aynısı yapılır ve "
-           "kaplama = kesişim / şasi voksel sayısıdır.")
+           "Kaplama, pcd2octomap_builder'ın kendi tanımıdır: bir şasi vokseline (2 cm) "
+           "en az bir sensör noktası düştüyse o voksel kaplanmış sayılır; payda, CAD "
+           "parçalarından üretilen BENZERSİZ şasi voksel sayısıdır. Kaplanan küme "
+           "occupancy .ot dosyasında DOLU olarak saklanır; şekiller bu .ot'nin "
+           "kendisidir ve tablodaki sayılar builder'ın bastığı kaplamayla aynıdır.")
     table(doc, ["Koşu", "Şasi vokseli", "Kaplanan", "Kaplama"], [
         ["Tek kol — gerçek robot", len(real["belief"]), len(real["covered"]),
-         f"%{100 * real['frac']:.1f}"],
+         f"%{100 * real['frac']:.2f}"],
         ["Tek kol — simülasyon", len(sim["belief"]), len(sim["covered"]),
-         f"%{100 * sim['frac']:.1f}"],
+         f"%{100 * sim['frac']:.2f}"],
         ["İki kol — gerçek robot (karşılaştırma)", len(multi["belief"]),
-         len(multi["covered"]), f"%{100 * multi['frac']:.1f}"],
+         len(multi["covered"]), f"%{100 * multi['frac']:.2f}"],
     ])
     figure(doc, "fig_vp_octomap.png",
-           "Şekil 4: Tek-kol koşusunun octomap'i. Yeşil vokseller sensörle kaplanan "
-           "şasi yüzeyi, kırmızılar kaplanmayan. Gerçek ve sim aynı kamera "
+           "Şekil 4: Tek-kol koşusunun occupancy .ot dosyası. Renkli vokseller .ot'de "
+           "DOLU olan (kaplanan) şasi yüzeyi, parça renkleriyle; açık gri olanlar "
+           "kaplanmayan. Gerçek ve sim aynı kamera "
            "açılarıyla çizilmiştir.")
     figure(doc, "fig_vp_part_coverage.png",
            "Şekil 5: Parça başına kaplama. Eksik, bütün yüzeye yayılmış bir bozulma "
            "değil; birkaç parçada toplanır.")
     figure(doc, "fig_vp_single_vs_multi.png",
            "Şekil 6: Aynı şasi, aynı ölçüt — solda tek kol, sağda iki kol. İkinci "
-           "kolun kapattığı kırmızı bölgeler, çok-robot senaryosunun varlık sebebidir.")
-    p(doc, "Planlayıcının kaplama tahmini (%%%.1f) ile octomap kaplaması (%%%.1f) "
-           "AYNI ŞEYİ ÖLÇMEZ ve eşleşmeleri beklenmez. Planlayıcı, katı bir sensör "
-           "modeli altında görülebilir mesh örnek noktalarının kesridir ve muhafazakâr "
-           "bir tahmindir; octomap ise gerçekte isabet alan voksellerin oranıdır "
-           "(farklı payda, voksel başına 'herhangi bir isabet')." %
-           (100 * plan["coverage_achieved"], 100 * real["frac"]))
+           "kolun kapattığı gri bölgeler, çok-robot senaryosunun varlık sebebidir.")
+    v = pk["validation"]
+    p(doc, "Planlayıcı kaplaması ile octomap kaplaması AYNI ŞEYİ ÖLÇMEZ ve "
+           "eşleşmeleri beklenmez. Planlayıcı, katı bir sensör modeli altında (FOV, "
+           "menzil, geliş açısı, occlusion) görülebilir mesh örnek noktalarının "
+           "kesridir; octomap ise gerçekte en az bir sensör noktası düşen şasi "
+           "voksellerinin oranıdır.")
+    p(doc, "Plan dosyasındaki coverage_achieved plan üretildiği andaki küme için "
+           "yazılmıştır: o küme bugün plandan çıkarılmış beş durağı ve zincire "
+           "bağlanamayan iki durağı da içerir. Planlayıcı hedef noktaları tohumsuz "
+           "örneklediği ve kaydetmediği için bu değer birebir yeniden üretilemez; bu "
+           "yüzden dosyadaki değerin tam kesri ile gerçekte koşan küme için aynı "
+           "modelle yapılan yeniden hesap birlikte verilir.")
+    table(doc, ["Ölçü", "Değer"], [
+        [f"Dosyadaki değer ({pk['written']['original_viewpoints']} + "
+         f"{len(pk['written']['skipped_viewpoints'])} atlanan bakış-noktası)",
+         f"{pk['written']['covered']} / {pk['written']['targets']} hedef nokta "
+         f"(%{pk['written']['percent']:.3f})"],
+        ["Atlanan iki durağın katkısı (planlayıcının kendi örneklemesinde, kesin)",
+         f"{pk['written']['skipped_new_points']} hedef nokta "
+         f"({100 * pk['written']['skipped_new_points'] / pk['written']['targets']:.3f} puan) — "
+         f"saklanan {pk['original']['viewpoints']} durağın 'yeni nokta' toplamı "
+         f"{pk['written']['stored_new_points_sum']}, dosyadaki kaplanan {pk['written']['covered']}"],
+        [f"Saklanan {pk['original']['viewpoints']} durak, planlayıcı örneklemesinde alt sınır",
+         f"{pk['original']['planner_sample_lower_bound']['covered']} / "
+         f"{pk['original']['planner_sample_lower_bound']['targets']} hedef nokta "
+         f"(%{pk['original']['planner_sample_lower_bound']['percent']:.3f})"],
+        [f"Aynı {pk['original']['viewpoints']} durak, yoğun yeniden hesap",
+         f"%{pk['original']['percent_mean']:.3f} (5 tohum: %{pk['original']['percent_min']:.3f}"
+         f" – %{pk['original']['percent_max']:.3f})"],
+        ["Açıklanamayan fark / 5000 örneklemenin σ'sı",
+         f"{v['difference_points']:+.3f} puan / {v['sampling_sigma_points']:.3f} puan "
+         f"(z = {v['z_score']:+.2f})"],
+        [f"GERÇEKTE KOŞAN {pk['executed']['viewpoints']} bakış-noktası, yeniden hesap",
+         f"%{pk['executed']['percent_mean']:.3f} (5 tohum: %{pk['executed']['percent_min']:.3f}"
+         f" – %{pk['executed']['percent_max']:.3f})"],
+    ])
+    p(doc, "Tablonun okunması: atlanan iki durak dosyadaki değerin yalnızca "
+           f"{100 * pk['written']['skipped_new_points'] / pk['written']['targets']:.2f} "
+           "puanını açıklar. Saklanan duraklar için planlayıcının kendi örneklemesindeki "
+           "alt sınır ile bağımsız, yoğun yeniden hesap arasında "
+           f"{v['difference_points']:+.2f} puanlık bir fark kalır ve bu, 5000 noktalık "
+           "örneklemenin tek başına üretebileceği oynaklıktan büyüktür. Çok-robot planında "
+           "aynı yönde ama σ içinde kalan bir fark görülür. En olası açıklama seçim "
+           "yanlılığıdır: planlayıcı bakış-noktalarını, kaplamasını raporladığı örneklemenin "
+           "kendisi üzerinde seçer; o örneklemede şans eseri çok nokta gören adaylar tercih "
+           "edildiği için yazılan değer bağımsız bir örneklemeye göre yukarı kayar. Bu "
+           "açıklama DOĞRULANMAMIŞTIR (seçimin yeniden koşturulması IK sorguları "
+           "gerektirir). Kesin olan: gerçekte koşan küme için planlayıcı modelinin "
+           "değeri tablonun son satırıdır.")
 
     # ------------------------------------------------------------------ 9
     h1(doc, "9. Bilinen Sınırlar ve Sonraki Adımlar")
@@ -349,8 +402,9 @@ def build():
          "Plan dosyasındaki ik_scene damgasını cache ile karşılaştıran bir denetim"],
         ["Alt raylar ve ayaklar", "Gerçek robotta en düşük kaplama orada",
          "Bu bölge için özel bakış-noktası üretimi; padding'i bölgeye göre gevşetmek"],
-        ["Plan-zamanı kaplama tahmini", "Elle düzenlemelerden sonra yaklaşık",
-         "Düzenlemeden sonra kaplamayı yeniden hesaplayan küçük bir araç"],
+        ["Plan-zamanı kaplama değeri", "Elle düzenlemeden sonra koşan kümeyi anlatmaz",
+         "docs/planlayici_kaplama.py her düzenlemeden sonra çalıştırılmalı; planlayıcı "
+         "hedef noktaları kaydetseydi değer birebir yeniden üretilebilirdi"],
     ])
 
     # ------------------------------------------------------------------ 10
@@ -371,7 +425,7 @@ def build():
 
     doc.save(OUT)
     print("yazıldı:", OUT)
-    print(f"  {len(vps)} bakış-noktası, gerçek kaplama %{100 * real['frac']:.1f}")
+    print(f"  {len(vps)} bakış-noktası, gerçek kaplama %{100 * real['frac']:.2f}")
 
 
 if __name__ == "__main__":

@@ -663,6 +663,10 @@ def launch_setup(context, *args, **kwargs):
         executable="parameter_bridge",
         arguments=[
             "/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V",
+            # 1. Lidar (Başlangıç)
+            '/sensor_start_scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+            # 2. Lidar (Bitiş / WP3 İptal Edici)
+            '/sensor_end_scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
         ],
         output="screen",
     )

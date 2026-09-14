@@ -11,7 +11,7 @@ Parametre tabloları launch dosyasından, veri şemaları güncel plan dosyasın
 başarım sayıları octomap çıktılarından üretim anında okunur.
 """
 import ast
-import json
+import json  # noqa: F401
 import os
 import sys
 
@@ -189,6 +189,7 @@ def build():
                            f"{P}/real_pcds/occupancyMap_real.ot")
     cov_sim = FS.coverage(f"{P}/sim_pcds/beliefMap_sim.ot",
                           f"{P}/sim_pcds/occupancyMap_sim.ot")
+    pk = json.load(open(os.path.join(HERE, "planlayici_kaplama.json")))
     single = FS.coverage(
         f"{P}/single_ur10e/real_data/beliefMap_single_ur10e_real.ot",
         f"{P}/single_ur10e/real_data/occupancyMap_single_ur10e_real.ot")
@@ -222,12 +223,20 @@ def build():
                       "(sim: /sim/pointcloud, /sim/kawasaki/pointcloud)"],
         ["Plandaki bakış-noktası", f"{len(ur)} UR + {len(kawa)} Kawasaki = "
                                    f"{len(ur) + len(kawa)}"],
-        ["Planlayıcı tahmini kaplama", f"%{100 * plan['coverage_achieved']:.1f}"],
-        ["Gerçek robot octomap kaplaması", f"%{100 * cov_real['frac']:.1f}"],
-        ["Simülasyon kaplaması", f"%{100 * cov_sim['frac']:.1f}"],
-        ["Tek kola göre kazanç",
-         f"+{100 * (cov_real['frac'] - single['frac']):.1f} puan "
-         f"(tek kol %{100 * single['frac']:.1f})"],
+        ["Planlayıcının yazdığı kaplama",
+         f"{pk['written']['covered']} / {pk['written']['targets']} hedef nokta "
+         f"(%{pk['written']['percent']:.2f}) — düzenleme öncesi 24 UR + 12 Kawasaki için"],
+        ["Koşan küme, planlayıcı modeliyle yeniden hesap",
+         f"%{pk['executed']['percent_mean']:.2f}"],
+        ["Gerçek robot octomap kaplaması",
+         f"{len(cov_real['covered'])} / {len(cov_real['belief'])} voksel "
+         f"(%{100 * cov_real['frac']:.2f})"],
+        ["Simülasyon octomap kaplaması",
+         f"{len(cov_sim['covered'])} / {len(cov_sim['belief'])} voksel "
+         f"(%{100 * cov_sim['frac']:.2f})"],
+        ["Tek kola göre kazanç (gerçek robot)",
+         f"+{100 * (cov_real['frac'] - single['frac']):.2f} puan "
+         f"(tek kol %{100 * single['frac']:.2f})"],
     ], widths=[1.9, 4.0])
 
     # 2
@@ -366,14 +375,15 @@ def build():
     h1(doc, "8. Bugünkü Ölçülen Başarım")
     table(doc, ["Koşu", "Şasi vokseli", "Kaplanan", "Kaplama"], [
         ["İki kol — gerçek robot", len(cov_real["belief"]), len(cov_real["covered"]),
-         f"%{100 * cov_real['frac']:.1f}"],
+         f"%{100 * cov_real['frac']:.2f}"],
         ["İki kol — simülasyon", len(cov_sim["belief"]), len(cov_sim["covered"]),
-         f"%{100 * cov_sim['frac']:.1f}"],
+         f"%{100 * cov_sim['frac']:.2f}"],
         ["Tek kol — gerçek robot (karşılaştırma)", len(single["belief"]),
-         len(single["covered"]), f"%{100 * single['frac']:.1f}"],
+         len(single["covered"]), f"%{100 * single['frac']:.2f}"],
     ], widths=[2.4, 1.2, 1.1, 1.0])
     figure(doc, "fig_octomap_real_vs_sim.png",
-           "Şekil 3: Kaplanan (yeşil) ve kaplanamayan (kırmızı) şasi vokselleri; "
+           "Şekil 3: Occupancy .ot dosyasının kendisi — renkli: dolu (kaplanan) "
+           "vokseller, parça renkleriyle; açık gri: kaplanmayan şasi vokselleri; "
            "gerçek ve simülasyon aynı kamera açılarıyla.")
     figure(doc, "fig_part_coverage.png",
            "Şekil 4: Parça başına kaplama. Gerçek robottaki eksik iki bölgede "

@@ -1,0 +1,207 @@
+{
+  "generated_at": "2026-09-14T16:41:30",
+  "method": {
+    "mesh": "/home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/collision/chassis.stl",
+    "mesh_scale": 0.001,
+    "min_normal_z": -0.95,
+    "dense_samples": 500000,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "visibility": "viewpoint_planner.ViewpointGenerator.visible_mask",
+    "camera_config": {
+      "horizontal_fov_deg": 70.0,
+      "vertical_fov_deg": 60.0,
+      "fov_safety_margin_deg": 3.0,
+      "min_range_m": 0.2,
+      "max_range_m": 1.8,
+      "frame_rate_hz": 5.0,
+      "viewpoint_distances": [
+        0.3,
+        0.6,
+        1.0,
+        1.4
+      ],
+      "tilt_variations_deg": [
+        -15.0,
+        0.0,
+        15.0
+      ],
+      "max_incidence_angle_deg": 85.0
+    }
+  },
+  "written": {
+    "covered": 2546,
+    "targets": 4270,
+    "fraction": 0.5962529274004684,
+    "percent": 59.62529274004684,
+    "denominator_consistent_over": 27,
+    "consistent": true,
+    "plan_file": "/home/cem/colcon_ws/src/viewpoint_planner/plans/viewpoint_plan.json",
+    "refers_to_set_in": "/home/cem/colcon_ws/src/viewpoint_planner/plans/viewpoint_plan_before_remove_1742.json",
+    "original_viewpoints": 31,
+    "skipped_viewpoints": [
+      "vp_032",
+      "vp_030"
+    ],
+    "stored_new_points_sum": 2510,
+    "skipped_new_points": 36
+  },
+  "original": {
+    "plan_file": "/home/cem/colcon_ws/src/viewpoint_planner/plans/viewpoint_plan_before_remove_1742.json",
+    "viewpoints": 31,
+    "viewpoint_ids": [
+      "vp_003",
+      "vp_028",
+      "vp_011",
+      "vp_015",
+      "vp_025",
+      "vp_004",
+      "vp_027",
+      "vp_005",
+      "vp_006",
+      "vp_020",
+      "vp_029",
+      "vp_019",
+      "vp_016",
+      "vp_026",
+      "vp_031",
+      "vp_000",
+      "vp_023",
+      "vp_002",
+      "vp_017",
+      "vp_012",
+      "vp_008",
+      "vp_013",
+      "vp_009",
+      "vp_014",
+      "vp_024",
+      "vp_010",
+      "vp_022",
+      "vp_021",
+      "vp_018",
+      "vp_001",
+      "vp_007"
+    ],
+    "per_seed": [
+      {
+        "seed": 0,
+        "covered": 243947,
+        "targets": 427992,
+        "percent": 56.99802800052338
+      },
+      {
+        "seed": 1,
+        "covered": 244081,
+        "targets": 428751,
+        "percent": 56.92838034197005
+      },
+      {
+        "seed": 2,
+        "covered": 244487,
+        "targets": 428925,
+        "percent": 56.999941714752
+      },
+      {
+        "seed": 3,
+        "covered": 244555,
+        "targets": 428477,
+        "percent": 57.07540894843831
+      },
+      {
+        "seed": 4,
+        "covered": 244278,
+        "targets": 428674,
+        "percent": 56.98456169490102
+      }
+    ],
+    "percent_mean": 56.997264140116954,
+    "percent_min": 56.92838034197005,
+    "percent_max": 57.07540894843831,
+    "planner_sample_lower_bound": {
+      "covered": 2510,
+      "targets": 4270,
+      "percent": 58.78220140515222
+    }
+  },
+  "executed": {
+    "plan_file": "/home/cem/colcon_ws/src/viewpoint_planner/plans/viewpoint_plan.json",
+    "viewpoints": 26,
+    "viewpoint_ids": [
+      "vp_003",
+      "vp_028",
+      "vp_011",
+      "vp_015",
+      "vp_025",
+      "vp_004",
+      "vp_027",
+      "vp_005",
+      "vp_006",
+      "vp_020",
+      "vp_029",
+      "vp_019",
+      "vp_016",
+      "vp_026",
+      "vp_000",
+      "vp_023",
+      "vp_002",
+      "vp_017",
+      "vp_012",
+      "vp_008",
+      "vp_013",
+      "vp_010",
+      "vp_022",
+      "vp_021",
+      "vp_018",
+      "vp_001"
+    ],
+    "per_seed": [
+      {
+        "seed": 0,
+        "covered": 233723,
+        "targets": 427992,
+        "percent": 54.609198302772015
+      },
+      {
+        "seed": 1,
+        "covered": 234043,
+        "targets": 428751,
+        "percent": 54.58716131274329
+      },
+      {
+        "seed": 2,
+        "covered": 234384,
+        "targets": 428925,
+        "percent": 54.64451827242525
+      },
+      {
+        "seed": 3,
+        "covered": 234270,
+        "targets": 428477,
+        "percent": 54.67504673529734
+      },
+      {
+        "seed": 4,
+        "covered": 234221,
+        "targets": 428674,
+        "percent": 54.638489854761424
+      }
+    ],
+    "percent_mean": 54.63088289559987,
+    "percent_min": 54.58716131274329,
+    "percent_max": 54.67504673529734
+  },
+  "validation": {
+    "original_dense_percent": 56.997264140116954,
+    "written_percent": 59.62529274004684,
+    "compared_planner_percent": 58.78220140515222,
+    "difference_points": 1.7849372650352677,
+    "sampling_sigma_points": 0.7576368867209687,
+    "z_score": 2.355927088978503,
+    "note": "Karşılaştırma, atlanan durakların katkısı çıkarılmış alt sınırla yapıldı. Kalan pozitif fark örnekleme gürültüsüyle açıklanmıyorsa en olası sebep seçim yanlılığıdır: planlayıcı bakış-noktalarını raporladığı örneklemenin KENDİSİ üzerinde seçer (doğrulanmadı; seçim IK gerektirir)."
+  }
+}

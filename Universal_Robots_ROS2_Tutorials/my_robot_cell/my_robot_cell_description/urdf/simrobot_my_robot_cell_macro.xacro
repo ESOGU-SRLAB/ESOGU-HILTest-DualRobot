@@ -380,6 +380,107 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
+    <link name="${tf_prefix}sensor_start_link">
+      <visual>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/conveyor_start_sensor.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/conveyor_start_sensor.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.1"/> 
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      </inertial>
+    </link>
+    <joint name="${tf_prefix}sensor_joint" type="fixed">
+      <parent link="world"/>
+      <child link="${tf_prefix}sensor_start_link"/>
+      <origin xyz="0.801772 -0.206524 0.867655" rpy="0 0 3.14"/>
+    </joint>
+    <!-- ======================================================= -->
+    <!-- KONVEYÖR BİTİŞ SENSÖRÜ (EXIT / END SENSOR)           -->
+    <!-- ======================================================= -->
+    <link name="${tf_prefix}end_sensor_start_link">
+      <visual>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/conveyor_start_sensor.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="file:////home/cem/colcon_ws/src/Universal_Robots_ROS2_Description/meshes/ur10e/secondrobotcollision/conveyor_start_sensor.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.1"/> 
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001"/>
+      </inertial>
+    </link>
+    <joint name="${tf_prefix}end_sensor_joint" type="fixed">
+      <parent link="world"/> 
+      <child link="${tf_prefix}end_sensor_start_link"/>
+      <origin xyz="0.801772 0.511524 0.867655" rpy="0 0 3.14"/>
+    </joint>
+    <!-- ======================================================= -->
+    <!-- GAZEBO LİDAR / SENSÖR TANIMLARI                      -->
+    <!-- ======================================================= -->
+    <gazebo reference="${tf_prefix}sensor_start_link">
+      <sensor type="gpu_lidar" name="optical_sensor_start">
+        <pose>0 0 0 0 0 0</pose>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <update_rate>20.0</update_rate>
+        <topic>sensor_start_scan</topic>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.02</min>
+            <max>0.3</max>
+            <resolution>0.01</resolution>
+          </range>
+        </ray>
+        <gz_frame_id>${tf_prefix}sensor_start_link</gz_frame_id> 
+      </sensor>
+    </gazebo>
+    <gazebo reference="${tf_prefix}end_sensor_start_link">
+      <sensor type="gpu_lidar" name="optical_sensor_end">
+        <pose>0 0 0 0 0 0</pose>
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <update_rate>20.0</update_rate>
+        <topic>sensor_end_scan</topic>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.02</min>
+            <max>0.3</max>
+            <resolution>0.01</resolution>
+          </range>
+        </ray>
+        <gz_frame_id>${tf_prefix}end_sensor_start_link</gz_frame_id> 
+      </sensor>
+    </gazebo>
+
     <!-- <joint name="${tf_prefix}base_to_conveyorbelt" type="fixed">
       <parent link="${parent}"/>
       <child link="${tf_prefix}conveyor_belt"/>

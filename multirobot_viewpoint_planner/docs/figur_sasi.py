@@ -46,6 +46,10 @@ INK = "#22252a"
 def voxel_keys(tree):
     """Yaprakları en ince çözünürlüğe açar; anahtar = (i, j, k) tam sayı ızgarası.
 
+    Anahtar FLOOR ile alınır: voksel merkezleri (k + 0.5) * res'tir ve np.round
+    k+0.5'i çift sayıya yuvarlar (banker's rounding), komşu voksellerin yarısını
+    birleştirir. Builder da floor(x / res) kullanır.
+
     Budanmış yapraklar (4 cm) octomap'te tek düğüm olarak durur ama 8 tane 2 cm'lik
     vokseli temsil eder; saymadan önce açılmazsa kaplama yanlış çıkar."""
     res = tree["res"]
@@ -53,13 +57,13 @@ def voxel_keys(tree):
     for c, s, rgb in zip(tree["centers"], tree["sizes"], tree["rgb"]):
         n = int(round(s / res))
         if n <= 1:
-            keys[tuple(np.round(c / res).astype(int))] = tuple(rgb)
+            keys[tuple(np.floor(c / res).astype(int))] = tuple(rgb)
             continue
         off = (np.arange(n) - (n - 1) / 2.0) * res
         for dx in off:
             for dy in off:
                 for dz in off:
-                    k = tuple(np.round((c + [dx, dy, dz]) / res).astype(int))
+                    k = tuple(np.floor((c + [dx, dy, dz]) / res).astype(int))
                     keys[k] = tuple(rgb)
     return keys, res
 
@@ -70,7 +74,7 @@ def coverage(belief_path, occ_path):
     kb, res = voxel_keys(belief)
     ko, _ = voxel_keys(occ)
     covered = {k for k in kb if k in ko}
-    return dict(res=res, belief=kb, covered=covered,
+    return dict(res=res, belief=kb, covered=covered, occ=ko,
                 frac=len(covered) / max(1, len(kb)))
 
 
@@ -89,9 +93,11 @@ def per_color_coverage(cov):
 # --------------------------------------------------------------------------- #
 def _arrows(ax, vps, basis, cmap, scale=0.16):
     P = np.array([v["position"] for v in vps])
-    # rotation satırları kamera eksenlerini verir; bakış ekseni üçüncü satırın
-    # tersidir (viewpoint üretiminde -Z ileri yönü kullanılmıştır).
-    D = np.array([-np.asarray(v["rotation"])[2] for v in vps])
+    # Görüş ekseni rotasyon matrisinin 3. SÜTUNUDUR (kamera +Z, ROS optik
+    # konvansiyonu) — paketin plan_visualizer.py ve RViz düğümüyle aynı:
+    # z_axis = rot[:, 2]. (Önceki sürüm 3. SATIRI alıyordu; oklar hep aynı yöne
+    # bakıyordu.)
+    D = np.array([np.asarray(v["rotation"])[:, 2] for v in vps])
     gain = np.array([v.get("new_points_covered") or 0 for v in vps], dtype=float)
     xy0, _ = project(P, basis)
     xy1, _ = project(P + D * scale, basis)
@@ -177,12 +183,16 @@ def fig_plan_kawasaki():
 # FİGÜR — gerçek robot ile simülasyonun octomap'i yan yana
 # --------------------------------------------------------------------------- #
 def _octomap_panel(ax, cov, basis, title):
+    """.ot'nin kendisini çizer: occupancy haritasının DOLU voksellerini .ot'de
+    saklanan parça renkleriyle (octovis'in gösterdiği gibi), kaplanamayan şasi
+    voksellerini açık gri. Merkezler (k + 0.5) * res."""
     res = cov["res"]
-    keys = np.array(list(cov["belief"].keys()), dtype=float) * res
-    covered = np.array([k in cov["covered"] for k in cov["belief"]])
-    rgb = np.where(covered[:, None], np.array([90, 160, 100]), np.array([200, 70, 60]))
-    draw_voxels(ax, keys, rgb.astype(np.uint8), np.full(len(keys), res), basis)
-    pts, _ = project(keys, basis)
+    keys = list(cov["belief"].keys())
+    centers = (np.array(keys, dtype=float) + 0.5) * res
+    rgb = np.array([cov["occ"][k] if k in cov["covered"] else (222, 222, 222)
+                    for k in keys], dtype=np.uint8)
+    draw_voxels(ax, centers, rgb, np.full(len(keys), res), basis)
+    pts, _ = project(centers, basis)
     frame(ax, [pts], pad=1.03)
     ax.set_title(title, fontsize=10, color=INK)
     return pts
@@ -204,7 +214,7 @@ def fig_octomap(prefix="", belief_real=None, occ_real=None, belief_sim=None,
             _octomap_panel(axes[row, col], cov, camera(elev, azim),
                            f"{label} — {sub}  (kaplama %{100 * cov['frac']:.1f})")
     fig.suptitle("Şasi octomap'i: hangi yüzey görüldü, hangisi görülmedi\n"
-                 "yeşil = sensörle kaplanan şasi vokseli · kırmızı = kaplanmayan · "
+                 "renkli = occupancy .ot'deki dolu vokseller (parça renkleri) · açık gri = kaplanmayan · "
                  "2 cm çözünürlük, İKİ HARİTA DA AYNI kamera açılarıyla çizildi",
                  fontsize=11, color=INK)
     fig.tight_layout()
