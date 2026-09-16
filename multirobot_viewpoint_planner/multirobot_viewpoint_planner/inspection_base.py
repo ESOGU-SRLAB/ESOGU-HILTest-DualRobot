@@ -208,6 +208,17 @@ class InspectionNodeBase(Node):
         self.declare_parameter("arrival_joint_tol", 0.10)   # rad, revolute joints
         self.declare_parameter("arrival_linear_tol", 0.08)  # m, world_to_agv / UR rail
 
+        # Kaç TUR atılacak. Buradaki varsayılan 1'dir ve ÖYLE KALMALI: bu sınıfı
+        # Kawasaki düğümü de kullanıyor ve o tek tur atar. Çok turu yalnız UR alır;
+        # launch'taki ur_tours argümanı (varsayılan 2) bu parametreyi UR'ye geçirir.
+        # Neden var: iki kol aynı anda başlıyor ama Kawasaki turunu UR'den ~7.5 dk sonra
+        # bitiriyor (ölçüm: UR 26 durak / 4.5 dk hareket, Kawasaki 11 durak / 8.7 dk).
+        # UR'nin boş beklediği bu süre, aynı yörüngelerle ikinci bir tur atarak
+        # değerlendirilebilir. DİKKAT: yakalama dosyaları her turda 1'den numaralanır,
+        # yani sonraki tur bir öncekinin bulutlarının ÜZERİNE yazar; kapsama değişmez,
+        # yalnızca bulutlar daha geç bir anda kaydedilmiş olur.
+        self.declare_parameter("tours", 1)
+
         # Trajectory cache.
         self.declare_parameter("use_trajectory_cache", True)
         self.declare_parameter("force_replan", False)
@@ -2001,12 +2012,19 @@ class InspectionNodeBase(Node):
         self.get_logger().info(
             f"{self.arm_label} executing {len(vps)} viewpoints (independent single-arm node).")
 
-        # Send this arm to its known START pose first, so the first (possibly cached)
-        # trajectory begins from the exact state it was recorded at.
-        self._go_to_start()
-
+        tours = max(1, int(self.get_parameter("tours").value))
         t_start = time.monotonic()
-        saved = self.run_sequence(vps)
+        saved = 0
+        for tour in range(1, tours + 1):
+            # Her turun başında START pozuna gidilir: ilk (muhtemelen cache'ten gelen)
+            # yörünge, kaydedildiği durumdan başlasın. Bir sonraki tur, bir önceki turun
+            # son durağından başladığı için bu ikinci turda da şarttır.
+            self._go_to_start()
+            if tours > 1:
+                self.get_logger().info(
+                    f"{self.arm_label} TUR {tour}/{tours} başlıyor "
+                    "(yakalama dosyaları 1'den numaralanır, öncekinin üzerine yazılır).")
+            saved = self.run_sequence(vps)
 
         if self.get_parameter(self.return_home_param).value:
             self._home_arm(list(self.get_parameter(self.home_positions_param).value), self.arm_label)
@@ -2015,7 +2033,8 @@ class InspectionNodeBase(Node):
         self.get_logger().info(
             f"{self.arm_label} inspection complete [only_sim={self.only_sim}]: "
             f"{saved}/{len(vps)} viewpoints captured into {trees} "
-            f"in {time.monotonic() - t_start:.1f}s.")
+            f"in {time.monotonic() - t_start:.1f}s"
+            + (f" ({tours} tur; diskteki bulutlar SON turdan)." if tours > 1 else "."))
 
     # ------------------------------------------------------------------ #
     def _resolve_only_flags(self):

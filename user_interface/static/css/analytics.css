@@ -48,6 +48,37 @@
     background: var(--text-primary);
 }
 
+/* Reopens the welcome guide (templates/index.html's #welcome-modal) at any time --
+   sits just right of the hamburger button, same visual treatment. Fixed positioning
+   (not a flex sibling of .hamburger-btn) so it never disturbs the hover/touch
+   open-state logic above, which is keyed off .side-menu itself. */
+.help-btn {
+    position: fixed;
+    top: 16px;
+    left: 68px;
+    z-index: 1000;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(17, 24, 39, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.help-btn:hover,
+.help-btn:focus-visible {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
 /* The flyout list of tabs. Hidden by default and revealed on hover/focus (for
    mouse/keyboard) or the .open class (toggled by JS on click, for touch
    screens where :hover never fires -- this control panel may run on a

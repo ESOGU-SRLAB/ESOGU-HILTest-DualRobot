@@ -100,6 +100,26 @@
       <xacro:insert_block name="origin"/>
       <axis xyz="0 0 1"/>
     </joint>
+
+    <!-- Grasp point: the empty space midway between the two finger pads, where a
+         grasped object actually sits. No such frame existed anywhere in this
+         workspace (unlike the vacuum gripper's own ur10e_suction_cup, which the
+         SRDF already uses as its group's tip_link), derived 2026-09-16 purely
+         from gripper_upper_1.stl/gripper_lower_1.stl's own vertex bounding boxes
+         plus this macro's own joint origins, no physical measurement available.
+         x/y: centre of each pad's bounding box, in this link's frame (0.096302,
+         0.061001 is the shared joint-origin offset from gripper_base_link).
+         z: the two fingers' facing surfaces (upper's min-z, lower's max-z) at their
+         OWN joint origins average to a value that is, by construction (the mimic
+         joint's multiplier=-1 on the same axis), INDEPENDENT of the actual
+         open/close position, verified numerically for v=0, 0.013 and 0.026, all
+         giving -0.017678. -->
+    <link name="${prefix}gripper_tcp"/>
+    <joint name="${prefix}gripper_tcp_joint" type="fixed">
+      <origin xyz="0.110916 0.084033 -0.017678" rpy="0 0 0"/>
+      <parent link="${prefix}gripper_base_link"/>
+      <child link="${prefix}gripper_tcp"/>
+    </joint>
   </xacro:macro>
 
 </robot>

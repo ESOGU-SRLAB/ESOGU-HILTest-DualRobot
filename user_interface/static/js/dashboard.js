@@ -258,6 +258,55 @@ document.addEventListener("keydown", (event) => {
 });
 
 // ==============================================================================
+// Welcome / Onboarding Modal
+// ==============================================================================
+
+// Bump the suffix if the guide's content changes enough that everyone should see
+// it again, even those who checked "don't show again" under the old version.
+const WELCOME_SEEN_KEY = "ifarlab_welcome_dismissed_v2"; // v2: English rewrite + URCap step
+
+function openWelcomeModal() {
+    const modal = document.getElementById("welcome-modal");
+    if (modal) modal.classList.add("visible");
+}
+
+function closeWelcomeModal() {
+    const modal = document.getElementById("welcome-modal");
+    if (modal) modal.classList.remove("visible");
+    const checkbox = document.getElementById("welcome-dont-show-again");
+    // Only persist the "don't auto-show" choice when the box is actually checked --
+    // otherwise this reappears on the next page load, matching what the checkbox
+    // label promises rather than silently suppressing it either way.
+    if (checkbox && checkbox.checked) {
+        try {
+            localStorage.setItem(WELCOME_SEEN_KEY, "true");
+        } catch (e) {
+            // Private browsing / storage disabled -- fine, it'll just show again.
+        }
+    }
+}
+
+function onWelcomeOverlayClick(event) {
+    if (event.target.id === "welcome-modal") closeWelcomeModal();
+}
+
+document.addEventListener("keydown", (event) => {
+    const modal = document.getElementById("welcome-modal");
+    if (!modal || !modal.classList.contains("visible")) return;
+    if (event.key === "Escape") closeWelcomeModal();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    let alreadyDismissed = false;
+    try {
+        alreadyDismissed = localStorage.getItem(WELCOME_SEEN_KEY) === "true";
+    } catch (e) {
+        // Storage unavailable -- default to showing the guide, same as a first visit.
+    }
+    if (!alreadyDismissed) openWelcomeModal();
+});
+
+// ==============================================================================
 // Chart.js — Live Joint State Graphs
 // ==============================================================================
 

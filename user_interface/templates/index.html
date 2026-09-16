@@ -37,6 +37,8 @@
             aria-haspopup="true" aria-expanded="false" aria-controls="tab-switcher">
         <span></span><span></span><span></span>
     </button>
+    <button class="help-btn" id="help-btn" aria-label="Show welcome guide"
+            title="Show the welcome guide" onclick="openWelcomeModal()">❔</button>
     <div class="tab-switcher" id="tab-switcher">
         <button class="tab-btn active" id="tab-btn-home" onclick="switchTab('home')">
             🏠 Dashboard
@@ -50,6 +52,86 @@
         <button class="tab-btn" id="tab-btn-freemove" onclick="switchTab('freemove')">
             🕹️ Free Move
         </button>
+    </div>
+</div>
+
+<!-- ===== WELCOME / ONBOARDING MODAL ===== -->
+<!-- Lives OUTSIDE every #view-* container (not just view-home) so the ❔ button
+     reopens it correctly regardless of which tab is currently active -- a view
+     container's `hidden` attribute would otherwise hide this too. -->
+<div class="modal-overlay" id="welcome-modal" onclick="onWelcomeOverlayClick(event)">
+    <div class="modal-box welcome-box" role="dialog" aria-modal="true"
+         aria-labelledby="welcome-modal-title">
+        <div class="modal-header">
+            <h3 id="welcome-modal-title">👋 Welcome to ESOGÜ IFARLAB</h3>
+            <button class="modal-close" onclick="closeWelcomeModal()" title="Close (Esc)">✕</button>
+        </div>
+
+        <p class="modal-desc">
+            This dashboard lets you remotely monitor and operate IFARLAB's dual-arm cell
+            (a UR10e + a Kawasaki RS005L, sharing an AGV rail and SICK cameras). The
+            hamburger menu at the top gives you 4 tabs:
+        </p>
+        <ul class="welcome-list">
+            <li><strong>🏠 Dashboard</strong> — start/stop the scenarios (Multi-Robot
+                Inspection, UR10e Inspection, Pick &amp; Place, Human-Robot
+                Collaboration), live camera feeds, and the system log.</li>
+            <li><strong>📈 Data Analytics</strong> — charts and analysis of the
+                collected data.</li>
+            <li><strong>🚨 Anomaly Detection</strong> — where anomaly-detection results
+                are monitored.</li>
+            <li><strong>🕹️ Free Move</strong> — drag the robots to a target pose and
+                run it with Plan/Execute, without writing a scripted scenario.</li>
+        </ul>
+
+        <h4 class="welcome-section-title">Before running the robots</h4>
+        <p class="modal-desc">
+            The dashboard only manages the software side — the hardware itself needs to
+            be physically powered on and ready:
+        </p>
+        <ul class="welcome-list">
+            <li><strong>UR10e:</strong> press the power button on the teach pendant.
+                Once PolyScope boots, tap the (powered-off) panel at the bottom left and
+                press <strong>ON</strong>, then <strong>START</strong>, to power up the
+                robot and release the brakes.</li>
+            <li><strong>Linear axis and sensors:</strong> plug in the cable in the
+                cabinet.</li>
+            <li>Once both the UR10e and the linear axis are connected, start the
+                <strong>External Control</strong> URCap program on the teach pendant
+                (load it and press Play) so the ROS driver can take control.</li>
+            <li><strong>Kawasaki:</strong> plug in its cable in the cabinet first, then
+                flip up the switch on its controller. Once the robot is powered, turn
+                the motors on from its teach pendant, then launch
+                <strong>KRterm 1.2.8</strong> from the desktop.</li>
+            <li><strong>AGV:</strong> turn on its ignition switch, then start rosbridge
+                from the server in the cabinet.</li>
+        </ul>
+        <p class="modal-hint">
+            See <code>IFARLAB_Kullanım_Rehberi.docx</code> on the desktop for the full,
+            detailed steps.
+        </p>
+
+        <h4 class="welcome-section-title">Safety</h4>
+        <ul class="welcome-list">
+            <li>The <strong>🛑 STOP ALL</strong> button in the top right stops
+                everything, at any time.</li>
+            <li>To try things out without touching the real hardware, leave
+                <strong>Use Fake Hardware</strong> switched on.</li>
+            <li>A scenario or Free Move always waits for an explicit confirmation
+                before moving the real robot (<em>Confirm Robot Ready</em> / Execute) —
+                make sure no one is within reach of the robots before confirming.</li>
+        </ul>
+
+        <label class="welcome-dismiss">
+            <input type="checkbox" id="welcome-dont-show-again">
+            Don't show this again
+        </label>
+
+        <div class="modal-actions">
+            <button class="modal-btn primary" onclick="closeWelcomeModal()">
+                Got it, let's go
+            </button>
+        </div>
     </div>
 </div>
 
@@ -823,6 +905,14 @@
                     <span class="slider"></span>
                 </label>
                 <span class="toggle-label">Use Fake Hardware</span>
+            </div>
+            <div class="toggle-container" title="Which tool is mounted on the UR10e for this session -- the arm can only carry one at a time. Kawasaki is always camera-only.">
+                <span class="toggle-label">UR End Effector</span>
+                <select id="freemove-ur-ee-select" class="fm-param-input fm-param-select">
+                    <option value="camera" selected>Camera only</option>
+                    <option value="gripper">2FG7 Gripper</option>
+                    <option value="vacuum">Vacuum (VGC10)</option>
+                </select>
             </div>
             <button id="freemove-enable-btn" class="fm-btn primary">Enable Free Move</button>
             <button id="freemove-stop-btn" class="emergency-btn">🛑 STOP</button>

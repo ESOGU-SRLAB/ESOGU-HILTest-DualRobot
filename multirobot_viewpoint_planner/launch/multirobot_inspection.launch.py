@@ -134,6 +134,15 @@ def generate_launch_description():
                     'harmony_moveit_config/config/joint_limits.yaml has '
                     'has_acceleration_limits: false, so there is no limit to scale. '
                     'Kept in step with the velocity factor for the day one is added.')
+    ur_tours_arg = DeclareLaunchArgument(
+        'ur_tours', default_value='2',
+        description="UR10e kaç tur atsın (Kawasaki her zaman 1 tur). VARSAYILAN 2: iki kol "
+                    "aynı anda başlar ama Kawasaki turunu ~7.5 dk sonra bitirir (ölçüm: UR "
+                    "26 durak / 4.5 dk hareket, Kawasaki 11 durak / 8.7 dk), bu yüzden UR o "
+                    "boş sürede aynı yörüngelerle ikinci turu atar. Yakalama dosyaları her "
+                    "turda 1'den numaralandığı için ikinci tur birincinin bulutlarının "
+                    "ÜZERİNE yazar: kapsama değişmez, bulutlar daha geç kaydedilmiş olur. "
+                    "Tek tur için ur_tours:=1.")
     return_home_ur_arg = DeclareLaunchArgument(
         'return_home_ur', default_value='true',
         description='Send the UR back to its home pose after the last viewpoint.')
@@ -200,7 +209,12 @@ def generate_launch_description():
         executable='ur_inspection_node',
         name='ur_inspection_node',
         output='screen',
-        parameters=[common_params],
+        # tours YALNIZ UR'ye verilir; Kawasaki tek tur atmaya devam eder (zaten geç
+        # biten kol odur). value_type=int şart: LaunchConfiguration string döner ve
+        # parametre int olarak deklare edilmiştir.
+        parameters=[common_params, {
+            'tours': ParameterValue(LaunchConfiguration('ur_tours'), value_type=int),
+        }],
     )
     # The branch-IK knobs go to the KAWASAKI ONLY. They exist for its KDL solver and its
     # redundant AGV rail; handing them to the UR (pick_ik, already restarting randomly in
@@ -238,7 +252,7 @@ def generate_launch_description():
         nearest_branch_ik_arg, branch_max_rail_shift_arg, branch_plan_candidates_arg,
         ik_random_seeds_arg, ik_random_seed_arg, branch_ik_group_arg, planner_id_arg,
         kawasaki_velocity_arg, kawasaki_acceleration_arg,
-        return_home_ur_arg, return_home_kawasaki_arg,
+        ur_tours_arg, return_home_ur_arg, return_home_kawasaki_arg,
         home_before_viewpoints_arg,
         ur_node, kawasaki_node, visualizer_node,
     ])

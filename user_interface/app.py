@@ -326,6 +326,13 @@ class ScenarioManager:
         # Free Move (drag-to-jog tab) ve senaryolar HIL'i birbirinden bağımsız iki
         # farklı şekilde ayağa kaldırıyor - ikisi aynı anda açık olamaz.
         self.free_move_active = False
+        # UR'ın Free Move için ayağa kaldırıldığı uç eleman modu: "camera" (varsayılan,
+        # ellerde alet yok), "gripper" (OnRobot 2FG7) veya "vacuum" (VGC10 emiş
+        # kafası). Kawasaki tarafında karşılığı yok -- o taraf her zaman sabit.
+        # /freemove/urdf bunu okuyup xacro'ya doğru ENV_USE_GRIPPER/
+        # ENV_USE_VACUUM_GRIPPER'ı geçiriyor (ikisi de start_free_move() içinde
+        # HIL komutuna eklenen aynı bayraklar).
+        self.ur_end_effector_mode = "camera"
         self._lock = threading.Lock()
         self._log_threads = []
         
@@ -640,11 +647,20 @@ class ScenarioManager:
         thread = threading.Thread(target=_run, daemon=True)
         thread.start()
 
-    def start_free_move(self, use_fake_hardware=False):
+    def start_free_move(self, use_fake_hardware=False, use_gripper=False,
+                         use_vacuum_gripper=False):
         """Bring up HIL alone (no scripted scenario) and start both FreeMoveArm
         controllers. Call on its own thread — waiting for the arms to come up can
         take up to ~60s.
+
+        use_gripper/use_vacuum_gripper pick which UR end effector this HIL bring-up
+        actually mounts (only one can be true — the arm can only carry one tool at a
+        time). Kawasaki has no such choice; it always stays camera-only.
         """
+        if use_gripper and use_vacuum_gripper:
+            self._emit_log("SYSTEM",
+                "❌ Use Gripper and Use Vacuum Gripper can't both be on — pick one.")
+            return
         with self._lock:
             if self.current_scenario is not None or self.scenario_status == "running":
                 self._emit_log("SYSTEM",
@@ -670,12 +686,18 @@ class ScenarioManager:
             self.current_scenario = None
             self.free_move_active = True
             self.use_fake_hardware = use_fake_hardware
+            self.ur_end_effector_mode = (
+                "gripper" if use_gripper else "vacuum" if use_vacuum_gripper else "camera")
             self.hil_status = "starting"
             self._emit_status()
 
             hil_cmd = self.HIL_BASE_CMD
             if use_fake_hardware:
                 hil_cmd += " use_fake_hardware:=true use_mock_hardware:=true fake_sensor_commands:=true"
+            if use_gripper:
+                hil_cmd += " use_gripper:=true"
+            if use_vacuum_gripper:
+                hil_cmd += " use_vacuum_gripper:=true"
 
             self.hil_process = self._start_process(hil_cmd, "HIL")
             self.hil_status = "running"
@@ -746,6 +768,10 @@ class ScenarioManager:
                 "pose": free_move.manager.ur.current_tcp_pose(),
                 "params": free_move.manager.ur.get_params(),
                 "planner_ids": freemove_planner_ids("real_ur10e"),
+                # "camera" | "gripper" | "vacuum" -- which link the frontend should
+                # show its end-effector arrow at (see the URDF the browser just
+                # fetched from /freemove/urdf, generated for this same mode).
+                "end_effector": self.ur_end_effector_mode,
             },
             "kawasaki": {
                 "ready": kawa_ready,
@@ -1593,9 +1619,12 @@ FREE_MOVE_XACRO = os.path.join(
     WORKSPACE_ROOT, "src", "Universal_Robots_ROS2_Tutorials", "my_robot_cell",
     "my_robot_cell_control", "urdf", "whole_cell_hw.urdf.xacro")
 
-# start_free_move() never passes use_vacuum_gripper/use_gripper/harmony, so
-# hil_test_whole_unified.launch.py always resolves to this package for Free Move
-# (its own declared defaults for those three args are all "false").
+# Fine to keep pointing at the base (camera-only) moveit_config regardless of
+# ur_end_effector_mode: the gripper/vacuum variants (real_ifarlab_gripper_moveit_config
+# / real_ifarlab_vacuum_moveit_config) only change the "real_ur10e" group's tip_link,
+# never the group NAME itself, and ompl_planning.yaml's planner_configs are keyed by
+# group name -- identical across all three. start_free_move() still never passes
+# "harmony", so hil_test_whole_unified.launch.py's own default ("false") applies.
 FREE_MOVE_OMPL_YAML = os.path.join(
     WORKSPACE_ROOT, "src", "real_ifarlab_moveit_config", "config", "ompl_planning.yaml")
 _freemove_planner_cache = None
@@ -1639,13 +1668,27 @@ def _rewrite_file_uri(match):
 @app.route("/freemove/urdf")
 def freemove_urdf():
     """Flatten whole_cell_hw.urdf.xacro and rewrite every mesh URI (package:// and
-    file://) to an HTTP path so the browser can fetch every mesh."""
+    file://) to an HTTP path so the browser can fetch every mesh.
+
+    The UR's gripper/vacuum attachment is NOT a plain xacro CLI arg -- ur_macro.xacro
+    reads use_gripper/use_vacuum_gripper via `$(optenv ENV_USE_GRIPPER false)` /
+    `$(optenv ENV_USE_VACUUM_GRIPPER false)` (an OS environment variable, not a
+    xacro:arg substitution; confirmed 2026-09-16 that passing use_gripper:=true on
+    the xacro command line has no effect, only the env var does). This is the exact
+    same mechanism hil_test_whole_unified.launch.py uses (SetEnvironmentVariable), so
+    setting it here keeps the ghost/real-robot URDF consistent with whatever mode
+    Free Move was actually started with (scenario_mgr.ur_end_effector_mode)."""
+    xacro_env = dict(os.environ)
+    xacro_env["ENV_USE_GRIPPER"] = (
+        "true" if scenario_mgr.ur_end_effector_mode == "gripper" else "false")
+    xacro_env["ENV_USE_VACUUM_GRIPPER"] = (
+        "true" if scenario_mgr.ur_end_effector_mode == "vacuum" else "false")
     try:
         result = subprocess.run(
             ["bash", "-c",
              f"source /opt/ros/humble/setup.bash && source {WORKSPACE_SETUP} && "
              f"xacro {shlex.quote(FREE_MOVE_XACRO)}"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, text=True, timeout=30, env=xacro_env,
         )
     except subprocess.TimeoutExpired:
         return jsonify({"error": "xacro timed out"}), 504
@@ -3407,9 +3450,13 @@ def handle_health_check():
 
 @socketio.on("freemove_start")
 def handle_freemove_start(data):
-    use_fake_hardware = (data or {}).get("use_fake_hardware", False)
+    data = data or {}
+    use_fake_hardware = data.get("use_fake_hardware", False)
+    use_gripper = data.get("use_gripper", False)
+    use_vacuum_gripper = data.get("use_vacuum_gripper", False)
     thread = threading.Thread(
-        target=scenario_mgr.start_free_move, args=(use_fake_hardware,), daemon=True)
+        target=scenario_mgr.start_free_move,
+        args=(use_fake_hardware, use_gripper, use_vacuum_gripper), daemon=True)
     thread.start()
 
 @socketio.on("freemove_stop")

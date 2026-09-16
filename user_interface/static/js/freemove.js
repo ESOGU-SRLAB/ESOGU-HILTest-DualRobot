@@ -35,7 +35,27 @@ const FM_ARMS = {
 // "TCP pose composed with a constant offset", computable straight from the target
 // ball with no IK round trip -- so the camera direction can be shown live while
 // dragging, not just after a plan comes back.
+// ur's entry is MUTABLE: it tracks whichever tool the UR was actually brought up
+// with this session (see FM_UR_EE_LINK_BY_MODE / the freemove_ready handler).
+// Kawasaki never changes -- always camera-only.
 const FM_CAMERA_LINK = { ur: "ur10e_sick_optical_frame", kawasaki: "kawasaki_sick_optical_frame" };
+// Which frame "the camera arrow" (fmCameraArrows/fmCameraTrails -- kept that name
+// throughout the file even though it's no longer always a camera, to avoid a
+// sweeping rename) should track for the UR, per end-effector mode. gripper_tcp and
+// suction_cup only exist in the URDF when that mode's ENV_USE_GRIPPER/
+// ENV_USE_VACUUM_GRIPPER was set for the /freemove/urdf fetch (see app.py).
+const FM_UR_EE_LINK_BY_MODE = {
+    camera: "ur10e_sick_optical_frame",
+    gripper: "ur10e_gripper_tcp",
+    vacuum: "ur10e_suction_cup",
+};
+// Which mode the CURRENTLY loaded fmRobot/ghosts actually reflect. Starts at
+// "camera" to match ScenarioManager.ur_end_effector_mode's own default (app.py) --
+// the very first /freemove/urdf fetch, at page load, happens before any
+// freemove_ready has told us otherwise. Compared against freemove_ready's reported
+// end_effector so an actual mode switch (Disable, pick a different tool, Enable
+// again) reloads the URDF instead of silently keeping the old meshes on screen.
+let fmLoadedUrEndEffector = "camera";
 
 // Links that are actually PART OF the moving arm (walked from the URDF's joint parent/
 // child chain, 2026-09-09) -- everything else in the cell (the UR's mounting table +
@@ -271,10 +291,37 @@ function fmSyncTrackedSliders() {
     });
 }
 
+function fmDisposeObject3D(obj) {
+    if (!obj) return;
+    obj.traverse((c) => {
+        if (!c.isMesh) return;
+        if (c.geometry) c.geometry.dispose();
+        const mats = Array.isArray(c.material) ? c.material : [c.material];
+        mats.forEach((m) => m && m.dispose());
+    });
+    if (obj.parent) obj.parent.remove(obj);
+}
+
 function fmLoadUrdf() {
+    // Dispose any PREVIOUSLY loaded robot/ghosts first -- fmLoadUrdf() is called
+    // again whenever the UR's end-effector mode changes (see the freemove_ready
+    // handler), and without this the old mode's meshes would just sit there
+    // overlapping the new ones.
+    fmDisposeObject3D(fmRobot);
+    fmRobot = null;
+    Object.keys(FM_ARMS).forEach((arm) => {
+        fmDisposeObject3D(fmGhosts[arm]);
+        delete fmGhosts[arm];
+    });
+    // Cache-busted: a mode switch fetches a DIFFERENT server-side response for the
+    // exact same URL (app.py regenerates the xacro per
+    // scenario_mgr.ur_end_effector_mode), so never let the browser reuse a stale
+    // fetch from the previous mode. Shared between the main robot and every ghost
+    // load below so they all agree on which mode's URDF they're getting.
+    const cacheBust = Date.now();
     const loader = new URDFLoader();
     loader.load(
-        "/freemove/urdf",
+        "/freemove/urdf?t=" + cacheBust,
         (robot) => {
             fmRobot = robot;
             fmScene.add(robot);
@@ -293,14 +340,14 @@ function fmLoadUrdf() {
             // a plain Object3D.clone() would. The extra fetches are cheap (every mesh
             // is already in the browser's HTTP cache from loading fmRobot itself, so
             // this is just re-parsing the same bytes, not re-downloading them).
-            Object.keys(FM_ARMS).forEach(fmLoadGhost);
+            Object.keys(FM_ARMS).forEach((arm) => fmLoadGhost(arm, cacheBust));
         },
         undefined,
         (err) => fmSetBanner("Failed to load the cell URDF: " + err, true),
     );
 }
 
-function fmLoadGhost(arm) {
+function fmLoadGhost(arm, cacheBust) {
     // Individual mesh files (STL fetches) load ASYNCHRONOUSLY, well after the load()
     // callback below fires -- that callback only receives the parsed link/joint tree,
     // not the actual geometries. Tinting here used to only catch whatever handful of
@@ -325,7 +372,7 @@ function fmLoadGhost(arm) {
     };
     const loader = new URDFLoader(manager);
     loader.load(
-        "/freemove/urdf",
+        "/freemove/urdf?t=" + cacheBust,
         (ghost) => {
             ghost.visible = false;
             fmScene.add(ghost);
@@ -670,7 +717,12 @@ function fmWireUi() {
             return;
         }
         const useFakeHardware = document.getElementById("freemove-fake-hw-toggle").checked;
-        socket.emit("freemove_start", { use_fake_hardware: useFakeHardware });
+        const eeMode = document.getElementById("freemove-ur-ee-select").value; // camera|gripper|vacuum
+        socket.emit("freemove_start", {
+            use_fake_hardware: useFakeHardware,
+            use_gripper: eeMode === "gripper",
+            use_vacuum_gripper: eeMode === "vacuum",
+        });
         fmSetBanner("Starting HIL and bringing up both arms — this can take up to a minute...", false);
     });
 
@@ -863,6 +915,17 @@ function fmWireSockets() {
     });
 
     socket.on("freemove_ready", (data) => {
+        // The UR may have come up with a DIFFERENT tool than whatever /freemove/urdf
+        // last returned (page load always fetches the "camera" default -- see
+        // fmLoadedUrEndEffector's own comment). Reload the whole scene when that
+        // happens so the ghost/real robot/end-effector arrow all reflect the actual
+        // attached tool, not a stale mode from an earlier fetch.
+        const urMode = (data && data.ur && data.ur.end_effector) || "camera";
+        if (urMode !== fmLoadedUrEndEffector) {
+            fmLoadedUrEndEffector = urMode;
+            FM_CAMERA_LINK.ur = FM_UR_EE_LINK_BY_MODE[urMode] || FM_UR_EE_LINK_BY_MODE.camera;
+            fmLoadUrdf();
+        }
         ["ur", "kawasaki"].forEach((arm) => {
             const info = data && data[arm];
             fmArmReady[arm] = !!(info && info.ready);

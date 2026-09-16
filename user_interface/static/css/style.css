@@ -807,6 +807,52 @@ option:hover {
     margin-top: 16px;
 }
 
+/* ========== WELCOME / ONBOARDING MODAL ========== */
+.welcome-box {
+    width: min(760px, 100%);
+}
+
+.welcome-section-title {
+    margin-top: 18px;
+    margin-bottom: 6px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.welcome-list {
+    margin: 0 0 4px;
+    padding-left: 20px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+
+.welcome-list li {
+    margin-bottom: 6px;
+}
+
+.welcome-list strong {
+    color: var(--text-primary);
+}
+
+.welcome-dismiss {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-subtle);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.welcome-dismiss input {
+    accent-color: var(--accent-blue);
+    cursor: pointer;
+}
+
 .modal-btn {
     padding: 9px 22px;
     border-radius: var(--radius-sm);
