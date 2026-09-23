@@ -46,7 +46,10 @@
     position: relative;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-subtle);
-    background: #0b1220;
+    /* Matches fmScene.background in freemove.js -- this is just the placeholder
+       visible before the canvas paints its first frame (or in any letterboxed
+       gaps), so it has to track whatever colour the THREE.js scene itself uses. */
+    background: #eef1f8;
     overflow: hidden;
     min-height: 480px;
 }

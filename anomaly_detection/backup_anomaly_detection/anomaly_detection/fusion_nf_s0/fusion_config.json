@@ -1,0 +1,36 @@
+{
+  "protocol": "run-disjoint v3",
+  "splits": "splits.json",
+  "norm": "minmax_val",
+  "scale": {
+    "residual": {
+      "lo": 0.003330090083181858,
+      "span": 1.4071569442749023
+    },
+    "raw": {
+      "lo": 0.0018060030415654182,
+      "span": 1.2595146894454956
+    }
+  },
+  "w_kal": 0.95,
+  "w_ham": 0.05,
+  "fused_threshold": 0.522313195899129,
+  "threshold_by_regime": {
+    "static": 0.07505472693219775,
+    "moving": 0.680360262557864
+  },
+  "motion_qd_min": 0.02,
+  "threshold_rule": "global_p97",
+  "regime_threshold": false,
+  "threshold_percentile": 97.0,
+  "w_source": "a-priori (reference study)",
+  "selected_on": "threshold from validation runs only; weight fixed a priori",
+  "residual": {
+    "threshold": 0.7500103116035461
+  },
+  "raw": {
+    "threshold": 0.44703924655914307
+  },
+  "clean_val_false_alarm": 0.030064754856614247,
+  "friction_applied": false
+}

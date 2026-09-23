@@ -353,7 +353,7 @@ function createJointChart(canvasId, titleLabel) {
                     display: true,
                     position: "bottom",
                     labels: {
-                        color: "#94a3b8",
+                        color: "#475569",
                         font: {
                             family: "'Inter', sans-serif",
                             size: 10,
@@ -404,7 +404,7 @@ function createJointChart(canvasId, titleLabel) {
                         maxTicksLimit: 8,
                     },
                     grid: {
-                        color: "rgba(255, 255, 255, 0.04)",
+                        color: "rgba(15, 23, 42, 0.06)",
                     },
                     min: -20,
                     max: 0,
@@ -423,7 +423,7 @@ function createJointChart(canvasId, titleLabel) {
                         maxTicksLimit: 8,
                     },
                     grid: {
-                        color: "rgba(255, 255, 255, 0.04)",
+                        color: "rgba(15, 23, 42, 0.06)",
                     },
                 },
             },
@@ -516,8 +516,15 @@ socket.on("disconnect", () => {
 // ==============================================================================
 
 document.addEventListener("keydown", (e) => {
-    // Escape = Emergency Stop
-    if (e.key === "Escape") {
-        emergencyStop();
-    }
-});
+    // Escape = Emergency Stop, EXCEPT while a modal is open -- every modal
+    // (command, export, welcome...) has its own Escape-to-close handler
+    // (a plain bubble-phase `document` listener too), and this used to fire on
+    // the SAME keypress regardless, popping the "stop everything?" confirm()
+    // right behind whatever the modal's own handler had just closed. Registered
+    // with the capture option so it runs BEFORE those bubble-phase handlers,
+    // while the modal is still reported visible -- if one is open, just let the
+    // event continue on to close it instead, same keypress.
+    if (e.key !== "Escape") return;
+    if (document.querySelector(".modal-overlay.visible")) return;
+    emergencyStop();
+}, true);

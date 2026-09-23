@@ -848,17 +848,17 @@ function baseChartOptions(p, opts = {}) {
                     color: "#64748b",
                     callback: (v) => new Date(v).toLocaleTimeString(),
                 },
-                grid: { color: "rgba(255,255,255,0.04)" },
+                grid: { color: "rgba(15,23,42,0.06)" },
             }, opts.x || {}),
             y: Object.assign({
                 title: { display: !!p.unit, text: p.unit, color: "#64748b" },
                 ticks: { color: "#64748b" },
-                grid: { color: "rgba(255,255,255,0.04)" },
+                grid: { color: "rgba(15,23,42,0.06)" },
             }, opts.y || {}),
         },
         plugins: {
             legend: {
-                labels: { color: "#94a3b8", boxWidth: 12, font: { size: 10 },
+                labels: { color: "#475569", boxWidth: 12, font: { size: 10 },
                           filter: (item) => !item.text.startsWith("__") },
                 onClick: isolateSeries,
             },
@@ -1292,10 +1292,10 @@ async function updateBoxPanel(p) {
         paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
         margin: { l: 48, r: 12, t: 8, b: 40 },
         boxmode: "group",
-        font: { color: "#94a3b8", size: 10 },
+        font: { color: "#475569", size: 10 },
         legend: { orientation: "h", y: 1.12 },
-        xaxis: { gridcolor: "rgba(255,255,255,0.06)" },
-        yaxis: { title: p.unit || "", gridcolor: "rgba(255,255,255,0.06)" },
+        xaxis: { gridcolor: "rgba(15,23,42,0.08)" },
+        yaxis: { title: p.unit || "", gridcolor: "rgba(15,23,42,0.08)" },
     };
     Plotly.react(`plot-${p.id}`, traces, layout, { responsive: true, displaylogo: false });
     toggleEmpty(p.id, traces.length === 0);
@@ -1322,9 +1322,9 @@ async function updateHeatmapPanel(p, points) {
     const layout = {
         paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
         margin: { l: 110, r: 8, t: 8, b: 40 },
-        font: { color: "#94a3b8", size: 10 },
-        xaxis: { gridcolor: "rgba(255,255,255,0.06)" },
-        yaxis: { gridcolor: "rgba(255,255,255,0.06)", automargin: true },
+        font: { color: "#475569", size: 10 },
+        xaxis: { gridcolor: "rgba(15,23,42,0.08)" },
+        yaxis: { gridcolor: "rgba(15,23,42,0.08)", automargin: true },
     };
     Plotly.react(`plot-${p.id}`, [trace], layout, { responsive: true, displaylogo: false });
     toggleEmpty(p.id, time.length === 0);
@@ -1388,11 +1388,11 @@ async function updateScatter3dPanel(p) {
         plot_bgcolor: "rgba(0,0,0,0)",
         margin: { l: 0, r: 0, t: 0, b: 0 },
         scene: {
-            xaxis: { title: "X (m)", color: "#94a3b8", gridcolor: "rgba(255,255,255,0.08)" },
-            yaxis: { title: "Y (m)", color: "#94a3b8", gridcolor: "rgba(255,255,255,0.08)" },
-            zaxis: { title: "Z (m)", color: "#94a3b8", gridcolor: "rgba(255,255,255,0.08)" },
+            xaxis: { title: "X (m)", color: "#475569", gridcolor: "rgba(15,23,42,0.10)" },
+            yaxis: { title: "Y (m)", color: "#475569", gridcolor: "rgba(15,23,42,0.10)" },
+            zaxis: { title: "Z (m)", color: "#475569", gridcolor: "rgba(15,23,42,0.10)" },
         },
-        font: { color: "#94a3b8" },
+        font: { color: "#475569" },
     };
     const drawable = chassis && !chassis.error;
     const traces = drawable ? [chassisTrace(chassis), trace] : [trace];
@@ -1428,9 +1428,11 @@ function chassisTrace(m) {
         name: "Chassis",
         x: m.x, y: m.y, z: m.z,
         i: m.i, j: m.j, k: m.k,
-        color: "#8fa3c8",
-        // 0.28 was too faint to read against the dark scene once WebGL had
-        // blended 16 k translucent triangles over each other.
+        color: "#5b7ba8",
+        // 0.28 was too faint to read once WebGL had blended 16k translucent
+        // triangles over each other (originally tuned against a dark scene; the
+        // colour was darkened again when the scene went light so it still reads
+        // against the now-white background).
         opacity: 0.5,
         flatshading: true,
         // The path is what a cursor should find, not the scenery behind it.
@@ -2037,7 +2039,7 @@ async function refreshDiscoverHistogram() {
                               callback: (v, i) => shortTime(times[i]) },
                      grid: { display: false } },
                 y: { ticks: { color: "#64748b", maxTicksLimit: 4 },
-                     grid: { color: "rgba(255,255,255,0.04)" } },
+                     grid: { color: "rgba(15,23,42,0.06)" } },
             },
             plugins: {
                 legend: { display: false },
@@ -2241,6 +2243,109 @@ function onPanelOverlayClick(e) {
     if (e.target.id === "panel-modal") closePanelBuilder();
 }
 window.onPanelOverlayClick = onPanelOverlayClick;
+
+// ==============================================================================
+// Export modal — full-result-set download via /api/es/export (search_after
+// pagination server-side, so it is NOT capped at the 10k-document from+size
+// window that /api/es/docs and the Discover table's own "⬇ CSV" button are).
+// ==============================================================================
+
+function openExportModal() {
+    populateIndexSelect("export-index");
+    document.getElementById("export-fields").value = "";
+    document.getElementById("export-format").value = "csv";
+    document.getElementById("export-status").textContent = "";
+    document.getElementById("export-all-fields").checked = false;
+    onExportAllFieldsChange();
+    onExportIndexChange();
+    document.getElementById("export-modal").classList.add("visible");
+}
+window.openExportModal = openExportModal;
+
+// "Export every field" ignores the Fields box entirely (server-side too --
+// all_fields=1 wins over fields in /api/es/export), so grey it out here rather
+// than leave a control on screen that quietly does nothing while checked.
+function onExportAllFieldsChange() {
+    const all = document.getElementById("export-all-fields").checked;
+    const field = document.getElementById("export-fields");
+    field.disabled = all;
+    document.getElementById("export-fields-field").style.opacity = all ? "0.5" : "";
+}
+window.onExportAllFieldsChange = onExportAllFieldsChange;
+
+function closeExportModal() {
+    document.getElementById("export-modal").classList.remove("visible");
+}
+window.closeExportModal = closeExportModal;
+
+function onExportOverlayClick(e) {
+    if (e.target.id === "export-modal") closeExportModal();
+}
+window.onExportOverlayClick = onExportOverlayClick;
+
+// Row-count estimate + field datalist for whichever topic is picked -- reuses
+// the same /api/es/stats count the KPI tiles already use, scoped by the time
+// range/use-case/query that are already set above the charts (panelParams()
+// pulls those in automatically), so what's shown here is really "how many rows
+// will Download actually fetch", not the index's total size.
+async function onExportIndexChange() {
+    const index = document.getElementById("export-index").value;
+    const hint = document.getElementById("export-count-hint");
+    if (!index) { hint.textContent = "Matching documents: —"; return; }
+    hint.textContent = "Matching documents: …";
+    try {
+        const meta = await fetchFields(index);
+        fillDatalist("export-field-list", meta.fields.map((f) => f.path));
+    } catch (err) {
+        console.warn("[analytics] export field list unavailable:", err.message);
+    }
+    try {
+        const res = await fetch(`/api/es/stats?${panelParams({ index }).toString()}`);
+        const d = await res.json();
+        hint.textContent = d.error
+            ? `Matching documents: unknown (${d.error})`
+            : `Matching documents: ${formatCount(d.count)} (current time range + filters)`;
+    } catch (err) {
+        hint.textContent = "Matching documents: unknown";
+    }
+}
+window.onExportIndexChange = onExportIndexChange;
+
+function confirmExport() {
+    const index = document.getElementById("export-index").value;
+    const status = document.getElementById("export-status");
+    if (!index) {
+        status.textContent = "Pick a topic first.";
+        return;
+    }
+    const fmt = document.getElementById("export-format").value;
+    const allFields = document.getElementById("export-all-fields").checked;
+    const extra = { format: fmt };
+    if (allFields) {
+        extra.all_fields = "1";
+    } else {
+        const fieldsRaw = document.getElementById("export-fields").value.trim();
+        if (fieldsRaw) {
+            extra.fields = fieldsRaw.split(",").map((f) => f.trim()).filter(Boolean).join(",");
+        }
+    }
+    // A plain navigation/new-tab download (not fetch()+blob): the browser
+    // streams the response straight to disk as it arrives, matching how
+    // exportDiscoverCsv() already downloads its (smaller, single-page) export --
+    // essential here since a full export can be a very large, long-running
+    // stream that must not sit buffered in page memory.
+    const url = "/api/es/export?" + panelParams({ index }, extra).toString();
+    window.open(url, "_blank");
+    status.textContent =
+        "Download started in a new tab — large exports can take a while to finish.";
+}
+window.confirmExport = confirmExport;
+
+document.addEventListener("keydown", (event) => {
+    const modal = document.getElementById("export-modal");
+    if (!modal || !modal.classList.contains("visible")) return;
+    if (event.key === "Escape") closeExportModal();
+});
 
 const PANEL_HINTS = {
     line: "Average of each field over time.",

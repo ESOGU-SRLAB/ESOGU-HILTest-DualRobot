@@ -109,7 +109,7 @@ function buildAnomalyChart() {
                     type: "linear",
                     title: { display: true, text: "seconds (now = 0)", color: "#64748b" },
                     ticks: { color: "#64748b", maxTicksLimit: 7 },
-                    grid: { color: "rgba(255,255,255,0.04)" },
+                    grid: { color: "rgba(15,23,42,0.06)" },
                 },
                 y: {
                     type: "linear",
@@ -117,11 +117,11 @@ function buildAnomalyChart() {
                     max: anAxisBase(),
                     title: { display: true, text: "fused score", color: "#64748b" },
                     ticks: { color: "#64748b", maxTicksLimit: 7 },
-                    grid: { color: "rgba(255,255,255,0.04)" },
+                    grid: { color: "rgba(15,23,42,0.06)" },
                 },
             },
             plugins: {
-                legend: { labels: { color: "#94a3b8", boxWidth: 12 } },
+                legend: { labels: { color: "#475569", boxWidth: 12 } },
                 tooltip: {
                     // The flat threshold line has nothing to say on hover.
                     filter: (item) => item.datasetIndex === 0,

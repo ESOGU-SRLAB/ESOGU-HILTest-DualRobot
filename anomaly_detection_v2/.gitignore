@@ -1,0 +1,4 @@
+# Üretilen veri setleri büyük olabilir (yüzlerce MB - birkaç GB) - git'e girmesin.
+dataset_prep/data/*.csv
+__pycache__/
+*.pyc

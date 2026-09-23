@@ -1,0 +1,126 @@
+{
+  "mode": "none",
+  "ratio": 0.8,
+  "residual_units": "current",
+  "note": "tau_meas(akim) ~ a*tau_model(Nm) + b. Artiklar olcum uzayinda; Nm'ye cevirmek icin a'ya bol (dusuk R2'li eklemlerde guvenilmez). r_ext de a ile carpilarak ayni uzaya tasindi.",
+  "a": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "a_model": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "b": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "r2": [
+    -22.73460013046271,
+    -95.14675901313423,
+    -59.36185969205071,
+    -6.726113025113969,
+    -0.2331180119736147,
+    -0.031283786277968684
+  ],
+  "nm_per_unit": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "per_joint": [
+    {
+      "joint": "shoulder_pan",
+      "a": 1.0,
+      "b": 0.0,
+      "r2": -22.73460013046271,
+      "corr": 0.050267313948229905,
+      "std_tau_meas": 0.7964187910974161,
+      "std_tau_model": 3.837634470656981,
+      "std_resid_naive": 3.8800065442009437,
+      "std_resid_calibrated": 3.8800065442009437,
+      "inliers_frac": 1.0,
+      "a_unit": 1.0
+    },
+    {
+      "joint": "shoulder_lift",
+      "a": 1.0,
+      "b": 0.0,
+      "r2": -95.14675901313423,
+      "corr": 0.9589677552343825,
+      "std_tau_meas": 3.4789940767950176,
+      "std_tau_model": 37.435066888412784,
+      "std_resid_naive": 34.11308638191801,
+      "std_resid_calibrated": 34.11308638191801,
+      "inliers_frac": 1.0,
+      "a_unit": 1.0
+    },
+    {
+      "joint": "elbow",
+      "a": 1.0,
+      "b": 0.0,
+      "r2": -59.36185969205071,
+      "corr": 0.9482605697915087,
+      "std_tau_meas": 1.7980814144310973,
+      "std_tau_model": 15.663195411040768,
+      "std_resid_naive": 13.96981509462355,
+      "std_resid_calibrated": 13.96981509462355,
+      "inliers_frac": 1.0,
+      "a_unit": 1.0
+    },
+    {
+      "joint": "wrist_1",
+      "a": 1.0,
+      "b": 0.0,
+      "r2": -6.726113025113969,
+      "corr": 0.4178520070300459,
+      "std_tau_meas": 0.30906984252973096,
+      "std_tau_model": 0.9410474776222311,
+      "std_resid_naive": 0.8590870242349935,
+      "std_resid_calibrated": 0.8590870242349935,
+      "inliers_frac": 1.0,
+      "a_unit": 1.0
+    },
+    {
+      "joint": "wrist_2",
+      "a": 1.0,
+      "b": 0.0,
+      "r2": -0.2331180119736147,
+      "corr": 0.060014666791780635,
+      "std_tau_meas": 0.32739141172604785,
+      "std_tau_model": 0.17893683312080233,
+      "std_resid_naive": 0.36355456591747254,
+      "std_resid_calibrated": 0.36355456591747254,
+      "inliers_frac": 1.0,
+      "a_unit": 1.0
+    },
+    {
+      "joint": "wrist_3",
+      "a": 1.0,
+      "b": 0.0,
+      "r2": -0.031283786277968684,
+      "corr": -0.00906186698050226,
+      "std_tau_meas": 0.4067139277717522,
+      "std_tau_model": 0.0683451642451211,
+      "std_resid_naive": 0.4130267118322898,
+      "std_resid_calibrated": 0.4130267118322898,
+      "inliers_frac": 1.0,
+      "a_unit": 1.0
+    }
+  ]
+}

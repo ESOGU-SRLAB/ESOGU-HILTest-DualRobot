@@ -1,0 +1,47 @@
+{
+  "yok": {
+    "decisions": 1058,
+    "alarms": 0,
+    "rate": 0.0,
+    "median_lag_ms": null,
+    "runs_detected": 0,
+    "runs_total": 5,
+    "infer_ms": 5.957388278827388
+  },
+  "motor_kaymasi": {
+    "decisions": 435,
+    "alarms": 0,
+    "rate": 0.0,
+    "median_lag_ms": null,
+    "runs_detected": 0,
+    "runs_total": 5,
+    "infer_ms": 5.862088124766827
+  },
+  "carpisma": {
+    "decisions": 435,
+    "alarms": 164,
+    "rate": 0.37701149425287356,
+    "median_lag_ms": 100.0,
+    "runs_detected": 5,
+    "runs_total": 5,
+    "infer_ms": 5.85464037334831
+  },
+  "gizyazar": {
+    "decisions": 435,
+    "alarms": 0,
+    "rate": 0.0,
+    "median_lag_ms": null,
+    "runs_detected": 0,
+    "runs_total": 5,
+    "infer_ms": 5.873328063323426
+  },
+  "sensor_gurultu": {
+    "decisions": 435,
+    "alarms": 54,
+    "rate": 0.12413793103448276,
+    "median_lag_ms": 350.00000000000006,
+    "runs_detected": 5,
+    "runs_total": 5,
+    "infer_ms": 5.873913017015035
+  }
+}

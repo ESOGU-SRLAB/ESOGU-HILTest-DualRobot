@@ -1,0 +1,64 @@
+{
+  "SMOKE_TEST_ONLY": true,
+  "warning": "78 örnek / ~0.6 saniye - GERÇEK kalibrasyon için kullanılamaz. Yalnızca kod/regresyon/şema doğrulaması içindir.",
+  "source_csv": "/home/cem/colcon_ws/src/anomaly_detection/ur-rtde-data.csv",
+  "n_samples": 78,
+  "nm_per_amp": [
+    5.802890610496461,
+    11.877335810907049,
+    7.9278052268877754,
+    13.221354087347292,
+    11.157085480223277,
+    -134.00823945596295
+  ],
+  "per_joint": [
+    {
+      "joint": "shoulder_pan",
+      "a_amp_per_nm": 0.1723279081275747,
+      "c_amp": 1.1821864686757757,
+      "r2": 0.3914477734704326,
+      "nm_per_amp": 5.802890610496461,
+      "trusted": false
+    },
+    {
+      "joint": "shoulder_lift",
+      "a_amp_per_nm": 0.08419396537409445,
+      "c_amp": -0.7797206056773364,
+      "r2": 0.05733343862993723,
+      "nm_per_amp": 11.877335810907049,
+      "trusted": false
+    },
+    {
+      "joint": "elbow",
+      "a_amp_per_nm": 0.12613831588702776,
+      "c_amp": -1.6869178287075903,
+      "r2": 0.10704823416320208,
+      "nm_per_amp": 7.9278052268877754,
+      "trusted": false
+    },
+    {
+      "joint": "wrist_1",
+      "a_amp_per_nm": 0.07563521810197871,
+      "c_amp": -0.20812872560947826,
+      "r2": 0.03819411295738062,
+      "nm_per_amp": 13.221354087347292,
+      "trusted": false
+    },
+    {
+      "joint": "wrist_2",
+      "a_amp_per_nm": 0.0896291421063835,
+      "c_amp": 0.48197130112517517,
+      "r2": 0.056547749430499894,
+      "nm_per_amp": 11.157085480223277,
+      "trusted": false
+    },
+    {
+      "joint": "wrist_3",
+      "a_amp_per_nm": -0.0074622277261437685,
+      "c_amp": 0.4235027712191554,
+      "r2": 1.046097527279688e-05,
+      "nm_per_amp": -134.00823945596295,
+      "trusted": false
+    }
+  ]
+}

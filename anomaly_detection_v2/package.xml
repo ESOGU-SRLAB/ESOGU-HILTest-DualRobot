@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>anomaly_detection_v2</name>
+  <version>0.1.0</version>
+  <description>UR10e anomali tespiti - sıfırdan yeniden yapım. RTDE ile 6 eklemin tamamında kalibre edilmiş akım-tork dönüşümü, görev-çeşitlendirilmiş (multirobot_inspection / tekli inceleme / pick-and-place / vidalama) veri seti, ayrık koşu bazlı eğitim/doğrulama/test bölünmesi.</description>
+  <maintainer email="cshyilmaz@gmail.com">Cem Süha Yılmaz</maintainer>
+  <license>Apache-2.0</license>
+
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-pandas</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

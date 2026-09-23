@@ -1,0 +1,194 @@
+{
+  "theta_abs": 0.6435986433178186,
+  "window": 600,
+  "warmup": 200,
+  "sweep": [
+    {
+      "k": 4,
+      "false_alarm": 0.0035211267605633804,
+      "faults": {
+        "motor_kaymasi": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "carpisma": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        },
+        "gizyazar": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "sensor_gurultu": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        }
+      }
+    },
+    {
+      "k": 6,
+      "false_alarm": 0.0,
+      "faults": {
+        "motor_kaymasi": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "carpisma": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        },
+        "gizyazar": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "sensor_gurultu": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        }
+      }
+    },
+    {
+      "k": 8,
+      "false_alarm": 0.0,
+      "faults": {
+        "motor_kaymasi": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "carpisma": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        },
+        "gizyazar": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "sensor_gurultu": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        }
+      }
+    },
+    {
+      "k": 12,
+      "false_alarm": 0.0,
+      "faults": {
+        "motor_kaymasi": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "carpisma": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        },
+        "gizyazar": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "sensor_gurultu": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "false_alarm": 0.0,
+      "faults": {
+        "motor_kaymasi": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1350.0
+        },
+        "carpisma": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        },
+        "gizyazar": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "sensor_gurultu": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        }
+      }
+    },
+    {
+      "k": 40,
+      "false_alarm": 0.0,
+      "faults": {
+        "motor_kaymasi": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1800.0
+        },
+        "carpisma": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        },
+        "gizyazar": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "sensor_gurultu": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        }
+      }
+    },
+    {
+      "k": 80,
+      "false_alarm": 0.0,
+      "faults": {
+        "motor_kaymasi": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 2750.0
+        },
+        "carpisma": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        },
+        "gizyazar": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 1250.0
+        },
+        "sensor_gurultu": {
+          "runs_detected": 4,
+          "runs": 4,
+          "median_lag_ms": 50.0
+        }
+      }
+    }
+  ],
+  "selected_k": 8,
+  "plateau_k": [
+    6,
+    12
+  ]
+}

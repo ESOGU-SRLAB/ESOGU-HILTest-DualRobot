@@ -1,0 +1,83 @@
+{
+  "mode": "residual",
+  "model_dir": "residual_ae_model",
+  "parquet": "ur10e_hybrid_residual.parquet",
+  "device": "cuda",
+  "n_val_windows": 8992,
+  "window_size": 100,
+  "stride": 25,
+  "features": 12,
+  "hidden_dim": 128,
+  "total_params": 478892,
+  "best_val_loss": 0.2666006840208671,
+  "epochs_trained": 152,
+  "anomaly_ratio": 0.1229982206405694,
+  "auc": 0.9737462502505184,
+  "average_precision": 0.8469677690868058,
+  "best_f1": 0.777486910994265,
+  "best_f1_precision": 0.7512647554806071,
+  "best_f1_recall": 0.8056057866184448,
+  "best_f1_threshold": 0.42843735218048096,
+  "trained_threshold": 1.961637258529663,
+  "f1_at_trained_threshold": 0.375,
+  "precision_at_trained_threshold": 0.9555555555555556,
+  "recall_at_trained_threshold": 0.2332730560578662,
+  "alarm_rate_at_trained_threshold": 0.030026690391459075,
+  "cusum": {
+    "delta_sigma": 0.5,
+    "h_sigma": 5.0,
+    "mu_ref": 0.2666652500629425,
+    "sigma": 0.8016045689582825,
+    "n_alarm": 2693,
+    "n_extra_over_ae": 2428,
+    "f1_combined": 0.5252365930599369,
+    "precision_combined": 0.3702742772424018,
+    "recall_combined": 0.903254972875226
+  },
+  "clusters": {
+    "n": 64,
+    "gap_windows": 2,
+    "mean_duration_ms": 333.04423093795776,
+    "max_duration_ms": 4968.6598777771
+  },
+  "classification": {
+    "internal": 266,
+    "external": 0,
+    "mixed": 4
+  },
+  "channel_contrib_top1pct": {
+    "r_int_1": 24.934690475463867,
+    "r_ext_4": 9.514891624450684,
+    "r_ext_2": 6.168041229248047,
+    "r_int_4": 4.752846717834473,
+    "r_ext_3": 4.425016403198242,
+    "r_ext_6": 3.9247405529022217,
+    "r_int_2": 2.8815908432006836,
+    "r_int_5": 2.4298110008239746
+  },
+  "latency": {
+    "batch1": {
+      "ms_per_call_p50": 0.845,
+      "ms_per_call_p95": 0.871,
+      "ms_per_call_p99": 1.032,
+      "ms_per_window_p50": 0.8453,
+      "windows_per_sec": 1183.0
+    },
+    "batch8": {
+      "ms_per_call_p50": 0.894,
+      "ms_per_call_p95": 0.901,
+      "ms_per_call_p99": 0.95,
+      "ms_per_window_p50": 0.1118,
+      "windows_per_sec": 8945.8
+    },
+    "batch64": {
+      "ms_per_call_p50": 2.78,
+      "ms_per_call_p95": 3.174,
+      "ms_per_call_p99": 3.4,
+      "ms_per_window_p50": 0.0434,
+      "windows_per_sec": 23024.8
+    }
+  },
+  "required_windows_per_sec_at_500hz": 20.0,
+  "headroom_batch1": 59.15
+}

@@ -8,28 +8,31 @@
 
 /* ---------- CSS Custom Properties ---------- */
 :root {
-    /* Native controls follow the dark theme: select popups, date pickers,
+    /* Native controls follow the light theme: select popups, date pickers,
        scrollbars and autofill. Declared once HERE rather than on individual
        control rules -- it used to sit only on `.tb-field select`, so the
        toolbar dropdowns read correctly while every select in a modal opened as
        white-on-white. A per-control property invites exactly that omission. */
-    color-scheme: dark;
+    color-scheme: light;
 
-    /* Color Palette */
-    --bg-primary: #0a0e1a;
-    --bg-secondary: #111827;
-    --bg-card: #1a2035;
-    --bg-card-hover: #1f2847;
-    --bg-input: #0d1225;
+    /* Color Palette -- light theme (switched 2026-09-23; was a dark navy theme).
+       Page background is a soft blue-grey, cards sit on it in white, text goes
+       dark-on-light instead of light-on-dark. */
+    --bg-primary: #eef1f8;
+    --bg-secondary: #f6f8fc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f4fb;
+    --bg-input: #ffffff;
 
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-accent: rgba(99, 102, 241, 0.3);
+    --border-subtle: rgba(15, 23, 42, 0.09);
+    --border-accent: rgba(99, 102, 241, 0.35);
 
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
     --text-muted: #64748b;
 
-    /* Accent Colors */
+    /* Accent Colors -- unchanged: this palette already has enough contrast on a
+       light background, that was the point of choosing saturated brand colors. */
     --accent-blue: #6366f1;
     --accent-blue-light: #818cf8;
     --accent-cyan: #06b6d4;
@@ -44,15 +47,16 @@
     --gradient-primary: linear-gradient(135deg, #6366f1, #8b5cf6);
     --gradient-success: linear-gradient(135deg, #10b981, #06b6d4);
     --gradient-danger: linear-gradient(135deg, #ef4444, #f97316);
-    --gradient-card: linear-gradient(145deg, #1a2035 0%, #151c30 100%);
+    --gradient-card: linear-gradient(145deg, #ffffff 0%, #f7f9fd 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
-    --shadow-glow-blue: 0 0 20px rgba(99, 102, 241, 0.15);
-    --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.15);
-    --shadow-glow-red: 0 0 20px rgba(239, 68, 68, 0.2);
+    /* Shadows -- lighter than the old dark-theme values (0.3/0.4/0.5 opacity black
+       read as harsh smudges once the page itself is light). */
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+    --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.10);
+    --shadow-lg: 0 10px 40px rgba(15, 23, 42, 0.16);
+    --shadow-glow-blue: 0 0 20px rgba(99, 102, 241, 0.18);
+    --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.18);
+    --shadow-glow-red: 0 0 20px rgba(239, 68, 68, 0.22);
 
     /* Spacing */
     --radius-sm: 8px;
@@ -709,7 +713,7 @@ option:hover {
     border: 1px solid var(--border-accent);
     border-radius: var(--radius-md);
     padding: 22px 24px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
     animation: modalRise 0.22s ease-out;
 }
 
@@ -920,7 +924,7 @@ option:hover {
     justify-content: space-between;
     padding: 12px 18px;
     border-bottom: 1px solid var(--border-subtle);
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(15, 23, 42, 0.035);
 }
 
 .panel-header h3 {
@@ -1135,7 +1139,7 @@ option:hover {
 }
 
 .legend-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(15, 23, 42, 0.05);
 }
 
 .legend-color {

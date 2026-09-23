@@ -150,7 +150,7 @@ function initFreeMove() {
     const viewport = document.getElementById("freemove-viewport");
 
     fmScene = new THREE.Scene();
-    fmScene.background = new THREE.Color(0x0b1220);
+    fmScene.background = new THREE.Color(0xeef1f8); // matches .freemove-viewport's CSS bg
 
     fmCamera = new THREE.PerspectiveCamera(
         50, viewport.clientWidth / Math.max(1, viewport.clientHeight), 0.01, 50);
@@ -166,7 +166,7 @@ function initFreeMove() {
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
     dirLight.position.set(3, 2, 5); // roughly overhead in this Z-up scene
     fmScene.add(dirLight);
-    fmGrid = new THREE.GridHelper(4, 40, 0x334155, 0x1e293b);
+    fmGrid = new THREE.GridHelper(4, 40, 0x94a3b8, 0xcbd5e1);
     fmGrid.rotation.x = Math.PI / 2; // GridHelper lies in XZ by default; make it XY (Z=0 floor)
     fmScene.add(fmGrid);
 
@@ -549,7 +549,7 @@ function fmFitCameraToRobot() {
         fmGrid.material.dispose();
     }
     const gridSize = Math.max(radius * 4, 4);
-    fmGrid = new THREE.GridHelper(gridSize, 40, 0x334155, 0x1e293b);
+    fmGrid = new THREE.GridHelper(gridSize, 40, 0x94a3b8, 0xcbd5e1);
     fmGrid.rotation.x = Math.PI / 2;
     fmGrid.position.set(center.x, center.y, box.min.z);
     fmScene.add(fmGrid);

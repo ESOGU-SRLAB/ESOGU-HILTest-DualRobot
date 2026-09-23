@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+    fmiVersion="2.0"
+    modelName="UR10e_InverseDynamics"
+    guid="78235678-90ab-cdef-1234-567890abcdef"
+    variableNamingConvention="flat"
+    generationTool="UniFMU">
+
+    <CoSimulation
+        modelIdentifier="unifmu"
+        needsExecutionTool="true"
+        canHandleVariableCommunicationStepSize="true"
+        canNotUseMemoryManagementFunctions="false"
+    />
+
+    <ModelVariables>
+        <ScalarVariable name="q1" valueReference="0" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="q2" valueReference="1" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="q3" valueReference="2" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="q4" valueReference="3" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="q5" valueReference="4" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="q6" valueReference="5" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+
+        <ScalarVariable name="qd1" valueReference="6" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qd2" valueReference="7" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qd3" valueReference="8" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qd4" valueReference="9" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qd5" valueReference="10" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qd6" valueReference="11" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+
+        <ScalarVariable name="qdd1" valueReference="12" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qdd2" valueReference="13" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qdd3" valueReference="14" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qdd4" valueReference="15" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qdd5" valueReference="16" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+        <ScalarVariable name="qdd6" valueReference="17" causality="input" variability="continuous"><Real start="0.0"/></ScalarVariable>
+
+        <ScalarVariable name="tau1" valueReference="18" causality="output" variability="continuous" initial="calculated"><Real/></ScalarVariable>
+        <ScalarVariable name="tau2" valueReference="19" causality="output" variability="continuous" initial="calculated"><Real/></ScalarVariable>
+        <ScalarVariable name="tau3" valueReference="20" causality="output" variability="continuous" initial="calculated"><Real/></ScalarVariable>
+        <ScalarVariable name="tau4" valueReference="21" causality="output" variability="continuous" initial="calculated"><Real/></ScalarVariable>
+        <ScalarVariable name="tau5" valueReference="22" causality="output" variability="continuous" initial="calculated"><Real/></ScalarVariable>
+        <ScalarVariable name="tau6" valueReference="23" causality="output" variability="continuous" initial="calculated"><Real/></ScalarVariable>
+    </ModelVariables>
+
+    <ModelStructure>
+        <Outputs>
+            <Unknown index="19"/> <Unknown index="20"/> <Unknown index="21"/>
+            <Unknown index="22"/> <Unknown index="23"/> <Unknown index="24"/>
+        </Outputs>
+        <InitialUnknowns>
+            <Unknown index="19"/> <Unknown index="20"/> <Unknown index="21"/>
+            <Unknown index="22"/> <Unknown index="23"/> <Unknown index="24"/>
+        </InitialUnknowns>
+    </ModelStructure>
+</fmiModelDescription>

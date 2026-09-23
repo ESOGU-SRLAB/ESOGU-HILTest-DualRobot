@@ -44,7 +44,7 @@
 .an-banner.an-idle  .an-banner-state { color: var(--text-muted); }
 .an-banner.an-ok    { border-color: var(--accent-green); box-shadow: var(--shadow-glow-green); }
 .an-banner.an-ok    .an-banner-state { color: var(--accent-green); }
-.an-banner.an-alarm { border-color: var(--accent-red); background: linear-gradient(145deg, #2a1520 0%, #1d1020 100%); }
+.an-banner.an-alarm { border-color: var(--accent-red); background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%); }
 .an-banner.an-alarm .an-banner-state { color: var(--accent-red); animation: an-pulse 1s ease-in-out infinite; }
 
 @keyframes an-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }

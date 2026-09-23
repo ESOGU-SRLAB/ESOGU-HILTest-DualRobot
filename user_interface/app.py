@@ -3334,6 +3334,22 @@ def _default_columns(index, time_field, hits):
     return columns
 
 
+def _all_columns(index, time_field, hits):
+    """Every leaf field, for /api/es/export's all_fields=1 -- same idea as
+    _default_columns but WITHOUT the noisy-pattern filter or the 12-column cap,
+    for the caller that deliberately wants everything, not a sane default."""
+    leaves = [f["path"] for f in _index_fields(index)
+              if not f["path"].endswith(".keyword")]
+    head = [c for c in (time_field, "use_case", "run_id") if c in leaves]
+    rest = [c for c in leaves if c not in head]
+    columns = head + rest
+
+    if not columns and hits:
+        columns = [k for k, v in (hits[0].get("_source") or {}).items()
+                   if not isinstance(v, (dict, list))]
+    return columns
+
+
 @app.route("/api/es/docs")
 def es_docs():
     """Raw documents for the Discover-style table, and CSV export.
@@ -3411,6 +3427,131 @@ def es_docs():
         "time_field": time_field,
         "time_unit": time_unit,
     })
+
+
+# Elasticsearch's classic `from`+`size` window tops out at 10,000 documents
+# (index.max_result_window) -- /api/es/docs above hits that on purpose (its own
+# `offset` param is capped at 9000). /api/es/export below is for the case that
+# needs MORE than that: it walks the FULL result set past the 10k window using
+# `search_after` pagination (https://www.elastic.co/guide/.../paginate-search-results.html),
+# streaming rows to the client as they arrive rather than building the whole
+# file in memory first, so a multi-million-row export doesn't balloon this
+# process's RAM or make the browser wait for the first byte.
+EXPORT_PAGE_SIZE = 1000
+# Safety valve, not a expected ceiling: stops a badly-scoped export (no time
+# range, no filters) from hammering Elasticsearch and this process forever.
+# 2M rows at typical ROS-topic width is already a large multi-hundred-MB file.
+MAX_EXPORT_ROWS = 2_000_000
+
+
+@app.route("/api/es/export")
+def es_export():
+    """Stream EVERY document matching the current filters to a CSV/NDJSON
+    download -- the full result set, not just one page (see /api/es/docs for
+    the paginated, on-screen Discover-table version).
+
+    Params: same as /api/es/docs (index, time_field, time_unit, from, to,
+    filters, q, dsl, fields, sort, order), plus format=csv|ndjson (csv default).
+    """
+    index, time_field, time_unit, frm, to, query = _common_params()
+    if not index:
+        return jsonify({"error": "index required"}), 400
+
+    fields = [f for f in request.args.get("fields", "").split(",") if f]
+    all_fields = request.args.get("all_fields", "").lower() in ("1", "true", "yes")
+    sort_field = request.args.get("sort") or time_field
+    order = "asc" if request.args.get("order", "desc") == "asc" else "desc"
+    fmt = request.args.get("format", "csv")
+    if fmt not in ("csv", "ndjson"):
+        return jsonify({"error": "format must be csv or ndjson"}), 400
+
+    # ndjson + all_fields skips column-flattening entirely and emits each hit's
+    # RAW, still-nested _source, unrestricted -- the one case that can actually
+    # mean "every field" for a topic whose documents nest arbitrarily deep
+    # (a fixed CSV column list cannot represent that faithfully anyway).
+    raw_ndjson = fmt == "ndjson" and all_fields and not fields
+
+    columns = fields
+    if not columns and not raw_ndjson:
+        # One cheap probe hit, purely to seed _default_columns'/_all_columns' own
+        # no-mapping fallback (an index with no mapped properties, like
+        # ros-interactive-marker-update-topic, needs a real document to infer
+        # columns from).
+        try:
+            probe = _es_search(index, {"size": 1, "query": query})
+        except ES_ERRORS as e:
+            return _es_fail(e)
+        probe_hits = probe.get("hits", {}).get("hits", [])
+        columns = (_all_columns(index, time_field, probe_hits) if all_fields
+                   else _default_columns(index, time_field, probe_hits))
+        if not columns:
+            return jsonify({"error": "no fields to export for this index"}), 400
+    source_fields = None if raw_ndjson else list(dict.fromkeys(columns + [time_field]))
+
+    def generate():
+        import csv
+        import io as _io
+
+        def csv_line(values):
+            buf = _io.StringIO()
+            csv.writer(buf).writerow(values)
+            return buf.getvalue()
+
+        if fmt == "csv":
+            yield csv_line(columns)
+
+        search_after = None
+        rows_sent = 0
+        while rows_sent < MAX_EXPORT_ROWS:
+            page_size = min(EXPORT_PAGE_SIZE, MAX_EXPORT_ROWS - rows_sent)
+            body = {
+                "size": page_size,
+                "query": query,
+                # `_id` as a tiebreaker is the standard search_after pattern for
+                # when two documents share the same primary sort value (common
+                # here: many ROS messages land in the same millisecond) --
+                # without it, ties can make a page repeat or skip documents.
+                "sort": [{sort_field: {"order": order}}, {"_id": order}],
+            }
+            if source_fields is not None:
+                body["_source"] = source_fields
+            # else: omit _source entirely -- ES returns the whole document,
+            # which is exactly what raw_ndjson wants (see above).
+            if search_after is not None:
+                body["search_after"] = search_after
+            try:
+                res = _es_search(index, body, timeout=30)
+            except ES_ERRORS:
+                # Mid-stream ES hiccup: end the download cleanly rather than
+                # crash it -- the client still gets a valid, if truncated, file.
+                break
+
+            hits = res.get("hits", {}).get("hits", [])
+            if not hits:
+                break
+            for h in hits:
+                src = h.get("_source", {})
+                if raw_ndjson:
+                    yield json.dumps(
+                        {"_id": h.get("_id"), **src}, default=str) + "\n"
+                else:
+                    row = [_dig(src, c) for c in columns]
+                    if fmt == "ndjson":
+                        yield json.dumps(
+                            {"_id": h.get("_id"), **dict(zip(columns, row))},
+                            default=str) + "\n"
+                    else:
+                        yield csv_line(row)
+                rows_sent += 1
+            search_after = hits[-1].get("sort")
+            if len(hits) < page_size or search_after is None:
+                break
+
+    mimetype = "application/x-ndjson" if fmt == "ndjson" else "text/csv"
+    ext = "ndjson" if fmt == "ndjson" else "csv"
+    return Response(
+        generate(), mimetype=mimetype,
+        headers={"Content-Disposition": f'attachment; filename="{index}.{ext}"'})
 
 
 # ==============================================================================

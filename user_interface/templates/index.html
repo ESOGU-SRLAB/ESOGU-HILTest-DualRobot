@@ -472,6 +472,9 @@
             <button class="tb-btn" id="btn-refresh" onclick="refreshAnalytics()">
                 🔄 Refresh
             </button>
+            <button class="tb-btn ghost" id="btn-export" onclick="openExportModal()">
+                ⬇ Export
+            </button>
             <span class="tb-status" id="analytics-status">Idle</span>
             <span class="crosshair-time" id="crosshair-time"
                   title="Time under the cursor — synced across every time-series panel"></span>
@@ -791,6 +794,59 @@
                 </button>
                 <button class="modal-btn primary" onclick="applyPanelBuilder()">
                     ✅ Add panel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== EXPORT MODAL ===== -->
+    <div class="modal-overlay" id="export-modal" onclick="onExportOverlayClick(event)">
+        <div class="modal-box" role="dialog" aria-modal="true"
+             aria-labelledby="export-modal-title">
+            <div class="modal-header">
+                <h3 id="export-modal-title">⬇ Export data</h3>
+                <button class="modal-close" onclick="closeExportModal()"
+                        title="Close (Esc)">✕</button>
+            </div>
+            <p class="modal-desc">
+                Downloads the full result set as a file — not just what's on
+                screen. Uses the time range, use-case selection and query
+                already set above the charts.
+            </p>
+            <div class="form-grid">
+                <label class="form-field">
+                    <span>Topic (index)</span>
+                    <select id="export-index" onchange="onExportIndexChange()"></select>
+                </label>
+                <label class="form-field">
+                    <span>Format</span>
+                    <select id="export-format">
+                        <option value="csv">CSV</option>
+                        <option value="ndjson">NDJSON (one JSON doc per line)</option>
+                    </select>
+                </label>
+                <label class="form-field wide-field" id="export-fields-field">
+                    <span>Fields <small>(comma separated — empty = the same default columns Discover uses)</small></span>
+                    <input list="export-field-list" id="export-fields"
+                           placeholder="ur10e_elbow_joint.effort, use_case" autocomplete="off">
+                    <datalist id="export-field-list"></datalist>
+                </label>
+                <label class="form-field wide-field">
+                    <label class="tb-check">
+                        <input type="checkbox" id="export-all-fields" onchange="onExportAllFieldsChange()">
+                        <span>Export every field (ignores the list above, no 12-column default cap)</span>
+                    </label>
+                </label>
+            </div>
+            <div class="modal-hint" id="export-count-hint">Matching documents: —</div>
+            <div class="modal-status" id="export-status"></div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeExportModal()">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" id="btn-export-confirm"
+                        onclick="confirmExport()">
+                    ⬇ Download
                 </button>
             </div>
         </div>

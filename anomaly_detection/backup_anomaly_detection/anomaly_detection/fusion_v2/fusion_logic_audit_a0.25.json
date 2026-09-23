@@ -1,0 +1,213 @@
+{
+  "decisions": 13160,
+  "onnx_calls": {
+    "residual": 13160,
+    "raw": 13160
+  },
+  "both_models_each_decision": true,
+  "norm": "minmax_val",
+  "amp_scale": 0.25,
+  "ablation": {
+    "Yalnız Ham   (w_kal=0,00)": {
+      "false_alarm": 0.0,
+      "hits": {
+        "motor_kaymasi": 0,
+        "carpisma": 6,
+        "gizyazar": 3,
+        "sensor_gurultu": 6
+      },
+      "total": 15
+    },
+    "Yalnız Kalıntı (w_kal=1,00)": {
+      "false_alarm": 0.000744047619047619,
+      "hits": {
+        "motor_kaymasi": 5,
+        "carpisma": 6,
+        "gizyazar": 5,
+        "sensor_gurultu": 6
+      },
+      "total": 22
+    },
+    "BİRLEŞİM     (w_kal=0,95)": {
+      "false_alarm": 0.0,
+      "hits": {
+        "motor_kaymasi": 5,
+        "carpisma": 6,
+        "gizyazar": 5,
+        "sensor_gurultu": 6
+      },
+      "total": 22
+    }
+  },
+  "ablation_decision_level": {
+    "bildirinin saf kuralı (yalnız mutlak eşik)": {
+      "Yalnız Ham   (w_kal=0,00)": {
+        "tp": 1765,
+        "fp": 0,
+        "fn": 3563,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.33126876876876876,
+        "f1": 0.4976737628644224,
+        "w_kal": 0.0
+      },
+      "Yalnız Kalıntı (w_kal=1,00)": {
+        "tp": 1767,
+        "fp": 2,
+        "fn": 3561,
+        "tn": 7830,
+        "precision": 0.9988694177501414,
+        "recall": 0.33164414414414417,
+        "f1": 0.4979568831897061,
+        "w_kal": 1.0
+      },
+      "BİRLEŞİM     (w_kal=0,95)": {
+        "tp": 1770,
+        "fp": 0,
+        "fn": 3558,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.3322072072072072,
+        "f1": 0.4987320371932012,
+        "w_kal": 0.95
+      }
+    },
+    "uyarlanabilir kural açık (D3)": {
+      "Yalnız Ham   (w_kal=0,00)": {
+        "tp": 2554,
+        "fp": 0,
+        "fn": 2774,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.47935435435435436,
+        "f1": 0.648058868307098,
+        "w_kal": 0.0
+      },
+      "Yalnız Kalıntı (w_kal=1,00)": {
+        "tp": 3176,
+        "fp": 2,
+        "fn": 2152,
+        "tn": 7830,
+        "precision": 0.9993706733794839,
+        "recall": 0.5960960960960962,
+        "f1": 0.7467669880079965,
+        "w_kal": 1.0
+      },
+      "BİRLEŞİM     (w_kal=0,95)": {
+        "tp": 3175,
+        "fp": 0,
+        "fn": 2153,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.5959084084084084,
+        "f1": 0.7467952487352723,
+        "w_kal": 0.95
+      }
+    }
+  },
+  "decision_level_gain": {
+    "bildirinin saf kuralı (yalnız mutlak eşik)": 0.0007751540034950932,
+    "uyarlanabilir kural açık (D3)": 2.8260727275797315e-05
+  },
+  "weight_sweep": [
+    {
+      "w_kal": 0.0,
+      "run_level": 15,
+      "false_alarm": 0.0,
+      "decision_level": {
+        "tp": 2554,
+        "fp": 0,
+        "fn": 2774,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.47935435435435436,
+        "f1": 0.648058868307098
+      }
+    },
+    {
+      "w_kal": 0.25,
+      "run_level": 20,
+      "false_alarm": 0.0,
+      "decision_level": {
+        "tp": 3169,
+        "fp": 0,
+        "fn": 2159,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.5947822822822822,
+        "f1": 0.7459103212893992
+      }
+    },
+    {
+      "w_kal": 0.5,
+      "run_level": 20,
+      "false_alarm": 0.0,
+      "decision_level": {
+        "tp": 3330,
+        "fp": 0,
+        "fn": 1998,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.625,
+        "f1": 0.7692307692302958
+      }
+    },
+    {
+      "w_kal": 0.75,
+      "run_level": 21,
+      "false_alarm": 0.0,
+      "decision_level": {
+        "tp": 3188,
+        "fp": 0,
+        "fn": 2140,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.5983483483483484,
+        "f1": 0.7487083137618612
+      }
+    },
+    {
+      "w_kal": 0.9,
+      "run_level": 21,
+      "false_alarm": 0.0,
+      "decision_level": {
+        "tp": 3178,
+        "fp": 0,
+        "fn": 2150,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.5964714714714715,
+        "f1": 0.7472372442976745
+      }
+    },
+    {
+      "w_kal": 0.95,
+      "run_level": 22,
+      "false_alarm": 0.0,
+      "decision_level": {
+        "tp": 3175,
+        "fp": 0,
+        "fn": 2153,
+        "tn": 7832,
+        "precision": 1.0,
+        "recall": 0.5959084084084084,
+        "f1": 0.7467952487352723
+      }
+    },
+    {
+      "w_kal": 1.0,
+      "run_level": 22,
+      "false_alarm": 0.000744047619047619,
+      "decision_level": {
+        "tp": 3176,
+        "fp": 2,
+        "fn": 2152,
+        "tn": 7830,
+        "precision": 0.9993706733794839,
+        "recall": 0.5960960960960962,
+        "f1": 0.7467669880079965
+      }
+    }
+  ],
+  "runs": 6
+}
