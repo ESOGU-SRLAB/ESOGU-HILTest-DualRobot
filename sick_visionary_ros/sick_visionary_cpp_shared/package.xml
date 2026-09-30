@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>sick_visionary_cpp_shared</name>
+  <version>2.5.0</version>
+  <description>Visionary access via network (SICK drivers shared library)</description>
+  <license>Unlicense</license>
+  <maintainer email="techsupport3dsnapshot@sick.de">SICK AG TechSupport 3D Snapshot</maintainer>
+  <author email="techsupport3dsnapshot@sick.de">SICK AG TechSupport 3D Snapshot</author>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>pcl_conversions</depend>
+  <depend>pcl_ros</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,19 @@
+Metadata-Version: 2.1
+Name: ros2-kafka-bridge
+Version: 0.0.1
+Summary: ROS2 Kafka Bridge Examples
+Home-page: UNKNOWN
+Author: Endre Eros
+Author-email: endre@todo.com
+Maintainer: Endre Eros
+Maintainer-email: endre@todo.com
+License: UNKNOWN
+Keywords: ROS
+Platform: UNKNOWN
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development
+
+UNKNOWN
+

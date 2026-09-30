@@ -1,0 +1,406 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 87
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /RobotModel1
+        - /RobotModel2
+      Splitter Ratio: 0.5
+    Tree Height: 414
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz_default_plugins/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /kawasaki/robot_description
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        barrier_closekabinet_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        barrier_closetable_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        barrier_kaw1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        barrier_kaw2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        barrier_kaw3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        barrier_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_back_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_back_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_front_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_front_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_wheel_back_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_wheel_back_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_wheel_front_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_wheel_front_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        human_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        ifarlab_ray_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        kabinet_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        light_curtain_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        link1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        link2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        link3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        link4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        link5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        link6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        manipulator_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        ota_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        ota_ir_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wheel_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wheel_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: RobotModel
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /sim/robot_description
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        sim_ur10e_alumunium_table:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sim_ur10e_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sim_ur10e_base_link_inertia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_cable_channel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_cable_channel_flange:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_chassis:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_conveyor_belt:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_depth_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sim_ur10e_depth_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sim_ur10e_flange:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_forearm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_ft_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sim_ur10e_rgb_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sim_ur10e_rgb_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        sim_ur10e_robot_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_shoulder_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_sick_camera:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_table:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_tool0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_upper_arm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_wrist_1_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_wrist_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sim_ur10e_wrist_3_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: RobotModel
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 9.141386032104492
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: -0.3747265338897705
+        Y: 0.5412650108337402
+        Z: 1.270876407623291
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.22000041604042053
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
+      Yaw: 1.6649976968765259
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1043
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd0000000100000000000001ad000003b9fc0200000003fb000000100044006900730070006c006100790073010000003d00000232000000c900fffffffb0000000a00560069006500770073010000027500000181000000a400fffffffb0000000a0049006d006100670065010000032a000000cc0000000000000000000005cd000003b900000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: false
+  Width: 1920
+  X: 1920
+  Y: 85

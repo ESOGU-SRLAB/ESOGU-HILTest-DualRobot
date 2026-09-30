@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>onrobot_api</name>
+  <version>1.0.0</version>
+  <description>The OnRobot c++ API package</description>
+  <maintainer email="vlad@touchlab.io">Vladimir Ivan</maintainer>
+  <license>Touchlab Limited</license>
+
+  <buildtool_depend>cmake</buildtool_depend>
+  <build_depend>libmodbus-dev</build_depend>
+  <exec_depend>libmodbus5</exec_depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>

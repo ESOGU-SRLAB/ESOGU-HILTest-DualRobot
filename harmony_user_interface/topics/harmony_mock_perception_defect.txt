@@ -1,0 +1,2 @@
+data: '{"timestamp": "2026-01-29T13:32:02.191863", "defect_id": "defect_1769682722", "defect_type": "PATCH", "severity_color": "RED", "...'
+---

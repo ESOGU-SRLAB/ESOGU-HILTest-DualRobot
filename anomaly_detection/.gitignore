@@ -1,0 +1,19 @@
+# Veri kümeleri — depoya asla girmemeli (birkaç GB)
+*.parquet
+*.csv
+*.npz
+*.npy
+*.zip
+*.fmu
+
+# Eğitim çıktıları (ONNX dışındakiler)
+best_model.pt
+*.pt
+*.png
+
+# Python
+__pycache__/
+*.pyc
+
+# Koşum günlükleri
+*.log

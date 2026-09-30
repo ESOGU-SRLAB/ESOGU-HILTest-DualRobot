@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>viewpoint_planner</name>
+  <version>0.0.0</version>
+  <description>Dual-robot viewpoint planning for chassis inspection</description>
+  <maintainer email="user@todo.todo">User</maintainer>
+  <license>TODO: License declaration</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>nav_msgs</depend>
+  <!-- Used by reachability_checker.py (GetPositionIK) but was previously
+       missing from this manifest, so rosdep / a clean workspace build could
+       not guarantee it was present. -->
+  <depend>moveit_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>action_msgs</depend>
+  <!-- Used by the launch files to resolve config/sick_tmini_params.yaml. -->
+  <exec_depend>ament_index_python</exec_depend>
+  <!-- inspection_executor_node: point cloud capture + TF + robot control. -->
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>sensor_msgs_py</exec_depend>
+  <exec_depend>pymoveit2_real</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

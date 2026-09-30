@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- ✅ Joint State Publisher (ros_gz_sim karşılığı: gz-sim-joint-state-publisher-system) -->
+  <xacro:macro name="agv_joints_state_publisher">
+    <plugin name="joint_state_publisher_plugin" filename="gz-sim-joint-state-publisher-system">
+      <update_rate>10</update_rate>
+      <topic>/joint_states</topic>
+    </plugin>
+  </xacro:macro>
+
+
+  <!-- ✅ Differential Drive Plugin (ros_gz_sim karşılığı: gz-sim-diff-drive-system) -->
+  <xacro:macro name="agv_diff_drive">
+    <plugin name="differential_drive_plugin" filename="gz-sim-diff-drive-system">
+      <left_joint>wheel_left_base</left_joint>
+      <right_joint>wheel_right_base</right_joint>
+
+      <!-- Geometri parametreleri -->
+      <wheel_separation>0.60</wheel_separation>
+      <wheel_radius>0.10</wheel_radius>
+
+      <!-- Hız ve denetim -->
+      <max_linear_speed>1.8</max_linear_speed>
+      <max_angular_speed>3.0</max_angular_speed>
+      <cmd_vel_topic>/cmd_vel</cmd_vel_topic>
+
+      <!-- Odometri -->
+      <odom_topic>/odom</odom_topic>
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>agv_base_link</robot_base_frame>
+      <publish_odometry>true</publish_odometry>
+      <publish_tf>true</publish_tf>
+      <use_velocity_commands>true</use_velocity_commands>
+
+      <update_rate>150.0</update_rate>
+    </plugin>
+  </xacro:macro>
+
+
+  <!-- ✅ IMU Plugin (ros_gz_sim karşılığı: gz-sim-imu-system) -->
+  <xacro:macro name="agv_imu">
+    <plugin name="imu_plugin" filename="gz-sim-imu-system">
+      <link_name>imu_link</link_name>
+      <topic>/imu</topic>
+      <update_rate>200</update_rate>
+
+      <noise type="gaussian">
+        <rate>
+          <mean>0.0</mean>
+          <stddev>2e-4</stddev>
+          <bias_mean>0.0000075</bias_mean>
+          <bias_stddev>0.0000008</bias_stddev>
+        </rate>
+        <accel>
+          <mean>0.0</mean>
+          <stddev>1.7e-2</stddev>
+          <bias_mean>0.1</bias_mean>
+          <bias_stddev>0.001</bias_stddev>
+        </accel>
+      </noise>
+    </plugin>
+  </xacro:macro>
+
+</robot>

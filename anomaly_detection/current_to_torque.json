@@ -1,0 +1,122 @@
+{
+  "method": "RTDE actual_current ~ a * target_moment + c (tum rejimler)",
+  "source_csv": "ur-rtde-data.csv",
+  "n_samples": 1016438,
+  "min_r2_trusted": 0.7,
+  "nm_per_amp_plausible_range": [
+    0.5,
+    40.0
+  ],
+  "nm_per_amp": [
+    10.723284045700817,
+    10.723284045700817,
+    9.055448076519877,
+    6.3654202307099155,
+    6.3654202307099155,
+    6.3654202307099155
+  ],
+  "nm_per_amp_measured": [
+    14.56919575174242,
+    10.723284045700817,
+    9.055448076519877,
+    6.3654202307099155,
+    7.691043845977903,
+    13.58316195241032
+  ],
+  "source": [
+    "assumed_family:shoulder_lift",
+    "measured",
+    "measured",
+    "measured_weak",
+    "assumed_family:wrist_1",
+    "assumed_family:wrist_1"
+  ],
+  "trusted": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+  ],
+  "per_joint": [
+    {
+      "joint": "shoulder_pan",
+      "a_amp_per_nm": 0.06863796856325469,
+      "c_amp": -0.05519726901392128,
+      "r2": 0.006825739602282277,
+      "nm_per_amp": 14.56919575174242,
+      "target_moment_std_nm": 1.0201788784881223,
+      "plausible_range": true,
+      "trusted": false,
+      "nm_per_amp_measured": 14.56919575174242,
+      "nm_per_amp_used": 10.723284045700817,
+      "source": "assumed_family:shoulder_lift"
+    },
+    {
+      "joint": "shoulder_lift",
+      "a_amp_per_nm": 0.09325501364490298,
+      "c_amp": -0.2785546233650355,
+      "r2": 0.9705050488319178,
+      "nm_per_amp": 10.723284045700817,
+      "target_moment_std_nm": 63.83128826137784,
+      "plausible_range": true,
+      "trusted": true,
+      "nm_per_amp_measured": 10.723284045700817,
+      "nm_per_amp_used": 10.723284045700817,
+      "source": "measured"
+    },
+    {
+      "joint": "elbow",
+      "a_amp_per_nm": 0.1104307585389317,
+      "c_amp": -0.3154495904094373,
+      "r2": 0.9600815276697183,
+      "nm_per_amp": 9.055448076519877,
+      "target_moment_std_nm": 31.804390867051882,
+      "plausible_range": true,
+      "trusted": true,
+      "nm_per_amp_measured": 9.055448076519877,
+      "nm_per_amp_used": 9.055448076519877,
+      "source": "measured"
+    },
+    {
+      "joint": "wrist_1",
+      "a_amp_per_nm": 0.15709881889266455,
+      "c_amp": -0.04137267746406533,
+      "r2": 0.5402953313536248,
+      "nm_per_amp": 6.3654202307099155,
+      "target_moment_std_nm": 2.4849357498300475,
+      "plausible_range": true,
+      "trusted": false,
+      "nm_per_amp_measured": 6.3654202307099155,
+      "nm_per_amp_used": 6.3654202307099155,
+      "source": "measured_weak"
+    },
+    {
+      "joint": "wrist_2",
+      "a_amp_per_nm": 0.13002136251283478,
+      "c_amp": -0.013219405965667348,
+      "r2": 0.04242000869135376,
+      "nm_per_amp": 7.691043845977903,
+      "target_moment_std_nm": 0.554181893395664,
+      "plausible_range": true,
+      "trusted": false,
+      "nm_per_amp_measured": 7.691043845977903,
+      "nm_per_amp_used": 6.3654202307099155,
+      "source": "assumed_family:wrist_1"
+    },
+    {
+      "joint": "wrist_3",
+      "a_amp_per_nm": 0.07362056077249016,
+      "c_amp": -0.020501071553275525,
+      "r2": 0.0007251103806320547,
+      "nm_per_amp": 13.58316195241032,
+      "target_moment_std_nm": 0.1168768382163432,
+      "plausible_range": true,
+      "trusted": false,
+      "nm_per_amp_measured": 13.58316195241032,
+      "nm_per_amp_used": 6.3654202307099155,
+      "source": "assumed_family:wrist_1"
+    }
+  ]
+}

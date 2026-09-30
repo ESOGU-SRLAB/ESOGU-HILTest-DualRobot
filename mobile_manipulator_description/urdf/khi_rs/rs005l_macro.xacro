@@ -1,0 +1,631 @@
+<?xml version="1.0"?> 
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"> 
+
+  <xacro:macro name="khi_rs005l" params="
+    name
+    parent
+    *origin
+    use_fake_hardware:=false
+    tf_prefix
+    generate_ros2_control_tag:=true
+    sim_ignition:=false
+    ">
+
+    <xacro:if value="${generate_ros2_control_tag}">
+      <!-- ros2 control include -->
+      <xacro:include filename="$(find rs005l_description)/urdf/rs005l.ros2_control.xacro" />
+      <!-- ros2 control instance -->
+      <xacro:rs005l_ros2_control
+        name="${name}"
+        use_fake_hardware="${use_fake_hardware}"
+        tf_prefix="${tf_prefix}"
+        sim_ignition="${sim_ignition}"
+      />
+    </xacro:if> 
+
+    <!-- ROS2: include path'leri find -> find-pkg-share -->
+    <xacro:include filename="$(find mobile_manipulator_description)/urdf/khi_rs/rs.transmission.xacro" />
+    <xacro:include filename="$(find mobile_manipulator_description)/urdf/khi_rs/common.gazebo.xacro" />
+
+    <!-- link rviz colors -->
+    <material name="White">
+      <color rgba="1 1 1 1"/>
+    </material>
+
+    <material name="Black">
+      <color rgba="0 0 0 1"/>
+    </material>
+
+    <!-- <material name="silver">
+      <color rgba="0.7 0.7 0.7 1.0"/>
+    </material> -->
+
+    <!-- DH parameters -->
+    <xacro:property name="dh_j1_j2_roty" value="${radians(90)}"/>
+    <xacro:property name="dh_j3_j4_roty" value="${radians(90)}"/>
+    <xacro:property name="dh_j4_j5_roty" value="${radians(90)}"/>
+    <xacro:property name="dh_j5_j6_roty" value="${radians(90)}"/>
+
+    <!-- link mass [kg] -->
+    <xacro:property name="j0_mass" value="5.910"/>
+    <xacro:property name="j1_mass" value="10.395"/>
+    <xacro:property name="j2_mass" value="8.788"/>
+    <xacro:property name="j3_mass" value="7.575"/>
+    <xacro:property name="j4_mass" value="2.679"/>
+    <xacro:property name="j5_mass" value="1.028"/>
+    <xacro:property name="j6_mass" value="0.625"/>
+
+    <!-- link lengths [m] -->
+    <xacro:property name="j0_length" value="0.295"/>
+    <xacro:property name="j1_length" value="0.105"/>
+    <xacro:property name="j2_length" value="0.380"/>
+    <xacro:property name="j31_length" value="0.15"/>
+    <xacro:property name="j32_length" value="0.080"/>
+    <xacro:property name="j4_length" value="0.410"/>
+    <xacro:property name="j5_length" value="0.078"/>
+    
+    <!-- joint limits [rad] -->
+    <xacro:property name="j1_lower_limit" value="${radians(-180)}"/>
+    <xacro:property name="j1_upper_limit" value="${radians( 180)}"/>
+    <xacro:property name="j2_lower_limit" value="${radians( -80)}"/>
+    <xacro:property name="j2_upper_limit" value="${radians( 135)}"/>
+    <xacro:property name="j3_lower_limit" value="${radians(-172)}"/>
+    <xacro:property name="j3_upper_limit" value="${radians( 118)}"/>
+    <xacro:property name="j4_lower_limit" value="${radians(-360)}"/>
+    <xacro:property name="j4_upper_limit" value="${radians( 360)}"/>
+    <xacro:property name="j5_lower_limit" value="${radians(-145)}"/>
+    <xacro:property name="j5_upper_limit" value="${radians( 145)}"/>
+    <xacro:property name="j6_lower_limit" value="${radians(-360)}"/>
+    <xacro:property name="j6_upper_limit" value="${radians( 360)}"/>
+
+    <!-- joint velocity limits [rad/s] -->
+    <xacro:property name="j1_velocity_limit" value="${radians( 300)}"/>
+    <xacro:property name="j2_velocity_limit" value="${radians( 300)}"/>
+    <xacro:property name="j3_velocity_limit" value="${radians( 300)}"/>
+    <xacro:property name="j4_velocity_limit" value="${radians( 460)}"/>
+    <xacro:property name="j5_velocity_limit" value="${radians( 460)}"/>
+    <xacro:property name="j6_velocity_limit" value="${radians( 740)}"/>
+
+    <!-- link inertial (TODO: gerçek inertial ile güncellenebilir) -->
+    <xacro:macro name="default_inertial" params="mass">
+      <inertial>
+        <mass value="${mass}" />
+        <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
+      </inertial>
+    </xacro:macro>
+
+    <!-- === Link 0 === -->
+    <link name="${tf_prefix}base_link">
+      <visual>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J0.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J0.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </collision>
+      <xacro:default_inertial mass="${j0_mass}"/>
+    </link>
+    
+    <joint name="${tf_prefix}base_mount" type="fixed">
+      <parent link="${parent}"/>
+      <child  link="${tf_prefix}base_link"/>
+      <xacro:insert_block name="origin"/>
+    </joint>
+
+    
+
+    <link name="${tf_prefix}link1">
+      <visual>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J1.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J1.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </collision>
+      <xacro:default_inertial mass="${j1_mass}"/>
+    </link>
+
+    <link name="${tf_prefix}link2">
+      <visual>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J2.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J2.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </collision>
+      <!-- Buradaki typo düzeltildi: 0${j2_mass} -> ${j2_mass} -->
+      <xacro:default_inertial mass="${j2_mass}"/>
+    </link>
+
+    <link name="${tf_prefix}link3">
+      <visual>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J3.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J3.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </collision>
+      <xacro:default_inertial mass="${j3_mass}"/>
+    </link>
+
+    <link name="${tf_prefix}link4">
+      <visual>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J4.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J4.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </collision>
+      <xacro:default_inertial mass="${j4_mass}"/>
+    </link>
+
+    <link name="${tf_prefix}link5">
+      <visual>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J5.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J5.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </collision>
+      <xacro:default_inertial mass="${j5_mass}"/>
+    </link>
+
+    <link name="${tf_prefix}link6">
+      <visual>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J6.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/RS005L_J6.STL"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+      </collision>
+      <xacro:default_inertial mass="${j6_mass}"/>
+    </link>
+
+    <!-- ===== Wrist underside block =====================================================
+         A part that is bolted under link7 on the real robot but was missing from the
+         model entirely, so MoveIt planned as if that volume were free.
+
+         It is added as extra geometry ON link7 rather than as its own link, on purpose.
+         The part is rigidly bolted, so a separate link would add a fixed joint whose
+         pose never changes AND would need its own disable_collisions rows against link6,
+         link5, link3 and camera_link in every whole_cell SRDF (six of them). Folding it
+         into link7 inherits all of those rows as they stand, so no SRDF edit is needed.
+         Self-collision inside a single link is never checked, which is correct here:
+         the block genuinely overlaps link7's own Montaj mesh.
+
+         PLACEMENT: the user gave the part's centre in WORLD coordinates,
+         (-1.93, 1.11, 1.6), read off the live cell at the HOME pose: every Kawasaki
+         joint at 0 with the rail (world_to_agv) at 1.0 m, the same convention the cable
+         channel cradle below was measured in. At that pose link7's origin resolves to
+         world (-1.921959, 1.086435, 1.591), so the offsets here are simply
+         R_link7^T * (target - link7_origin). If the AGV is ever parked elsewhere for a
+         re-measurement, only the rail value changes, not these numbers.
+
+         The (-1.93, 1.11, 1.6) reading put the block deep inside link7's own Montaj
+         mesh, buried rather than mounted, so the final X and Y were set by dragging it
+         in RViz with scripts/wrist_block_tuner.py until it sat on the outer surface.
+         That moved the centre 25.4 mm along world +Y, to (-1.9311, 1.1354, 1.6000);
+         Z was left exactly as measured. Straight DOWN was tried first and rejected:
+         link6 is a thin flange sharing link7's origin, occupying x -1.9420..-1.9020,
+         y 1.0664..1.1064, z 1.5850..1.5910, and a downward shift drives the block
+         into it. At the offsets below link6 clears by 3.9 mm.
+
+         The tuner still reports the block as intersecting link7's own mesh, which is
+         expected and harmless: it is flush against a thin shell, so it necessarily
+         crosses those triangles, and geometry belonging to the SAME link is never
+         collision-checked against itself. Only link6 (disabled anyway) and link4
+         (enabled, see below) are worth watching.
+
+         ORIENTATION: link7 is yawed 157.700273 deg about world Z at that pose (its Z
+         axis IS world Z, so there is no roll or pitch to undo). The -2.752389 rad yaw
+         below cancels exactly that, so the block's own edges land on the world axes,
+         verified to 1e-9; which edge is which is then set by wrist_block_size.
+         That alignment holds AT THE HOME POSE; the block is bolted on, so it rotates
+         with the wrist as joint1/4/6 move, which is the physically correct behaviour.
+
+         WATCH THE COST AGAINST link4 whenever this block moves: that pair is NOT
+         disabled in any SRDF, so geometry reaching past link7's own mesh can block wrist
+         poses that used to plan. Measured by sweeping the only two joints that move the
+         pair (joint5 x joint6, 61 x 73 poses): at the offsets below the block enters
+         link4 in 254 of them, and in 94 (2.1%) link7's own mesh was still clear, so
+         those are newly blocked. All sit at |joint5| >= 116 deg against a 145 deg limit,
+         and the home pose is clear, so there is no permanent self-collision. The number
+         is sensitive to a couple of centimetres: before the outward tune it was 22
+         poses, and a trial position hanging 24 mm lower gave 249 (5.6%).
+         scripts/wrist_block_tuner.py reports it for any candidate offset. If a needed
+         band is ever lost, shrink or raise the block rather than adding an SRDF row:
+         disabling link4-link7 would also blind the check for link7's own mesh.
+
+         The visual is here only so the placement can be eyeballed in RViz; drop it and
+         keep the collision if the extra body is in the way. -->
+    <xacro:property name="wrist_block_x" value="0.027059"/>   <!-- in link7's frame -->
+    <xacro:property name="wrist_block_y" value="-0.041800"/>
+    <xacro:property name="wrist_block_z" value="0.009"/>
+    <xacro:property name="wrist_block_yaw" value="-2.752389"/>
+    <!-- world X x world Y x world Z at the home pose, i.e. the 5 cm edge runs along
+         world Y and the 2.5 cm edge along world X. The first version had those two
+         swapped; the block is not square in plan, so the difference is a real 90 deg. -->
+    <xacro:property name="wrist_block_size" value="0.025 0.05 0.02"/>
+
+    <link name="${tf_prefix}link7">
+      <visual>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/Montaj.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="-0.035 -0.04 0.2175" rpy="1.570796 3.1415 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/Montaj.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="White"/>
+        <origin xyz="-0.035 -0.04 0.2175" rpy="1.570796 3.1415 0"/>
+      </collision>
+      <visual>
+        <origin xyz="${wrist_block_x} ${wrist_block_y} ${wrist_block_z}"
+                rpy="0 0 ${wrist_block_yaw}"/>
+        <geometry><box size="${wrist_block_size}"/></geometry>
+        <material name="White"/>
+      </visual>
+      <collision>
+        <origin xyz="${wrist_block_x} ${wrist_block_y} ${wrist_block_z}"
+                rpy="0 0 ${wrist_block_yaw}"/>
+        <geometry><box size="${wrist_block_size}"/></geometry>
+      </collision>
+      <xacro:default_inertial mass="0.1"/>
+    </link>
+
+    <!-- === Link 1 === -->
+    <joint name="${tf_prefix}joint1" type="revolute">
+      <axis xyz="0 0 -1" rpy="0 0 0" />
+      <limit effort="1000.0" lower="${j1_lower_limit}" upper="${j1_upper_limit}" velocity="${j1_velocity_limit}"/>
+      <origin xyz="0 0 ${j0_length}" rpy="0 0 0" />
+      <parent link="${tf_prefix}base_link"/>
+      <child link="${tf_prefix}link1"/>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+
+    <!-- === Link 2 === -->
+    <joint name="${tf_prefix}joint2" type="revolute">
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <limit effort="1000.0" lower="${j2_lower_limit}" upper="${j2_upper_limit}" velocity="${j2_velocity_limit}"/>
+      <origin xyz="0 ${j1_length} 0" rpy="0 ${dh_j1_j2_roty*-1} 0" />
+      <parent link="${tf_prefix}link1"/>
+      <child link="${tf_prefix}link2"/>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+
+    
+
+    <!-- === Link 3 === -->
+    <joint name="${tf_prefix}joint3" type="revolute">
+      <axis xyz="0 0 -1" rpy="0 0 0" />
+      <limit effort="1000.0" lower="${j3_lower_limit}" upper="${j3_upper_limit}" velocity="${j3_velocity_limit}"/>
+      <origin xyz="${j2_length} 0 0" rpy="0 0 0" />
+      <parent link="${tf_prefix}link2"/>
+      <child link="${tf_prefix}link3"/>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+
+    <!-- ===== Cable channel cradle on the forearm =====================================
+         The physical cable channel holder bolted to link3, near the elbow. It was not
+         modelled at all, so MoveIt planned straight through it.
+
+         MESH: kawa_cable_channel.stl is a byte identical copy of the UR's
+         cable_channel.stl (Universal_Robots_ROS2_Description), i.e. it still carries the
+         UR assembly's CAD coordinates: the raw mm bounds are x 1043.13..1115.62,
+         y 473.79..499.79, z 608.11..669.75. That CAD frame IS the ROS world frame at the
+         home pose, which is verifiable: ur10e_cable_channel resolves to world
+         (1.0781, 0.4868, 0.6698) with identity rotation, exactly the mesh's own anchor.
+         So the mesh has to be translated off the UR wrist and onto the Kawasaki forearm.
+
+         The visual/collision origin below subtracts the mesh's bounding box CENTRE
+         (1.079374, 0.486789, 0.638931 m), so the link frame sits in the MIDDLE of the
+         part. Handy in RViz: the TF axis marker lands in the centre of the channel, and
+         the joint origin below is read directly as "where the centre of the part is".
+
+         PLACEMENT: xyz and rpy below are taken VERBATIM from the final RViz drag (see
+         ORIENTATION), not rounded, so nothing is lost in interpretation. The part centre
+         lands at world (-2.0072, 1.0875, 1.2387) with all Kawasaki joints at 0 AND THE
+         RAIL (world_to_agv) AT 1.0 m, which is where the user's live stack has it: the
+         tuner's TF readout confirmed the rail value. The rail is the only degree of
+         freedom that can explain a y near 1.09 at all: at rail 0 link3 sits at y = 0.086,
+         and joint1 can shift link3 by at most 0.105 m because link3's origin is only that
+         far off the joint1 axis. link3's rotation at that pose maps local x to world z,
+         local y to world x and local z to world y, which is why the xyz reads permuted
+         against the world numbers. If the AGV is ever parked elsewhere for the
+         measurement, only cable_cradle_z changes.
+
+         ORIENTATION: rpy = (1.244738, -1.527940, -2.767659), copied straight out of the
+         final RViz drag. It is 3.7 deg off the axis aligned attitude
+         [[0,1,0],[0,0,1],[1,0,0]] = rpy (0, -pi/2, -pi/2), and 87.3 deg off the next
+         nearest one, so if a clean right angled mount is ever wanted, that is the value
+         to snap to and it is not a close call. It was left unsnapped because the user
+         placed it by eye and asked for exactly this.
+         The part is a flat plate, 72.5 x 61.6 mm outline and 26 mm thick, and its two
+         dominant mesh faces (0.0034 m^2 each) carry the plate normal; here that normal
+         ends up roughly along world Z, so the plate lies close to horizontal with the
+         72.5 mm side along world Y.
+
+         Do NOT try to reason this one out from a verbal description: five guesses in a
+         row were wrong. It was settled by dragging the part in RViz with
+         scripts/cable_channel_tuner.py, which prints the pasteable origin line.
+
+         Two traps that produced the wrong guesses, worth knowing:
+         - The tuner prints the pose ALREADY IN THE PARENT FRAME (link3). It is the joint
+           origin as is. Do not compose link3's inverse onto it a second time, which is
+           how (0, 0, 0) was arrived at once and was wrong by exactly link3's rotation.
+         - Turning the plate about its OWN normal, e.g. rpy (pi/2, 0, pi) here, is a legal
+           90 deg turn that only swaps the 72.5 and 61.6 mm outline sides while the plate
+           stays on the same face. An 11 mm change reads as "it did not rotate at all".
+         Also note that several of the candidate attitudes share an AABB, so comparing
+         bounding boxes is no way to tell them apart; only the mesh orientation differs.
+
+         SRDF: this link is new, so every whole_cell SRDF needs it disabled against the
+         links it is bolted to or permanently touches (link3 and link4). Everything else
+         stays ENABLED on purpose, that is the point of modelling it. -->
+    <xacro:property name="cable_cradle_x" value="0.13573"/>   <!-- link3 local x = world z  1.2387 -->
+    <xacro:property name="cable_cradle_y" value="-0.16326"/>  <!-- link3 local y = world x -2.0050 -->
+    <xacro:property name="cable_cradle_z" value="0.00110"/>   <!-- link3 local z = world y  1.0875 -->
+
+    <link name="${tf_prefix}kawa_cable_channel">
+      <visual>
+        <origin xyz="-1.079374 -0.486789 -0.638931" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/kawa_cable_channel.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="White"/>
+      </visual>
+      <collision>
+        <origin xyz="-1.079374 -0.486789 -0.638931" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://mobile_manipulator_description/meshes/khi_rs/kawa_cable_channel.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <xacro:default_inertial mass="0.1"/>
+    </link>
+
+    <joint name="${tf_prefix}link3-kawa_cable_channel" type="fixed">
+      <origin xyz="${cable_cradle_x} ${cable_cradle_y} ${cable_cradle_z}" rpy="1.244738 -1.527940 -2.767659"/>
+      <parent link="${tf_prefix}link3"/>
+      <child link="${tf_prefix}kawa_cable_channel"/>
+    </joint>
+
+    <!-- === Link 4 === -->
+    <joint name="${tf_prefix}joint4" type="revolute">
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <limit effort="1000.0" lower="${j4_lower_limit}" upper="${j4_upper_limit}" velocity="${j4_velocity_limit}"/>
+      <origin xyz="${j31_length} ${j32_length*-1} 0" rpy="0 ${dh_j3_j4_roty} 0" />
+      <parent link="${tf_prefix}link3"/>
+      <child link="${tf_prefix}link4"/>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+
+    
+
+    <!-- === Link 5 === -->
+    <joint name="${tf_prefix}joint5" type="revolute">
+      <axis xyz="0 0 -1" rpy="0 0 0" />
+      <limit effort="1000.0" lower="${j5_lower_limit}" upper="${j5_upper_limit}" velocity="${j5_velocity_limit}"/>
+      <origin xyz="0 0 0.26" rpy="0 ${dh_j4_j5_roty*-1} 0" />
+      <parent link="${tf_prefix}link4"/>
+      <child link="${tf_prefix}link5"/>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+
+    
+
+    <!-- === Link 6 === -->
+    <joint name="${tf_prefix}joint6" type="revolute">
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <limit effort="1000.0" lower="${j6_lower_limit}" upper="${j6_upper_limit}" velocity="${j6_velocity_limit}"/>
+      <origin xyz="${j5_length} 0 0" rpy="0 ${dh_j5_j6_roty} 0" />
+      <parent link="${tf_prefix}link5"/>
+      <child link="${tf_prefix}link6"/>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+
+    <joint name="${tf_prefix}joint7" type="fixed">
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 -1.96" />
+      <parent link="${tf_prefix}link6"/>
+      <child link="${tf_prefix}link7"/>
+    </joint>
+
+    <!-- SICK camera collision shell (Kawasaki side), the counterpart of the six boxes
+         on the UR's ur10e_sick_camera link in ur_macro.xacro. Until this was added
+         camera_link carried NO collision geometry at all, so MoveIt planned as if the
+         Kawasaki's camera did not exist and happily drove the housing into the cell.
+
+         Frame: camera_link IS the optical frame (camera_rgb_joint and
+         camera_rgb_optic_joint are both identity), and the Gazebo sensor hangs off
+         camera_rgb_optic_frame, so the VIEW AXIS IS +X here, not +Z as on the UR, whose
+         boxes therefore cannot be copied verbatim. The housing hangs BACKWARD from the
+         optics, along -X.
+
+         Geometry: a body box spanning x = [-depth, 0], plus a skirt on each of its six
+         faces, exactly the UR's "wrap the housing on all sides" arrangement. The UR gets
+         its body volume from a mesh and so needs only the six skirts; camera_link has no
+         mesh, hence the extra body box here. The UR's 60 deg yaw about the view axis is
+         deliberately NOT reproduced: it matched that housing's mounting angle, which is
+         not known for this bracket, so the cross-section is kept square (0.090, the
+         larger of the UR's 0.087 x 0.090) and is therefore correct at any roll.
+
+         SRDF: camera_link is rigidly fixed to link7/link6, so those two pairs are
+         disabled in every whole_cell SRDF. link5 and inboard links are deliberately LEFT
+         ENABLED, because the shell reaches well past link7 and folding it into the
+         forearm is a genuine collision worth catching.
+
+         Shrink cam_shell_skirt if this costs too much Kawasaki reachability. -->
+    <xacro:property name="cam_body_depth" value="0.0775"/>  <!-- along the view axis -->
+    <xacro:property name="cam_body_cross" value="0.090"/>   <!-- square cross-section -->
+    <xacro:property name="cam_shell_skirt" value="0.039"/>  <!-- clearance per face -->
+    <xacro:property name="cam_body_x" value="${-cam_body_depth / 2.0}"/>
+    <xacro:property name="cam_side_off" value="${(cam_body_cross + cam_shell_skirt) / 2.0}"/>
+
+    <link name="${tf_prefix}camera_link">
+      <inertial>
+        <mass value="0.01"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      </inertial>
+      <!-- housing body -->
+      <collision>
+        <origin xyz="${cam_body_x} 0 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_body_cross} ${cam_body_cross}"/></geometry>
+      </collision>
+      <!-- optics face (+X, the viewing direction) and back face -->
+      <collision>
+        <origin xyz="${cam_shell_skirt / 2.0} 0 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_shell_skirt} ${cam_body_cross} ${cam_body_cross}"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="${-cam_body_depth - cam_shell_skirt / 2.0} 0 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_shell_skirt} ${cam_body_cross} ${cam_body_cross}"/></geometry>
+      </collision>
+      <!-- the four sides -->
+      <collision>
+        <origin xyz="${cam_body_x} ${cam_side_off} 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_shell_skirt} ${cam_body_cross}"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="${cam_body_x} ${-cam_side_off} 0" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_shell_skirt} ${cam_body_cross}"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="${cam_body_x} 0 ${cam_side_off}" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_body_cross} ${cam_shell_skirt}"/></geometry>
+      </collision>
+      <collision>
+        <origin xyz="${cam_body_x} 0 ${-cam_side_off}" rpy="0 0 0"/>
+        <geometry><box size="${cam_body_depth} ${cam_body_cross} ${cam_shell_skirt}"/></geometry>
+      </collision>
+    </link>
+
+    <joint name="${tf_prefix}camera_joint" type="fixed">
+       <origin xyz="0.0145 0.0125 0.185" rpy="0 -1.570796 1.570796"/>
+       <parent link="${tf_prefix}link7"/>
+       <child link="${tf_prefix}camera_link"/>
+    </joint>
+    <joint name="${tf_prefix}camera_rgb_joint" type="fixed">
+       <origin xyz="0 0 0" rpy="0 0 0"/>
+       <parent link="${tf_prefix}camera_link"/>
+       <child link="${tf_prefix}camera_rgb_frame"/>
+    </joint>
+    <link name="${tf_prefix}camera_rgb_frame"/>
+
+    <joint name="${tf_prefix}camera_rgb_optic_joint" type="fixed">
+       <origin xyz="0 0 0" rpy="0 0 0"/>
+       <parent link="${tf_prefix}camera_rgb_frame"/>
+       <child link="${tf_prefix}camera_rgb_optic_frame"/>
+    </joint>
+     
+    <link name="${tf_prefix}camera_rgb_optic_frame"/>
+
+    <!-- Gerçek SICK Visionary-T Mini optik frame'i. camera_rgb_optic_frame Gazebo
+         sim kamerası için oryante edilmiştir (<gazebo reference=camera_rgb_optic_frame>);
+         gerçek SICK bulutu optik konvansiyon farkı nedeniyle ona göre dönüktür.
+         RViz'de (Fixed Frame=world) bulut şaseye oturana kadar kalibre edildi:
+         rpy = -pi/2, -pi/2, -pi/2 (konum ofseti gerekmedi). Gerçek bulut bu frame'e
+         damgalanır (sick_kawasaki node frame_id + pointcloud_transformer target). -->
+    <joint name="${tf_prefix}kawasaki_sick_optical_joint" type="fixed">
+       <origin xyz="-0.02 0 0" rpy="-1.5708 -1.5708 -1.5708"/>
+       <parent link="${tf_prefix}camera_rgb_optic_frame"/>
+       <child link="${tf_prefix}kawasaki_sick_optical_frame"/>
+    </joint>
+    <link name="${tf_prefix}kawasaki_sick_optical_frame"/>
+
+    <xacro:if value="${sim_ignition}">
+      <!-- NOT: gz-sim-sensors-system plugin'i world SDF'de (ifarlab.sdf) zaten
+           yükleniyor. Burada tekrar tanımlamak "Scene already exists" hatasına
+           ve ardından WaitForInit() segfault'una yol açar. Sadece sensör
+           tanımı (<gazebo reference=...>) yeterlidir. -->
+
+      <gazebo reference="${tf_prefix}camera_rgb_optic_frame">
+        <sensor name="${tf_prefix}camera_rgb_optic_frame" type="rgbd_camera">
+          <always_on>false</always_on>
+          <update_rate>5.0</update_rate>
+          <visualize>false</visualize>
+
+          <camera name="${tf_prefix}rgbd">
+            <horizontal_fov>1.22</horizontal_fov>
+
+            <image>
+              <width>512</width>
+              <height>424</height>
+              <format>R8G8B8</format>
+            </image>
+
+            <depth_image>
+              <width>512</width>
+              <height>424</height>
+              <format>R_FLOAT32</format>
+            </depth_image>
+
+            <clip>
+              <near>0.05</near>
+              <far>16.0</far>
+            </clip>
+
+            <noise>
+              <type>gaussian</type>
+              <mean>0.0</mean>
+              <stddev>0.0008</stddev>
+            </noise>
+          </camera>
+        </sensor>
+      </gazebo>
+    </xacro:if>
+
+  </xacro:macro>
+</robot>

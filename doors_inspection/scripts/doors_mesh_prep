@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Console entry point for the merged-door-mesh builder.
+
+The package used to declare this through setup.py's console_scripts. It became a
+script when the package turned hybrid (ament_cmake + ament_cmake_python) to host the
+C++ octomap builder; ament_cmake ignores setup.py entry points, so the shim is
+installed into lib/doors_inspection instead and `ros2 run` finds it exactly as before.
+"""
+import sys
+
+from doors_inspection.merge_door_meshes import main
+
+if __name__ == '__main__':
+    sys.exit(main())

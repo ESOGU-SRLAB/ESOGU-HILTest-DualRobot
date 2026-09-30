@@ -1,0 +1,13 @@
+[console_scripts]
+double_kafka_pro_con = src.double_kafka_pro_con:double_kafka_pro_con
+double_ros2_kafka_bridge = src.double_ros2_kafka_bridge:double_ros2_kafka_bridge
+double_ros2_pub_sub = src.double_ros2_pub_sub:double_ros2_pub_sub
+single_kafka_con_1 = src.single_kafka_con_1:single_kafka_con_1
+single_kafka_con_2 = src.single_kafka_con_2:single_kafka_con_2
+single_kafka_pro_1 = src.single_kafka_pro_1:single_kafka_pro_1
+single_kafka_pro_2 = src.single_kafka_pro_2:single_kafka_pro_2
+single_ros2_kafka_bridge_topic_1 = src.single_ros2_kafka_bridge_topic_1:single_ros2_kafka_bridge_topic_1
+single_ros2_kafka_bridge_topic_2 = src.single_ros2_kafka_bridge_topic_2:single_ros2_kafka_bridge_topic_2
+single_ros2_pub_sub_1 = src.single_ros2_pub_sub_1:single_ros2_pub_sub_1
+single_ros2_pub_sub_2 = src.single_ros2_pub_sub_2:single_ros2_pub_sub_2
+

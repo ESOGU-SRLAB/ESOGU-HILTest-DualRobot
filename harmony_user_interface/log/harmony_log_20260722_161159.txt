@@ -1,0 +1,6 @@
+[16:12:08] [FAULT] ⚠️ [T0] E-4005 — Kapı yüzeyi referans kalibrasyonu tolerans sınırında. (senaryo hatası, süreç durmadı)
+[16:12:09] [FAULT] ✅ [T2] E-4005 — operatör uyarıyı kapattı.
+[16:12:10] [SYSTEM] 📡 Published command: START
+[16:12:11] [SYSTEM] 📡 Published command: CONFIRM
+[16:12:12] [SYSTEM] 📡 Published command: REINSPECT
+[16:12:14] [SYSTEM] 📡 Published command: STOP

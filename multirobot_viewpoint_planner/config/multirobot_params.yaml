@@ -1,0 +1,188 @@
+# Multi-robot viewpoint planner parameters.
+#
+# The camera block and coverage knobs mirror the single-arm
+# viewpoint_planner (config/sick_tmini_params.yaml) so the solo-vs-multi
+# comparison uses the SAME sensor model and candidate density -- only the
+# allocation across the two arms differs.
+multirobot_planner_node:
+  ros__parameters:
+    camera:
+      horizontal_fov_deg: 70.0
+      vertical_fov_deg: 60.0
+      fov_safety_margin_deg: 3.0
+      min_range_m: 0.2
+      max_range_m: 1.8
+      frame_rate_hz: 5.0
+      viewpoint_distances: [0.3, 0.6, 1.0, 1.4]
+      tilt_variations_deg: [-15.0, 0.0, 15.0]
+      # Steepest surface-to-view angle still counted as covered. Measured on the
+      # chassis mesh (4277 targets, 5136 candidates): the geometric coverage
+      # ceiling is 90.5% at 80 deg, 91.7% at 85, 94.6% at 88. It costs nothing --
+      # the candidate set does not change, only which targets they are credited
+      # with. 85 is the honest stopping point: a ToF sensor returns little at a
+      # grazing incidence, so the extra 3 points at 88/89 deg would be counted
+      # coverage the camera does not actually measure.
+      max_incidence_angle_deg: 85.0
+
+    coverage_threshold: 0.98
+
+    # Candidate density (same as the solo baseline).
+    num_base_points: 400
+    target_sample_points: 5000
+
+    # --- Waypoint-count control (the plan had 100+ tail viewpoints each adding
+    #     only 1-2 points; these two knobs cut that tail). ---
+    # Stop adding viewpoints once the best remaining one would add fewer than this
+    # many NEW target points. This cuts the long diminishing-returns tail: raise it
+    # for far fewer waypoints (small coverage cost), lower it (1) to keep every
+    # useful viewpoint. From the observed curve: ~8 keeps the informative knee.
+    min_new_points: 8
+
+    # Fractional tail cutter (mirrors the solo viewpoint_planner "cut at 0.5%").
+    # Stop once the best remaining viewpoint adds fewer than this FRACTION of all
+    # target points as new coverage (0.0035 = 0.35% ~= 15 new points on 4277
+    # targets). The effective floor is max(min_new_points, min_marginal_coverage *
+    # targets), so this still dominates min_new_points=8. 0.0 disables it.
+    #
+    # Was 0.005 (= 22 new points on this mesh), which stopped the chassis plan at
+    # 28 viewpoints and 75.0% geometric coverage. Measured 2026-09-08 on the greedy
+    # curve for this mesh, at max_incidence 85 deg: floor 22 -> 29 viewpoints /
+    # 76.4%, floor 15 -> 37 / 79.5%, floor 9 -> 51 / 83.0%. The achieved figure is
+    # lower than all of these because most of the tail is unreachable, but the
+    # ranking holds. This sits mid-way: it buys back most of the coverage the 0.5%
+    # cutter was discarding without doubling the number of stops. The extra stops
+    # cost planning time only once -- both arms run in parallel and every
+    # trajectory is cached after the first recording run.
+    min_marginal_coverage: 0.0035
+
+    # Hard per-ARM cap as a safety guard. 0 = no cap (let min_new_points decide).
+    # With the two arms in parallel the wall-clock cost is ~max(per-arm counts).
+    # Shared fallback, used only by an arm with no override below.
+    max_viewpoints_per_robot: 30
+
+    # PER-ARM overrides (0 = no override, fall back to the shared cap above). The
+    # arms are not interchangeable: the Kawasaki runs at 0.015 velocity scaling
+    # (~4.5 deg/s), so its stop count sets the wall-clock length of a run, while
+    # the UR is far quicker. Raised together with min_marginal_coverage=0.002,
+    # which lengthens the plan from ~28 to ~51 viewpoints: without these the
+    # shared cap of 30 would stop the allocation early ("Every arm reached its
+    # per-robot budget") and throw away the coverage the looser tail cutter buys.
+    max_viewpoints_ur: 45
+    max_viewpoints_kawasaki: 13
+
+    # A candidate reachable by both arms goes to the less-loaded arm (balances the
+    # parallel run). Set false for a fixed arm priority order.
+    balance_load: true
+
+    # Reorder each arm's selected viewpoints into a short cartesian visiting path
+    # (nearest-neighbour + 2-opt) so the arm sweeps neighbouring stops instead of
+    # jumping across the chassis in greedy coverage-discovery order. Only the
+    # visiting ORDER changes -- the same viewpoints are kept. false = greedy order.
+    order_by_proximity: true
+    # Per-arm START anchor for the visiting sweep so the two arms approach the
+    # chassis from OPPOSITE ends (one from the front, one from the back) instead of
+    # converging on the same region. 'max_y' = largest Y (front), 'min_y' = smallest
+    # Y (back), 'coverage' = start at the highest-coverage viewpoint.
+    ur_order_anchor: "max_y"
+    kawasaki_order_anchor: "min_y"
+    # HOW the tour is built once the anchor is chosen.
+    #   'y_bands'   -> monotone sweep: every viewpoint in the first Y band, then the
+    #                  next band, and so on -- the arm never returns to a band it has
+    #                  left. Inside a band the stops still take the shortest path.
+    #   'proximity' -> the original behaviour: the globally shortest 3D path. It is
+    #                  free to walk back up the chassis whenever that is cheaper, and
+    #                  it does: on the 2026-09-08 plan the UR tour ran down to
+    #                  y=-0.49 and then climbed all the way back to y=+1.25, with 9
+    #                  of its 20 hops moving against the sweep direction (2.28 m of
+    #                  backward Y travel, worst single step 0.76 m).
+    order_mode: "y_bands"
+    # Depth of one Y band, metres. Measured on the same two plans: at 0.30 the worst
+    # backward step falls to 0.22 m and total backward travel to 0.54 m, for ~13%
+    # more path length than 'proximity'. Smaller bands approach a strict sort by Y
+    # (perfectly monotone, ~35% longer path); larger bands drift back towards
+    # 'proximity'. Set it to about the Y depth one camera position covers.
+    order_band_width_m: 0.30
+
+    # Once the visiting order is fixed, re-express each viewpoint's stored IK angles as
+    # the 2*pi-equivalents nearest the PREVIOUS viewpoint, where the joint's URDF limits
+    # allow it. IK hands back one arbitrary branch per viewpoint, so the tour otherwise
+    # stores pairs like +100 deg then -260 deg -- the same physical angle, a full extra
+    # turn to drive. Poses are identical, so coverage/reachability cannot change.
+    # Joints whose range is 2*pi or less (Kawasaki joint1/2/3/5, UR elbow) are untouched.
+    unwind_joint_goals: true
+    wrap_limit_margin: 0.05   # rad kept clear of each joint limit
+    wrap_min_gain: 0.35       # rad (~20 deg): ignore rewrites that save less
+
+    # Branch re-chaining. Unwinding only removes whole turns; a viewpoint reached from a
+    # genuinely different arm posture (shoulder/elbow/wrist flip, or a different AGV
+    # position) is a separate problem, and on the 2026-08-03 plan it was the Kawasaki's
+    # dominant cost: 346 deg per hop against the UR's 225, with one 248 deg joint1 swing
+    # that unwinding can never touch because joint1 spans exactly +/-180.
+    rechain_ik: true
+    rechain_ik_attempts: 4
+    # Repeating a seeded query only samples new branches when the solver restarts
+    # randomly -- pick_ik/global does (UR), KDL does not (Kawasaki). So vary the SEED.
+    rechain_rail_probe: 0.25   # m, +/- rail seed offset (redundancy probe); 0 disables
+    rechain_rail_weight: 2.0   # rad per m: what a metre of AGV travel is "worth"
+    rechain_yaw_probe: true    # also seed with joint1 turned +/- pi
+    rechain_yaw_joint: "joint1"
+    rechain_rail_joint: "world_to_agv"
+
+    # IK rejects poses where the arm collides with the scene/chassis.
+    ik_avoid_collisions: true
+
+    # --- The scene that reachability is verified against ---------------------
+    # ik_avoid_collisions above is answered by move_group, against whatever scene
+    # move_group holds. The EXECUTORS add a floor box and pad their moving links
+    # before they plan, so without recreating that here the generator checks a bare
+    # scene and the executor a padded one: measured on the 2026-09-07/08 chassis
+    # plans, one UR viewpoint per run (z = 0.278 and 0.256 m) had no collision-free
+    # IK branch at execution time, yet its coverage was counted in the plan total.
+    # KEEP THESE EQUAL TO THE LAUNCH ARGUMENTS THE RUN WILL USE -- they mirror
+    # multirobot_inspection.launch.py's defaults.
+    ik_scene_setup: true
+    ground_plane_z: -0.02        # world-frame height of the floor box TOP face
+    ground_plane_size: 6.0
+    ground_plane_thickness: 0.2
+    collision_padding: 0.04      # safety margin the arms keep from every obstacle
+    # Links the executors pad: UR node pads every 'ur10e_*' link, Kawasaki node pads
+    # link1..link6. A cooperative run applies both to the one shared scene.
+    ik_padding_link_patterns: ["^ur10e_", "^link[1-6]$"]
+
+    # --- UR10e: camera on ur10e_depth_optical_frame ---
+    ur_group_name: "real_ur10e"
+    ur_base_frame: "world"
+    ur_tool_frame: "ur10e_depth_optical_frame"
+
+    # WORKSPACE KEEP-OUT BOX for the UR ONLY (world frame, metres). The mesh-only
+    # occlusion cannot see that a camera pose BEHIND the UR's linear rail is blocked,
+    # so the UR would drive there and capture 0 points. This makes the UR treat any
+    # candidate outside [min,max] as unreachable -> the allocator hands it to the
+    # Kawasaki (never gated by this box, so Kawa coverage is preserved) or drops it.
+    # The rail is at world X=-0.158 (cell at origin, travels along Y); -0.20 keeps a
+    # ~4 cm margin. Same box the solo viewpoint_planner uses, applied per-arm here.
+    # X upper = -0.20 (rejects behind-rail poses; rail at world X=-0.158).
+    # Z lower =  0.20 is now only a cheap PRE-filter: it bounds the CAMERA, which
+    #                  says nothing about where the wrist ends up, and that is what
+    #                  actually hits the floor. The real floor test is the collision
+    #                  check against the ground plane set up by ik_scene_setup above.
+    ur_workspace_filter_enabled: true
+    ur_workspace_bounds_min: [-100.0, -100.0, 0.20]
+    ur_workspace_bounds_max: [-0.20, 100.0, 100.0]
+
+    # --- Kawasaki: the viewpoint is where the camera must be, but IK is solved
+    #     for the group TIP (link6) with the fixed camera->tip transform applied,
+    #     so the camera faces the chassis correctly (see node docstring). ---
+    kawasaki_group_name: "real_kawasaki"
+    kawasaki_base_frame: "world"
+    kawasaki_camera_frame: "camera_rgb_optic_frame"
+    kawasaki_group_tip: "link6"
+    kawasaki_ik_via_tip: true
+
+    # THE orientation fix. The generator aims the camera along +Z (correct for the
+    # UR, whose real depth_optical_frame has +Z as its view axis). The Kawasaki's
+    # camera_rgb_optic_frame instead views along +X (confirmed from saved clouds).
+    # This rotation re-aims the target so the Kawasaki camera actually faces the
+    # chassis: R_cam = R_view @ R(rpy). Default rpy(-pi/2,-pi/2,0) maps +Z -> +X.
+    # If it squares up but is rolled/upside down, adjust the third (yaw) value.
+    kawasaki_view_axis_correction_rpy: [-1.5707963, -1.5707963, 0.0]

@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>gemini_robotics_ros</name>
+  <version>0.1.0</version>
+  <description>
+    Gemini Robotics ER 2 (embodied reasoning) ile UR10e bilek kamerası arasında köprü.
+    ER 2 görüntüden 2D nokta üretir, bu düğümler noktayı depth/pointcloud ile 3D'ye
+    çevirip world frame'ine taşır ve MoveIt üzerinden pick and place yaptırır.
+  </description>
+  <maintainer email="cshyilmaz@gmail.com">Cem Süha Yılmaz</maintainer>
+  <license>Apache-2.0</license>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf2_geometry_msgs</exec_depend>
+  <exec_depend>vgc10_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+
+  <!-- pymoveit2_sim ve google-genai rosdep'te yok:
+       pymoveit2_sim bu workspace'ten, google-genai pip ile kurulur.
+       Bkz. README.md -->
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

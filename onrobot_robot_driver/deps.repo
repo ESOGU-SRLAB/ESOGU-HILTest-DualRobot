@@ -1,0 +1,9 @@
+repositories:
+  onrobot_2fg7_description:
+    type: git
+    url: git@github.com:touchlab-avatarx/onrobot_2fg7_description.git
+    version: main
+  onrobot_api:
+    type: git
+    url: git@github.com:touchlab-avatarx/onrobot_api.git
+    version: main

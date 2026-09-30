@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<robot name="agv_ignition" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- Single include to consolidated macro file in the same folder -->
+    <xacro:include filename="$(find agv_description)/urdf/macro_ignition.xacro"/>
+	  <xacro:include filename="$(find rs005l_description)/urdf/rs005l_macro.xacro"/>
+
+    <xacro:agv_base />
+    <xacro:agv_ir agv_base_link="agv_base_link" link_name="ir1" xyz_ir="0.505 0.215 -0.03" rpy_ir="0 0 0" />
+    <xacro:agv_ir agv_base_link="agv_base_link" link_name="ir2" xyz_ir="0.20 0.355 -0.068" rpy_ir="0 0 1.570796" />
+    <xacro:agv_ir agv_base_link="agv_base_link" link_name="ir3" xyz_ir="-0.20 0.355 -0.068" rpy_ir="0 0 1.570796" />
+    <xacro:agv_ir agv_base_link="agv_base_link" link_name="ir4" xyz_ir="-0.505 0.215 -0.005" rpy_ir="0 0 3.14159" />
+    <xacro:agv_ir agv_base_link="agv_base_link" link_name="ir5" xyz_ir="-0.505 -0.215 -0.005" rpy_ir="0 0 3.14159" />
+    <xacro:agv_ir agv_base_link="agv_base_link" link_name="ir6" xyz_ir="-0.20 -0.355 -0.068" rpy_ir="0 0 -1.570796" />
+    <xacro:agv_ir agv_base_link="agv_base_link" link_name="ir7" xyz_ir="0.20 -0.355 -0.068" rpy_ir="0 0 -1.570796" />
+    <xacro:agv_ir agv_base_link="agv_base_link" link_name="ir8" xyz_ir="0.503 -0.215 -0.03" rpy_ir="0 0 0" />
+    <xacro:agv_wheel xyz_hub="0 -0.30 -0.06" rpy_hub="0 0 0" side="left"/>
+    <xacro:agv_wheel xyz_hub="0 0.30 -0.06" rpy_hub="0 0 0" side="right"/>
+    <xacro:agv_swivel xyz_caster="0.37 -0.22 -0.048" rpy_caster="0 0 0" side="front_right"/>
+    <xacro:agv_swivel xyz_caster="0.37 0.22 -0.048" rpy_caster="0 0 0" side="front_left"/>
+    <xacro:agv_swivel xyz_caster="-0.37 -0.22 -0.048" rpy_caster="0 0 0" side="back_right"/>
+    <xacro:agv_swivel xyz_caster="-0.37 0.22 -0.048" rpy_caster="0 0 0" side="back_left"/>
+    <xacro:agv_diff_drive />
+    <xacro:agv_joints_state_publisher />
+    <xacro:agv_imu />
+
+    <xacro:arg name="tf_prefix" default="" />
+
+     <!-- Simulation parameters -->
+   <xacro:arg name="use_fake_hardware" default="false" />
+   <xacro:arg name="sim_ignition" default="false" />
+   <xacro:arg name="simulation_controllers" default="" />
+
+
+		<!-- Kawasaki'yi AGV üzerine sabitle -->
+  	<xacro:rs005l
+			name="rs005l"
+			parent="agv_base_link"            
+			tf_prefix=""                   
+			use_fake_hardware="true"          
+			sim_ignition="true">              
+			<!-- Montaj pozu: AGV üst plakaya göre ayarla -->
+			<origin xyz="0.0 0.0 0.0051" rpy="0 0 3.141593"/>
+		</xacro:rs005l>
+
+    <xacro:if value="$(arg sim_ignition)">
+    <!-- Gazebo plugins -->
+    <gazebo reference="world">
+      </gazebo>
+      <gazebo>
+        <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+          <parameters>$(arg simulation_controllers)</parameters>
+          <controller_manager_node_name>$(arg tf_prefix)controller_manager</controller_manager_node_name>
+        </plugin>
+      </gazebo>
+    </xacro:if>
+
+</robot>

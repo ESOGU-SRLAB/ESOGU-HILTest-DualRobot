@@ -1,0 +1,833 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "title": "IFARLAB UR10e (sim) capabilities for STLC Manager test generation",
+    "status": "DRAFT - requires manual approval (see approval block)",
+    "generated_at": "2026-09-29",
+    "generated_from": "static read of ros2-exec-harness:0.2.0 + IFARLAB config files + live param dump of the /sim stack (hil_test_whole_unified.launch.py digital_twin:=true use_fake_hardware:=true) taken 2026-09-29",
+    "approval": {
+      "approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "notes": null
+    },
+    "evidence_legend": {
+      "code": "read from the Python source inside the image",
+      "config": "read from URDF/SRDF/MoveIt/controller config (live param dump where noted)",
+      "measured": "observed at runtime",
+      "unverified": "plausible but NOT measured yet - see open_questions; do not rely on it in assertions"
+    },
+    "pinned_sources": {
+      "image": {
+        "tag": "ros2-exec-harness:0.3.2",
+        "id": "TO BE FILLED AFTER BUILD: docker images --no-trunc ros2-exec-harness:0.3.2"
+      },
+      "sha256": {
+        "/harness_ws/install/pymoveit2_sim/lib/pymoveit2_sim/sim_robot_goal.py": "59dbb47a4d50d4da5cea72e1d942cfa12b40821f58450d3b7f13b3dba7cf38a9",
+        "/harness_ws/install/pymoveit2_sim/lib/pymoveit2_sim/sim_robot_joint_goal.py": "8dc12858b8e007585a0c00eb151f0bec9444c21250023b4be939019bf2534355",
+        "pymoveit2_sim/moveit2.py (in image)": "f0d79fb4ca2043aeccfc22a55ca9ede3bcd1270f0cf3666a73b9854e55c487b6",
+        "pymoveit2_sim/robots/ur.py (in image)": "60f9d19b0c3c100ebe7ebe2fcc3430951a96c9b974da11c22b5849fc961d7f8e",
+        "sim_ifarlab_moveit_config/config/joint_limits.yaml": "eea8e964ba72f672e2c7b1a5fcfac4a11f40f6d23ba076cc8e1b2966a56dd7fb",
+        "sim_ifarlab_moveit_config/config/whole_cell_sim.srdf": "637995e1a4129f37be6ff249ba7574003f02b34cf44f3ec31f19c797090d301c",
+        "sim_ifarlab_moveit_config/config/moveit_controllers.yaml": "d4887646848e1c7c00ea04721817ec10176e76bb3405994453c2f6ad020024de",
+        "sim_ifarlab_moveit_config/config/ompl_planning.yaml": "9f0ed0e5e983673f7969f7ad5d5be5fc00a777de091df9182134f0e5619c4f27",
+        "my_robot_cell_control/config/whole_cell_sim_controllers.yaml": "27bef7a159b2e9d8e95c34939a0f07557ec80d72afb5648364c3fcacf885f1fc"
+      },
+      "rule": "If any hash no longer matches, this file is stale and must be regenerated and re-approved."
+    }
+  },
+  "execution_environment": {
+    "evidence": "code (Dockerfile, entrypoint.sh, conftest.py)",
+    "run_command": "docker run --rm --network host --ipc=host -e FASTDDS_BUILTIN_TRANSPORTS=UDPv4 -v <file>.py:/harness_ws/generated_script.py:ro ros2-exec-harness:0.3.2 python3 /harness_ws/generated_script.py",
+    "python": "3.10.12",
+    "ros_distro": "humble",
+    "pytest": "6.2.5",
+    "pytest_plugins_available": [
+      "pytest-timeout"
+    ],
+    "pytest_plugins_NOT_available": [
+      "pytest-html",
+      "pytest-asyncio",
+      "pytest-mock",
+      "pytest-xdist",
+      "pytest-cov"
+    ],
+    "third_party_python_packages": "Only ROS 2 Humble ros-base, rclpy, the pymoveit2_* packages and stdlib. No numpy guarantee beyond what ROS pulls in; no requests, no pandas.",
+    "run_mode": "If the file has a top-level `def test_`, `async def test_` or `class Test`, it is run with pytest; otherwise with plain python3.",
+    "rclpy_lifecycle": "conftest.py calls rclpy.init() once per session and turns rclpy.init()/rclpy.shutdown() into no-ops. Tests must NOT create their own executor/spin thread for the controller: MoveIt2 spins the node itself inside wait_until_executed().",
+    "timeouts": {
+      "per_test_seconds_default": 60,
+      "per_test_env_var": "HARNESS_TEST_TIMEOUT",
+      "run_seconds_default": 600,
+      "run_env_var": "HARNESS_RUN_TIMEOUT",
+      "run_timeout_scope": "Total run time of the generated file (plain python3 or the whole pytest session, including collection/import). The pre-run snapshot and the post-run reset are outside it.",
+      "on_run_timeout": "SIGINT, then SIGTERM 30 s later, then SIGKILL 10 s after that; container exits 124; the post-run reset still runs."
+    },
+    "exit_codes": {
+      "0": "all tests passed",
+      "1": "at least one test failed",
+      "2": "collection/import error",
+      "5": "no tests collected",
+      "124": "run time limit (HARNESS_RUN_TIMEOUT, default 600 s) exceeded"
+    },
+    "filesystem": "Generated file is mounted read-only as /harness_ws/generated_script.py. Working dir is /harness_ws. Do not write reports/files (no --html, no open(...,'w') outside /tmp).",
+    "network": "Host network; only ROS 2 DDS traffic to the persistent stack is meaningful. No internet access assumed.",
+    "fixtures_available": [
+      "ros_context (session, autouse, from conftest.py)",
+      "pytest built-ins: tmp_path, capsys, caplog, monkeypatch"
+    ],
+    "post_run_reset": "After every run (pass, fail, timeout, docker stop) the harness returns the sim UR10e to home [rail 1.0, 0, -pi/2, 0, -pi/2, 0, 0], removes planning-scene objects the run added and cancels leftover motion goals. Tests do not need to (and cannot reliably) home the robot in their own cleanup. The result is printed as one line: '[harness] reset: status=already_home|homed|failed|stack_down|timeout ...'. The container exit code is always the test's, never the reset's."
+  },
+  "target_system": {
+    "evidence": "config (live /sim param dump) + code (robots/ur.py)",
+    "robot": "Universal Robots UR10e mounted on a 1-axis linear rail (prismatic joint) - 7 DOF total, simulated in Gazebo Harmonic",
+    "ros_namespace": "/sim",
+    "moveit_config_package": "sim_ifarlab_moveit_config (use_gripper:=false, use_vacuum_gripper:=false)",
+    "planning_group": "sim_ur10e",
+    "planning_frame": "world",
+    "end_effector_link": "sim_ur10e_tool0",
+    "joint_order": [
+      "sim_ur10e_base_to_robot_mount",
+      "sim_ur10e_shoulder_pan_joint",
+      "sim_ur10e_shoulder_lift_joint",
+      "sim_ur10e_elbow_joint",
+      "sim_ur10e_wrist_1_joint",
+      "sim_ur10e_wrist_2_joint",
+      "sim_ur10e_wrist_3_joint"
+    ],
+    "joint_order_note": "Every joint vector is 7 long and the FIRST element is the rail position in METRES, the other six are radians. A 6-element UR vector is wrong for this cell.",
+    "controller": {
+      "name": "/sim/sim_scaled_joint_trajectory_controller",
+      "type": "ur_controllers/ScaledJointTrajectoryController",
+      "command_interfaces": [
+        "position"
+      ],
+      "state_interfaces": [
+        "position",
+        "velocity"
+      ],
+      "constraints": "goal/trajectory tolerances are all 0.0 (= not enforced), goal_time 0.0",
+      "allow_partial_joints_goal": true
+    },
+    "end_effector_tooling": "NONE in this configuration: no gripper, no vacuum. A SICK camera and a cable channel are mounted as fixed links on the flange (collision only, no API).",
+    "other_robots_in_same_scene": "Kawasaki RS005L on an AGV (group sim_kawasaki) shares the /sim planning scene. It is an obstacle for the UR10e; it is NOT controllable through the allowed API.",
+    "persistent_stack_required": "ros2 launch my_robot_cell_control hil_test_whole_unified.launch.py digital_twin:=true use_fake_hardware:=true must be running on IFARLAB; if it is not, every motion call warns 'not yet available' and returns without moving."
+  },
+  "api": {
+    "principle": "Closed world. Only the imports, classes, methods and attributes listed here exist. Anything not listed must be treated as nonexistent.",
+    "allowed_imports": [
+      "from sim_robot_goal import SimCollisionAwareRobotController",
+      "from sim_robot_joint_goal import CollisionAwareRobotController",
+      "from pymoveit2_sim import MoveIt2State",
+      "from pymoveit2_sim.robots import ur",
+      "import rclpy",
+      "import pytest",
+      "import time",
+      "import math"
+    ],
+    "classes": {
+      "sim_robot_goal.SimCollisionAwareRobotController": {
+        "evidence": "code",
+        "purpose": "Pose (Cartesian target) based motion.",
+        "constructor": "SimCollisionAwareRobotController()  # no arguments; creates ROS node 'sim_collision_aware_robot_controller'",
+        "construction_side_effects": {
+          "moveit2.max_velocity": 0.2,
+          "moveit2.max_acceleration": 0.2,
+          "moveit2.planner_id": "RRTConnectkConfigDefault",
+          "moveit2.cartesian_avoid_collisions": true,
+          "moveit2.cartesian_jump_threshold": 2.0,
+          "self.planning_attempts": 10,
+          "self.planning_time": 10.0,
+          "base_link_name": "world"
+        },
+        "public_attributes": {
+          "moveit2": "pymoveit2_sim.MoveIt2 instance (see moveit2_interface)",
+          "planning_attempts": "int, only passed to move_to_position; has no effect (see caveats)",
+          "planning_time": "float, same - no effect"
+        },
+        "methods": {
+          "move_to_position": {
+            "signature": "move_to_position(position, orientation=None, cartesian=False, cartesian_max_step=0.005, cartesian_fraction_threshold=0.95, synchronous=True, planning_attempts=None, planning_time=None)",
+            "args": {
+              "position": "[x, y, z] metres in frame 'world'",
+              "orientation": "[x, y, z, w] quaternion; default [1.0, 0.0, 0.0, 0.0] (tool pointing down)",
+              "cartesian": "False = OMPL joint-space plan to a pose goal; True = straight line via /sim/compute_cartesian_path",
+              "synchronous": "True blocks until motion finishes"
+            },
+            "returns": "None ALWAYS. It does not report success.",
+            "raises": "Never - every exception is caught and only logged.",
+            "caveats": [
+              "planning_attempts/planning_time arguments are silently ignored: the method checks hasattr(moveit2, 'planning_attempts'), but MoveIt2 names them num_planning_attempts/allowed_planning_time. Effective values are 5 attempts / 0.5 s.",
+              "It gives no reliable success signal. Check reachability first with moveit2.plan(...) - see success_observation."
+            ]
+          },
+          "safe_move_sequence": {
+            "signature": "safe_move_sequence(positions_list, orientations_list=None, wait_time=2.0)",
+            "returns": "None",
+            "behaviour": "Calls move_to_position(pos, orient, cartesian=False) for each item, sleeps wait_time between. Default orientation for every item is [0.0, 0.0, 0.7071, 0.7071]. Does not stop on failure."
+          },
+          "move_home_safe": {
+            "signature": "move_home_safe()",
+            "returns": "None",
+            "behaviour": "move_to_position([-0.3, 0.3, 1.2], [-1,0,0,0]) then cartesian move_to_position([-0.3, 0.3, 0.95], [-1,0,0,0]).",
+            "caveat": "These two poses have NOT been verified reachable in the current cell (see open_questions)."
+          },
+          "safe_cartesian_path": {
+            "signature": "safe_cartesian_path(waypoints, max_step=0.005, safety_height=0.05)",
+            "returns": "None",
+            "behaviour": "For each [x,y,z] adds safety_height to z and calls move_to_position(..., cartesian=False). Despite its name it is NOT a Cartesian path. max_step is unused."
+          },
+          "check_planning_scene": {
+            "signature": "check_planning_scene()",
+            "returns": "None",
+            "behaviour": "Only logs two info lines. Checks nothing. Do not use it as an assertion target."
+          }
+        }
+      },
+      "sim_robot_joint_goal.CollisionAwareRobotController": {
+        "evidence": "code; 26 targets measured OK on 2026-09-25",
+        "purpose": "Joint-space motion. This is the ONLY class whose motion method returns a success value.",
+        "constructor": "CollisionAwareRobotController()  # no arguments",
+        "construction_side_effects": {
+          "moveit2.max_velocity": 0.05,
+          "moveit2.max_acceleration": 0.5,
+          "moveit2.planner_id": "RRTConnectkConfigDefault",
+          "base_link_name": "sim_ur10e_base_link"
+        },
+        "import_warning": "Importing sim_robot_joint_goal is safe (main() is under __main__). Both classes can be constructed in the same process but each creates its own node.",
+        "methods": {
+          "move_to_joint_angles": {
+            "signature": "move_to_joint_angles(joint_positions, synchronous=True)",
+            "args": {
+              "joint_positions": "7 floats in target_system.joint_order: [rail_m, pan, lift, elbow, wrist1, wrist2, wrist3] (rad)"
+            },
+            "returns": "bool when synchronous=True (True = executed successfully); True immediately when synchronous=False",
+            "raises": "Never (caught, returns False)"
+          },
+          "safe_joint_sequence": {
+            "signature": "safe_joint_sequence(list_of_joint_angles, wait_time=2.0, max_retries=3)",
+            "returns": "None",
+            "behaviour": "Retries each target up to max_retries."
+          },
+          "move_to_position": {
+            "signature": "move_to_position(position, orientation=None, cartesian=False, cartesian_max_step=0.005, cartesian_fraction_threshold=0.95, synchronous=True, planning_attempts=None, planning_time=None)",
+            "returns": "None",
+            "note": "Same caveats as the pose class. Default orientation here is [0,0,0,1]."
+          },
+          "safe_pose_sequence": {
+            "signature": "safe_pose_sequence(positions_list, orientations_list=None, wait_time=2.0)",
+            "returns": "None"
+          },
+          "move_home_safe": {
+            "signature": "move_home_safe()",
+            "returns": "None",
+            "caveat": "unverified poses"
+          },
+          "check_planning_scene": {
+            "signature": "check_planning_scene()",
+            "returns": "None",
+            "behaviour": "log only"
+          }
+        }
+      }
+    },
+    "moveit2_interface": {
+      "evidence": "code",
+      "access": "controller.moveit2  (type pymoveit2_sim.MoveIt2, already configured for /sim)",
+      "allowed_members": {
+        "move_to_configuration(joint_positions, joint_names=None, tolerance=0.001, weight=1.0) -> None": "joint goal; follow with wait_until_executed()",
+        "move_to_pose(position=None, quat_xyzw=None, frame_id=None, tolerance_position=0.001, tolerance_orientation=0.001, cartesian=False, cartesian_max_step=0.0025, cartesian_fraction_threshold=0.0) -> None": "pose goal; follow with wait_until_executed()",
+        "wait_until_executed() -> bool": "Blocks until the last requested motion ends. Returns False immediately (with a warning) if nothing was requested, e.g. because planning failed.",
+        "get_last_execution_error_code() -> MoveItErrorCodes | None": ".val == 1 means SUCCESS - but STALE after a planning failure (only reset when a trajectory is sent). Only meaningful right after plan() returned a trajectory.",
+        "query_state() -> MoveIt2State": "IDLE / REQUESTING / EXECUTING",
+        "cancel_execution() -> None": "",
+        "joint_state -> sensor_msgs/JointState | None": "latest /sim/joint_states; None until the first message arrives - poll with rclpy.spin_once(controller, timeout_sec=0.1)",
+        "max_velocity (get/set float)": "velocity scaling factor, see limits.scaling",
+        "max_acceleration (get/set float)": "acceleration scaling factor",
+        "num_planning_attempts (get/set int)": "default 5",
+        "allowed_planning_time (get/set float, s)": "default 0.5",
+        "planner_id (get/set str)": "one of limits.planning.ompl_planners",
+        "cartesian_avoid_collisions (get/set bool)": "",
+        "add_collision_box(id, size, position, quat_xyzw, frame_id=None) -> None": "publishes to /sim/collision_object",
+        "add_collision_sphere(id, radius, position, quat_xyzw, frame_id=None) -> None": "",
+        "add_collision_cylinder(id, height, radius, position, quat_xyzw, frame_id=None) -> None": "",
+        "remove_collision_object(id) -> None": "",
+        "joint_names -> List[str]": "the 7 names in target_system.joint_order",
+        "cartesian_jump_threshold (get/set float)": "default set by the pose class: 2.0",
+        "plan(position=None, quat_xyzw=None, joint_positions=None, frame_id=None, cartesian=False) -> JointTrajectory | None": "Plan only, no motion (/sim/plan_kinematic_path). None = unreachable/in collision. The reliable reachability check for POSE targets."
+      },
+      "success_observation": [
+        "Joint targets: assert controller.move_to_joint_angles(q) is True (reliable: planning failure -> wait_until_executed() returns False).",
+        "Pose targets: first traj = controller.moveit2.plan(position=p, quat_xyzw=q); assert traj is not None (reachability), THEN controller.move_to_position(p, q) and compare joint_state with traj.points[-1].positions within 0.01.",
+        "Negative pose tests: assert controller.moveit2.plan(position=p, quat_xyzw=q) is None.",
+        "Final state: spin a few times, then compare controller.moveit2.joint_state.position (reordered by .name) with the target within 0.01 rad / 0.005 m.",
+        "Do NOT use moveit2.motion_suceeded (sic) or get_last_execution_error_code() alone after move_to_position: after a planning failure both keep the value of the PREVIOUS motion."
+      ]
+    },
+    "forbidden": {
+      "evidence": "code + analysis of the 87 files in ~/stlc_runs (2026-09-25 run)",
+      "nonexistent_names_seen_in_generated_tests": [
+        "sim_robot_goal.RobotGoal",
+        "sim_robot_goal.robot_goal",
+        "sim_robot_goal.SimRobotGoal",
+        "sim_robot_goal.simulate_robot_goal",
+        "sim_robot_goal.input_validation",
+        "sim_robot_goal.login_system",
+        "your_module.*",
+        "set_initial_state",
+        "validate_input",
+        "check_collision",
+        "is_collision",
+        "internal_state",
+        "get_internal_state",
+        "process_input",
+        "login",
+        "logout",
+        "is_authenticated",
+        "session_id",
+        "get_session_id",
+        "validate_initial_configuration",
+        "is_controlled",
+        "is_stable",
+        "adjust_robot_speed",
+        "speed",
+        "velocity",
+        "get_max_speed",
+        "get_max_acceleration",
+        "calculate_control_forces",
+        "calculate_velocity",
+        "calculate_distance",
+        "get_collision_awareness",
+        "stable_movement",
+        "is_boundary_collision",
+        "is_non_boundary_collision",
+        "touch_object",
+        "models",
+        "get_models",
+        "update_models",
+        "move",
+        "position (as attribute)",
+        "state",
+        "configuration"
+      ],
+      "exists_but_do_not_use": {
+        "moveit2.compute_fk / compute_ik / *_async": "Calls the NON-namespaced /compute_fk and /compute_ik, i.e. the other (real/fake-hardware) move_group with different joint names. Measured: 'Service compute_fk is not yet available' from the container.",
+        "pymoveit2_sim.MoveIt2Gripper / GripperInterface / GripperCommand": "No gripper in this configuration (use_gripper:=false).",
+        "pymoveit2_sim.MoveIt2Servo": "No servo_node is running.",
+        "pymoveit2_real / pymoveit2_kawasaki_real": "Drive REAL hardware. Never import in STLC tests.",
+        "pymoveit2_kawasaki_sim": "Other robot; also defines sim_robot_goal.SimCollisionAwareRobotController and is NOT on PYTHONPATH.",
+        "moveit2.motion_suceeded": "stale after failures, see success_observation",
+        "moveit2.execute / plan_async / reset_controller / clear_all_collision_objects": "Low-level or scene-wide side effects on the shared stack."
+      },
+      "patterns": [
+        "Mocking the robot (unittest.mock.patch/MagicMock/Mock on the controller or on moveit2). A mocked test does not test the robot and will be rejected.",
+        "Cartesian speeds in m/s or joint speeds in rad/s as parameters - the API has no such parameter; only scaling factors exist.",
+        "Infinite loops (while True / while rclpy.ok()) - the run is killed after HARNESS_RUN_TIMEOUT (600 s) and reported as exit 124 (timeout), not as a test result.",
+        "Own rclpy executors/threads spinning the controller node.",
+        "pytest.main([... '--html=...']) or any pytest plugin not listed as available.",
+        "6-element joint vectors."
+      ]
+    }
+  },
+  "limits": {
+    "joints": {
+      "evidence": "config: URDF from live /sim/robot_state_publisher + joint_limits.yaml (acceleration)",
+      "items": [
+        {
+          "index": 0,
+          "name": "sim_ur10e_base_to_robot_mount",
+          "type": "prismatic",
+          "unit": "m",
+          "position_min": 0.05,
+          "position_max": 1.95,
+          "max_velocity": 1.25,
+          "velocity_unit": "m/s",
+          "max_acceleration": 1.0,
+          "acceleration_unit": "m/s^2",
+          "max_effort": 1000.0
+        },
+        {
+          "index": 1,
+          "name": "sim_ur10e_shoulder_pan_joint",
+          "type": "revolute",
+          "unit": "rad",
+          "position_min": -6.283185,
+          "position_max": 6.283185,
+          "max_velocity": 2.094395,
+          "velocity_unit": "rad/s",
+          "max_acceleration": 5.0,
+          "acceleration_unit": "rad/s^2",
+          "max_effort": 330.0
+        },
+        {
+          "index": 2,
+          "name": "sim_ur10e_shoulder_lift_joint",
+          "type": "revolute",
+          "unit": "rad",
+          "position_min": -6.283185,
+          "position_max": 6.283185,
+          "max_velocity": 2.094395,
+          "velocity_unit": "rad/s",
+          "max_acceleration": 5.0,
+          "acceleration_unit": "rad/s^2",
+          "max_effort": 330.0
+        },
+        {
+          "index": 3,
+          "name": "sim_ur10e_elbow_joint",
+          "type": "revolute",
+          "unit": "rad",
+          "position_min": -3.141593,
+          "position_max": 3.141593,
+          "max_velocity": 3.141593,
+          "velocity_unit": "rad/s",
+          "max_acceleration": 5.0,
+          "acceleration_unit": "rad/s^2",
+          "max_effort": 150.0
+        },
+        {
+          "index": 4,
+          "name": "sim_ur10e_wrist_1_joint",
+          "type": "revolute",
+          "unit": "rad",
+          "position_min": -6.283185,
+          "position_max": 6.283185,
+          "max_velocity": 3.141593,
+          "velocity_unit": "rad/s",
+          "max_acceleration": 5.0,
+          "acceleration_unit": "rad/s^2",
+          "max_effort": 54.0
+        },
+        {
+          "index": 5,
+          "name": "sim_ur10e_wrist_2_joint",
+          "type": "revolute",
+          "unit": "rad",
+          "position_min": -6.283185,
+          "position_max": 6.283185,
+          "max_velocity": 3.141593,
+          "velocity_unit": "rad/s",
+          "max_acceleration": 5.0,
+          "acceleration_unit": "rad/s^2",
+          "max_effort": 54.0
+        },
+        {
+          "index": 6,
+          "name": "sim_ur10e_wrist_3_joint",
+          "type": "revolute",
+          "unit": "rad",
+          "position_min": -6.283185,
+          "position_max": 6.283185,
+          "max_velocity": 3.141593,
+          "velocity_unit": "rad/s",
+          "max_acceleration": 5.0,
+          "acceleration_unit": "rad/s^2",
+          "max_effort": 54.0
+        }
+      ],
+      "notes": [
+        "max_velocity comes from the URDF (joint_limits.yaml does not override it).",
+        "Rail axis is world +Y. Rail origin: world (-0.158, 0.115, 0.58635); robot base y = 0.115 + rail position.",
+        "A target outside [position_min, position_max] is rejected by the planner - valid as a NEGATIVE test only, expecting failure."
+      ]
+    },
+    "scaling": {
+      "evidence": "code + config",
+      "velocity_scaling_factor_range": "(0.0, 1.0]",
+      "acceleration_scaling_factor_range": "(0.0, 1.0]",
+      "effective_joint_speed": "max_velocity[joint] * moveit2.max_velocity",
+      "values_set_by_classes": {
+        "SimCollisionAwareRobotController": {
+          "max_velocity": 0.2,
+          "max_acceleration": 0.2
+        },
+        "CollisionAwareRobotController": {
+          "max_velocity": 0.05,
+          "max_acceleration": 0.5
+        }
+      },
+      "moveit_default_if_zero": {
+        "velocity": 0.1,
+        "acceleration": 0.1
+      },
+      "recommended_max_for_tests": 0.5,
+      "out_of_range_behaviour": "unverified - the Python setter accepts any float; what MoveIt does with >1 or <=0 is in open_questions"
+    },
+    "cartesian_limits_pilz": {
+      "evidence": "config",
+      "max_trans_vel_m_s": 1.0,
+      "max_trans_acc_m_s2": 2.25,
+      "max_trans_dec_m_s2": -5.0,
+      "max_rot_vel_rad_s": 1.57,
+      "note": "Only used by the Pilz planner, which the classes do not select. There is no API to command a Cartesian speed."
+    },
+    "planning": {
+      "evidence": "code + config",
+      "pipeline": "ompl",
+      "default_planner": "RRTConnectkConfigDefault",
+      "ompl_planners": [
+        "RRTConnectkConfigDefault",
+        "SBLkConfigDefault",
+        "ESTkConfigDefault",
+        "LBKPIECEkConfigDefault",
+        "BKPIECEkConfigDefault",
+        "KPIECEkConfigDefault",
+        "PRMkConfigDefault"
+      ],
+      "effective_num_planning_attempts": 5,
+      "effective_allowed_planning_time_s": 0.5,
+      "goal_tolerance_default": {
+        "position_m": 0.001,
+        "orientation_rad": 0.001,
+        "joint": 0.001
+      },
+      "cartesian_path": {
+        "service": "/sim/compute_cartesian_path",
+        "max_step_m": 0.005,
+        "fraction_threshold": 0.95,
+        "jump_threshold": 2.0,
+        "avoid_collisions": true
+      },
+      "ik_solver": "pick_ik (group sim_ur10e), timeout 0.05 s, 3 attempts",
+      "collision_checking": "always on for OMPL plans; SRDF disables 4835 link pairs, arm vs. rail-foot pairs are enabled",
+      "ompl_planners_broken_do_not_use": {
+        "names": [
+          "RRTkConfigDefault",
+          "RRTstarkConfigDefault",
+          "TRRTkConfigDefault",
+          "PRMstarkConfigDefault"
+        ],
+        "reason": "listed for sim_ur10e but their 'type:' line is commented out in ompl_planning.yaml"
+      }
+    },
+    "timing": {
+      "evidence": "measured 2026-09-25",
+      "one_joint_target_at_scaling_0.05": "about 8 s average (26 targets in about 3.5 min incl. 1.5 s waits)",
+      "startup": "allow up to 5 s after construction for the first /sim/joint_states"
+    }
+  },
+  "workspace": {
+    "frame": "world",
+    "evidence": "config (geometry) + measured (joint targets)",
+    "arm_reach_m": 1.3,
+    "rail_base_y_range_m": [
+      0.165,
+      2.065
+    ],
+    "approximate_reachable_box_world_m": {
+      "x": [
+        -1.45,
+        1.15
+      ],
+      "y": [
+        -1.15,
+        3.35
+      ],
+      "z": [
+        0.6,
+        2.05
+      ],
+      "status": "unverified - pure geometry from reach + rail, ignores collisions with table, chassis, bins and the Kawasaki; treat as a necessary, not sufficient, condition"
+    },
+    "verified_joint_configurations": {
+      "evidence": "measured 2026-09-25: all executed OK from generated_script.py (= sim_robot_joint_goal.py) at scaling 0.05",
+      "order": [
+        "sim_ur10e_base_to_robot_mount",
+        "sim_ur10e_shoulder_pan_joint",
+        "sim_ur10e_shoulder_lift_joint",
+        "sim_ur10e_elbow_joint",
+        "sim_ur10e_wrist_1_joint",
+        "sim_ur10e_wrist_2_joint",
+        "sim_ur10e_wrist_3_joint"
+      ],
+      "configs": {
+        "home_joints": [
+          1.0,
+          0.0,
+          -1.5708,
+          0.0,
+          -1.5708,
+          0.0,
+          0.0
+        ],
+        "vr_top": [
+          1.9,
+          -0.26808,
+          -2.01079,
+          -0.89745,
+          -0.22969,
+          1.93487,
+          1.5708
+        ],
+        "vr_middle": [
+          1.9,
+          -0.26861,
+          -2.04465,
+          -1.44566,
+          0.35221,
+          1.9333,
+          1.5708
+        ],
+        "vr_below": [
+          1.9,
+          -0.26808,
+          -2.56965,
+          -1.58755,
+          1.0184,
+          1.93243,
+          1.5708
+        ],
+        "intermediate_point": [
+          1.0,
+          0.59987,
+          -0.96761,
+          -2.13105,
+          -0.04136,
+          1.06448,
+          0.0
+        ],
+        "pose2_joints_downwards": [
+          1.0,
+          -0.3379,
+          -2.14134,
+          -0.90408,
+          -0.04381,
+          2.03209,
+          0.0
+        ],
+        "pose2_joints_left": [
+          1.0,
+          -0.3379,
+          -2.14134,
+          -0.90408,
+          -0.04381,
+          2.03209,
+          1.5708
+        ],
+        "pose2_joints_upwards": [
+          1.0,
+          -0.3379,
+          -2.14134,
+          -0.90408,
+          -0.04381,
+          2.03209,
+          3.14159
+        ],
+        "pose2_joints_right": [
+          1.0,
+          -0.3379,
+          -2.14134,
+          -0.90408,
+          -0.04381,
+          2.03209,
+          4.71239
+        ],
+        "pose2_joints_tofront": [
+          1.0,
+          -0.3379,
+          -2.14134,
+          -0.90408,
+          -0.04381,
+          3.14159,
+          -1.5708
+        ],
+        "pose3_joints_downwards": [
+          1.0,
+          0.60319,
+          -2.05478,
+          -0.9334,
+          -0.22846,
+          0.96028,
+          0.0
+        ],
+        "pose3_joints_left": [
+          1.0,
+          0.60319,
+          -2.05478,
+          -0.9334,
+          -0.22846,
+          0.96028,
+          1.5708
+        ],
+        "pose3_joints_upwards": [
+          1.0,
+          0.60319,
+          -2.05478,
+          -0.9334,
+          -0.22846,
+          0.96028,
+          3.14159
+        ],
+        "pose3_joints_right": [
+          1.0,
+          0.60319,
+          -2.05478,
+          -0.9334,
+          -0.22846,
+          0.96028,
+          4.71239
+        ],
+        "pose3_joints_tofront": [
+          1.0,
+          0.60319,
+          -2.05478,
+          -0.9334,
+          -0.22846,
+          3.14159,
+          -1.5708
+        ],
+        "vl_top": [
+          0.055,
+          0.44017,
+          -2.3733,
+          -0.15725,
+          -0.41155,
+          1.08001,
+          -1.5708
+        ],
+        "vl_middle": [
+          0.055,
+          0.4393,
+          -2.15635,
+          -1.0636,
+          0.27803,
+          1.07774,
+          -1.5708
+        ],
+        "vl_below": [
+          0.055,
+          0.43965,
+          -2.76321,
+          -1.31458,
+          1.13708,
+          1.07669,
+          -1.5708
+        ],
+        "pose5_joints_downwards": [
+          1.0,
+          0.76428,
+          -2.63039,
+          -1.69297,
+          1.18647,
+          0.89989,
+          0.0
+        ],
+        "pose5_joints_left": [
+          1.0,
+          0.80791,
+          -2.60735,
+          -1.77657,
+          1.24756,
+          0.85608,
+          1.5708
+        ],
+        "pose5_joints_upwards": [
+          1.0,
+          0.80791,
+          -2.60735,
+          -1.77657,
+          1.24756,
+          0.85608,
+          3.14159
+        ],
+        "pose5_joints_right": [
+          1.0,
+          0.80791,
+          -2.60735,
+          -1.77657,
+          1.24756,
+          0.85608,
+          4.71239
+        ],
+        "below_intermediate_point": [
+          1.0,
+          1.09275,
+          -2.54923,
+          -2.10557,
+          1.52332,
+          0.57125,
+          0.0
+        ],
+        "pose6_joints_downwards": [
+          1.0,
+          -0.41399,
+          -2.59391,
+          -1.84411,
+          1.2247,
+          1.94517,
+          0.0
+        ],
+        "pose6_joints_left": [
+          1.0,
+          -0.41399,
+          -2.59391,
+          -1.84411,
+          1.2247,
+          1.94517,
+          1.5708
+        ],
+        "pose6_joints_upwards": [
+          1.0,
+          -0.41399,
+          -2.59391,
+          -1.84411,
+          1.2247,
+          1.94517,
+          3.14159
+        ],
+        "pose6_joints_right": [
+          1.0,
+          -0.41399,
+          -2.59391,
+          -1.84411,
+          1.2247,
+          1.94517,
+          4.71239
+        ]
+      }
+    },
+    "verified_cartesian_poses": {
+      "status": "none yet",
+      "note": "Pose-based targets used in examples ([-1.0, 1.0, 1.55], [-0.5, 1.65, 1.55], ...) ran in July demos but were not re-measured on the current cell; see open_questions."
+    }
+  },
+  "test_generation_rules": [
+    "Use only api.allowed_imports and the members listed under api.classes / api.moveit2_interface.",
+    "Assert success with CollisionAwareRobotController.move_to_joint_angles (joint targets) or moveit2.plan(...) is not None (pose targets). Never assert on a move_to_position return value - it is always None.",
+    "Joint vectors are 7 long; element 0 is the rail in metres.",
+    "Pick joint targets from workspace.verified_joint_configurations, or small perturbations of them that stay within limits.joints.",
+    "Speeds are scaling factors in (0, 1]; never write m/s or rad/s speeds.",
+    "Every test must terminate: no infinite loops, bounded sequences, total test time well below 300 s.",
+    "Assert on observable robot state (return value, error code, joint_state), never on logs or on mocks.",
+    "Negative tests (targets outside limits, unreachable poses) must expect failure (False / error code != 1), not an exception - these methods do not raise.",
+    "Construct one controller per test module (module-scoped fixture) - each construction creates a new ROS node.",
+    "Do not modify the shared planning scene without removing what you added in a finally/teardown."
+  ],
+  "open_questions": [
+    {
+      "id": "Q1",
+      "what": "What MoveIt does with velocity scaling > 1.0 or <= 0.0 (clamp, default, or reject).",
+      "how": "probe_capabilities.py on the live /sim stack"
+    },
+    {
+      "id": "Q2",
+      "what": "Are move_home_safe() poses ([-0.3,0.3,1.2] and [-0.3,0.3,0.95], quat [-1,0,0,0]) reachable in the current cell?",
+      "how": "probe"
+    },
+    {
+      "id": "Q3",
+      "what": "A verified set of Cartesian pose targets and a sampled reachability map (via /sim/compute_ik with collision checking).",
+      "how": "probe"
+    },
+    {
+      "id": "Q4",
+      "what": "Duration of wait_until_executed() when planning fails (expected: returns False immediately).",
+      "how": "probe"
+    },
+    {
+      "id": "Q5",
+      "what": "Should pymoveit2_sim be fixed so compute_fk/compute_ik use sim/compute_fk? Until then they stay forbidden.",
+      "how": "decision"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+<library path="kawasaki_hardware_interface">
+  <class
+    name="kawasaki_ros2_control/KawasakiHardwareInterface"
+    type="kawasaki_ros2_control::KawasakiHardwareInterface"
+    base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ROS 2 Control hardware interface plugin for the Kawasaki RS005L robot.
+      Communicates with the physical robot via the SIR TCP/IP protocol.
+    </description>
+  </class>
+</library>

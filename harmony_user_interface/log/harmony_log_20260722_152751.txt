@@ -1,0 +1,7 @@
+[15:28:00] [FAULT] ⚠️ [T0] E-2071 — SICK Visionary-T Mini veri akışında paket kaybı algılandı. (senaryo hatası, süreç durmadı)
+[15:28:01] [FAULT] ✅ [T2] E-TEST — operatör uyarıyı kapattı.
+[15:28:02] [SYSTEM] 📡 Published command: START
+[15:28:04] [SYSTEM] 📡 Published command: CONFIRM
+[15:28:05] [SYSTEM] 📡 Published command: STOP
+[15:28:06] [SYSTEM] 📡 Published command: REINSPECT
+[15:28:07] [SYSTEM] ❌ Unknown command: BOGUS

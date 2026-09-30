@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Robotic Testbed as a Service — ESOGÜ IFARLAB control dashboard for multi-robot HIL testing">
+    <title>Robotic Testbed as a Service — ESOGÜ IFARLAB</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/analytics.css">
+    <link rel="stylesheet" href="/static/css/anomaly.css">
+    <link rel="stylesheet" href="/static/css/freemove.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <!-- Plotly (3D visualizations) -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+    <!-- three.js (classic global build, pinned to match urdf-loader's era) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/ColladaLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/urdf-loader@0.12.1/umd/URDFLoader.js"></script>
+</head>
+<body>
+
+<!-- ===== SIDE MENU (top-left, hover-to-reveal) ===== -->
+<div class="side-menu" id="side-menu">
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Open navigation menu"
+            aria-haspopup="true" aria-expanded="false" aria-controls="tab-switcher">
+        <span></span><span></span><span></span>
+    </button>
+    <button class="help-btn" id="help-btn" aria-label="Show welcome guide"
+            title="Show the welcome guide" onclick="openWelcomeModal()">❔</button>
+    <div class="tab-switcher" id="tab-switcher">
+        <button class="tab-btn active" id="tab-btn-home" onclick="switchTab('home')">
+            🏠 Dashboard
+        </button>
+        <button class="tab-btn" id="tab-btn-analytics" onclick="switchTab('analytics')">
+            📈 Data Analytics
+        </button>
+        <button class="tab-btn" id="tab-btn-anomaly" onclick="switchTab('anomaly')">
+            🚨 Anomaly Detection
+        </button>
+        <button class="tab-btn" id="tab-btn-freemove" onclick="switchTab('freemove')">
+            🕹️ Free Move
+        </button>
+    </div>
+</div>
+
+<!-- ===== WELCOME / ONBOARDING MODAL ===== -->
+<!-- Lives OUTSIDE every #view-* container (not just view-home) so the ❔ button
+     reopens it correctly regardless of which tab is currently active -- a view
+     container's `hidden` attribute would otherwise hide this too. -->
+<div class="modal-overlay" id="welcome-modal" onclick="onWelcomeOverlayClick(event)">
+    <div class="modal-box welcome-box" role="dialog" aria-modal="true"
+         aria-labelledby="welcome-modal-title">
+        <div class="modal-header">
+            <h3 id="welcome-modal-title">👋 Welcome to ESOGÜ IFARLAB</h3>
+            <button class="modal-close" onclick="closeWelcomeModal()" title="Close (Esc)">✕</button>
+        </div>
+
+        <p class="modal-desc">
+            This dashboard lets you remotely monitor and operate IFARLAB's dual-arm cell
+            (a UR10e + a Kawasaki RS005L, sharing an AGV rail and SICK cameras). The
+            hamburger menu at the top gives you 4 tabs:
+        </p>
+        <ul class="welcome-list">
+            <li><strong>🏠 Dashboard</strong> — start/stop the scenarios (Multi-Robot
+                Inspection, UR10e Inspection, Pick &amp; Place, Human-Robot
+                Collaboration), live camera feeds, and the system log.</li>
+            <li><strong>📈 Data Analytics</strong> — charts and analysis of the
+                collected data.</li>
+            <li><strong>🚨 Anomaly Detection</strong> — where anomaly-detection results
+                are monitored.</li>
+            <li><strong>🕹️ Free Move</strong> — drag the robots to a target pose and
+                run it with Plan/Execute, without writing a scripted scenario.</li>
+        </ul>
+
+        <h4 class="welcome-section-title">Before running the robots</h4>
+        <p class="modal-desc">
+            The dashboard only manages the software side — the hardware itself needs to
+            be physically powered on and ready:
+        </p>
+        <ul class="welcome-list">
+            <li><strong>UR10e:</strong> press the power button on the teach pendant.
+                Once PolyScope boots, tap the (powered-off) panel at the bottom left and
+                press <strong>ON</strong>, then <strong>START</strong>, to power up the
+                robot and release the brakes.</li>
+            <li><strong>Linear axis and sensors:</strong> plug in the cable in the
+                cabinet.</li>
+            <li>Once both the UR10e and the linear axis are connected, start the
+                <strong>External Control</strong> URCap program on the teach pendant
+                (load it and press Play) so the ROS driver can take control.</li>
+            <li><strong>Kawasaki:</strong> plug in its cable in the cabinet first, then
+                flip up the switch on its controller. Once the robot is powered, turn
+                the motors on from its teach pendant, then launch
+                <strong>KRterm 1.2.8</strong> from the desktop.</li>
+            <li><strong>AGV:</strong> turn on its ignition switch, then start rosbridge
+                from the server in the cabinet.</li>
+        </ul>
+        <p class="modal-hint">
+            See <code>IFARLAB_Kullanım_Rehberi.docx</code> on the desktop for the full,
+            detailed steps.
+        </p>
+
+        <h4 class="welcome-section-title">Safety</h4>
+        <ul class="welcome-list">
+            <li>The <strong>🛑 STOP ALL</strong> button in the top right stops
+                everything, at any time.</li>
+            <li>To try things out without touching the real hardware, leave
+                <strong>Use Fake Hardware</strong> switched on.</li>
+            <li>A scenario or Free Move always waits for an explicit confirmation
+                before moving the real robot (<em>Confirm Robot Ready</em> / Execute) —
+                make sure no one is within reach of the robots before confirming.</li>
+        </ul>
+
+        <label class="welcome-dismiss">
+            <input type="checkbox" id="welcome-dont-show-again">
+            Don't show this again
+        </label>
+
+        <div class="modal-actions">
+            <button class="modal-btn primary" onclick="closeWelcomeModal()">
+                Got it, let's go
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== VIEW: HOME (existing dashboard — unchanged) ===== -->
+<div id="view-home">
+
+<div class="dashboard">
+
+    <!-- ===== HEADER (Logos + Title) ===== -->
+    <header class="header fade-in">
+        <div class="header-left">
+            <img src="/figures/ifarlab.png" alt="ESOGÜ IFARLAB" title="ESOGÜ IFARLAB" id="logo-ifarlab">
+            <img src="/figures/asrlab.jpg" alt="ESOGÜ ASRLAB" title="ESOGÜ ASRLAB" id="logo-asrlab">
+        </div>
+        <div class="header-center">
+            <h1>Robotic Testbed as a Service</h1>
+            <p>ESOGÜ - IFARLAB — Control Dashboard</p>
+        </div>
+        <div class="header-right">
+            <img src="/figures/matisse.png" alt="MATISSE" title="MATISSE Project" id="logo-matisse">
+        </div>
+    </header>
+
+    <!-- ===== CONTROL BAR (Scenario Buttons + Emergency Stop) ===== -->
+    <nav class="control-bar fade-in" id="control-bar">
+        <div class="scenario-btn-wrap">
+            <button class="scenario-btn" id="btn-multi_robot_inspection" onclick="startScenario('multi_robot_inspection')">
+                <span class="btn-icon">🤖</span>
+                Multi-Robot Inspection
+            </button>
+            <button type="button" class="info-btn" aria-label="About Multi-Robot Inspection">i
+                <span class="info-tooltip">
+                    <strong>Multi-Robot Inspection</strong>
+                    The UR10e and the Kawasaki RS005L move together around the cell
+                    chassis, visiting a set of pre-planned viewpoints. At each stop,
+                    both arms capture a SICK point cloud together with the camera's
+                    optical-frame pose, saving both to disk for later 3D coverage
+                    analysis.
+                </span>
+            </button>
+        </div>
+        <div class="scenario-btn-wrap">
+            <button class="scenario-btn" id="btn-ur10e_inspection" onclick="startScenario('ur10e_inspection')">
+                <span class="btn-icon">🔍</span>
+                UR10e Inspection
+            </button>
+            <button type="button" class="info-btn" aria-label="About UR10e Inspection">i
+                <span class="info-tooltip">
+                    <strong>UR10e Inspection</strong>
+                    The single-robot version of the inspection scenario: the UR10e
+                    alone visits its own pre-planned viewpoints around the cell. At
+                    each stop it captures a SICK point cloud and the camera's
+                    optical-frame pose, saving both to disk for coverage analysis.
+                </span>
+            </button>
+        </div>
+        <div class="scenario-btn-wrap">
+            <button class="scenario-btn" id="btn-pick_and_place" onclick="startScenario('pick_and_place')">
+                <span class="btn-icon">📦</span>
+                Pick &amp; Place
+            </button>
+            <button type="button" class="info-btn" aria-label="About Pick &amp; Place">i
+                <span class="info-tooltip">
+                    <strong>Pick &amp; Place</strong>
+                    You describe the task in plain English (e.g. "pick up the thing on
+                    the conveyor and place it in an empty compartment of the
+                    toolkit's top row"). Gemini Robotics ER 2 reads the camera and
+                    works out a pick and a place target; the UR10e then carries it
+                    out with the vacuum gripper via MoveIt.
+                </span>
+            </button>
+        </div>
+        <div class="scenario-btn-wrap">
+            <button class="scenario-btn" id="btn-human_robot_collaboration" onclick="startScenario('human_robot_collaboration')">
+                <span class="btn-icon">🤝</span>
+                Human-Robot Collaboration
+            </button>
+            <button type="button" class="info-btn" aria-label="About Human-Robot Collaboration">i
+                <span class="info-tooltip">
+                    <strong>Human-Robot Collaboration</strong>
+                    The UR10e picks up a screwdriver tool and moves through 4
+                    pre-taught screw points. At each one it stops and waits for the
+                    operator to press a physical green button before slowly driving
+                    the screwdriver down to tighten the screw, then retracts and
+                    moves on — repeating in a loop until stopped.
+                </span>
+            </button>
+        </div>
+
+        <div class="control-separator"></div>
+
+        <div class="toggle-stack">
+            <div class="toggle-container" title="Enable this switch when not connected to real hardware">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="fake-hardware-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Use Fake Hardware</span>
+            </div>
+
+            <div class="toggle-container"
+                 title="Starts the whole collection pipeline: the RTDE recorder, the Kafka → Elasticsearch consumers, and (on the next scenario start) the ROS2 → Kafka bridge">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="data-acquisition-toggle"
+                           onchange="toggleDataAcquisition(this.checked)">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Data Acquisition</span>
+                <span class="acq-jobs" id="acq-jobs" hidden>
+                    <span class="acq-job" id="acq-job-rtde" title="UR10e RTDE → Kafka recorder">
+                        <span class="acq-dot"></span>RTDE</span>
+                    <span class="acq-job" id="acq-job-kafka_es" title="Kafka → Elasticsearch consumers">
+                        <span class="acq-dot"></span>ES</span>
+                </span>
+            </div>
+        </div>
+
+        <button class="emergency-btn" id="btn-emergency" onclick="emergencyStop()">
+            🛑 STOP ALL
+        </button>
+    </nav>
+
+    <!-- ===== STATUS BAR ===== -->
+    <div class="status-bar fade-in" id="status-bar">
+        <div class="status-item">
+            <span class="status-dot stopped" id="hil-dot"></span>
+            <span class="status-label">HIL:</span>
+            <span class="status-value" id="hil-status-text">Offline</span>
+        </div>
+        <div class="status-item">
+            <span class="status-dot stopped" id="scenario-dot"></span>
+            <span class="status-label">Scenario:</span>
+            <span class="status-value" id="scenario-status-text">—</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Active:</span>
+            <span class="status-value" id="active-scenario-text">—</span>
+        </div>
+
+        <!-- Yalnızca serbest metin komut alan senaryolarda görünür -->
+        <button class="command-btn" id="btn-send-command" style="display:none;"
+                onclick="openCommandModal()">
+            💬 Send Command
+        </button>
+
+    </div>
+
+    <!-- ===== CONFIRM ROBOT READY BANNER ===== -->
+    <div class="confirm-banner" id="confirm-banner">
+        <span class="banner-icon">⚠️</span>
+        <span class="banner-text">HIL initialized. Please confirm when the robot is ready.</span>
+        <button class="confirm-btn" id="btn-confirm" onclick="confirmRobot()">
+            ✅ Robot is Ready — Start Scenario
+        </button>
+    </div>
+
+    <!-- ===== RUN AGAIN BANNER (always shown; enabled once a one-shot scenario
+         finishes on its own -- see dashboard.js's status_update handler) ===== -->
+    <div class="rerun-banner disabled" id="rerun-banner">
+        <span class="banner-icon">✅</span>
+        <span class="banner-text" id="rerun-banner-text">Run a one-shot scenario to enable this.</span>
+        <button class="confirm-btn" id="btn-rerun" onclick="rerunScenario()" disabled>
+            🔁 Run It Again
+        </button>
+    </div>
+
+    <!-- ===== TASK COMMAND MODAL (/gemini/command) ===== -->
+    <div class="modal-overlay" id="command-modal" onclick="onCommandOverlayClick(event)">
+        <div class="modal-box" role="dialog" aria-modal="true"
+             aria-labelledby="command-modal-title">
+            <div class="modal-header">
+                <h3 id="command-modal-title">💬 Task Command</h3>
+                <button class="modal-close" onclick="closeCommandModal()"
+                        title="Close (Esc)">✕</button>
+            </div>
+
+            <p class="modal-desc">
+                Describe the pick and place task in plain English. Gemini Robotics
+                ER 2 turns it into a pick target and a place target.
+            </p>
+
+            <textarea id="command-text" class="modal-textarea" rows="5" spellcheck="false"
+                      placeholder="There is a thing on the conveyor belt. I want you to pick that up and place it in one of the empty compartments in the toolkit's top row"></textarea>
+
+            <div class="modal-hint">
+                Published to <code>/gemini/command</code>. Ctrl+Enter also confirms.
+            </div>
+
+            <div class="modal-status" id="command-status"></div>
+
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeCommandModal()">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" id="btn-command-confirm"
+                        onclick="sendCommand()">
+                    ✅ Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CAMERA FEEDS ===== -->
+    <div class="content-grid">
+        <!-- Real Camera (Left) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>🎥 Real World Camera</h3>
+                <span class="panel-badge live">● LIVE</span>
+            </div>
+            <div class="camera-container" id="real-camera-wrapper">
+                <img src="/stream/real" alt="Real World Camera" id="real-camera"
+                     onerror="this.style.display='none'; document.getElementById('real-placeholder').style.display='flex';">
+                <div class="camera-placeholder" id="real-placeholder" style="display:none;">
+                    <span class="placeholder-icon">📷</span>
+                    <span class="placeholder-text">Waiting for camera connection...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gazebo Camera (Right) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>🎮 Gazebo Simulation Camera</h3>
+                <span class="panel-badge sim">● SIM</span>
+            </div>
+            <div class="camera-container" id="gazebo-camera-wrapper">
+                <img src="/stream/gazebo" alt="Gazebo Simulation Camera" id="gazebo-camera"
+                     onerror="this.style.display='none'; document.getElementById('gazebo-placeholder').style.display='flex';">
+                <div class="camera-placeholder" id="gazebo-placeholder" style="display:none;">
+                    <span class="placeholder-icon">🎮</span>
+                    <span class="placeholder-text">Waiting for simulation stream...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real Joint States Chart (Left) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>📊 Real World — Joint States</h3>
+                <span class="panel-badge live">● LIVE</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="real-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Sim Joint States Chart (Right) -->
+        <div class="panel fade-in">
+            <div class="panel-header">
+                <h3>📊 Simulation — Joint States</h3>
+                <span class="panel-badge sim">● SIM</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="sim-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Log Panel (Full Width) -->
+        <div class="panel log-section fade-in">
+            <div class="panel-header">
+                <h3>📋 System Logs</h3>
+                <div class="log-controls">
+                    <button class="log-control-btn" onclick="toggleAutoScroll()">
+                        ⬇️ Auto-Scroll: <span id="autoscroll-label">ON</span>
+                    </button>
+                    <button class="log-control-btn" onclick="clearLogs()">
+                        🗑️ Clear
+                    </button>
+                </div>
+            </div>
+            <div class="log-container" id="log-container">
+                <div class="log-entry">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-source system">SYSTEM</span>
+                    <span class="log-msg">Dashboard started. You can select a scenario to begin.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<!-- ===== /VIEW: HOME ===== -->
+
+<!-- ===== VIEW: DATA ANALYTICS ===== -->
+<div id="view-analytics" hidden>
+    <header class="analytics-header">
+        <div class="analytics-title">
+            <h1>📈 Data Analytics</h1>
+            <p>Collected data from Elasticsearch — ROS2 → Kafka → Elasticsearch</p>
+        </div>
+
+        <div class="analytics-toolbar">
+            <label class="tb-field">
+                <span>Range</span>
+                <select id="range-preset">
+                    <option value="all">All data</option>
+                    <option value="custom">Custom (absolute)</option>
+                    <option value="900000">Last 15 min</option>
+                    <option value="3600000">Last 1 hour</option>
+                    <option value="21600000">Last 6 hours</option>
+                    <option value="86400000">Last 24 hours</option>
+                    <option value="604800000">Last 7 days</option>
+                    <option value="2592000000">Last 30 days</option>
+                </select>
+            </label>
+
+            <label class="tb-field" id="custom-from-field" style="display:none;">
+                <span>From (UTC)</span>
+                <input type="datetime-local" id="range-from" step="1">
+            </label>
+            <label class="tb-field" id="custom-to-field" style="display:none;">
+                <span>To (UTC)</span>
+                <input type="datetime-local" id="range-to" step="1">
+            </label>
+            <button class="tb-btn" id="btn-fit" style="display:none;" onclick="fitToData()"
+                    title="Set the custom range to span all available data">
+                ⤢ Fit to data
+            </button>
+
+            <label class="tb-field">
+                <span>Points</span>
+                <select id="point-count">
+                    <option value="200">200</option>
+                    <option value="500" selected>500</option>
+                    <option value="1000">1000</option>
+                    <option value="2000">2000</option>
+                    <option value="5000">5000</option>
+                    <option value="10000">10000</option>
+                    <option value="20000">20000</option>
+                    <option value="60000">60000 (max detail)</option>
+                </select>
+            </label>
+
+            <label class="tb-field">
+                <span>Auto-refresh</span>
+                <select id="refresh-interval">
+                    <option value="0">Off</option>
+                    <option value="2000">2 s</option>
+                    <option value="5000">5 s</option>
+                    <option value="10000">10 s</option>
+                    <option value="30000">30 s</option>
+                </select>
+            </label>
+
+            <button class="tb-btn" id="btn-refresh" onclick="refreshAnalytics()">
+                🔄 Refresh
+            </button>
+            <button class="tb-btn ghost" id="btn-export" onclick="openExportModal()">
+                ⬇ Export
+            </button>
+            <span class="tb-status" id="analytics-status">Idle</span>
+            <span class="crosshair-time" id="crosshair-time"
+                  title="Time under the cursor — synced across every time-series panel"></span>
+        </div>
+    </header>
+
+    <!-- ===== FILTER BAR (applies to every panel) ===== -->
+    <div class="filter-bar" id="filter-bar">
+        <div class="filter-row">
+            <span class="filter-group-label">🏷️ Use case</span>
+            <div class="use-case-chips" id="use-case-chips">
+                <span class="uc-chip loading">loading…</span>
+            </div>
+            <button class="tb-btn ghost" onclick="clearUseCases()"
+                    title="Clear the use-case selection">Clear</button>
+        </div>
+
+        <div class="filter-row">
+            <span class="filter-group-label">⌨️ Query</span>
+            <input type="text" id="query-bar" class="query-input" autocomplete="off"
+                   spellcheck="false"
+                   placeholder="ur10e_elbow_joint.effort > 5 and use_case:PICKPLACE">
+            <button class="tb-btn ghost" id="btn-dsl" onclick="toggleDslBox()"
+                    title="Write a raw Elasticsearch query clause">{ } DSL</button>
+            <button class="tb-btn ghost" onclick="showQueryPreview()"
+                    title="See the Elasticsearch query this page is sending">
+                👁 Show query
+            </button>
+            <span class="filter-hint" id="query-hint">
+                Lucene syntax — <code>field:value</code>, <code>field &gt; 5</code>,
+                <code>a AND b</code>. Enter to run.
+            </span>
+        </div>
+
+        <div class="filter-row dsl-row" id="dsl-row" hidden>
+            <span class="filter-group-label">{ }</span>
+            <textarea id="query-dsl" class="dsl-input" spellcheck="false" rows="3"
+                      placeholder='{"range": {"ur10e_elbow_joint.effort": {"gte": 5}}}'></textarea>
+            <div class="dsl-side">
+                <button class="tb-btn" onclick="applyDsl()">✅ Apply</button>
+                <button class="tb-btn ghost" onclick="clearDsl()">Clear</button>
+                <span class="dsl-status" id="dsl-status">
+                    AND-ed into <code>bool.filter</code>. Read-only: no aggs, no scripts.
+                </span>
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <span class="filter-group-label">🔍 Filters</span>
+            <div class="filter-pills" id="filter-pills"></div>
+            <button class="tb-btn ghost" id="btn-add-filter" onclick="openFilterEditor()">
+                ＋ Add filter
+            </button>
+            <span class="filter-hint" id="filter-hint">
+                No filters — showing everything in range.
+            </span>
+        </div>
+
+        <div class="filter-row">
+            <span class="filter-group-label">🧩 Panels</span>
+            <select id="layout-select" class="tb-inline-select"
+                    onchange="onLayoutChange()"></select>
+            <button class="tb-btn ghost" onclick="openPanelBuilder()">＋ Add panel</button>
+            <button class="tb-btn ghost" onclick="resetLayout()"
+                    title="Restore the built-in panel set">↺ Reset</button>
+            <label class="tb-check">
+                <input type="checkbox" id="toggle-discover" onchange="toggleDiscover()">
+                <span>Discover table</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- ===== KPI TILES ===== -->
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <!-- ===== AUTO INSIGHT ===== -->
+    <div class="insight-bar" id="insight-bar" hidden>
+        <span class="insight-icon">💡</span>
+        <span class="insight-text" id="insight-text"></span>
+    </div>
+
+    <div class="analytics-grid" id="analytics-grid">
+        <!-- Panels are generated by analytics.js -->
+    </div>
+
+    <!-- ===== DISCOVER (raw documents) ===== -->
+    <section class="a-panel discover-panel" id="discover-panel" hidden>
+        <div class="a-panel-header">
+            <h3>🔎 Discover — raw documents</h3>
+            <div class="discover-controls">
+                <select id="discover-index" class="tb-inline-select"
+                        onchange="onDiscoverIndexChange()"></select>
+                <span class="discover-timefield" id="discover-timefield"></span>
+                <select id="discover-size" class="tb-inline-select"
+                        onchange="onDiscoverSizeChange()">
+                    <option value="25">25 rows</option>
+                    <option value="50" selected>50 rows</option>
+                    <option value="100">100 rows</option>
+                    <option value="500">500 rows</option>
+                </select>
+                <button class="tb-btn ghost" onclick="resetDiscoverColumns()"
+                        title="Back to the default column set">↺ Columns</button>
+                <button class="tb-btn ghost" onclick="exportDiscoverCsv()">⬇ CSV</button>
+                <span class="discover-total" id="discover-total"></span>
+            </div>
+        </div>
+
+        <div class="discover-body">
+            <aside class="discover-fields">
+                <div class="df-search">
+                    <input type="text" id="df-search" autocomplete="off"
+                           placeholder="Filter fields…" oninput="renderFieldSidebar()">
+                </div>
+                <div class="df-list" id="df-list">
+                    <div class="df-empty">Not loaded.</div>
+                </div>
+            </aside>
+
+            <div class="discover-main">
+                <div class="discover-hist">
+                    <canvas id="discover-hist-canvas"></canvas>
+                    <div class="dh-empty" id="dh-empty" hidden>No documents in range.</div>
+                </div>
+                <div class="discover-table-wrap">
+                    <table class="discover-table" id="discover-table">
+                        <thead><tr><th>—</th></tr></thead>
+                        <tbody><tr><td class="a-empty-cell">Not loaded.</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="discover-pager">
+                    <button class="tb-btn ghost" id="dp-prev"
+                            onclick="discoverPage(-1)">← Prev</button>
+                    <span class="dp-label" id="dp-label"></span>
+                    <button class="tb-btn ghost" id="dp-next"
+                            onclick="discoverPage(1)">Next →</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== QUERY PREVIEW MODAL ===== -->
+    <div class="modal-overlay" id="query-modal" onclick="onQueryOverlayClick(event)">
+        <div class="modal-box wide" role="dialog" aria-modal="true"
+             aria-labelledby="query-modal-title">
+            <div class="modal-header">
+                <h3 id="query-modal-title">👁 Elasticsearch query</h3>
+                <button class="modal-close" onclick="closeQueryPreview()"
+                        title="Close (Esc)">✕</button>
+            </div>
+            <p class="modal-desc" id="query-modal-desc">
+                Everything above — range, use-case chips, filter pills, query bar —
+                becomes this one read-only query.
+            </p>
+            <pre class="query-json" id="query-json"></pre>
+            <div class="modal-status" id="query-copy-status"></div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="copyQueryText('json')">
+                    📋 Copy JSON
+                </button>
+                <button class="modal-btn secondary" onclick="copyQueryText('curl')">
+                    📋 Copy curl
+                </button>
+                <button class="modal-btn primary" onclick="closeQueryPreview()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FILTER EDITOR MODAL ===== -->
+    <div class="modal-overlay" id="filter-modal" onclick="onFilterOverlayClick(event)">
+        <div class="modal-box" role="dialog" aria-modal="true"
+             aria-labelledby="filter-modal-title">
+            <div class="modal-header">
+                <h3 id="filter-modal-title">🔍 Add filter</h3>
+                <button class="modal-close" onclick="closeFilterEditor()"
+                        title="Close (Esc)">✕</button>
+            </div>
+            <p class="modal-desc">
+                Filters apply to every panel at once, on top of the time range.
+            </p>
+            <div class="form-grid">
+                <label class="form-field">
+                    <span>Index</span>
+                    <select id="filter-index" onchange="loadFilterFields()"></select>
+                </label>
+                <label class="form-field">
+                    <span>Field</span>
+                    <input list="filter-field-list" id="filter-field"
+                           placeholder="use_case" autocomplete="off"
+                           onchange="onFilterFieldChange()">
+                    <datalist id="filter-field-list"></datalist>
+                </label>
+                <label class="form-field">
+                    <span>Operator</span>
+                    <select id="filter-op" onchange="onFilterOpChange()">
+                        <option value="is">is</option>
+                        <option value="is_not">is not</option>
+                        <option value="one_of">is one of</option>
+                        <option value="not_one_of">is not one of</option>
+                        <option value="gt">&gt;</option>
+                        <option value="gte">&ge;</option>
+                        <option value="lt">&lt;</option>
+                        <option value="lte">&le;</option>
+                        <option value="between">between</option>
+                        <option value="exists">exists</option>
+                        <option value="missing">does not exist</option>
+                        <option value="contains">contains</option>
+                    </select>
+                </label>
+                <label class="form-field" id="filter-value-field">
+                    <span>Value</span>
+                    <input list="filter-value-list" id="filter-value"
+                           placeholder="PICKPLACE" autocomplete="off">
+                    <datalist id="filter-value-list"></datalist>
+                </label>
+                <label class="form-field" id="filter-value2-field" style="display:none;">
+                    <span>and</span>
+                    <input id="filter-value2" placeholder="upper bound"
+                           autocomplete="off">
+                </label>
+            </div>
+            <div class="modal-status" id="filter-status"></div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeFilterEditor()">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" onclick="applyFilterEditor()">
+                    ✅ Add filter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PANEL BUILDER MODAL ===== -->
+    <div class="modal-overlay" id="panel-modal" onclick="onPanelOverlayClick(event)">
+        <div class="modal-box wide" role="dialog" aria-modal="true"
+             aria-labelledby="panel-modal-title">
+            <div class="modal-header">
+                <h3 id="panel-modal-title">🧩 Add panel</h3>
+                <button class="modal-close" onclick="closePanelBuilder()"
+                        title="Close (Esc)">✕</button>
+            </div>
+            <div class="form-grid">
+                <label class="form-field">
+                    <span>Title</span>
+                    <input id="pb-title" placeholder="UR10e — elbow effort">
+                </label>
+                <label class="form-field">
+                    <span>Chart type</span>
+                    <select id="pb-type" onchange="onPanelTypeChange()">
+                        <option value="line">Line (time-series)</option>
+                        <option value="envelope">Envelope (min / avg / max)</option>
+                        <option value="histogram">Histogram (distribution)</option>
+                        <option value="box">Box plot (percentiles)</option>
+                        <option value="heatmap">Heatmap (fields × time)</option>
+                        <option value="scatter2d">Scatter 2D (correlation)</option>
+                        <option value="scatter3d">Scatter 3D (path)</option>
+                        <option value="bar">Bar (compare groups)</option>
+                    </select>
+                </label>
+                <label class="form-field">
+                    <span>Index</span>
+                    <select id="pb-index" onchange="loadPanelFields()"></select>
+                </label>
+                <label class="form-field">
+                    <span>Time field</span>
+                    <select id="pb-time-field"></select>
+                </label>
+                <label class="form-field wide-field" id="pb-fields-field">
+                    <span>Fields <small>(comma separated)</small></span>
+                    <input list="pb-field-list" id="pb-fields"
+                           placeholder="ur10e_elbow_joint.effort" autocomplete="off">
+                    <datalist id="pb-field-list"></datalist>
+                </label>
+                <label class="form-field" id="pb-x-field" style="display:none;">
+                    <span>X</span>
+                    <input list="pb-field-list" id="pb-x" autocomplete="off">
+                </label>
+                <label class="form-field" id="pb-y-field" style="display:none;">
+                    <span>Y</span>
+                    <input list="pb-field-list" id="pb-y" autocomplete="off">
+                </label>
+                <label class="form-field" id="pb-z-field" style="display:none;">
+                    <span>Z</span>
+                    <input list="pb-field-list" id="pb-z" autocomplete="off">
+                </label>
+                <label class="form-field" id="pb-mesh-field" style="display:none;">
+                    <span>Cell geometry</span>
+                    <label class="tb-check">
+                        <input type="checkbox" id="pb-mesh" checked>
+                        <span>Draw the chassis outline</span>
+                    </label>
+                </label>
+                <label class="form-field" id="pb-split-field">
+                    <span>Split by <small>(optional)</small></span>
+                    <input list="pb-field-list" id="pb-split"
+                           placeholder="use_case" autocomplete="off">
+                </label>
+                <label class="form-field">
+                    <span>Unit label</span>
+                    <input id="pb-unit" placeholder="rad / Nm / A / m">
+                </label>
+                <label class="form-field">
+                    <span>Width</span>
+                    <select id="pb-width">
+                        <option value="half">Half</option>
+                        <option value="full">Full</option>
+                    </select>
+                </label>
+            </div>
+            <div class="modal-hint" id="pb-hint"></div>
+            <div class="modal-status" id="pb-status"></div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closePanelBuilder()">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" onclick="applyPanelBuilder()">
+                    ✅ Add panel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== EXPORT MODAL ===== -->
+    <div class="modal-overlay" id="export-modal" onclick="onExportOverlayClick(event)">
+        <div class="modal-box" role="dialog" aria-modal="true"
+             aria-labelledby="export-modal-title">
+            <div class="modal-header">
+                <h3 id="export-modal-title">⬇ Export data</h3>
+                <button class="modal-close" onclick="closeExportModal()"
+                        title="Close (Esc)">✕</button>
+            </div>
+            <p class="modal-desc">
+                Downloads the full result set as a file — not just what's on
+                screen. Uses the time range, use-case selection and query
+                already set above the charts.
+            </p>
+            <div class="form-grid">
+                <label class="form-field">
+                    <span>Topic (index)</span>
+                    <select id="export-index" onchange="onExportIndexChange()"></select>
+                </label>
+                <label class="form-field">
+                    <span>Format</span>
+                    <select id="export-format">
+                        <option value="csv">CSV</option>
+                        <option value="ndjson">NDJSON (one JSON doc per line)</option>
+                    </select>
+                </label>
+                <label class="form-field wide-field" id="export-fields-field">
+                    <span>Fields <small>(comma separated — empty = the same default columns Discover uses)</small></span>
+                    <input list="export-field-list" id="export-fields"
+                           placeholder="ur10e_elbow_joint.effort, use_case" autocomplete="off">
+                    <datalist id="export-field-list"></datalist>
+                </label>
+                <label class="form-field wide-field">
+                    <label class="tb-check">
+                        <input type="checkbox" id="export-all-fields" onchange="onExportAllFieldsChange()">
+                        <span>Export every field (ignores the list above, no 12-column default cap)</span>
+                    </label>
+                </label>
+            </div>
+            <div class="modal-hint" id="export-count-hint">Matching documents: —</div>
+            <div class="modal-status" id="export-status"></div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeExportModal()">
+                    Cancel
+                </button>
+                <button class="modal-btn primary" id="btn-export-confirm"
+                        onclick="confirmExport()">
+                    ⬇ Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ===== /VIEW: DATA ANALYTICS ===== -->
+
+<!-- ===== VIEW: ANOMALY DETECTION ===== -->
+<div id="view-anomaly" hidden>
+    <header class="analytics-header">
+        <div class="analytics-title">
+            <h1>🚨 Anomaly Detection</h1>
+            <p>Two LSTM-autoencoder models watch the UR10e in real time — one on the
+               raw joint signals, one on their residual — and their fused score
+               flags abnormal behavior on the robot.</p>
+        </div>
+        <div class="analytics-toolbar">
+            <span class="an-conn" id="an-conn">● NO CONNECTION</span>
+        </div>
+    </header>
+
+    <!-- Status banner -->
+    <div class="an-banner an-idle" id="an-banner">
+        <div class="an-banner-state" id="an-banner-state">WAITING</div>
+        <div class="an-banner-metrics">
+            <div class="an-metric">
+                <span class="an-metric-label">threshold</span>
+                <span class="an-metric-value" id="an-thr">—</span>
+            </div>
+            <div class="an-metric">
+                <span class="an-metric-label">since last alarm</span>
+                <span class="an-metric-value" id="an-since">—</span>
+            </div>
+            <div class="an-metric">
+                <span class="an-metric-label">decision rate</span>
+                <span class="an-metric-value" id="an-hz">—</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="an-grid">
+        <!-- Live score chart -->
+        <section class="an-card an-card-wide">
+            <h3>Live Fused Score
+                <small>— last 60 s · hover a red marker for event details</small></h3>
+            <div class="an-chart-wrap"><canvas id="an-chart"></canvas></div>
+        </section>
+
+        <!-- Per-model breakdown -->
+        <section class="an-card">
+            <h3>Model Breakdown</h3>
+            <div class="an-bar-row">
+                <div class="an-bar-label">RESIDUAL <small>θ = <span id="an-thr-res">—</span></small></div>
+                <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-res"></div></div>
+                <div class="an-bar-val" id="an-val-res">—</div>
+            </div>
+            <div class="an-bar-row">
+                <div class="an-bar-label">RAW <small>θ = <span id="an-thr-raw">—</span></small></div>
+                <div class="an-bar-track"><div class="an-bar-fill" id="an-bar-raw"></div></div>
+                <div class="an-bar-val" id="an-val-raw">—</div>
+            </div>
+            <p class="an-note">The number is the model’s raw reconstruction error;
+               the bar fills in proportion to its own threshold and turns red past it.
+               The alarm decision is made by the fused score alone — this breakdown
+               only tells you which model is driving it.</p>
+        </section>
+    </div>
+
+    <!-- Event table -->
+    <section class="an-card an-events">
+        <h3>Event history
+            <small>— operator labels build the retraining set</small>
+            <span class="an-stats" id="an-event-stats"></span>
+        </h3>
+        <div class="an-table-wrap">
+            <table class="an-table">
+                <thead>
+                    <tr>
+                        <th>time</th><th>duration</th><th class="an-th-peak">PEAK</th>
+                        <th>entry</th><th>trigger</th><th>run</th><th>label</th>
+                    </tr>
+                </thead>
+                <tbody id="an-event-body">
+                    <tr><td colspan="7" class="an-empty">Loading…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+<!-- ===== /VIEW: ANOMALY DETECTION ===== -->
+
+{% from "freemove_macros.html" import freemove_params, freemove_joints %}
+<!-- ===== VIEW: FREE MOVE ===== -->
+<div id="view-freemove" hidden>
+    <div class="dashboard freemove-dashboard">
+        <header class="fm-header">
+            <h2>🕹️ Free Move</h2>
+            <p>Drag each ball to the pose you want that arm's TCP at, hit
+                <strong>Plan</strong> to preview the move without touching the robot,
+                then <strong>Execute</strong> (with confirmation) to actually run it.
+                Both arms plan and execute independently, the same way Multi-Robot
+                Inspection runs them — one shared planning scene keeps them from
+                hitting each other.</p>
+        </header>
+
+        <div id="freemove-banner" class="freemove-banner" hidden></div>
+
+        <div class="fm-controlbar">
+            <div class="toggle-container" title="Enable this switch when not connected to real hardware">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="freemove-fake-hw-toggle">
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label">Use Fake Hardware</span>
+            </div>
+            <div class="toggle-container" title="Which tool is mounted on the UR10e for this session -- the arm can only carry one at a time. Kawasaki is always camera-only.">
+                <span class="toggle-label">UR End Effector</span>
+                <select id="freemove-ur-ee-select" class="fm-param-input fm-param-select">
+                    <option value="camera" selected>Camera only</option>
+                    <option value="gripper">2FG7 Gripper</option>
+                    <option value="vacuum">Vacuum (VGC10)</option>
+                </select>
+            </div>
+            <button id="freemove-enable-btn" class="fm-btn primary">Enable Free Move</button>
+            <button id="freemove-stop-btn" class="emergency-btn">🛑 STOP</button>
+        </div>
+
+        <div class="fm-body">
+            <div id="freemove-viewport" class="freemove-viewport"></div>
+
+            <div class="fm-side-panel">
+                <div class="fm-arm-card" id="fm-card-ur" data-arm="ur">
+                    <h3><span class="fm-dot" style="--uc-color:#3b82f6"></span> UR10e</h3>
+                    <p class="fm-status" id="fm-status-ur">Not enabled.</p>
+                    <div class="fm-mode-toggle" role="group" aria-label="UR10e gizmo mode" title="Shortcut: G / R">
+                        <button type="button" class="fm-mode-btn active" data-arm="ur" data-mode="translate">Move (G)</button>
+                        <button type="button" class="fm-mode-btn" data-arm="ur" data-mode="rotate">Rotate (R)</button>
+                    </div>
+                    <div class="fm-pose-readout" id="fm-pose-ur">—</div>
+                    <div class="fm-actions">
+                        <button type="button" class="fm-btn secondary fm-plan-btn" data-arm="ur" disabled>Plan</button>
+                        <button type="button" class="fm-btn primary fm-execute-btn" data-arm="ur" disabled>Execute</button>
+                        <button type="button" class="fm-btn ghost fm-cancel-btn" data-arm="ur">Cancel</button>
+                    </div>
+                    <button type="button" class="fm-btn secondary fm-reset-btn" data-arm="ur" disabled>
+                        ↺ Reset ball to current TCP
+                    </button>
+                    {{ freemove_params("ur", default_velocity=0.1, default_acceleration=0.1) }}
+                    {{ freemove_joints("ur") }}
+                </div>
+
+                <div class="fm-arm-card" id="fm-card-kawasaki" data-arm="kawasaki">
+                    <h3><span class="fm-dot" style="--uc-color:#f97316"></span> Kawasaki RS005L</h3>
+                    <p class="fm-status" id="fm-status-kawasaki">Not enabled.</p>
+                    <div class="fm-mode-toggle" role="group" aria-label="Kawasaki gizmo mode" title="Shortcut: G / R">
+                        <button type="button" class="fm-mode-btn active" data-arm="kawasaki" data-mode="translate">Move (G)</button>
+                        <button type="button" class="fm-mode-btn" data-arm="kawasaki" data-mode="rotate">Rotate (R)</button>
+                    </div>
+                    <div class="fm-pose-readout" id="fm-pose-kawasaki">—</div>
+                    <div class="fm-actions">
+                        <button type="button" class="fm-btn secondary fm-plan-btn" data-arm="kawasaki" disabled>Plan</button>
+                        <button type="button" class="fm-btn primary fm-execute-btn" data-arm="kawasaki" disabled>Execute</button>
+                        <button type="button" class="fm-btn ghost fm-cancel-btn" data-arm="kawasaki">Cancel</button>
+                    </div>
+                    <button type="button" class="fm-btn secondary fm-reset-btn" data-arm="kawasaki" disabled>
+                        ↺ Reset ball to current TCP
+                    </button>
+                    {{ freemove_params("kawasaki", default_velocity=0.02, default_acceleration=0.02) }}
+                    {{ freemove_joints("kawasaki") }}
+                </div>
+            </div>
+        </div>
+
+        <div class="fm-terminal-section">
+            <div class="panel-header">
+                <h3>📋 Free Move Log</h3>
+                <div class="log-controls">
+                    <button class="log-control-btn" id="freemove-log-autoscroll">
+                        ⬇️ Auto-Scroll: <span id="freemove-autoscroll-label">ON</span>
+                    </button>
+                    <button class="log-control-btn" id="freemove-log-clear">🗑️ Clear</button>
+                </div>
+            </div>
+            <div class="log-container" id="freemove-log-container"></div>
+        </div>
+    </div>
+</div>
+<!-- ===== /VIEW: FREE MOVE ===== -->
+
+<!-- ===== JavaScript ===== -->
+<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/analytics.js"></script>
+<script src="/static/js/anomaly.js"></script>
+<script src="/static/js/freemove.js"></script>
+
+</body>
+</html>

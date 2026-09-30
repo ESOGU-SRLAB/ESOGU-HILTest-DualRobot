@@ -1,0 +1,2 @@
+[15:07:58] [SYSTEM] 🚨 EMERGENCY STOP — Terminating all processes!
+[15:07:58] [SYSTEM] ✅ All processes stopped.
