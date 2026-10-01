@@ -212,6 +212,29 @@ function anEventAt(tEpoch) {
     return null;
 }
 
+// p99.9 pop-up: auto-dismisses, restarts its own timer on a fresh edge rather
+// than stacking - several warnings in quick succession (e.g. a task's own
+// contact phase repeatedly nudging the score past p99.9) should read as one
+// ongoing situation, not a pile of toasts.
+let anWarnTimer = null;
+const AN_WARN_MS = 6000;
+
+function showWarningToast(msg) {
+    const toast = document.getElementById("an-warn-toast");
+    const text = document.getElementById("an-warn-toast-text");
+    if (!toast || !text) return;
+    const thr = (msg.thresholds && msg.thresholds.warn) || null;
+    const score = msg.current ? msg.current.fused : null;
+    text.textContent = "Anomaly situation occurred — the fused score briefly "
+        + "exceeded the early-warning threshold"
+        + (thr != null ? ` (${fmtNum(thr)})` : "")
+        + (score != null ? `, reaching ${fmtNum(score)}` : "") + ". This is "
+        + "below the stop-level threshold; no action was taken on the robot.";
+    toast.style.display = "flex";
+    clearTimeout(anWarnTimer);
+    anWarnTimer = setTimeout(() => { toast.style.display = "none"; }, AN_WARN_MS);
+}
+
 // ------------------------------------------------------------- live feed ----
 function onAnomalyUpdate(msg) {
     const conn = document.getElementById("an-conn");
@@ -262,6 +285,12 @@ function onAnomalyUpdate(msg) {
     // events entirely, so extend the window whenever an edge arrives.
     const now = Date.now();
     if (msg.alarm_edge || msg.alarm) anLatchUntil = now + AN_LATCH_MS;
+
+    // p99.9 early warning: below the stop-level (p99.99) threshold, never
+    // drives the main banner or any robot action - a separate, dismissible
+    // pop-up only. Fires on the edge for the same reason as the banner latch
+    // (a 5 Hz poll would otherwise miss a short crossing).
+    if (msg.warning_edge) showWarningToast(msg);
 
     const banner = document.getElementById("an-banner");
     const state = document.getElementById("an-banner-state");

@@ -1,0 +1,98 @@
+{
+  "timestamp": "20260930_134305",
+  "node": "detector_node",
+  "use_case": "UR10E_INSPECTION",
+  "residual_model": {
+    "path": "/home/ifarlab/colcon_ws/install/anomaly_detection/share/anomaly_detection/residual_ae_v4",
+    "sha256_16": "710ffc6c1f10b935",
+    "bytes": 1695861
+  },
+  "raw_model": {
+    "path": "/home/ifarlab/colcon_ws/install/anomaly_detection/share/anomaly_detection/raw_ae_v4",
+    "sha256_16": "32d277a44f852efe",
+    "bytes": 6743330
+  },
+  "fusion_config_path": "/home/ifarlab/colcon_ws/install/anomaly_detection/share/anomaly_detection/fusion_v4/fusion_config.json",
+  "current_to_torque": {
+    "path": "/home/ifarlab/colcon_ws/install/anomaly_detection/share/anomaly_detection/current_to_torque.json",
+    "sha256_16": "6b30fdd3aace79d7",
+    "bytes": 3381
+  },
+  "residual_calibration": {
+    "path": "/home/ifarlab/colcon_ws/install/anomaly_detection/share/anomaly_detection/residual_calibration.json",
+    "sha256_16": "45cc974323a3ec54",
+    "bytes": 2258
+  },
+  "w_res": 0.9,
+  "w_raw": 0.1,
+  "regime_threshold": true,
+  "quantile": "p99.9",
+  "threshold_by_regime": {
+    "static": 2.1350744118339997,
+    "moving": 3.9029819071049334
+  },
+  "motion_qd_min": 0.02,
+  "residual_theta": 0.5646076798439026,
+  "raw_theta": 0.7391416430473328,
+  "stride": 25,
+  "adaptive": false,
+  "adaptive_k": 8.0,
+  "adaptive_window": 600,
+  "freeze_timeout": 3.0,
+  "providers": [
+    "CPUExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "joint_states_topic": "/joint_states",
+  "fusion_config": {
+    "PROVISIONAL": true,
+    "provisional_note": "Bu esikler OFFLINE val kumesinden - GERCEK ROBOT KALIBRASYONU DEGIL. README'nin kendi kuralı: cevrimdisi esik donanima tasinmaz (21.08.2026, 26.08.2026 deneyimleri). Robotta calistirmadan once calibrate_cell.py ile (ya da esdegeriyle) yeniden olculmesi SART.",
+    "norm": "log",
+    "log_norm": {
+      "residual": {
+        "mean": -1.6863114543992108,
+        "std": 0.5485793296690996
+      },
+      "raw": {
+        "mean": -2.047471261395057,
+        "std": 0.835298367160864
+      },
+      "eps": 1e-09
+    },
+    "w_kal": 0.9,
+    "w_ham": 0.1,
+    "w_source": "measured (evaluate_faults.py, fiziksel-tutarlı arıza enjeksiyonu, 3 normalizasyon x raw16/raw18/raw24 tarandı, secilen: raw16 + log)",
+    "threshold_by_regime": {
+      "static": {
+        "p97": -0.03917484226761585,
+        "p99": 0.6940268725817376,
+        "p99.9": 2.1350744118339997,
+        "p99.99": 2.4227317422140615
+      },
+      "moving": {
+        "p97": 2.8189970016917028,
+        "p99": 3.384965314356816,
+        "p99.9": 3.9029819071049334,
+        "p99.99": 4.229308174571658
+      }
+    },
+    "regime_threshold": true,
+    "motion_qd_min": 0.02,
+    "moving_val_fraction": 0.42359095004504954,
+    "residual": {
+      "threshold": 0.5646076798439026
+    },
+    "raw": {
+      "threshold": 0.7391416430473328
+    },
+    "friction_applied": true,
+    "kts_removed": true,
+    "calibrated_on": "offline (training_features.csv, val split)",
+    "exported_at": "2026-09-28T10:48:08",
+    "source_models": {
+      "residual": "residual",
+      "raw": "raw16"
+    }
+  },
+  "git_commit": null
+}

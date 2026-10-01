@@ -876,6 +876,14 @@
         </div>
     </header>
 
+    <!-- p99.9 early-warning pop-up: fixed-position, auto-dismissing, shown on
+         warning_edge from the anomaly_update socket event. Below the stop-level
+         (p99.99) threshold - informational only, no robot action taken. -->
+    <div class="an-warn-toast" id="an-warn-toast" style="display:none" role="alert">
+        <span class="an-warn-toast-icon">⚠</span>
+        <span class="an-warn-toast-text" id="an-warn-toast-text"></span>
+    </div>
+
     <!-- Status banner -->
     <div class="an-banner an-idle" id="an-banner">
         <div class="an-banner-state" id="an-banner-state">WAITING</div>

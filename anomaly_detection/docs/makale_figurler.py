@@ -586,6 +586,38 @@ def fig_interface():
     save(fig, "_arsiv/fig7_interface.png")  # makalede kullanilmiyor
 
 
+# ═════════════════════════════════════════════════════════════════════
+# Figure 5 — operator interface, v4 commissioning (01.10.2026)
+# ═════════════════════════════════════════════════════════════════════
+def fig_interface_v4():
+    """`anomali_ui1.png` kullanıcının kendisi aldı (replay_scores.py ile gerçek
+    bir PICKPLACE olayının skorlarını arayüze geri yayınlayıp ekran görüntüsü
+    aldı - robot/dedektör çalışmadan). fig_interface()'ten farklı olarak kırpma
+    YOK (kaynak zaten tarayıcı kromu olmadan, temiz alınmış); yalnız ince bir
+    çerçeve eklendi çünkü fig_platform/fig_interface'in aksine bu görüntü büyük
+    ölçüde beyaz zeminli - çerçevesiz sayfaya karışabilir."""
+    src = FIG / "anomali_ui1.png"
+    if not src.exists():
+        print("  !! missing anomali_ui1.png", file=sys.stderr)
+        return
+    from PIL import Image
+    im = Image.open(src).convert("RGB")
+    img = np.asarray(im)
+    h, w = img.shape[:2]
+    fig, ax = plt.subplots(figsize=(WIDE, WIDE * h / w))
+    ax.imshow(img)
+    # set_axis_off() ÇAĞRILMIYOR kasten - o, spine görünürlüğünü spine bazında
+    # değil axison bayrağıyla eziyor, çerçeve hiç çizilmez. Tik/etiket yerine
+    # yalnız onları gizliyoruz, çerçeve (spine) kalıyor.
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for side in ax.spines.values():
+        side.set_visible(True)
+        side.set_edgecolor(AXIS)
+        side.set_linewidth(1.4)
+    save(fig, "fig5_interface.png")
+
+
 def main():
     print("figures →", FIG)
     fig_platform()
@@ -597,6 +629,7 @@ def main():
         fig_pr_roc(D)
         fig_fusion_value(D)
     fig_interface()
+    fig_interface_v4()
 
 
 if __name__ == "__main__":

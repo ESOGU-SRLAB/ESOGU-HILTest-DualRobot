@@ -134,6 +134,13 @@ class FusionDetector:
         self.thr_regime = {r: float(regime_tbl[r][quantile]) for r in ("static", "moving")}
         self.thr_regime_source = "use_case" if use_case in fc.get(
             "threshold_by_regime_by_use_case", {}) else "generic"
+        # 01.10.2026: ikinci, DAHA DÜŞÜK bir "uyarı" eşiği - her zaman p99.9,
+        # `quantile` parametresinden (duruş eşiği için p99.99 olabilir) BAĞIMSIZ.
+        # UI'da sarı pop-up bunu kullanır; robotu durdurmaz, yalnız operatöre
+        # haber verir. `quantile` yanlışlıkla "p99.9" seçilirse iki eşik aynı
+        # sayıya denk gelir - bu durumda uyarı==duruş, pop-up hiç görünmeden
+        # direkt dururuz (bilinçli davranış, hata değil).
+        self.thr_warn_regime = {r: float(regime_tbl[r]["p99.9"]) for r in ("static", "moving")}
         self.regime_threshold = bool(fc.get("regime_threshold", True) if regime_threshold is None
                                      else regime_threshold)
         self.motion_qd_min = float(motion_qd_min if motion_qd_min is not None
@@ -207,6 +214,11 @@ class FusionDetector:
         thr_abs = self.thr_regime["moving"] if (self.regime_threshold and moving) else (
             self.thr_regime["static"] if self.regime_threshold else self.thr_regime["moving"])
         hit_abs = bool(fused > thr_abs)
+        # Uyarı katmanı (p99.9) - duruş katmanından (quantile, p99.99) bağımsız,
+        # her zaman hesaplanır. Yalnız bilgilendirme; robotu BU değer durdurmaz.
+        thr_warn = self.thr_warn_regime["moving"] if (self.regime_threshold and moving) else (
+            self.thr_warn_regime["static"] if self.regime_threshold else self.thr_warn_regime["moving"])
+        hit_warn = bool(fused > thr_warn)
         thr_ad = float("inf")
         hit_ad = False
         if self.adaptive and len(self._hist) >= self.adaptive_warmup:
@@ -241,4 +253,5 @@ class FusionDetector:
             # ~/detail dokümantasyonu, THR_FUSED'in daha önce başına geleni).
             "threshold_residual": self.ae_res.threshold,
             "threshold_raw": self.ae_raw.threshold,
+            "threshold_warn": thr_warn, "hit_warn": hit_warn,
         }

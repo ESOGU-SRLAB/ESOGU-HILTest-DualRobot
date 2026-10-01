@@ -455,9 +455,16 @@ ABSTRACT_EN = (
     "re-implemented as a 500 Hz ROS 2 node without the removed channel; its "
     "measurement-level equivalence with the offline pipeline was re-verified "
     "and, on a replay of the physical cell, it drew its first alarm from both "
-    "models simultaneously. Hardware commissioning and threshold "
-    "recalibration on the physical cell, the step that closed the previous "
-    "extension, is in progress and is reported separately."
+    "models simultaneously. Commissioned on three of the cell's four "
+    "production tasks, it first exposed a task-selection defect that fed the "
+    "payload correction the wrong task's physical model on six of nine runs, "
+    "producing 309 false alarms against 5 genuine ones by shifting the body "
+    "of the fused-score distribution rather than its tail — a failure no "
+    "re-tuning of the threshold alone could fix, confirmed by backtest. Once "
+    "corrected and given a per-task operating threshold fitted on site, the "
+    "same three tasks produced zero false alarms against seven "
+    "operator-confirmed events, each separated from its threshold by a "
+    "factor of 1.1-1.6×."
 )
 
 ABSTRACT_TR = (
@@ -652,8 +659,11 @@ def body(b):
         "(Sections 3.6, 4.3);",
         "a re-implementation as a ROS 2 node without the removed channel, "
         "numerically re-verified against the offline pipeline (Section 3.8); "
-        "hardware commissioning is reported as an addendum once the trial "
-        "reported pending in Section 4.6 is complete.",
+        "and commissioning across three of the cell's four production tasks "
+        "(Section 4.6), which found and corrected a task-selection defect "
+        "that had produced more false alarms than genuine ones, then reduced "
+        "the false-alarm count on the affected tasks to zero against seven "
+        "operator-confirmed events.",
     ):
         p = b.para("", style="Paragraf", align=WD_ALIGN_PARAGRAPH.JUSTIFY,
                    space_before=3, space_after=0)
@@ -1504,21 +1514,180 @@ def body(b):
 
     b.h2("4.6. Commissioning On The Real Robot")
     b.p(
-        "**Pending.** All results in Sections 4.1-4.5 were obtained on the "
-        "recorded dataset. The extension this study builds on closed with "
-        "exactly this step — commissioning on the physical cell, re-measuring "
-        "the fused threshold there, and reporting what the deployed detector "
-        "did against provoked, operator-confirmed events — and Section 3.8 "
-        "reports that the online feature engine has already been re-verified "
-        "against the offline pipeline in preparation for it. The trial itself, "
-        "across the four production tasks of Section 3.1, had not yet been run "
-        "at the time of writing and is reported as a self-contained addendum "
-        "once it has. Two questions the offline sections above could not settle "
-        "are deferred to it specifically: whether the offline threshold "
-        "transfers any better than the predecessor's did, now that the "
-        "correction of Section 3.4 is conditioned on the running task, and "
-        "whether the small, encoder-specific fusion contribution of Section 4.4 "
-        "is visible on a genuine fault rather than only on an injected one."
+        "All results in Sections 4.1-4.5 were obtained on the recorded "
+        "dataset; this section reports what happened once the detector was "
+        "run on the physical cell. The trial covered three of the four "
+        "production tasks of Section 3.1 — UR10E_INSPECTION, HRC and "
+        "PICKPLACE — across two sessions (30 September and 1 October 2026); "
+        "MULTIROBOT_INSPECTION had not been exercised at the time of writing "
+        "and is listed with the other gaps in Section 5.6."
+    )
+    b.p(
+        "The first session produced 314 triggered alarms across nine runs, of "
+        "which an operator confirmed 5 against the physical event and labelled "
+        "the remaining 309 false — a false-alarm rate the predecessor's own "
+        "commissioning never approached. The cause was not the threshold. "
+        "Every one of the nine runs' provenance records showed the same "
+        "use_case value, UR10E_INSPECTION, although six of the nine were later "
+        "established to be HRC or PICKPLACE sessions: the launch argument "
+        "that selects Section 3.4's task-conditioned correction carries a "
+        "default, and nothing enforced that it be overridden. The effect is "
+        "systematic rather than occasional. On the one run later confirmed "
+        "unaffected (14,121 decisions, zero alarms) the fused score's regime "
+        "medians were −0.49 (static) and +0.99 (moving); on the six "
+        "mis-tagged runs the static median alone ranged up to +2.41 — a shift "
+        "in the body of the distribution, not its tail. Recalibrating the "
+        "threshold from the one clean run and backtesting it against all nine "
+        "confirms the diagnosis rather than fixing it: total alarms across the "
+        "nine runs rose from 159 to 177 under the two-consecutive-decision "
+        "rule of Section 3.6, because no single cut can separate ordinary "
+        "operation from wrongly-corrected operation once the whole "
+        "distribution has moved. This is a different failure from the one "
+        "Section 5.3 reasoned about in advance: the log-domain normalisation "
+        "adopted there defends against one atypical window dominating an "
+        "affine threshold, and nothing in this campaign defeated it on that "
+        "front — every one of the seven genuine events below remained clearly "
+        "separated from its threshold throughout. What defeated detection "
+        "here was a wrong task label feeding the correction a wrong physical "
+        "model, a failure mode no choice of normalisation addresses."
+    )
+    b.p(
+        "The mechanism is visible directly in motor current. During HRC's "
+        "screw-driving contact phase, shoulder and elbow current measured "
+        "4-11 A and up to 6.5 A respectively, against under 2 A during the "
+        "same task's non-contact motion — a real, task-specific reaction "
+        "torque the correction for a different task's payload and friction "
+        "does not model. The fix addresses the cause rather than the symptom: "
+        "the use_case launch argument was made genuinely mandatory (the "
+        "launch description now refuses to start without one of the four "
+        "valid values), and the detector was given a live watchdog on the "
+        "operator dashboard's own task broadcast, raising an operator-visible "
+        "error the instant the two disagree rather than leaving two "
+        "independently-maintained copies of \"which task is running\" to drift "
+        "apart silently."
+    )
+    b.p(
+        "With the task label corrected, the task-conditioned correction "
+        "behaved as Section 3.4 intended: the HRC session's regime medians "
+        "(0.41 moving, against the clean baseline's 0.99 — if anything lower) "
+        "showed no shift at all. What remained was a second, narrower problem "
+        "specific to tasks that involve deliberate contact: the fixed, "
+        "shared operating threshold of Section 3.6 was fitted offline on a "
+        "mix of tasks and was not set to tolerate a task's own legitimate "
+        "contact phase. Table 12 reports the result of fitting one operating "
+        "threshold per task instead, at the 99.99th percentile of that task's "
+        "own clean on-site decisions rather than carried over from the "
+        "offline validation split, and backtesting it against every recorded "
+        "session for that task; the 99.9th percentile of the same sessions "
+        "was tried first and rejected — it still left 2 of HRC's 9 false "
+        "alarms and 2 of PICKPLACE's 16 uncorrected (while still separating "
+        "every confirmed genuine event cleanly), the task's own contact "
+        "phase crossing it too often for the margin to be useful."
+    )
+    b.table(
+        "Real-Robot Commissioning, Before And After Task-Specific Thresholds.",
+        ["Task", "Decisions", "Confirmed events", "Alarms, shared offline θ",
+         "Alarms, task-specific θ"],
+        [["UR10E_INSPECTION", "6,819", "0", "0", "— (unchanged)"],
+         ["HRC", "11,654", "0", "9", "0"],
+         ["PICKPLACE", "15,232", "2", "18", "2 (both confirmed)"],
+         ["MULTIROBOT_INSPECTION", "—", "—", "—", "not yet run"]],
+        widths=[4.7, 2.1, 2.7, 3.3, 3.3], wide=True, align_right=[1, 2, 3],
+        note="θ_task is the 99.99th percentile of the task's own clean on-site "
+             "decisions (Section 3.6 quantile family), fitted separately per "
+             "regime; UR10E_INSPECTION was not refitted because its shared "
+             "offline threshold already produced zero alarms on site (static "
+             "/ moving p99.9 on-site: 1.66 / 3.52, against 2.14 / 3.90 "
+             "offline — looser, not tighter, so no correction was needed).")
+    b.p(
+        "Across the two sessions, seven alarms were operator-confirmed "
+        "against the physical event rather than labelled false. Six remained "
+        "separated from the fused, log-normalised threshold by a factor of "
+        "1.4-1.6×, and the underlying residual sub-model's own reconstruction "
+        "error exceeded its threshold by 64-128× on these six — the margin "
+        "Section 5.3 reasoned the log-domain normalisation should preserve. "
+        "The seventh, the only confirmed event in the static regime, cleared "
+        "its task-specific threshold by 11 % (4.43 against 4.0) — the current "
+        "calibration's thinnest margin, fitted from a single session, and "
+        "flagged here rather than smoothed over. One confirmed PICKPLACE event "
+        "stayed latched for its full 205 s because the arm halted inside the "
+        "faulted configuration instead of recovering from it, which Figure 5 "
+        "shows on a shorter, equivalent case: the dashboard of Section 3.9 "
+        "during a live replay of a different confirmed event, the fused score "
+        "stepping from a noisy baseline near 2 to a sustained plateau near 6 "
+        "and holding there for the full 10 s window shown. The plateau is not "
+        "an artefact of the two-consecutive-decision rule; it is the direct "
+        "consequence of the robot not leaving the pose the fault was detected "
+        "in, and the dashboard's own \"since last alarm\" field reads zero for "
+        "as long as that remains true."
+    )
+    b.figure(
+        "fig5_interface.png",
+        "Operator Dashboard During A Confirmed Real Event | screen capture "
+        "taken from a live replay (Section 3.9) of a recorded PICKPLACE "
+        "session, not from the robot directly — robot and detector are both "
+        "idle during capture, and the dashboard cannot distinguish the two. "
+        "The fused score (blue) crosses the moving-regime threshold (red, "
+        "dashed) nine seconds before the capture and remains above it for "
+        "the rest of the window because the arm halts in the faulted pose "
+        "rather than recovering from it.",
+        wide=True)
+    b.p(
+        "The adaptive rule of Section 3.8 was left disabled throughout this "
+        "campaign, matching the predecessor's default; whether the "
+        "task-conditioned correction has reduced the pose-dependence that "
+        "motivated disabling it was not re-evaluated here and remains open. "
+        "The per-fault-type latency distribution Section 4.5 deferred to this "
+        "trial was likewise not captured — every alarm observed here was a "
+        "genuine event or a mis-corrected one, not a provoked fault with a "
+        "known onset time to measure latency against — and is carried "
+        "forward as an outstanding measurement in Section 5.6. The "
+        "encoder-specific fusion contribution Section 4.4 asked whether a "
+        "genuine fault would show was not settled either: none of the seven "
+        "confirmed events was an encoder-type fault, and the question remains "
+        "open to whichever task next produces one."
+    )
+
+    b.h2("4.7. A Second Threshold: Early Warning And Automatic Pause")
+    b.p(
+        "The gap between the two percentiles compared in Section 4.6 — wide "
+        "enough that the lower one (p99.9) still let through two of HRC's "
+        "nine false alarms and two of PICKPLACE's sixteen, the higher one "
+        "(p99.99) none — suggested a use for the rejected threshold rather "
+        "than discarding it: a second, lower-stakes tier. Added to the "
+        "deployed node after the campaign above and not yet exercised on the "
+        "physical cell, it is reported here as an implementation addition, "
+        "not as a further finding."
+    )
+    b.p(
+        "Every decision is now checked against both percentiles of Table 12's "
+        "task-specific table independently. Crossing p99.9 changes nothing "
+        "about the robot; it latches a separate, debounced signal that the "
+        "operator dashboard surfaces as a dismissible, auto-clearing notice, "
+        "distinct from the alarm banner Section 3.9 describes. Crossing "
+        "p99.99 — the operating threshold Sections 3.6 and 4.6 already act "
+        "on — now additionally calls the ROS 2 driver's dashboard-server "
+        "pause service on the alarm's rising edge, pausing whichever program "
+        "is currently loaded and running on the controller, the External "
+        "Control URCap node in every task reported here."
+    )
+    b.p(
+        "This is explicitly not the safety-rated protective stop the "
+        "robot's own monitoring or a Configurable Safety Input can trigger: "
+        "a UR controller does not expose that function to software, by "
+        "design, so pausing the loaded program is the available substitute. "
+        "It is not cosmetic — pausing also drops the reverse communication "
+        "interface the ROS driver depends on, documented upstream as "
+        "\"Connection to reverse interface dropped\" — but recovery is a "
+        "single deliberate action (teach-pendant Play, or the equivalent "
+        "dashboard call under remote control) rather than the fuller "
+        "recovery an emergency stop requires. The operator who deployed "
+        "this addition accepted manual resumption as the operating "
+        "assumption; the feature defaults to enabled on that basis and can "
+        "be disabled per launch. Whether it fires at the intended rate on "
+        "genuine hardware operation, rather than only in the offline "
+        "backtest of Section 4.6, is accordingly listed with the other "
+        "untested additions in Section 5.6."
     )
 
     # ────────────────────────────────────────── 5. Discussion ────────
@@ -1673,9 +1842,23 @@ def body(b):
         "Classical baselines (Isolation Forest, One-Class SVM, a residual-norm "
         "threshold) and the architecture and fusion-weight-sweep figures of the "
         "extension this study builds on were not regenerated for this revision.",
-        "Hardware commissioning, and everything Sections 4.6, 5.2 and 5.3 state "
-        "as expectation rather than measurement, is outstanding at the time of "
-        "writing.",
+        "Hardware commissioning (Section 4.6) covered three of the cell's four "
+        "production tasks; MULTIROBOT_INSPECTION was not exercised. Within the "
+        "three, each task's operating threshold was fitted from a single "
+        "on-site session — the PICKPLACE static-regime margin it produced "
+        "(11 %) is the calibration's thinnest point and a larger clean sample "
+        "would plausibly widen it. The per-fault-type latency distribution "
+        "and the encoder-specific fusion contribution on a genuine fault, "
+        "both deferred to the trial in Sections 4.5 and 4.4, were not settled "
+        "by it: no provoked fault with a known onset was run, and none of the "
+        "confirmed events was an encoder-type fault. Whether the adaptive "
+        "rule's pose-dependence (Section 3.8) was reduced by the "
+        "task-conditioned correction was not re-evaluated; it was left "
+        "disabled throughout.",
+        "The early-warning notice and automatic pause of Section 4.7 were "
+        "added after the campaign above and have not been exercised on the "
+        "physical cell; their only evidence is the offline backtest Section "
+        "4.6 already reports for the two percentiles involved.",
     ]:
         pp = b.para("", style="Paragraf", align=WD_ALIGN_PARAGRAPH.JUSTIFY,
                     space_before=3, space_after=0)
@@ -1738,17 +1921,25 @@ def body(b):
     b.p(
         "The system was re-implemented as a ROS 2 node without the removed "
         "channel, and its feature engine was re-verified against the offline "
-        "pipeline (largest observed deviation 1.5·10⁻⁶ Nm in the residual). On "
-        "a replay of the physical cell it drew an alarm from both models "
-        "simultaneously on a provoked fault, one qualitative data point rather "
-        "than a statistic. Commissioning the detector on hardware — "
-        "re-measuring the threshold there, as the predecessor found necessary, "
-        "and reporting what it catches and what it misses across four "
-        "production tasks rather than one — is the step this paper's own "
-        "predecessor closed with and this revision reopens; it is reported "
-        "separately once complete, together with the per-fault-type latency "
-        "distribution and detection-ablation measurements listed as "
-        "outstanding in Section 5.6."
+        "pipeline (largest observed deviation 1.5·10⁻⁶ Nm in the residual). "
+        "Commissioned on three of the cell's four production tasks, it "
+        "reproduced the predecessor's hardware finding in a different form: "
+        "the offline threshold did not fail by the mechanism the predecessor "
+        "traced and this revision's log-domain normalisation was adopted to "
+        "pre-empt, but by a task-selection defect that fed the task-"
+        "conditioned correction the wrong task's physical model on six of "
+        "nine initial runs, shifting the body of the score distribution "
+        "rather than its tail and producing 309 false alarms against 5 "
+        "genuine ones. Corrected, the same correction behaved as intended — "
+        "zero false alarms against seven operator-confirmed events across "
+        "the three tasks tested, with one task's threshold, the only one "
+        "measured on site both before and after the defect, found to need no "
+        "correction at all (its offline threshold had been the looser one). "
+        "The task-conditioned correction therefore does narrow the "
+        "predecessor's transfer gap, but only once a task-selection failure "
+        "with no relationship to the residual definition is first ruled out "
+        "— a precondition the predecessor's single-task deployment could not "
+        "have exposed and this one did by construction."
     )
     b.p(
         "Two directions follow, one carried over unchanged and one specific to "
@@ -1758,12 +1949,14 @@ def body(b):
         "cell's own trajectories or a genuine force/torque channel rather than "
         "the withdrawn one — a fitted correction outside the solver, however "
         "well it generalises, is not a substitute for a transducer where a "
-        "transducer is actually required. Specific to this revision: whether a "
-        "detector whose residual definition changed in kind, not only in "
-        "coefficients, reproduces the predecessor's hardware finding that the "
-        "offline threshold does not transfer, or whether the task-conditioned "
-        "correction narrows that gap, is a question this paper has posed and "
-        "not yet answered."
+        "transducer is actually required. Specific to this revision: the "
+        "fourth production task, MULTIROBOT_INSPECTION, remains uncommissioned; "
+        "each task's operating threshold rests on a single on-site session, "
+        "narrowly so on one of three (Section 5.6); and the per-fault-type "
+        "latency distribution and the encoder-specific fusion contribution on "
+        "a genuine rather than injected fault, both deferred to the "
+        "commissioning trial, were not settled by it and remain open to "
+        "whichever future session produces a provoked or encoder-type event."
     )
 
     b.h1("Acknowledgement")

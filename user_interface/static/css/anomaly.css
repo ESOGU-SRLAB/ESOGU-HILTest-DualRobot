@@ -19,6 +19,37 @@
 .an-conn.live { color: var(--accent-green); }
 .an-conn.dead { color: var(--accent-red); }
 
+/* ---------- Early-warning pop-up (p99.9) ---------- */
+/* Fixed so it floats above the page regardless of scroll - a pop-up, not an
+   inline element. Below the stop-level threshold on purpose: informational,
+   dismissible, never blocks interaction with the rest of the dashboard. */
+.an-warn-toast {
+    position: fixed;
+    top: 84px;
+    right: 28px;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 420px;
+    padding: 16px 20px;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--accent-yellow);
+    background: #fffbeb;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    animation: an-warn-in 0.25s ease-out;
+}
+.an-warn-toast-icon { font-size: 1.4rem; line-height: 1.2; color: var(--accent-yellow); }
+.an-warn-toast-text { font-size: 0.88rem; line-height: 1.4; color: #78350f; }
+
+@keyframes an-warn-in {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .an-warn-toast { animation: none; }
+}
+
 /* ---------- Status banner ---------- */
 /* Must stay readable from a distance: the operator is not glued to the screen. */
 .an-banner {

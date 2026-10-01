@@ -35,6 +35,7 @@ from rclpy.qos import (QoSProfile, ReliabilityPolicy, HistoryPolicy,
 
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Bool, Float32, Float32MultiArray, String
+from std_srvs.srv import Trigger
 
 # user_interface/app.py'nin yayınladığı, hangi senaryonun koştuğunu söyleyen
 # latch'li topic (bkz. UseCaseBroadcaster). Bu düğüm BUNA GÖRE kendi use_case'ini
@@ -92,9 +93,10 @@ class AnomalyDetectorNode(Node):
         # senaryolar arası fark - bkz. dosyanın b_by_use_case/payload_by_use_case alanları).
         p("use_case", "UR10E_INSPECTION")
         # Eşik persentili: fusion_config.json dört tanesini de taşıyor (p97..p99.99).
-        # p99.9 varsayılan - offline ölçümde p97 saatte binlerce yanlış alarma denk
-        # geliyordu (dataset_prep/evaluate_faults.py). Gerçek robotta yeniden ölçülecek.
-        p("quantile", "p99.9")
+        # 01.10.2026: p99.99 varsayılan - HRC/PICKPLACE'in gerçek hücre backtest'i
+        # bunda en iyi sonucu verdi (yanlış alarm ~0, gerçek olaylar kayıpsız).
+        # launch dosyasıyla aynı varsayılan tutulmalı (detector.launch.py).
+        p("quantile", "p99.99")
         p("regime_threshold", "auto")
         p("solver_resources", f"{DEFAULT_BASE}/resources")
         p("joint_states_topic", "/joint_states")
@@ -113,12 +115,105 @@ class AnomalyDetectorNode(Node):
         p("motion_qd_min", -1.0)       # -1 = fusion_config.json'daki (0,02)
         p("log_dir", str(Path.home() / "anomali_kayit"))
         p("log_scores", True)
+        # 01.10.2026: iki kademeli tepki. p99.9 aşılırsa arayüzde sarı pop-up
+        # (bkz. ~/warning) - robota dokunmaz. p99.99 (mevcut ~/detected,
+        # "quantile" parametresiyle seçilen asıl eşik) aşılırsa dashboard_client'ın
+        # "pause" servisini çağırır: ÇALIŞAN PROGRAMI DURAKLATIR (External Control
+        # programı - bağlantı da düşer, "Connection to reverse interface dropped"),
+        # devam etmek kontrol moduna göre pendant'tan Play / dashboard play /
+        # resend_robot_program ister. GERÇEK bir protective stop DEĞİL (UR'de
+        # yazılımdan tetiklenemez, SIL2 güvenlik sistemi gerektirir - bkz.
+        # Configurable Safety Input); kullanıcı bunu bilerek seçti, elle devam
+        # etmeyi kabul etti (01.10.2026) - varsayılan AÇIK.
+        p("robot_stop_on_alarm", True)
+        p("dashboard_pause_service", "/dashboard_client/pause")
 
         g = lambda k: self.get_parameter(k).value  # noqa: E731
         self.tf_prefix = str(g("tf_prefix"))
         self.need_consecutive = int(g("consecutive_for_alarm"))
+        self.robot_stop_on_alarm = bool(g("robot_stop_on_alarm"))
+        self.cli_pause = self.create_client(Trigger, str(g("dashboard_pause_service")))
+        if self.robot_stop_on_alarm:
+            self.get_logger().warn(
+                f"robot_stop_on_alarm AÇIK: p99.99 aşılırsa "
+                f"{self.cli_pause.srv_name} çağrılacak (dashboard 'pause' - "
+                f"programı duraklatır, GERÇEK protective stop DEĞİL).")
+        else:
+            self.get_logger().info(
+                "robot_stop_on_alarm KAPALI - yalnız izleniyor, robot "
+                "durdurulmayacak (kapatmak için robot_stop_on_alarm:=false "
+                "verilmeliydi; varsayılan artık AÇIK).")
+
+        # det kurulana kadar on_health gibi zamanlayıcılar bunlara güvenle erişsin
+        # diye TÜM sayaçlar FusionDetector kurulmadan ÖNCE hazır olmalı - IDLE ile
+        # beklerken (aşağıya bkz.) kuruluş dakikalarca gecikebilir.
+        self.det = None
+        self.consecutive = 0
+        self.jidx_cache: dict[tuple, list[int] | None] = {}
+        self.n_samples = 0
+        self.n_scores = 0
+        self.n_foreign = 0
+        self.n_short = 0
+        self.n_alarms = 0
+        self.health_state: str | None = None
+        self.t_health = time.monotonic()
+        self.n_samples_health = 0
+        self.n_scores_health = 0
+        self.alarm_active = False
+        self.alarm_t0 = 0.0
+        self.alarm_peak = 0.0
+        self.warn_consecutive = 0
+        self.warn_active = False
+        self.warn_t0 = 0.0
+        self.warn_peak = 0.0
+        self.n_warnings = 0
+        self.f_events = None
+        self.f_scores = None
+        self.t_flush = time.monotonic()
+        self.infer_ms: deque = deque(maxlen=200)
+
+        # Arayüzün yayınladığı aktif senaryoyla uyuşmazlığı canlı yakala (bkz.
+        # dosya başındaki TESTBED_USE_CASE_TOPIC notu). TRANSIENT_LOCAL ŞART -
+        # yayıncı (UseCaseBroadcaster) latch'li, bu düğüm ondan SONRA başlasa
+        # bile son değeri bu sayede kaçırmaz. Abonelik HER ZAMAN kurulur -
+        # use_case=IDLE ile başlatıldıysak kuruluşu TETİKLEYEN de bu.
+        tb_qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE,
+                            durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self._last_testbed_use_case: str | None = None
+        self.create_subscription(String, TESTBED_USE_CASE_TOPIC,
+                                 self.on_testbed_use_case, tb_qos)
+
+        self.pub_score = self.create_publisher(Float32, "~/score", 10)
+        self.pub_det = self.create_publisher(Bool, "~/detected", 10)
+        self.pub_detail = self.create_publisher(Float32MultiArray, "~/detail", 10)
+        # p99.9 "uyarı" katmanı - ~/detected (p99.99, duruş) ile aynı işlevde
+        # ama ayrı bir topic; robota dokunmaz, yalnız arayüzde sarı pop-up.
+        self.pub_warn = self.create_publisher(Bool, "~/warning", 10)
+        self.create_timer(10.0, self.on_health)
 
         use_case = str(g("use_case"))
+        if use_case == "IDLE":
+            # 01.10.2026: arayüzde bir senaryo butonuna basılınca HIL ayağa
+            # kalkarken use_case kısa süreliğine IDLE oluyor (bkz. user_interface
+            # ScenarioManager). Bu düğüm o anda `use_case:=IDLE` ile başlatılırsa
+            # artık hata VERMEZ - gerçek senaryo /testbed/use_case'ten gelene
+            # kadar bekler, FusionDetector'ı o zaman kurar. JointState aboneliği
+            # de o ana kadar YOK - yanlış/kurulmamış fizik modeliyle örnek işlemez.
+            self.get_logger().warn(
+                "use_case=IDLE ile başlatıldı - arayüzden gerçek senaryo "
+                f"bekleniyor ({TESTBED_USE_CASE_TOPIC}). HIL ayağa kalkarken "
+                "normal bir ARA durum; birkaç dakikadan uzun sürerse arayüzün "
+                "gerçekten bir senaryo başlattığını kontrol edin.")
+        else:
+            self._baslat(use_case)
+
+    def _baslat(self, use_case: str) -> None:
+        """FusionDetector'ı kurar, kayıt dosyalarını açar, JointState aboneliğini
+        başlatır. __init__'ten (use_case baştan geçerliyse) ya da
+        on_testbed_use_case'ten (IDLE ile başlayıp arayüzden gerçek senaryo
+        gelince) çağrılır - yalnız BİR KEZ."""
+        g = lambda k: self.get_parameter(k).value  # noqa: E731
+
         if use_case not in USE_CASES:
             self.get_logger().warn(
                 f"use_case={use_case!r} bilinen 4 senaryodan biri değil "
@@ -126,7 +221,7 @@ class AnomalyDetectorNode(Node):
                 f"düğüm hemen hata verip duracak.")
 
         self.get_logger().info(
-            f"UR10e anomali tespiti başlatılıyor (senaryo={use_case})...")
+            f"UR10e anomali tespiti kuruluyor (senaryo={use_case})...")
 
         sys.path.insert(0, str(Path(g("solver_resources")).resolve()))
         import ur10_solver_py                                    # FMU ile aynı çekirdek
@@ -177,45 +272,12 @@ class AnomalyDetectorNode(Node):
                 f"Tork ölçeği bu kanallarda varsayımdır (aile katsayısı) — tespiti "
                 f"etkilemez, Nm cinsinden yorumu etkiler.")
 
-        self.consecutive = 0
-        self.jidx_cache: dict[tuple, list[int] | None] = {}
-        self.n_samples = 0
-        self.n_scores = 0
-        self.n_foreign = 0
-        self.n_short = 0
-        self.n_alarms = 0
-        self.health_state: str | None = None
-        self.t_health = time.monotonic()
-        self.n_samples_health = 0
-        self.n_scores_health = 0
-        self.alarm_active = False
-        self.alarm_t0 = 0.0
-        self.alarm_peak = 0.0
-        self.f_events = None
-        self.f_scores = None
-        self.t_flush = time.monotonic()
         self._open_logs(str(g("log_dir")).strip(), bool(g("log_scores")))
-        self.infer_ms: deque = deque(maxlen=200)
 
         qos = QoSProfile(depth=50, reliability=ReliabilityPolicy.BEST_EFFORT,
                          history=HistoryPolicy.KEEP_LAST)
         self.create_subscription(JointState, str(g("joint_states_topic")),
                                  self.on_joint_states, qos)
-
-        # Arayüzün yayınladığı aktif senaryoyla uyuşmazlığı canlı yakala (bkz.
-        # dosya başındaki TESTBED_USE_CASE_TOPIC notu). TRANSIENT_LOCAL ŞART -
-        # yayıncı (UseCaseBroadcaster) latch'li, bu düğüm ondan SONRA başlasa
-        # bile son değeri bu sayede kaçırmaz.
-        tb_qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE,
-                            durability=DurabilityPolicy.TRANSIENT_LOCAL)
-        self._last_testbed_use_case: str | None = None
-        self.create_subscription(String, TESTBED_USE_CASE_TOPIC,
-                                 self.on_testbed_use_case, tb_qos)
-
-        self.pub_score = self.create_publisher(Float32, "~/score", 10)
-        self.pub_det = self.create_publisher(Bool, "~/detected", 10)
-        self.pub_detail = self.create_publisher(Float32MultiArray, "~/detail", 10)
-        self.create_timer(10.0, self.on_health)
 
         self.get_logger().info(
             f"Hazır. Tespit gecikmesi ≈ {d.lag_seconds*1000:.0f} ms "
@@ -236,7 +298,7 @@ class AnomalyDetectorNode(Node):
             self.f_scores.write(
                 "t_ros,s_kal,s_ham,z_kal,z_ham,birlesik,thr_mutlak,thr_uyarlanabilir,"
                 "hit_mutlak,hit_uyarlanabilir,hit_kal,hit_ham,hareket,qd_tepe,"
-                "taban_n,donmus,thr_kal,thr_ham,alarm\n")
+                "taban_n,donmus,thr_kal,thr_ham,thr_warn,alarm,uyari\n")
         self._write_run_meta(d, ts)
         self.get_logger().info(
             f"Kayıt: {d}/olaylar_{ts}.jsonl"
@@ -314,16 +376,33 @@ class AnomalyDetectorNode(Node):
         self.f_events.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
     def on_testbed_use_case(self, msg: String) -> None:
-        """Arayüzün (user_interface) o an koşturduğu senaryoyla bu düğümün
-        LAUNCH ANINDA sabitlenmiş use_case'i uyuşuyor mu. Canlı olarak fizik
-        modelini DEĞİŞTİRMEZ (riskli - baseline/buffer sıfırlanır), yalnız
-        uyuşmazlığı hem terminal logunda hem olaylar_*.jsonl'de (dolayısıyla
-        arayüzün kendi anomali panelinde) görünür kılar. 30.09.2026: bu kontrol
-        olsaydı 9 koşunun 8'inde ilk saniyede fark edilirdi, saatler sonra değil."""
+        """İki görevi var:
+        1) Henüz kurulmadıysak (use_case=IDLE ile başlatıldık): arayüzden gerçek
+           bir senaryo gelince _baslat()'ı TETİKLER. HIL ayağa kalkarken IDLE
+           görülmesi beklenen bir ara durumdur, hataya YOL AÇMAZ.
+        2) Zaten kurulduysak: arayüzün o an koşturduğu senaryoyla LAUNCH ANINDA
+           sabitlenmiş use_case uyuşuyor mu diye canlı kontrol eder. Fizik
+           modelini DEĞİŞTİRMEZ (riskli - baseline/buffer sıfırlanır), yalnız
+           uyuşmazlığı terminalde + olaylar_*.jsonl'de (dolayısıyla arayüzün
+           anomali panelinde) görünür kılar. 30.09.2026: bu kontrol olsaydı
+           9 koşunun 8'inde ilk saniyede fark edilirdi, saatler sonra değil."""
         gelen = str(msg.data).strip()
         if gelen == self._last_testbed_use_case:
             return                                   # aynı değer tekrar geldi, sessiz kal
         self._last_testbed_use_case = gelen
+
+        if self.det is None:
+            if gelen in ("", "IDLE"):
+                return                                # hâlâ bekliyoruz, normal
+            if gelen not in USE_CASES:
+                self.get_logger().warn(
+                    f"Arayüz use_case={gelen!r} yayınladı ama bilinen 4 senaryodan "
+                    f"biri değil ({USE_CASES}) - beklemeye devam ediyorum.")
+                return
+            self.get_logger().info(f"Arayüzden geçerli senaryo geldi: {gelen!r}. Kuruluyor...")
+            self._baslat(gelen)
+            return
+
         if gelen in ("", "IDLE") or gelen == self.det.use_case:
             return
         self.get_logger().error(
@@ -380,9 +459,12 @@ class AnomalyDetectorNode(Node):
 
         self.consecutive = self.consecutive + 1 if r["detected"] else 0
         alarm = self.consecutive >= self.need_consecutive
+        self.warn_consecutive = self.warn_consecutive + 1 if r["hit_warn"] else 0
+        warn_alarm = self.warn_consecutive >= self.need_consecutive
 
         self.pub_score.publish(Float32(data=float(r["fused"])))
         self.pub_det.publish(Bool(data=bool(alarm)))
+        self.pub_warn.publish(Bool(data=bool(warn_alarm)))
         det = Float32MultiArray()
         thr_ad = r["adaptive_threshold"]
         det.data = [float(r["s_residual"]), float(r["s_raw"]),
@@ -396,14 +478,17 @@ class AnomalyDetectorNode(Node):
                     # Her modelin KENDİ eşiği (indeks 15/16, EK — arayüz artık
                     # bunları hard-code etmek yerine buradan okuyor; bkz.
                     # user_interface/app.py AnomalyCollector).
-                    float(r["threshold_residual"]), float(r["threshold_raw"])]
+                    float(r["threshold_residual"]), float(r["threshold_raw"]),
+                    # indeks 17, EK (01.10.2026): uyarı (p99.9) eşiği - ~/warning
+                    # bool'u ile birlikte okunur, arayüzdeki sarı pop-up bunu kullanır.
+                    float(r["threshold_warn"])]
         self.pub_detail.publish(det)
 
         t_ros = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         if self.f_scores is not None:
             self.f_scores.write(
                 f"{t_ros:.4f}," + ",".join(f"{v:.6g}" for v in det.data)
-                + f",{int(alarm)}\n")
+                + f",{int(alarm)},{int(warn_alarm)}\n")
             now = time.monotonic()
             if now - self.t_flush > 2.0:
                 self.f_scores.flush()
@@ -433,6 +518,7 @@ class AnomalyDetectorNode(Node):
                         q=[round(float(v), 5) for v in q],
                         qd=[round(float(v), 5) for v in qd],
                         akim=[round(float(v), 4) for v in amps])
+            self._robotu_duraklat(f"birleşik={r['fused']:.4f} > {lim:.4f} ({rule})")
         elif alarm:
             self.alarm_peak = max(self.alarm_peak, float(r["fused"]))
         elif self.alarm_active:
@@ -444,8 +530,72 @@ class AnomalyDetectorNode(Node):
                 f"Anomali sona erdi (#{self.n_alarms}, {sure:.2f} s, "
                 f"tepe {self.alarm_peak:.4f})")
 
+        # Uyarı katmanı (p99.9) - alarm (p99.99) katmanıyla AYNI yapı ama
+        # robota dokunmaz, yalnız arayüzde sarı pop-up için kayıt bırakır.
+        if warn_alarm and not self.warn_active:
+            self.warn_active = True
+            self.warn_t0 = time.monotonic()
+            self.warn_peak = float(r["fused"])
+            self.n_warnings += 1
+            self._event("uyari_basladi", t_ros=round(t_ros, 4), sira=self.n_warnings,
+                        birlesik=round(float(r["fused"]), 5),
+                        esik=round(float(r["threshold_warn"]), 5),
+                        hareket=bool(r["moving"]))
+        elif warn_alarm:
+            self.warn_peak = max(self.warn_peak, float(r["fused"]))
+        elif self.warn_active:
+            self.warn_active = False
+            sure = time.monotonic() - self.warn_t0
+            self._event("uyari_bitti", t_ros=round(t_ros, 4), sira=self.n_warnings,
+                        sure_s=round(sure, 3), tepe=round(self.warn_peak, 5))
+
+    def _robotu_duraklat(self, sebep: str) -> None:
+        """p99.99 alarmının YÜKSELEN kenarında çağrılır. robot_stop_on_alarm
+        KAPALIYSA hiçbir şey yapmaz (varsayılan AÇIK, kullanıcı elle devam
+        etmeyi kabul etti - 01.10.2026). Dashboard
+        client'ın 'pause' servisini ÇAĞIRIR - çalışan programı duraklatır,
+        operatör 'play' ile devam eder. GERÇEK bir protective stop DEĞİL
+        (UR'de yazılımdan tetiklenemez); kullanıcı bunu bilerek seçti
+        (01.10.2026) - gerçek, güvenlik-değerlendirmeli bir durdurma için
+        Configurable Safety Input kurulumu gerekir, bu düğümün kapsamı dışında."""
+        if not self.robot_stop_on_alarm:
+            return
+        if not self.cli_pause.service_is_ready():
+            self.get_logger().error(
+                f"ROBOT DURAKLATILAMADI: {self.cli_pause.srv_name} servisi "
+                f"hazır değil (dashboard_client çalışmıyor olabilir). "
+                f"Sebep: {sebep}")
+            self._event("robot_duraklatma_basarisiz", sebep=sebep,
+                        neden="servis_hazir_degil")
+            return
+        fut = self.cli_pause.call_async(Trigger.Request())
+
+        def _bitince(f):
+            try:
+                res = f.result()
+            except Exception as e:
+                self.get_logger().error(
+                    f"ROBOT DURAKLATMA ÇAĞRISI HATA VERDİ ({sebep}): {e}")
+                self._event("robot_duraklatma_basarisiz", sebep=sebep, neden=str(e))
+                return
+            if res.success:
+                self.get_logger().warn(f"ROBOT DURAKLATILDI ({sebep}): {res.message}")
+                self._event("robot_duraklatildi", sebep=sebep, mesaj=res.message)
+            else:
+                self.get_logger().error(
+                    f"ROBOT DURAKLATMA REDDEDİLDİ ({sebep}): {res.message}")
+                self._event("robot_duraklatma_basarisiz", sebep=sebep, neden=res.message)
+        fut.add_done_callback(_bitince)
+
     def on_health(self) -> None:
         """Sağlık raporu - yalnız durum DEĞİŞTİĞİNDE bir satır yazar."""
+        if self.det is None:
+            if self.health_state != "bekleniyor":
+                self.health_state = "bekleniyor"
+                self.get_logger().warn(
+                    "Hâlâ use_case=IDLE bekleniyor - arayüzden bir senaryo "
+                    "başlatıldı mı kontrol edin.")
+            return
         now = time.monotonic()
         el = max(now - self.t_health, 1e-6)
         rate = (self.n_samples - self.n_samples_health) / el

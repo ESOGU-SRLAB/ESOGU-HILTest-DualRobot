@@ -47,6 +47,38 @@
         "p99.9": 4.64499,
         "p99.99": 4.95142
       }
+    },
+    "PICKPLACE": {
+      "calibrated_on": "gerçek hücre, 2026-10-01 11:52 + 12:05 oturumları (anomali_kayit_pickplace, 2 koşu, 15232 örnek birleşik). Gerçek anomali 2/2 etiketlendi (sira6 statik tepe=4.431, sira11 moving tepe=5.897, 205 sn sürdü) - eşik hesabından bu iki olayın ±1 sn penceresi ÇIKARILDI (yoksa threshold kendi kendini kirletir).",
+      "note": "Büyük J1 taban dönüşleri ve tutma/bırakma pozları (q örn. J1≈5.5, J4≈±5) birkaç yanlış alarma yol açıyordu, HRC'deki temas pozu gibi fizik modelinde temsil edilmiyor. quantile=p99.99 ile backtest: 18 yanlış alarm -> 0, 2 gerçek olay 2/2 yakalandı (sira11 payı geniş: 5.90 vs eşik 4.26; sira6 payı DAR: 4.43 vs eşik 3.99/4.13 - yalnız ~%7 marj, ileride daha fazla veriyle sıkılaştırılmalı).",
+      "static": {
+        "p97": 0.20713,
+        "p99": 1.48836,
+        "p99.9": 3.218,
+        "p99.99": 3.99125
+      },
+      "moving": {
+        "p97": 3.33184,
+        "p99": 3.89642,
+        "p99.9": 4.2311,
+        "p99.99": 4.25799
+      }
+    },
+    "UR10E_INSPECTION": {
+      "calibrated_on": "gerçek hücre, 2026-10-01 12:18 oturumu (anomali_kayit_urinspection, 6819 örnek, 0 olay - tamamen temiz). 30.09.2026'nın 130713 koşusuyla (jenerik eşiğin dayandığı offline değerlere yakın, medyanlar tutarlı) uyumlu, bu use_case'in gerçek robotta zaten iyi davrandığını doğruluyor.",
+      "note": "Jenerik (offline) eşikten belirgin sapma yok (bu oturumun p99.9'u static 1.66/moving 3.52, jenerik 2.14/3.90 - zaten gevşek tarafta). Sıkılaştırma amaçlı eklendi, acil bir düzeltme değil.",
+      "static": {
+        "p97": 0.892903,
+        "p99": 1.13801,
+        "p99.9": 1.66163,
+        "p99.99": 1.67626
+      },
+      "moving": {
+        "p97": 2.4489,
+        "p99": 2.74633,
+        "p99.9": 3.52003,
+        "p99.99": 3.74943
+      }
     }
   },
   "regime_threshold": true,

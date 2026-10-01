@@ -19,7 +19,14 @@ def _use_case_dogrula(context, *args, **kwargs):
     """use_case'i GERÇEKTEN zorunlu kılar. 30.09.2026: varsayılan (UR10E_INSPECTION)
     sessizce kalıp 9 koşunun 8'i yanlış senaryoyla çalıştı, 309 yanlış alarm üretti
     (bkz. anomali_kayit/kosu_*.json - hepsi UR10E_INSPECTION taşıyordu). `use_case:=`
-    verilmezse artık launch BAŞLAMAZ, sessizce yanlış değerle devam etmez."""
+    verilmezse artık launch BAŞLAMAZ, sessizce yanlış değerle devam etmez.
+
+    01.10.2026: 'IDLE' İSTİSNA - ZORUNLU DEĞİL. Arayüzden (user_interface) bir
+    senaryo butonuna basılınca HIL ayağa kalkarken use_case kısa süreliğine IDLE
+    oluyor; bu ANDA detector'ı `use_case:=IDLE` ile başlatmak artık hata vermiyor
+    - düğüm /testbed/use_case'ten gerçek senaryo gelene kadar bekliyor (bkz.
+    detector_node.py::_baslat). Gerçek bir senaryo adı hâlâ reddedilmiyorsa
+    (typo vb.) bu fonksiyon onu burada, launch anında yakalamaya devam eder."""
     uc = LaunchConfiguration("use_case").perform(context)
     if uc == _NO_DEFAULT:
         raise RuntimeError(
@@ -27,10 +34,13 @@ def _use_case_dogrula(context, *args, **kwargs):
             "seçilir, yanlış/eksik verilirse kalıntı yüzlerce Nm sapabilir "
             "(30.09.2026 deneyimi). Örnek:\n"
             "  ros2 launch anomaly_detection detector.launch.py use_case:=HRC\n"
-            f"Geçerli değerler: {', '.join(_USE_CASES)}")
-    if uc not in _USE_CASES:
+            "  ros2 launch anomaly_detection detector.launch.py use_case:=IDLE  "
+            "(arayüzden gerçek senaryo gelene kadar bekler)\n"
+            f"Geçerli değerler: {', '.join(_USE_CASES)}, IDLE")
+    if uc != "IDLE" and uc not in _USE_CASES:
         raise RuntimeError(
-            f"use_case={uc!r} bilinen 4 senaryodan biri değil: {', '.join(_USE_CASES)}")
+            f"use_case={uc!r} bilinen 4 senaryodan biri değil: "
+            f"{', '.join(_USE_CASES)} (ya da 'IDLE' - bekler)")
     return []
 
 
@@ -43,17 +53,47 @@ def generate_launch_description():
         DeclareLaunchArgument("use_case", default_value=_NO_DEFAULT,
                              description="ZORUNLU, varsayılanı yok: HRC | "
                                          "MULTIROBOT_INSPECTION | PICKPLACE | "
-                                         "UR10E_INSPECTION - çalışan göreve göre VERİLMELİ"),
-        DeclareLaunchArgument("quantile", default_value="p99.9",
+                                         "UR10E_INSPECTION - çalışan göreve göre VERİLMELİ. "
+                                         "Arayüzle (user_interface) birlikte otomatik "
+                                         "başlatılıyorsa IDLE verilebilir - düğüm "
+                                         "/testbed/use_case'ten gerçek senaryo gelene "
+                                         "kadar bekler (HIL ayağa kalkarken IDLE olması "
+                                         "normaldir)."),
+        # 01.10.2026: HRC + PICKPLACE'in gerçek hücre backtest'i p99.99'da en iyi
+        # sonucu verdi (HRC 9->0, PICKPLACE 18->0 yanlış alarm, gerçek olaylar
+        # kayıpsız) - varsayılan buna çekildi. threshold_by_regime_by_use_case'i
+        # olmayan use_case'ler (MULTIROBOT_INSPECTION) jenerik/offline tabloya
+        # düşer; orada p99.99 yalnız biraz daha gevşek (2.42/4.23 vs p99.9'un
+        # 2.14/3.90), zararı yok - zaten kalibre edilmemiş bir tabloyu sıkı
+        # tutmanın anlamı da yoktu.
+        DeclareLaunchArgument("quantile", default_value="p99.99",
                              description="eşik persentili: p97 | p99 | p99.9 | p99.99 "
                                          "- fusion_config.json'un dördünü de taşıdığı "
-                                         "PROVISIONAL (offline) değerlerden seçilir. "
-                                         "HRC için p99.99 ÖNERİLİR (bkz. "
-                                         "threshold_by_regime_by_use_case.HRC.note - "
-                                         "temas pozundaki beklenen reaksiyon torku "
-                                         "p99.9'u hâlâ geçiyor)."),
+                                         "değerlerden seçilir. HRC/PICKPLACE'te gerçek "
+                                         "hücreden ölçülmüş, UR10E_INSPECTION/"
+                                         "MULTIROBOT_INSPECTION'da jenerik/offline."),
         DeclareLaunchArgument("tf_prefix", default_value="ur10e_"),
         DeclareLaunchArgument("joint_states_topic", default_value="/joint_states"),
+        # 01.10.2026: p99.99 (yukarıdaki quantile) aşılırsa robotu durdur.
+        # Varsayılan AÇIK - kullanıcı kararı (01.10.2026): pause sonrası
+        # External Control programını pendant'tan elle yeniden başlatmayı kabul
+        # etti. GERÇEK bir protective stop DEĞİL (dashboard_client "pause" -
+        # programı duraklatır, bağlantı da düşer: "Connection to reverse
+        # interface dropped"); gerçek, güvenlik-değerlendirmeli bir durdurma
+        # Configurable Safety Input kurulumu gerektirir (bu düğümün kapsamı dışında).
+        DeclareLaunchArgument("robot_stop_on_alarm", default_value="true",
+                             description="true ise p99.99 aşılınca "
+                                         "dashboard_pause_service çağrılır "
+                                         "(programı duraklatır - GERÇEK "
+                                         "protective stop DEĞİL, pendant'tan "
+                                         "elle devam gerekir). Kapatmak için "
+                                         "robot_stop_on_alarm:=false ver."),
+        DeclareLaunchArgument("dashboard_pause_service",
+                             default_value="/dashboard_client/pause",
+                             description="ur_robot_driver'ın dashboard_client "
+                                         "düğümünün 'pause' servisi; hücrenin "
+                                         "launch ağacında farklı bir isim/"
+                                         "namespace altındaysa buradan verilmeli"),
         DeclareLaunchArgument("adaptive", default_value="false",
                              description="v3'te gerçek robotta kalıntının poza bağlı "
                                          "olduğu ölçüldüğü için kapatılmıştı; v4'ün "
@@ -87,6 +127,9 @@ def generate_launch_description():
             "quantile": LaunchConfiguration("quantile"),
             "tf_prefix": LaunchConfiguration("tf_prefix"),
             "joint_states_topic": LaunchConfiguration("joint_states_topic"),
+            "robot_stop_on_alarm": ParameterValue(
+                LaunchConfiguration("robot_stop_on_alarm"), value_type=bool),
+            "dashboard_pause_service": LaunchConfiguration("dashboard_pause_service"),
             "adaptive": ParameterValue(LaunchConfiguration("adaptive"), value_type=bool),
             "adaptive_k": ParameterValue(LaunchConfiguration("adaptive_k"), value_type=float),
             "freeze_timeout": ParameterValue(LaunchConfiguration("freeze_timeout"), value_type=float),

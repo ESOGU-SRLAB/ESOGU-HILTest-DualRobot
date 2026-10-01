@@ -1116,7 +1116,19 @@ def launch_setup(context, *args, **kwargs):
                             FindPackageShare("anomaly_detection"),
                             "launch", "detector.launch.py",
                         ])
-                    ])
+                    ]),
+                    # 01.10.2026: use_case ARTIK ZORUNLU (detector.launch.py
+                    # kendi doğrulamasını yapıyor) - vermezsen bu include hiç
+                    # ayağa kalkmaz. IDLE veriyoruz: detector_node arayüzün
+                    # (user_interface/app.py UseCaseBroadcaster) latch'li
+                    # /testbed/use_case yayınından gerçek senaryoyu bekleyip
+                    # kendini o zaman kurar - hangi senaryo butonuna basıldığını
+                    # BU dosyanın bilmesine gerek yok. ÖNCEDEN (use_case
+                    # argümanı hiç verilmiyordu): detector sessizce
+                    # UR10E_INSPECTION varsayılanıyla kurulurdu, senaryo ne
+                    # olursa olsun - 30.09.2026'nın use_case bug'ının aynısı,
+                    # yalnız bu dosyadan hiç fark edilmemişti.
+                    launch_arguments=[("use_case", "IDLE")],
                 )
             ],
         ))

@@ -1395,6 +1395,10 @@ class AnomalyCollector:
     THR_FUSED = 1.4
     THR_RESIDUAL = 0.5646
     THR_RAW = 0.7391
+    # p99.9 uyarı eşiği - index 17, 01.10.2026'dan sonraki kayıtlarda var.
+    # Eski kayıtların replay'inde (~/detail 17 eleman) hiç gelmez, bu
+    # varsayılanda kalır - zararsız, çünkü ~/warning da hiç True olmayacak.
+    THR_WARN = 1.4
 
     def __init__(self, socketio_instance, buffer_seconds=60):
         self.socketio = socketio_instance
@@ -1408,6 +1412,11 @@ class AnomalyCollector:
         self._alarm_edge = False
         self._alarm_now = False
         self._last_alarm_t = 0.0
+        # 01.10.2026: ikinci, daha düşük (p99.9) katman - robotu durdurmaz,
+        # yalnız sarı pop-up. Aynı edge-latch deseni, ayrı bir topic (~/warning).
+        self._warn_edge = False
+        self._warn_now = False
+        self._last_warn_t = 0.0
 
     def start(self):
         self._running = True
@@ -1454,6 +1463,10 @@ class AnomalyCollector:
                         self.THR_RESIDUAL = d[15]
                     if d[16] > 0:
                         self.THR_RAW = d[16]
+                # v4 + uyarı katmanı: indeks 18 = thr_warn (01.10.2026). Eski
+                # kayıt/düğümlerde yok - THR_WARN varsayılanda kalır, zararsız.
+                if len(d) >= 18 and d[17] > 0:
+                    self.THR_WARN = d[17]
                 with self._lock:
                     self.samples.append(rec)
                     self._n_msgs += 1
@@ -1467,8 +1480,16 @@ class AnomalyCollector:
                         self._alarm_edge = True          # latch; cleared by push
                         self._last_alarm_t = time.time()
 
+            def warn_cb(msg):
+                with self._lock:
+                    self._warn_now = bool(msg.data)
+                    if msg.data:
+                        self._warn_edge = True           # latch; cleared by push
+                        self._last_warn_t = time.time()
+
             node.create_subscription(Float32MultiArray, ns + "/detail", detail_cb, 20)
             node.create_subscription(Bool, ns + "/detected", det_cb, 20)
+            node.create_subscription(Bool, ns + "/warning", warn_cb, 20)
             node.create_subscription(Float32, ns + "/score", lambda m: None, 10)
             node.get_logger().info("Dashboard anomaly listener started.")
 
@@ -1502,6 +1523,9 @@ class AnomalyCollector:
                     edge, self._alarm_edge = self._alarm_edge, False
                     alarm_now = self._alarm_now
                     last_alarm = self._last_alarm_t
+                    warn_edge, self._warn_edge = self._warn_edge, False
+                    warn_now = self._warn_now
+                    last_warn = self._last_warn_t
                     n = self._n_msgs
                     t0 = self._connected_at
                 son = seri[-1] if seri else None
@@ -1511,9 +1535,13 @@ class AnomalyCollector:
                     "alarm": alarm_now,
                     "alarm_edge": edge,          # did an alarm occur in this window?
                     "last_alarm_ago": (now - last_alarm) if last_alarm else None,
+                    "warning": warn_now,
+                    "warning_edge": warn_edge,   # p99.9 crossed - UI-only, no robot action
+                    "last_warning_ago": (now - last_warn) if last_warn else None,
                     "thresholds": {"fused": self.THR_FUSED,
                                    "residual": self.THR_RESIDUAL,
-                                   "raw": self.THR_RAW},
+                                   "raw": self.THR_RAW,
+                                   "warn": self.THR_WARN},
                     "current": son,
                     "series": self._downsample(seri, 240),
                     "decision_hz": (n / (now - t0)) if t0 and now > t0 else 0.0,

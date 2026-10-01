@@ -53,11 +53,16 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool, Float32, Float32MultiArray
 
-# CSV'de t_ros'tan sonra gelen ve `~/detail` dizisini oluşturan 17 alan.
+# CSV'de t_ros'tan sonra gelen ve `~/detail` dizisini oluşturan 17 ZORUNLU alan.
 DETAIL_COLS = ["s_kal", "s_ham", "z_kal", "z_ham", "birlesik", "thr_mutlak",
                "thr_uyarlanabilir", "hit_mutlak", "hit_uyarlanabilir",
                "hit_kal", "hit_ham", "hareket", "qd_tepe", "taban_n", "donmus",
                "thr_kal", "thr_ham"]
+# 01.10.2026'dan sonraki kayıtlarda var (indeks 17 + uyarı bool'u); öncekilerde
+# yok - OPSİYONEL, eksikse eski 17 elemanlı ~/detail ve ~/warning=False yayınlanır.
+# Bunu ZORUNLU yapmak 30.09/01.10 kampanyasının (makaledeki fig5_interface.png'nin
+# kaynağı) 17 sütunlu kayıtlarını oynatılamaz hale getirirdi.
+WARN_COLS = ["thr_warn", "uyari"]
 
 
 class ScoreReplay(Node):
@@ -101,6 +106,7 @@ class ScoreReplay(Node):
         ns = "/" + self.get_name()
         self.pub_detail = self.create_publisher(Float32MultiArray, ns + "/detail", 20)
         self.pub_det = self.create_publisher(Bool, ns + "/detected", 20)
+        self.pub_warn = self.create_publisher(Bool, ns + "/warning", 20)
         self.pub_score = self.create_publisher(Float32, ns + "/score", 20)
 
         d = self.rows[-1]["t"] - self.rows[0]["t"]
@@ -126,11 +132,22 @@ class ScoreReplay(Node):
             if miss:
                 raise SystemExit(f"CSV'de eksik sütun: {miss}\n"
                                  f"  (eski sürüm kayıt olabilir)")
+            has_warn = all(c in rd.fieldnames for c in WARN_COLS)
+            if not has_warn:
+                self.get_logger().info(
+                    "Uyarı sütunları (thr_warn/uyari) yok - 01.10.2026 öncesi "
+                    "kayıt. ~/warning hep False yayınlanacak, ~/detail 17 "
+                    "elemanlı kalacak (eski davranış).")
             for r in rd:
                 try:
-                    out.append({"t": float(r["t_ros"]),
-                                "detail": [float(r[c]) for c in DETAIL_COLS],
-                                "alarm": float(r.get("alarm", 0)) > 0.5})
+                    detail = [float(r[c]) for c in DETAIL_COLS]
+                    warn = False
+                    if has_warn:
+                        detail.append(float(r["thr_warn"]))
+                        warn = float(r["uyari"]) > 0.5
+                    out.append({"t": float(r["t_ros"]), "detail": detail,
+                                "alarm": float(r.get("alarm", 0)) > 0.5,
+                                "warn": warn})
                 except (TypeError, ValueError):
                     continue
         if not out:
@@ -186,6 +203,7 @@ class ScoreReplay(Node):
             m.data = [float(x) for x in r["detail"]]
             self.pub_detail.publish(m)
             self.pub_det.publish(Bool(data=r["alarm"]))
+            self.pub_warn.publish(Bool(data=r["warn"]))
             self.pub_score.publish(Float32(data=float(r["detail"][4])))
             self.i += 1
             sent += 1
