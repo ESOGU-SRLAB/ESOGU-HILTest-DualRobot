@@ -1600,12 +1600,44 @@ def _read_anomaly_events(limit=200):
     return olaylar[:limit]
 
 
+def _read_use_case_mismatches(limit=5):
+    """detector_node.py'nin on_testbed_use_case() ile yazdığı 'use_case_uyusmazligi'
+    olaylarını okur. _read_anomaly_events bunları görmezden gelir (yalnız
+    anomali_basladi/bitti çiftlerini eşler) - bu yüzden ayrı, küçük bir tarama."""
+    import glob
+    kayitlar = []
+    for path in sorted(glob.glob(os.path.join(ANOMALY_LOG_DIR, "**", "olaylar_*.jsonl"),
+                                 recursive=True)):
+        kosu = os.path.basename(path).replace("olaylar_", "").replace(".jsonl", "")
+        try:
+            with open(path, encoding="utf-8") as f:
+                for satir in f:
+                    satir = satir.strip()
+                    if not satir:
+                        continue
+                    try:
+                        e = json.loads(satir)
+                    except ValueError:
+                        continue
+                    if e.get("olay") == "use_case_uyusmazligi":
+                        kayitlar.append({
+                            "kosu": kosu, "zaman": e.get("zaman"),
+                            "baslatilan": e.get("baslatilan"),
+                            "arayuzdeki": e.get("arayuzdeki"),
+                        })
+        except OSError:
+            continue
+    kayitlar.sort(key=lambda k: k.get("zaman") or "", reverse=True)
+    return kayitlar[:limit]
+
+
 @app.route("/api/anomaly/events")
 def api_anomaly_events():
     try:
-        return jsonify({"ok": True, "events": _read_anomaly_events()})
+        return jsonify({"ok": True, "events": _read_anomaly_events(),
+                        "uyumsuzluk": _read_use_case_mismatches()})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e), "events": []}), 500
+        return jsonify({"ok": False, "error": str(e), "events": [], "uyumsuzluk": []}), 500
 
 
 @app.route("/api/anomaly/label", methods=["POST"])

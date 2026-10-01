@@ -315,6 +315,23 @@ function updateBar(which, val, thr) {
     out.textContent = fmtNum(val);
 }
 
+// detector_node bu değeri launch'ta sabitliyor; arayüzün koşturduğu senaryo
+// değişince uyuşmazlık burada (en güncel kayıt) gösterilir. Boşsa banner gizli.
+function renderUseCaseMismatch(uyumsuzluk) {
+    const banner = document.getElementById("an-mismatch-banner");
+    const text = document.getElementById("an-mismatch-text");
+    if (!banner || !text) return;
+    if (!uyumsuzluk.length) {
+        banner.style.display = "none";
+        return;
+    }
+    const son = uyumsuzluk[0];
+    text.textContent = `Detector '${son.baslatilan}' ile başlatıldı, arayüz `
+        + `'${son.arayuzdeki}' koşturuyor (${son.kosu}, ${son.zaman}). `
+        + `Detector'ı 'use_case:=${son.arayuzdeki}' ile yeniden başlatın.`;
+    banner.style.display = "";
+}
+
 // ----------------------------------------------------------- event table ----
 async function refreshAnomalyEvents() {
     anLastEventFetch = Date.now();
@@ -325,6 +342,7 @@ async function refreshAnomalyEvents() {
         const j = await r.json();
         if (!j.ok) throw new Error(j.error || "unknown error");
         renderEvents(j.events || []);
+        renderUseCaseMismatch(j.uyumsuzluk || []);
     } catch (err) {
         body.innerHTML = `<tr><td colspan="7" class="an-empty">
             Could not read events: ${escapeHtml(String(err.message || err))}</td></tr>`;

@@ -20,7 +20,7 @@
     "pinned_sources": {
       "image": {
         "tag": "ros2-exec-harness:0.3.2",
-        "id": "TO BE FILLED AFTER BUILD: docker images --no-trunc ros2-exec-harness:0.3.2"
+        "id": "sha256:abe5b70699a0f73cb4903b0a85761e9ea0e7a29c82ac88fa61f70b1ca5231c6b"
       },
       "sha256": {
         "/harness_ws/install/pymoveit2_sim/lib/pymoveit2_sim/sim_robot_goal.py": "59dbb47a4d50d4da5cea72e1d942cfa12b40821f58450d3b7f13b3dba7cf38a9",

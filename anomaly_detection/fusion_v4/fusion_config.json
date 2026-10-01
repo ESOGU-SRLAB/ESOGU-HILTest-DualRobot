@@ -30,6 +30,25 @@
       "p99.99": 4.229308174571658
     }
   },
+  "threshold_by_regime_by_use_case": {
+    "_note": "use_case eşleşmesinde buradaki anahtar bulunamazsa üstteki (generic, offline) threshold_by_regime'e düşülür. Buradakiler GERÇEK HÜCREDEN ölçüldü - ama her biri TEK oturum, küçük örneklem; daha fazla temiz HRC/PICKPLACE verisiyle yeniden ölçülmeli.",
+    "HRC": {
+      "calibrated_on": "gerçek hücre, 2026-09-30 17:31 oturumu (anomali_kayit_hrc, 11654 örnek, etiketlenmiş: gerçek anomali YOK, 9/9 olay 'yanlis')",
+      "note": "Vidalama temas pozunda (J2/J3 akımı 4-11A, aktif sıkma reaksiyonu) kalıntı fizik modelinde temsil edilmiyor - bu NORMAL operasyon, eşik buna göre yükseltildi. quantile=p99.99 (fiilen bugünkü maksimuma eşit) ÖNERİLİR; p99.9 bu oturumdaki 9 olayın 3'ünü hâlâ geçiyor.",
+      "static": {
+        "p97": 0.493578,
+        "p99": 1.09914,
+        "p99.9": 4.11339,
+        "p99.99": 5.32679
+      },
+      "moving": {
+        "p97": 2.39385,
+        "p99": 3.34434,
+        "p99.9": 4.64499,
+        "p99.99": 4.95142
+      }
+    }
+  },
   "regime_threshold": true,
   "motion_qd_min": 0.02,
   "moving_val_fraction": 0.42359095004504954,

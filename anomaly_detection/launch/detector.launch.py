@@ -3,28 +3,55 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
+_USE_CASES = ("HRC", "MULTIROBOT_INSPECTION", "PICKPLACE", "UR10E_INSPECTION")
+_NO_DEFAULT = "__VERILMEDI__"
+
 # Model, kalibrasyon ve FMU çözücüsü paketin share dizinine kurulur.
 BASE = get_package_share_directory("anomaly_detection")
+
+
+def _use_case_dogrula(context, *args, **kwargs):
+    """use_case'i GERÇEKTEN zorunlu kılar. 30.09.2026: varsayılan (UR10E_INSPECTION)
+    sessizce kalıp 9 koşunun 8'i yanlış senaryoyla çalıştı, 309 yanlış alarm üretti
+    (bkz. anomali_kayit/kosu_*.json - hepsi UR10E_INSPECTION taşıyordu). `use_case:=`
+    verilmezse artık launch BAŞLAMAZ, sessizce yanlış değerle devam etmez."""
+    uc = LaunchConfiguration("use_case").perform(context)
+    if uc == _NO_DEFAULT:
+        raise RuntimeError(
+            "use_case verilmedi. ZORUNLU - yük/sürtünme düzeltmesi buna göre "
+            "seçilir, yanlış/eksik verilirse kalıntı yüzlerce Nm sapabilir "
+            "(30.09.2026 deneyimi). Örnek:\n"
+            "  ros2 launch anomaly_detection detector.launch.py use_case:=HRC\n"
+            f"Geçerli değerler: {', '.join(_USE_CASES)}")
+    if uc not in _USE_CASES:
+        raise RuntimeError(
+            f"use_case={uc!r} bilinen 4 senaryodan biri değil: {', '.join(_USE_CASES)}")
+    return []
 
 
 def generate_launch_description():
     args = [
         DeclareLaunchArgument("models_base", default_value=BASE,
                              description="model/kalibrasyon dosyalarının kök dizini"),
-        # ZORUNLU niyetinde - yük/ofset düzeltmesi buna göre seçilir. Yanlış
-        # senaryo verilirse kalıntı yüzlerce Nm sapabilir.
-        DeclareLaunchArgument("use_case", default_value="UR10E_INSPECTION",
-                             description="HRC | MULTIROBOT_INSPECTION | PICKPLACE | "
+        # ZORUNLU - varsayılanı YOK (bkz. _use_case_dogrula). Yanlış senaryo
+        # verilirse kalıntı yüzlerce Nm sapabilir.
+        DeclareLaunchArgument("use_case", default_value=_NO_DEFAULT,
+                             description="ZORUNLU, varsayılanı yok: HRC | "
+                                         "MULTIROBOT_INSPECTION | PICKPLACE | "
                                          "UR10E_INSPECTION - çalışan göreve göre VERİLMELİ"),
         DeclareLaunchArgument("quantile", default_value="p99.9",
                              description="eşik persentili: p97 | p99 | p99.9 | p99.99 "
                                          "- fusion_config.json'un dördünü de taşıdığı "
-                                         "PROVISIONAL (offline) değerlerden seçilir"),
+                                         "PROVISIONAL (offline) değerlerden seçilir. "
+                                         "HRC için p99.99 ÖNERİLİR (bkz. "
+                                         "threshold_by_regime_by_use_case.HRC.note - "
+                                         "temas pozundaki beklenen reaksiyon torku "
+                                         "p99.9'u hâlâ geçiyor)."),
         DeclareLaunchArgument("tf_prefix", default_value="ur10e_"),
         DeclareLaunchArgument("joint_states_topic", default_value="/joint_states"),
         DeclareLaunchArgument("adaptive", default_value="false",
@@ -68,4 +95,6 @@ def generate_launch_description():
             "log_scores": ParameterValue(LaunchConfiguration("log_scores"), value_type=bool),
         }],
     )
-    return LaunchDescription(args + [node])
+    # OpaqueFunction args listesinin SONUNDA olmalı: use_case'in DeclareLaunchArgument'ı
+    # yukarıda zaten eklendi, bu yalnız onu çözüp doğruluyor.
+    return LaunchDescription(args + [OpaqueFunction(function=_use_case_dogrula), node])

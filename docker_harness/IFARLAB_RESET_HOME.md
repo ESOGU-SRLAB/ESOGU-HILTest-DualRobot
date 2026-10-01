@@ -60,7 +60,7 @@ Buna bağlı karar: **STLC'nin `ssh ... docker run` çağrısındaki zaman aşı
 
 Bağlantı ~2 dk cevap vermezse SSH kendini kapatır; uzun ama canlı bir koşu hiç kesilmez.
 
-`robot_capabilities.json` da güncellendi: `execution_environment.timeouts` (60 / 600 sn), `exit_codes.124`, yeni `post_run_reset` alanı, sonsuz döngü yasağının gerekçesi ve `run_command` etiketi (`0.3.2`). **`meta.pinned_sources.image.id` build'den sonra doldurulmalı** (4.2).
+`robot_capabilities.json` da güncellendi: `execution_environment.timeouts` (60 / 600 sn), `exit_codes.124`, yeni `post_run_reset` alanı, sonsuz döngü yasağının gerekçesi ve `run_command` etiketi (`0.3.2`). `0.3.2` 30 Eyl 2026'da IFARLAB'da build edildi: `sha256:abe5b70699a0f73cb4903b0a85761e9ea0e7a29c82ac88fa61f70b1ca5231c6b`; bu ID `meta.pinned_sources.image.id`'ye yazıldı.
 
 ## 1. Amaç
 
@@ -968,7 +968,7 @@ Bu belgenin ilk sürümü `0.3.0`'ı `0.2.0` etiketinin üzerine yazmayı öneri
 | `0.2.0` | `sha256:4a814e161eb6…` | import + pytest düzeltmesi, reset yok |
 | `0.3.0` | `sha256:c13b4440447d…` | reset (eski `reset_home.py`, kaçış payı yok). **Kullanılmamalı** |
 | `0.3.1` | `sha256:820e1ddbb3b9c2cd7344b7efec75910361571c5f86692197e0a4492dc2860800` | reset + kaçış payı + `HARNESS_RUN_TIMEOUT` (180 sn) |
-| `0.3.2` | build sonrası doldurulacak | `0.3.1` + `HARNESS_RUN_TIMEOUT` varsayılanı 600 sn |
+| `0.3.2` | `sha256:abe5b70699a0f73cb4903b0a85761e9ea0e7a29c82ac88fa61f70b1ca5231c6b` | `0.3.1` + `HARNESS_RUN_TIMEOUT` varsayılanı 600 sn |
 
 STLC'nin göndereceği komut:
 

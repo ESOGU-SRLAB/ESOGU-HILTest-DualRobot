@@ -30,10 +30,19 @@ from pathlib import Path
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from rclpy.qos import (QoSProfile, ReliabilityPolicy, HistoryPolicy,
+                       DurabilityPolicy)
 
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Bool, Float32, Float32MultiArray
+from std_msgs.msg import Bool, Float32, Float32MultiArray, String
+
+# user_interface/app.py'nin yayınladığı, hangi senaryonun koştuğunu söyleyen
+# latch'li topic (bkz. UseCaseBroadcaster). Bu düğüm BUNA GÖRE kendi use_case'ini
+# DEĞİŞTİRMEZ (fizik modeli kuruluşta sabitlenir, canlı yeniden kurmak riskli) -
+# yalnız uyuşmazlığı YÜKSEK SESLE bildirir. 30.09.2026'da tam olarak bu uyuşmazlık
+# (launch hep varsayılan UR10E_INSPECTION ile başlamış, arayüz HRC/PICKPLACE
+# koşturmuş) 309 yanlış alarma yol açmıştı.
+TESTBED_USE_CASE_TOPIC = "/testbed/use_case"
 
 from .detector import FusionDetector
 from .features import JOINT_SUFFIX
@@ -192,6 +201,17 @@ class AnomalyDetectorNode(Node):
                          history=HistoryPolicy.KEEP_LAST)
         self.create_subscription(JointState, str(g("joint_states_topic")),
                                  self.on_joint_states, qos)
+
+        # Arayüzün yayınladığı aktif senaryoyla uyuşmazlığı canlı yakala (bkz.
+        # dosya başındaki TESTBED_USE_CASE_TOPIC notu). TRANSIENT_LOCAL ŞART -
+        # yayıncı (UseCaseBroadcaster) latch'li, bu düğüm ondan SONRA başlasa
+        # bile son değeri bu sayede kaçırmaz.
+        tb_qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE,
+                            durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self._last_testbed_use_case: str | None = None
+        self.create_subscription(String, TESTBED_USE_CASE_TOPIC,
+                                 self.on_testbed_use_case, tb_qos)
+
         self.pub_score = self.create_publisher(Float32, "~/score", 10)
         self.pub_det = self.create_publisher(Bool, "~/detected", 10)
         self.pub_detail = self.create_publisher(Float32MultiArray, "~/detail", 10)
@@ -254,6 +274,7 @@ class AnomalyDetectorNode(Node):
             "regime_threshold": det.regime_threshold,
             "quantile": det.quantile,
             "threshold_by_regime": det.thr_regime,
+            "threshold_by_regime_source": det.thr_regime_source,
             "motion_qd_min": det.motion_qd_min,
             "residual_theta": det.ae_res.threshold,
             "raw_theta": det.ae_raw.threshold,
@@ -291,6 +312,27 @@ class AnomalyDetectorNode(Node):
         rec = {"zaman": time.strftime("%Y-%m-%dT%H:%M:%S"), "olay": kind}
         rec.update(kw)
         self.f_events.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+    def on_testbed_use_case(self, msg: String) -> None:
+        """Arayüzün (user_interface) o an koşturduğu senaryoyla bu düğümün
+        LAUNCH ANINDA sabitlenmiş use_case'i uyuşuyor mu. Canlı olarak fizik
+        modelini DEĞİŞTİRMEZ (riskli - baseline/buffer sıfırlanır), yalnız
+        uyuşmazlığı hem terminal logunda hem olaylar_*.jsonl'de (dolayısıyla
+        arayüzün kendi anomali panelinde) görünür kılar. 30.09.2026: bu kontrol
+        olsaydı 9 koşunun 8'inde ilk saniyede fark edilirdi, saatler sonra değil."""
+        gelen = str(msg.data).strip()
+        if gelen == self._last_testbed_use_case:
+            return                                   # aynı değer tekrar geldi, sessiz kal
+        self._last_testbed_use_case = gelen
+        if gelen in ("", "IDLE") or gelen == self.det.use_case:
+            return
+        self.get_logger().error(
+            f"USE_CASE UYUŞMAZLIĞI: bu düğüm '{self.det.use_case}' ile başlatıldı "
+            f"ama arayüz şu an '{gelen}' senaryosunu koşturuyor. Kalıntı skoru "
+            f"YANLIŞ senaryonun yük/sürtünme düzeltmesiyle hesaplanıyor demektir "
+            f"- CTRL+C yapıp 'use_case:={gelen}' ile yeniden başlatın.")
+        self._event("use_case_uyusmazligi",
+                    baslatilan=self.det.use_case, arayuzdeki=gelen)
 
     def _resolve(self, names: tuple) -> list[int] | None:
         """İsim kümesini UR eklem indekslerine çevirir; UR'a ait değilse None."""

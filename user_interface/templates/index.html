@@ -923,6 +923,14 @@
         </section>
     </div>
 
+    <!-- use_case mismatch warning: populated by refreshAnomalyEvents() from
+         /api/anomaly/events's "uyumsuzluk" field. Hidden when empty. Reuses the
+         existing .an-banner.an-alarm look (red, pulsing) instead of new CSS. -->
+    <div class="an-banner an-alarm" id="an-mismatch-banner" style="display:none; margin-bottom:16px;">
+        <div class="an-banner-state">USE_CASE UYUŞMAZLIĞI</div>
+        <div class="an-banner-metrics" id="an-mismatch-text"></div>
+    </div>
+
     <!-- Event table -->
     <section class="an-card an-events">
         <h3>Event history

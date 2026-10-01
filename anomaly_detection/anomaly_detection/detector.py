@@ -126,7 +126,14 @@ class FusionDetector:
         if quantile not in QUANTILES:
             raise ValueError(f"quantile {quantile!r} değil; geçerli: {QUANTILES}")
         self.quantile = quantile
-        self.thr_regime = {r: float(fc["threshold_by_regime"][r][quantile]) for r in ("static", "moving")}
+        # use_case'e özel eşik varsa onu kullan (gerçek hücreden ölçülmüş olabilir,
+        # bkz. HRC girdisi: temas pozundaki beklenen reaksiyon torku jenerik eşikte
+        # yok); yoksa jenerik (offline, PROVISIONAL) threshold_by_regime'e düş.
+        regime_tbl = fc.get("threshold_by_regime_by_use_case", {}).get(
+            use_case, fc["threshold_by_regime"])
+        self.thr_regime = {r: float(regime_tbl[r][quantile]) for r in ("static", "moving")}
+        self.thr_regime_source = "use_case" if use_case in fc.get(
+            "threshold_by_regime_by_use_case", {}) else "generic"
         self.regime_threshold = bool(fc.get("regime_threshold", True) if regime_threshold is None
                                      else regime_threshold)
         self.motion_qd_min = float(motion_qd_min if motion_qd_min is not None
