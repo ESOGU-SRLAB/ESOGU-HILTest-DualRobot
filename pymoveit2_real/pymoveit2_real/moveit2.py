@@ -574,7 +574,7 @@ class MoveIt2:
             return None
 
         while not future.done():
-            rclpy.spin_once(self._node, timeout_sec=1.0)
+            self._spin_or_sleep(timeout_sec=1.0)
 
         return self.get_trajectory(
             future,
@@ -691,7 +691,7 @@ class MoveIt2:
                 start_joint_state = self.__joint_state
                 break
             else:
-                rclpy.spin_once(self._node, timeout_sec=1.0)
+                self._spin_or_sleep(timeout_sec=1.0)
         self._node._logger.info(message="Joint states are available now")
 
         # Plan trajectory asynchronously by service call
@@ -799,7 +799,7 @@ class MoveIt2:
             return False
 
         while self.__is_motion_requested or self.__is_executing:
-            rclpy.spin_once(self._node, timeout_sec=1.0)
+            self._spin_or_sleep(timeout_sec=1.0)
 
         return self.motion_suceeded
 
@@ -1251,7 +1251,7 @@ class MoveIt2:
             return None
 
         while not future.done():
-            rclpy.spin_once(self._node, timeout_sec=1.0)
+            self._spin_or_sleep(timeout_sec=1.0)
 
         return self.get_compute_fk_result(future, fk_link_names=fk_link_names)
 
@@ -1351,7 +1351,7 @@ class MoveIt2:
             return None
 
         while not future.done():
-            rclpy.spin_once(self._node, timeout_sec=1.0)
+            self._spin_or_sleep(timeout_sec=1.0)
 
         return self.get_compute_ik_result(future)
 
@@ -2162,6 +2162,23 @@ class MoveIt2:
     # ------------------------------------------------------------------ #
     # Nearest-branch IK.
     # ------------------------------------------------------------------ #
+    def _spin_or_sleep(self, timeout_sec: float = 1.0):
+        """Let callbacks run while a blocking call waits. If the node already lives in
+        the caller's own executor (e.g. a background MultiThreadedExecutor), just sleep
+        and let that executor deliver the callbacks. Calling rclpy.spin_once() there
+        makes TWO executors wait on the same action client at once, and rclpy raises
+        'wait set index for status subscription is out of bounds' -- which kills the
+        caller's executor thread and freezes every subscription (io_states, ...)."""
+        executor = self._node.executor
+        if (
+            executor is not None
+            and executor is not rclpy.get_global_executor()
+            and self._node in executor.get_nodes()
+        ):
+            time.sleep(0.01)
+        else:
+            rclpy.spin_once(self._node, timeout_sec=timeout_sec)
+
     def __await_future(self, future, timeout: float) -> bool:
         """Wait for a future WITHOUT spinning. Everything below runs from a caller that
         already has its node under an executor, and rclpy.spin_once() from there hands

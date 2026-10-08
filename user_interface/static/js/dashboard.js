@@ -41,6 +41,24 @@ socket.on("status_update", (data) => {
     scenarioDot.className = `status-dot ${data.scenario_status}`;
     scenarioText.textContent = STATUS_TEXT[data.scenario_status] || data.scenario_status;
 
+    // Data acquisition: the switch mirrors the PROCESSES, not the last click.
+    // A recorder that exits on its own (unreachable robot, Kafka gone) therefore
+    // turns the switch back off instead of leaving it on over a dead pipeline.
+    const acq = data.data_acquisition || { enabled: false, jobs: {} };
+    const acqToggle = document.getElementById("data-acquisition-toggle");
+    if (acqToggle && acqToggle.checked !== acq.enabled) acqToggle.checked = acq.enabled;
+    const jobsBox = document.getElementById("acq-jobs");
+    if (jobsBox) {
+        const states = acq.jobs || {};
+        // Hidden while everything is stopped: two greyed-out dots sitting on the
+        // control bar all day is noise, not status.
+        jobsBox.hidden = !acq.enabled && !Object.values(states).includes("failed");
+        Object.entries(states).forEach(([key, state]) => {
+            const el = document.getElementById("acq-job-" + key);
+            if (el) el.className = "acq-job " + state;
+        });
+    }
+
     // Active scenario
     const activeText = document.getElementById("active-scenario-text");
     activeText.textContent = data.current_scenario
@@ -179,6 +197,15 @@ function rerunScenario() {
     socket.emit("confirm_robot");
 }
 
+// Data Acquisition. The switch starts and stops the two collection processes
+// straight away (the UR RTDE recorder and the Kafka→Elasticsearch consumers);
+// the third one, the ROS→Kafka bridge, is a launch argument and so only joins
+// at the next scenario start -- which is why the switch is flipped BEFORE
+// starting a run. Backend side: ScenarioManager.start_acquisition in app.py.
+function toggleDataAcquisition(enabled) {
+    socket.emit("set_data_acquisition", { enabled });
+}
+
 function emergencyStop() {
     if (confirm("🛑 All processes will be stopped. Are you sure?")) {
         socket.emit("stop_all");
@@ -191,13 +218,22 @@ function emergencyStop() {
 
 // Son gönderilen komut: pencere yeniden açıldığında kutuda hazır bekler,
 // çünkü aynı görev çoğu zaman ufak bir değişiklikle tekrar deneniyor.
-let lastCommandText = "";
+//
+// Başlangıç değeri placeholder DEĞİL, gerçek metin: pencere açılınca doğrudan
+// Confirm'e basılabilsin. Bu cümle kayıtlı koşularda sınandı - ayırt edici
+// bilgi ("separate multi-level bin rack") bırakma isim öbeğinin içinde olduğu
+// için planner kısaltırken atmıyor.
+const DEFAULT_COMMAND_TEXT =
+    "Pick up the flat rectangular object lying on the conveyor belt and place " +
+    "it into one of the empty open-top bins in the top row of the separate " +
+    "multi-level bin rack that stands apart from the conveyor.";
+let lastCommandText = DEFAULT_COMMAND_TEXT;
 
 function openCommandModal() {
     const modal = document.getElementById("command-modal");
     const box = document.getElementById("command-text");
     setCommandStatus("", "");
-    if (lastCommandText) box.value = lastCommandText;
+    box.value = lastCommandText;
     modal.classList.add("visible");
     // Odak ve imleç sona: kullanıcı hemen yazmaya/düzeltmeye başlayabilsin.
     setTimeout(() => {

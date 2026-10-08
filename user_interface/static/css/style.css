@@ -492,6 +492,40 @@ body::before {
     animation: pulse-glow 1s ease-in-out infinite;
 }
 
+/* Data Acquisition: one dot per collection process, shown next to the switch.
+   The switch alone cannot say WHICH half of the pipeline is alive, and the
+   recorder is the half that quietly exits when the robot is unreachable.
+   Colors come from the palette above -- nothing theme-specific here. */
+.acq-jobs {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 6px;
+}
+
+.acq-job {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+}
+
+.acq-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.acq-job.running .acq-dot { background: var(--accent-green); }
+.acq-job.running { color: var(--accent-green); }
+.acq-job.failed .acq-dot { background: var(--accent-red); }
+.acq-job.failed { color: var(--accent-red); }
+
 @keyframes pulse-glow {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.5; transform: scale(0.85); }
